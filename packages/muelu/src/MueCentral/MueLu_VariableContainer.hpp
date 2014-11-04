@@ -46,14 +46,9 @@
 #ifndef MUELU_VARIABLECONTAINER_HPP
 #define MUELU_VARIABLECONTAINER_HPP
 
-#include "MueLu_ExplicitInstantiation.hpp"
-
-#include <complex>
 #include <map>
 
-#include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
-#include <Tpetra_ETIHelperMacros.h>
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Operator.hpp>
@@ -92,7 +87,26 @@ namespace MueLu {
       const std::type_info& type() const { return typeid(T); }
       std::string typeName() const { return Teuchos::TypeNameTraits<T>::name(); }
       T data_;
-  };
+    };
+
+    template<typename T>
+    struct Getter {
+      static T& get(DataBase* data_, DataBase*& datah_) {
+        const std::string typeName = Teuchos::TypeNameTraits<T>::name();
+        TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                   "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
+        TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
+                                   "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
+                                   "\'" << data_->typeName() << "!");
+
+        Data<T>* data = dynamic_cast<Data<T>*>(data_);
+        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                   "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is "
+                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        return data->data_;
+      }
+    };
+
 
   public:
     typedef std::map<const FactoryBase*,int> request_container;
@@ -100,7 +114,8 @@ namespace MueLu {
   private:
     DataBase*          data_;        ///< the data itself
     mutable
-    DataBase*          datah_;
+    DataBase*          datah_;       ///< temporary data storage (need to get a reference
+                                     ///< to RCP to a base class (like Operator)
     bool               available_;   ///< is data available?
     KeepType           keep_;        ///< keep flag
     int                count_;       ///< number of requests by all factories
@@ -137,39 +152,19 @@ namespace MueLu {
     //! NOTE: we do not check if data is available
     template<typename T>
     const T& GetData() const {
-      const std::string typeName = Teuchos::TypeNameTraits<T>::name();
-      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
-                                 "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
-      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
-                                 "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
-                                 "\'" << data_->typeName() << "!");
-
-      Data<T>* data = dynamic_cast<Data<T>*>(data_);
-      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
-                                 "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is "
-                                 "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
-      return data->data_;
+      return Getter<T>::get(data_, datah_);
     }
 
     //! Return reference to data stored in container
     //! NOTE: we do not check if data is available
     template<typename T>
     T& GetData() {
-      const std::string typeName = Teuchos::TypeNameTraits<T>::name();
-      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
-                                 "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
-      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
-                                 "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
-                                 "\'" << data_->typeName() << "!");
-
-      Data<T>* data = dynamic_cast<Data<T>*>(data_);
-      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
-                                 "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is \'"
-                                 << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
-      return data->data_;
+      return Getter<T>::get(data_, datah_);
     }
 
     std::string GetTypeName() {
+      if (data_ == NULL)
+        return std::string("");
       return data_->typeName();
     }
 
@@ -238,58 +233,45 @@ namespace MueLu {
     //@}
   };
 
-#define MUELU_DECL1_SC_LO_GO_NO(SC,LO,GO,NO) \
-  template<> \
-  const Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> >& VariableContainer::GetData<Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > >() const;
 
-#define MUELU_DECL2_SC_LO_GO_NO(SC,LO,GO,NO) \
-  template<> \
-  Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> >& VariableContainer::GetData<Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > >();
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  struct VariableContainer::Getter<Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > {
+    typedef Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
+    typedef Xpetra::Matrix  <Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-  MUELU_DECL1_SC_LO_GO_NO(double,int,int,KokkosClassic::DefaultNode::DefaultNodeType);
-  MUELU_DECL2_SC_LO_GO_NO(double,int,int,KokkosClassic::DefaultNode::DefaultNodeType);
-#endif
+    static Teuchos::RCP<Operator>& get(DataBase* data_, DataBase*& datah_) {
+      typedef Teuchos::RCP<Operator> TO;
+      typedef Teuchos::RCP<Matrix>   TM;
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  MUELU_DECL1_SC_LO_GO_NO(double,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
-  MUELU_DECL2_SC_LO_GO_NO(double,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+      const std::string typeTOName = Teuchos::TypeNameTraits<TO>::name();
+      const std::string typeTMName = Teuchos::TypeNameTraits<TM>::name();
+      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeTOName << "> failed since the content is NULL");
+      if (data_->type() == typeid(TO)) {
+        Data<TO>* data = dynamic_cast<Data<TO>*>(data_);
+        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                   "Error, cast to type Data<" << typeTOName << "> failed but should not have and the actual underlying type is "
+                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        return data->data_;
+      }
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-  MUELU_DECL1_SC_LO_GO_NO(std::complex<double>,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
-  MUELU_DECL2_SC_LO_GO_NO(std::complex<double>,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
-  MUELU_DECL1_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosThreadsWrapperNode);
-  MUELU_DECL2_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosThreadsWrapperNode);
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-  MUELU_DECL1_SC_LO_GO_NO(double,int,int,KokkosClassic_TPINode);
-  MUELU_DECL2_SC_LO_GO_NO(double,int,int,KokkosClassic_TPINode);
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
-  MUELU_DECL1_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosOpenMPWrapperNode);
-  MUELU_DECL2_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosOpenMPWrapperNode);
-#endif
-
-#undef MUELU_DECL1_SC_LO_GO_NO
-#undef MUELU_DECL2_SC_LO_GO_NO
+      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(TM), Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeTMName << "> failed since the actual underlying type is "
+                                 "\'" << data_->typeName() << "!");
+      Data<TM>* data = dynamic_cast<Data<TM>*>(data_);
+      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                 "Error, cast to type Data<" << typeTMName << "> failed but should not have and the actual underlying type is "
+                                 "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      if (datah_ == NULL)
+        datah_ = new Data<TO>(Teuchos::rcp_dynamic_cast<Operator>(data->data_));
+      Data<TO>* datah = dynamic_cast<Data<TO>*>(datah_);
+      TEUCHOS_TEST_FOR_EXCEPTION(!datah, std::logic_error,
+                                 "Error, cast to type Data<" << typeTOName << "> failed but should not have and the actual underlying type is "
+                                 "\'" << datah_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      return datah->data_;
+    }
+  };
 
 }
 
 #endif /* MUELU_VARIABLECONTAINER_HPP */
-
-//TODO: move implementation to .cpp file + fwd decl of this class
