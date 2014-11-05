@@ -142,6 +142,14 @@ int main( int argc, char *argv[] )
 
     CommandLineProcessor clp(false); // Don't throw exceptions
 
+    const int numSolverTypes = 3;
+    const int solverTypeValues[numSolverTypes] = { AZ_gmres, AZ_bicgstab, AZ_cg };
+    const char* solverTypeNames[numSolverTypes] = { "gmres", "bicgstab", "cg" };
+    int solverType = AZ_gmres;
+    clp.setOption( "solver", &solverType,
+      numSolverTypes, solverTypeValues, solverTypeNames,
+      "The solver type to use." );
+
     int num_trials = 5;
     clp.setOption( "num-trials", &num_trials,
       "Number of times to set up and solve linear system" );
@@ -177,9 +185,24 @@ int main( int argc, char *argv[] )
       b->PutScalar(1.0);
 
       RCP<AztecOO> solver = rcp( new AztecOO() );
-      solver->SetAztecOption(AZ_solver,AZ_gmres);
-      solver->SetAztecOption(AZ_precond,AZ_dom_decomp);
-      solver->SetAztecOption(AZ_subdomain_solve,AZ_ilu);
+
+      int precType = AZ_ilu;
+      if (solverType == AZ_gmres) {
+        cout << "\nUsing AZ_gmres and AZ_ilu ...\n";
+        precType = AZ_ilu;
+      }
+      else if (solverType == AZ_bicgstab) {
+        cout << "\nUsing AZ_bicgstab and AZ_ilu ...\n";
+        precType = AZ_ilu;
+      }
+      else if (solverType == AZ_cg) {
+        cout << "\nUsing AZ_cg and AZ_icc ...\n";
+        precType = AZ_icc;
+      }
+
+      solver->SetAztecOption(AZ_solver, solverType);
+      solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+      solver->SetAztecOption(AZ_subdomain_solve, precType);
 
       // Prepare for solve
       solver->SetLHS( x.get() );
