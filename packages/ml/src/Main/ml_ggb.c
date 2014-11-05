@@ -843,7 +843,7 @@ void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Stru
     }
   }
 
-  if(current_vec != NULL) free(current_vec);
+  ML_free(current_vec);
 }
 
 
@@ -1214,7 +1214,7 @@ extern int  ML_Rayleigh (ML *ml, int nrows, double *q, int count)
       u[i]  =   rhs[i]  - (compA[0]*q[i] - compA[1]*q[i+nrows]);   /* real part */
       v[i]  =   rhs1[i] - (compA[0]*q[i+nrows] + compA[1]*q[i]);   /* imag part */
     }
-    if (compB != NULL) free(compB);
+    ML_free(compB);
     compB  =  ML_complex_gdot(nrows, u, v, u, v, ml->comm);
     norm   =  sqrt(compB[0]);
 
