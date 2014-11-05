@@ -214,7 +214,6 @@ KLU2<Matrix,Vector>::solve_impl(
 
   int ierr = 0; // returned error code
 
-  magnitude_type rpg, rcond;
   if ( this->root_ ) {
 
     //local_ordinal_type i_ld_rhs = as<local_ordinal_type>(ld_rhs);
