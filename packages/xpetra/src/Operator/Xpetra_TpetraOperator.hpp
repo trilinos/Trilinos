@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_TPETRAMULTIVECTOR_HPP
-#define XPETRA_TPETRAMULTIVECTOR_HPP
+#ifndef XPETRA_TPETRAOPERATOR_HPP
+#define XPETRA_TPETRAOPERATOR_HPP
 
 #include "Xpetra_TpetraConfigDefs.hpp"
 
@@ -129,5 +129,5 @@ namespace Xpetra {
 
 } // Xpetra namespace
 
-#define XPETRA_TPETRAMULTIVECTOR_SHORT
-#endif // XPETRA_TPETRAMULTIVECTOR_HPP
+#define XPETRA_TPETRAOPERATOR_SHORT
+#endif // XPETRA_TPETRAOPERATOR_HPP
