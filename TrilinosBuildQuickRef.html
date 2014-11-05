@@ -575,20 +575,23 @@ cmake \
 </pre>
 <p>where MyConfigureOptions.cmake might look like:</p>
 <pre class="literal-block">
-SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING &quot;&quot; FORCE)
-SET(Trilinos_ENABLE_CHECKED_STL ON CACHE BOOL &quot;&quot; FORCE)
-SET(BUILD_SHARED_LIBS ON CACHE BOOL &quot;&quot; FORCE)
+SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING &quot;&quot;)
+SET(Trilinos_ENABLE_CHECKED_STL ON CACHE BOOL &quot;&quot;)
+SET(BUILD_SHARED_LIBS ON CACHE BOOL &quot;&quot;)
 ...
 </pre>
 <p>Using a configuration fragment file allows for better reuse of configure
 options across different configure scripts and better version control of
-configure options.</p>
+configure options.  Also, when this file changes, CMake will automatically
+trigger a reconfgure during a make (because it knows about the file and will
+check its time stamp).</p>
 <p>NOTE: You can actually pass in a list of configuration fragment files
 which will be read in the order they are given.</p>
-<p>NOTE: If you do not use 'FORCE' shown above, then the option can be
-overridden on the cmake command line with -D options.  Also, if you don't
-use 'FORCE' then the option will not be set if it is already set in the
-case (e.g. by another configuration fragment file prior in the list).</p>
+<p>NOTE: You can use the <tt class="docutils literal">FORCE</tt> option in the <tt class="docutils literal">SET()</tt> shown above and that
+will override any value of the options that might already be set.  However,
+that will not allow the user to override the options on the CMake
+comamndline using <tt class="docutils literal"><span class="pre">-D&lt;VAR&gt;=&lt;value&gt;</span></tt> so it is generally desired to use
+<tt class="docutils literal">FORCE</tt>.</p>
 </blockquote>
 <ol class="loweralpha simple" start="3">
 <li>Using ccmake to configure</li>
