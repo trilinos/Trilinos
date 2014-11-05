@@ -121,11 +121,11 @@ namespace MueLu {
 
   // This macro is tricky. The use case is when we do not have a level specific parameter, so we
   // need to take the default value from the general list for all levels, or set it to the default.
-#define MUELU_READ_2LIST_PARAM(paramList, defaultList, paramStr, varType, defaultValue, varName) \
+#define MUELU_READ_2LIST_PARAM(paramList, defaultList, paramStr, varType, varName) \
   varType varName; \
   if      (paramList.isParameter(paramStr))   varName = paramList.get<varType>(paramStr); \
   else if (defaultList.isParameter(paramStr)) varName = defaultList.get<varType>(paramStr); \
-  else                                        varName = defaultValue;
+  else                                        varName = MasterList::getDefault<varType>(paramStr);
 
   // This macro check whether the variable is in the list.
   // If it is, it copies its value to the second list, possibly with a new name
@@ -324,7 +324,7 @@ namespace MueLu {
         paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
         paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
         paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");;
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, PreOrPost);
     if (PreOrPost == "none") {
       manager.SetFactory("Smoother", Teuchos::null);
 
@@ -368,7 +368,7 @@ namespace MueLu {
         if (paramList.isParameter("smoother: pre type")) {
           preSmootherType = paramList.get<std::string>("smoother: pre type");
         } else {
-          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", preSmootherTypeTmp);
+          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, preSmootherTypeTmp);
           preSmootherType = preSmootherTypeTmp;
         }
         if (paramList.isParameter("smoother: pre overlap"))
@@ -390,7 +390,7 @@ namespace MueLu {
         if (paramList.isParameter("smoother: post type"))
           postSmootherType = paramList.get<std::string>("smoother: post type");
         else {
-          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", postSmootherTypeTmp);
+          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, postSmootherTypeTmp);
           postSmootherType = postSmootherTypeTmp;
         }
 
@@ -431,7 +431,7 @@ namespace MueLu {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, "", coarseType);
+      MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, coarseType);
 
       int overlap = 0;
       if (paramList.isParameter("coarse: overlap"))
@@ -472,7 +472,7 @@ namespace MueLu {
     manager.SetFactory("Graph", dropFactory);
 
     // Aggregation sheme
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: type", std::string, "uncoupled", aggType);
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: type", std::string, aggType);
     RCP<Factory> aggFactory;
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
@@ -513,7 +513,7 @@ namespace MueLu {
     manager.SetFactory("Nullspace", nullSpace);
 
     // === Prolongation ===
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, "sa", multigridAlgo);
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     if (multigridAlgo == "unsmoothed") {
       manager.SetFactory("P", Ptent);
 
@@ -538,7 +538,7 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "emin") {
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "emin: pattern", std::string, "AkPtent", patternType);
+      MUELU_READ_2LIST_PARAM(paramList, defaultList, "emin: pattern", std::string, patternType);
       TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
                                  "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
       // Pattern
@@ -574,7 +574,7 @@ namespace MueLu {
 
     // === Restriction ===
     if (!this->implicitTranspose_) {
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "problem: symmetric", bool, true, isSymmetric);
+      MUELU_READ_2LIST_PARAM(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
       if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
         this->GetOStream(Warnings0) << "Switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
         isSymmetric = true;
@@ -599,7 +599,7 @@ namespace MueLu {
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: export visualization data", bool, false, visAgg);
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: export visualization data", bool, visAgg);
     if (visAgg) {
       RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
       aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
@@ -618,10 +618,10 @@ namespace MueLu {
     }
 
     // === Repartitioning ===
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, enableRepart);
     if (enableRepart) {
 #ifdef HAVE_MPI
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, "zoltan", partName);
+      MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
       // Partitioner
@@ -712,6 +712,7 @@ namespace MueLu {
   }
 #undef MUELU_READ_2LIST_PARAM
 #undef MUELU_TEST_AND_SET_PARAM
+#undef MUELU_TEST_AND_SET_VAR
 
   int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
