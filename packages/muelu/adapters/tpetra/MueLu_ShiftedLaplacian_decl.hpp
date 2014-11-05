@@ -183,6 +183,7 @@ namespace MueLu {
     // reset the Belos operator if the frequency changes
     void resetLinearProblem();
 
+
     // Solve phase
     int solve(const RCP<TMV> B, RCP<TMV>& X);
     void multigrid_apply(const RCP<MultiVector> B,
@@ -191,6 +192,8 @@ namespace MueLu {
 			 RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
     double GetResidual();
+
+    RCP<FactoryManager>               Manager_;
 
   private:
 
@@ -243,9 +246,8 @@ namespace MueLu {
     RCP<Matrix>                       K_, M_, A_, P_;
     RCP<MultiVector>                  Coords_, NullSpace_;
 
-    // Multigrid Hierarchy and Factory Manager
+    // Multigrid Hierarchy
     RCP<Hierarchy>                    Hierarchy_;
-    RCP<FactoryManager>               Manager_;
 
     // Factories and prototypes
     RCP<TentativePFactory>            TentPfact_;
