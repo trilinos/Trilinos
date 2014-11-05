@@ -32,5 +32,11 @@ SET(Epetra_ENABLE_Fortran OFF CACHE BOOL
 SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL
   "Set by default in gcc-4.6.1-base-options.cmake")
 
+# Set up valgrind options
+SET( MEMORYCHECK_COMMAND
+  /projects/vera/common_tools/valgrind-3.9.0/bin/valgrind)
+SET( MEMORYCHECK_COMMAND_OPTIONS
+  "-q --trace-children=yes --tool=memcheck --leak-check=yes --leak-check=full --workaround-gcc296-bugs=yes --num-callers=50")
+
 # Include last so that above override these cache variables
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-core-enables-disables.cmake)

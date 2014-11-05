@@ -2364,9 +2364,10 @@ Certain simplifications are allowed when defining TriBITS projects,
 repositories and packages.  The known allowed simplifications are described
 below.
 
-**TriBITS Repository == TriBITS Project**: It is allowed for a TriBITS Project
-and a TriBITS Repository to be the same source directory and in fact this is
-the default for every TriBITS project (unless the `<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
+**TriBITS Repository Dir == TriBITS Project Dir**: It is allowed for a TriBITS
+Project and a TriBITS Repository to be the same source directory and in fact
+this is the default for every TriBITS project (unless the
+`<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
 the repository name `REPOSITORY_NAME`_ and the project name `PROJECT_NAME`_
 are the same as well.  This is quite common and is in fact the default that
 every TriBITS Project is also a TriBITS repository (and therefore must contain
@@ -2377,13 +2378,13 @@ Project's and the Repository's ``Version.cmake`` and ``Copyright.txt`` files
 are also one and the same, as they should be (see `Project and Repository
 Versioning and Release Mode`_).
 
-**TriBITS Package == TriBITS Repository**: It is also allowed for a TriBITS
-Repository to have only one package and to have that package be the base
-repository directory.  The TriBITS Repository and the single TriBITS Package
-would typically have the same name in this case (but that is actually not
-required but it is confusing if they are not the same).  For example, in the
-TriBITS test project `MockTrilinos`_, the repository and package
-``extraRepoOnePackage`` are one in the same.  In this case, the file
+**TriBITS Package Dir == TriBITS Repository Dir**: It is also allowed for a
+TriBITS Repository to have only one package and to have that package be the
+base repository directory.  The TriBITS Repository and the single TriBITS
+Package would typically have the same name in this case (but that is actually
+not required but it is confusing if they are not the same).  For example, in
+the TriBITS test project `MockTrilinos`_, the repository and package
+``extraRepoOnePackage`` are the same directory.  In this case, the file
 ``extraRepoOnePackage/PackagesList.cmake`` looks like:
 
 .. include:: ../../package_arch/UnitTests/MockTrilinos/extraRepoOnePackage/PackagesList.cmake
@@ -2391,8 +2392,8 @@ TriBITS test project `MockTrilinos`_, the repository and package
 
 (Note the dot ``'.'`` for the package directory.)
 
-This is show the real TriBITS repository and package `DataTransferKit`_ is set
-up (at least that is the way it was when this document was first written).
+This is also how the real TriBITS repository and package `DataTransferKit`_ is
+set up (at least that is the way it was when this document was first written).
 
 .. _DataTransferKit: https://github.com/CNERG/DataTransferKit
 
@@ -2402,54 +2403,38 @@ This allows a TriBITS repository to define more packages later.
 
 .. _TriBITS Package == TriBITS Repository == TriBITS Project:
 
-**TriBITS Package == TriBITS Repository == TriBITS Project**: In the extreme,
-it is possible to collapse a single TriBITS package, repository, and project
-into the same base source directory.  However, in this case, the TriBITS
-Project name and the TriBITS Package name cannot be the same and some
-modifications and tricks are needed to allow this to work.  One example of
-this is the ``TriBITSProj`` project and `The TriBITS Test Package`_
-themselves, which are both rooted in the base ``TriBITS`` source directory of
-the stand-alone TriBITS repository.  There are a few restrictions and
-modifications needed to get this to work:
+**TriBITS Package Dir == TriBITS Repository Dir == TriBITS Project Dir**: In
+the extreme, it is possible to collapse a single TriBITS package, repository,
+and project into the same base source directory.  They can also share the same
+name for the package, repository and package.  One example of this is the
+``TriBITS`` project and `The TriBITS Test Package`_ themselves, which are both
+rooted in the base ``TriBITS/`` source directory of the stand-alone TriBITS
+repository.  There are a few restrictions and modifications needed to get this
+to work:
 
-* The Project and Package names cannot be the same.  In the case of the
-  TriBITS project, the project name is ``TriBITSProj`` (as defined in
-  ``TriBITS/ProjectName.cmake``) and the package name is ``TriBITS`` (as
-  defined in ``TriBITS/PackagesList.cmake``).
 * The base ``CMakeLists.txt`` file must be modified to allow it to be
   processed both as the base project ``CMakeLists.txt`` file and as the
   package's base ``CMakeLists.txt`` file.  In the case of
   ``TriBITS/CMakeLists.txt``, a big if statement is used.
-* An extra subdirectory must be created for TriBITS package's binary
-  directory.  Because of directory-level targets like ``${PROJECT_NAME}_libs``
-  and ``${PACKAGE_NAME}_libs``, a subdirectory for the package's binary
-  directory must be created.  This is simply done by overriding the binary
-  directory name ``${PACKAGE_NAME}_SPECIFIED_BINARY_DIR``.  In the case of
-  TriBITS, this is set to ``tribits`` in the ``TriBITS/PackagesList.cmake``
-  file.
 
-Other than those modifications, a TriBITS project, repository, and package can
-all be rooted in the same source directory.  However, as one can see above, to
-do so is a little messy and is not recommended.  It was only done this way
-with the base TriBITS directory ``TriBITS`` in order to maintain backward
-compatibility for the usage of TriBITS in existing TriBITS projects.
+.. ToDo: Create a new macro called TRIBITS_PROJECT_AND_PACKAGE() that will
+.. automatically take care of the details of a TriBITS package also being a
+.. TriBITS project.
 
-However, one possible use case for collapsing a project, repository, and
-package into a single base source directory would be to support the
-stand-alone build of a TriBITS package as its own entity that uses an
-independent installation of the TriBITS.  If a given TriBITS package has no
+Other than that simple modification to the top-level ``CMakeLists.txt`` file,
+a TriBITS project, repository, and package can all be rooted in the same
+source directory.
+
+The primary use case for collapsing a project, repository, and package into a
+single base source directory would be to support the stand-alone build of a
+TriBITS package as its own entity that uses an independent installation of the
+TriBITS (or a minimal snapshotof TriBITS).  If a given TriBITS package has no
 required `upstream`_ TriBITS package dependencies and minimal TPL dependencies
 (or only uses `Standard TriBITS TPLs`_ already defined in the
 ``tribits/tpls/`` directory), then creating a stand-alone project build of a
-loan TriBITS package requires fairly little extra overhead or duplication.
+single TriBITS package requires fairly little extra overhead or duplication.
 However, as mentioned above, one cannot use the same name for the package and
 the project.
-
-.. NOTE: We could modify the TriBITS system to allow having the project and
-.. package names be the same if we disable one of the sets of XXX_libs and
-.. other targets created by TriBITS.  We could also provide a standard wrapper
-.. CMakeLists.txt file to make it easy for packages to support stand-alone
-.. builds.  However, that is an effort for later.
 
 
 Standard TriBITS TPLs
@@ -2531,7 +2516,7 @@ in this document.  Also mentioned is the `Trilinos`_ project itself which can
 be a useful example of the usage of TriBITS (see disclaimers in the section
 `Trilinos`_).  The last example mentioned is `The TriBITS Test Package`_
 itself which allows the TriBITS system to be tested and installed from any
-TriBITS project that lists it, including the ``TriBITSProj`` project itself
+TriBITS project that lists it, including the ``TriBITS`` project itself
 (see `Coexisting Projects, Repositories, and Packages`_).
 
 The directory ``tribits/doc/examples/`` contains some other example TriBITS
@@ -4483,9 +4468,9 @@ SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
 Test Test Category         ``PERFORMANCE``     (`Test Test Category PERFORMANCE`_)
 =========================  ==================  ====================================
 
-.. ToDo: I need to set up automated testing for TriBITSProj to use as the
-.. example for all of these types of testing.  There is no better example that
-.. one that actually works.  It would also be nice t have a snapshot repo of
+.. ToDo: I need to set up automated testing for TriBITS to use as the example
+.. for all of these types of testing.  There is no better example that one
+.. that actually works.  It would also be nice t have a snapshot repo of
 .. TribitsExampleProject that also had this testing enabled for it but I am
 .. not sure that really makes sense.
 

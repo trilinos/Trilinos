@@ -32,6 +32,7 @@
 
 #include <cstdio>
 #include <float.h>	// for DBL_MAX
+#include "Sacado_DisableKokkosCuda.hpp" // Disable Cuda stuff that fails
 #include "Sacado_MathFunctions.hpp"
 #include "Sacado_trad.hpp"
 #include "Sacado_trad2.hpp"

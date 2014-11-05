@@ -26,7 +26,10 @@ directory which just runs::
     --project-template-file=TribitsBuildQuickRefTemplate.rst \
     --file-base=TribitsBuildQuickRef
 
-to generate this document.  In a project-specific version, ``<Project>`` is replaced with the actual project name (e.g. ``Trilinos``, or ``TriBITSProj``, etc.).  This version of the generated document is referred to by the general TribitsDeveloperGuide.[rst,html,pdf] document.
+to generate this document.  In a project-specific version, ``<Project>`` is
+replaced with the actual project name (e.g. ``Trilinos``, or ``TriBITS``,
+etc.).  This version of the generated document is referred to by the general
+TribitsDeveloperGuide.[rst,html,pdf] document.
 
 Below are given genetic versions of the sections that show up in every
 project-specific build of this document.

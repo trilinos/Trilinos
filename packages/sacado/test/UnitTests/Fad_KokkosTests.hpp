@@ -28,13 +28,7 @@
 // @HEADER
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Kokkos_Core.hpp"
-#include "Sacado.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_CacheFad_SFad.hpp"
-#include "Sacado_CacheFad_SLFad.hpp"
-
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Kokkos.hpp"
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,
