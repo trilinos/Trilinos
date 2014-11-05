@@ -1,11 +1,18 @@
+#include <Kokkos_Core.hpp>
+#include <Kokkos_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+#include <Kokkos_Qthread.hpp>
+#include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
+
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
-#include "symbolic_task.hpp"
+#include "crs_matrix_helper.hpp"
 
+#include "task_factory.hpp"
 #include "crs_task_view.hpp"
 
 using namespace std;
@@ -14,14 +21,20 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+//typedef Kokkos::Qthread space_type;
+typedef Kokkos::Serial space_type; 
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
-typedef Example::SymbolicTask Task;
-typedef Example::CrsTaskView<CrsMatrixBase,Task> CrsTaskView;
+typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
+                             Kokkos::Future<int,space_type> > TaskFactory;
+typedef Example::CrsTaskView<CrsMatrixBase,TaskFactory> CrsTaskView;
 
-typedef Example::CrsMatrixBase<CrsTaskView,ordinal_type,size_type> CrsHierBase;
-typedef Example::CrsTaskView<CrsHierBase,Task> CrsHierView;
+typedef Example::CrsMatrixBase<CrsTaskView,ordinal_type,size_type,space_type> CrsHierBase;
+typedef Example::CrsTaskView<CrsHierBase,TaskFactory> CrsHierView;
+
+typedef Example::CrsMatrixHelper CrsMatrixHelper; 
 
 typedef Example::Uplo Uplo;
 
@@ -30,8 +43,13 @@ int main (int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " filename" << endl;
     return -1;
   }
+
+  Kokkos::initialize();
+  cout << "Default execution space initialized = "
+       << typeid(Kokkos::DefaultExecutionSpace).name()
+       << endl;
   
-  CrsMatrixBase A;
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -39,16 +57,20 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  A.importMatrixMarket(in);
+  AA.importMatrixMarket(in);
 
-  CrsMatrixBase L(A, Uplo::Lower);
+  CrsMatrixBase LL("LL");
+  LL.copy(Uplo::Lower, AA);
 
-  CrsHierBase H(L, 1, 1);
+  CrsHierBase HH("HH");
+  CrsMatrixHelper::flat2hier(LL, HH);
 
-  CrsHierView HH;
-  HH.setView(&H, 2, 3, 2, 3);
-  cout << "Hierarchical Block Matrix of L = " << endl
-       << HH << endl;
+  CrsHierView H;
+  H.setView(&HH, 2, 3, 2, 3);
+  cout << "Block Matrix H = " << endl;
+  H.showMeDetail(cout);
+
+  Kokkos::finalize();
 
   return 0;
 }

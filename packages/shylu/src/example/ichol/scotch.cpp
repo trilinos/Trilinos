@@ -1,3 +1,4 @@
+#include <Kokkos_Core.hpp> 
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
@@ -8,8 +9,12 @@ using namespace std;
 typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+
+typedef Kokkos::Serial space_type;
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+
 typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
@@ -17,8 +22,13 @@ int main (int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " filename" << endl;
     return -1;
   }
-  
-  CrsMatrixBase A;
+
+  Kokkos::initialize();
+  cout << "Default execution space initialized = "
+       << typeid(Kokkos::DefaultExecutionSpace).name()
+       << endl;
+
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -26,17 +36,20 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  A.importMatrixMarket(in);
-  cout << A << endl;
+  AA.importMatrixMarket(in);
+  cout << AA << endl;
 
-  GraphHelper S(A);
+  GraphHelper S(AA);
 
   S.computeOrdering();
   cout << S << endl;
 
-  CrsMatrixBase PA(A, S.PermVector(), S.InvPermVector());
+  CrsMatrixBase PA("Permuted AA");
+  PA.copy(S.PermVector(), S.InvPermVector(), AA);
 
   cout << PA << endl;
+
+  Kokkos::finalize();
 
   return 0;
 }

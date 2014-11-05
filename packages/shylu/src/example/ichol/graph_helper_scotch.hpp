@@ -15,25 +15,40 @@ namespace Example {
     typedef typename CrsMatrixType::ordinal_type ordinal_type;
     typedef typename CrsMatrixType::size_type    size_type;
 
+    typedef typename CrsMatrixType::ordinal_type_array ordinal_type_array;
+    typedef typename CrsMatrixType::size_type_array    size_type_array;
+
   private:
+    string _label; 
+
     // scotch main data structure
     SCOTCH_Graph _graph;
 
-    // scotch input wihtout diagonal contributions
-    ordinal_type _base,_m,*_cidx;
-    size_type _nnz,*_rptr;
+    // scotch input has no diagonal contribution
+    ordinal_type _base,_m;
+    ordinal_type_array _cidx;
+
+    size_type _nnz;
+    size_type_array _rptr;
 
     // scotch output 
-    ordinal_type _cblk,*_perm,*_peri,*_range,*_tree;
+    ordinal_type _cblk;
+    ordinal_type_array _perm,_peri,_range,_tree;
 
     // status flag
     bool _is_ordered;
 
   public:
-    ordinal_type* PermVector()    const { return _perm; }
-    ordinal_type* InvPermVector() const { return _peri; }
+    
+    void setLabel(string label) { _label = label; }
+    string Label() const { return _label; }
+
+    ordinal_type_array PermVector()    const { return _perm; }
+    ordinal_type_array InvPermVector() const { return _peri; }
 
     GraphHelper_Scotch(CrsMatrixType& A) {
+
+      _label = "GraphHelper_Scotch::" + A.Label();
 
       _is_ordered = false;
       _cblk  = 0;
@@ -43,35 +58,36 @@ namespace Example {
       _m     = A.NumRows();
       _nnz   = A.NumNonZeros();       
 
-      _rptr  = new size_type[_m+1]();    
-      _cidx  = new ordinal_type[_nnz]();
+      _rptr  = size_type_array(_label+"::RowPtrArray", _m+1);
+      _cidx  = ordinal_type_array(_label+"::ColIndexArray", _nnz);
 
-      _perm  = new ordinal_type[_m]();
-      _peri  = new ordinal_type[_m]();
-      _range = new ordinal_type[_m+1]();
-      _tree  = new ordinal_type[_m]();
-
+      _perm  = ordinal_type_array(_label+"::PermutationArray", _m);
+      _peri  = ordinal_type_array(_label+"::InvPermutationArray", _m);
+      _range = ordinal_type_array(_label+"::RangeArray", _m);
+      _tree  = ordinal_type_array(_label+"::TreeArray", _m);
+      
       // adjust graph structure
       A.convertGraph(_nnz, _rptr, _cidx);
 
       int ierr = 0;
+      ordinal_type *rptr = _rptr.ptr_on_device();
+      ordinal_type *cidx = _cidx.ptr_on_device();
       
       ierr = SCOTCH_graphInit(&_graph);CHKERR(ierr);
       ierr = SCOTCH_graphBuild(&_graph,             // scotch graph
                                _base,               // base value
                                _m,                  // # of vertices
-                               _rptr,               // column index array pointer begin
-                               _rptr+1,             // column index array pointer end
+                               rptr, // column index array pointer begin
+                               rptr+1,             // column index array pointer end
                                NULL,                // weights on vertices (optional)
                                NULL,                // label array on vertices (optional)
                                _nnz,                // # of nonzeros
-                               _cidx,               // column index array
+                               cidx,               // column index array
                                NULL);CHKERR(ierr);  // edge load array (optional)
       ierr = SCOTCH_graphCheck(&_graph);CHKERR(ierr);
     }
     virtual~GraphHelper_Scotch() {
       SCOTCH_graphFree(&_graph);
-      delete _rptr,_cidx,_perm,_peri,_range,_tree;
     }
     ordinal_type getNumBlocks() const {
       return _cblk; 
@@ -95,14 +111,19 @@ namespace Example {
 
       ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
       ierr = SCOTCH_stratGraphOrderBuild (&stradat, straval, level, 0.2);CHKERR(ierr);
+      
+      ordinal_type *perm  = _perm.ptr_on_device();
+      ordinal_type *peri  = _peri.ptr_on_device();
+      ordinal_type *range = _range.ptr_on_device();
+      ordinal_type *tree  = _tree.ptr_on_device();
 
       ierr = SCOTCH_graphOrder(&_graph, 
                                &stradat, 
-                               _perm, 
-                               _peri,
+                               perm, 
+                               peri,
                                &_cblk,
-                               _range,
-                               _tree);CHKERR(ierr);
+                               range,
+                               tree);CHKERR(ierr);
       SCOTCH_stratExit(&stradat);
 
       _is_ordered = true;
@@ -122,14 +143,6 @@ namespace Example {
          << "    Base Value     = " << _base << endl
          << "    # of Rows      = " << _m << endl
          << "    # of NonZeros  = " << _nnz << endl;
-      
-      // for (ordinal_type i=0;i<_m;++i) {
-      //   size_type jbegin = _rptr[i], jend = _rptr[i+1];
-      //   os << endl;
-      //   for (size_type j=jbegin;j<jend;++j)
-      //     os << i << "  " << _cidx[j] << endl;                                              
-      // } 
-      // os << endl;
       
       if (_is_ordered) 
         os << " -- Elimination tree -- " << endl

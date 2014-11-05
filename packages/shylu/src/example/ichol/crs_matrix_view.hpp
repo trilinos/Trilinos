@@ -23,8 +23,6 @@ namespace Example {
   public:
     typedef typename CrsMatBaseType::value_type    value_type;
     typedef typename CrsMatBaseType::ordinal_type  ordinal_type;
-    typedef typename CrsMatBaseType::space_type    space_type;
-    typedef typename CrsMatBaseType::memory_traits memory_traits;
 
     typedef CrsRowView<CrsMatBaseType> row_view_type;
 
@@ -67,13 +65,13 @@ namespace Example {
 
     KOKKOS_INLINE_FUNCTION
     row_view_type extractRow(const ordinal_type i) const { 
-      typedef typename row_view_type::value_type_array   value_type_array;
-      typedef typename row_view_type::ordinal_type_array ordinal_type_array;
+      typedef typename row_view_type::value_type_array_view   value_type_array_view;
+      typedef typename row_view_type::ordinal_type_array_view ordinal_type_array_view;
 
       // grep a row from base
       ordinal_type ii = _offm + i;  
-      ordinal_type_array cols = _base->ColsInRow(ii);
-      value_type_array   vals = _base->ValuesInRow(ii);
+      ordinal_type_array_view cols = _base->ColsInRow(ii);
+      value_type_array_view   vals = _base->ValuesInRow(ii);
 
       ordinal_type *ptr_begin = cols.ptr_on_device();
       ordinal_type *ptr_end   = cols.ptr_on_device() + cols.dimension_0();
@@ -83,8 +81,8 @@ namespace Example {
 
       range_type<ordinal_type> range(view_begin, view_end);
 
-      cols = Kokkos::subview<ordinal_type_array>(cols, range);
-      vals = Kokkos::subview<value_type_array>(vals, range);
+      cols = Kokkos::subview<ordinal_type_array_view>(cols, range);
+      vals = Kokkos::subview<value_type_array_view>(vals, range);
 
       return row_view_type(_offn, _n, view_end - view_begin, cols, vals);
     }
@@ -124,27 +122,23 @@ namespace Example {
     { } 
 
     ostream& showMe(ostream &os) const {
-
-      if (_base != NULL) {
-        os << endl
-           << " -- "<< _base->Label() << "::View --" << endl
-           << "    Offset in Rows = " << _offm << endl
-           << "    Offset in Cols = " << _offn << endl
-           << "    # of Rows      = " << _m << endl
-           << "    # of Cols      = " << _n << endl;
-        
-        const int w = 6;
-        for (ordinal_type i=0;i<_m;++i) {
-          os << endl;
-          row_view_type row = extractRow(i);
-          row.showMe(os);
-        }
-      } else {
-        os << endl
-           << " Base object is null " << endl;
-      }
+      const int w = 4;
+      if (_base != NULL) 
+        os << _base->Label() << "::View, "
+           << " Offs ( " << setw(w) << _offm << ", " << setw(w) << _offn << " ); "
+           << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); ";
+      //<< " BaseObject = " << BaseObject() << ";" ;
+      else 
+        os << "-- Base object is null --";
       
       return os;
+    }
+
+    ostream& showMeDetail(ostream &os) const {
+      showMe(os);
+      os << endl << endl;
+      for (ordinal_type i=0;i<_m;++i)
+        os << extractRow(i) << endl;
     }
 
   };

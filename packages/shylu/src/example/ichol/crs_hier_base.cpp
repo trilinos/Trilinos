@@ -1,8 +1,16 @@
+#include <Kokkos_Core.hpp> 
+#include <Kokkos_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+#include <Kokkos_Qthread.hpp>
+#include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
+
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
+
+#include "crs_matrix_helper.hpp"
 
 using namespace std;
 
@@ -10,10 +18,14 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+//typedef Kokkos::Qthread space_type;
+typedef Kokkos::Serial space_type;
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
-typedef Example::CrsMatrixBase<CrsMatrixView,ordinal_type,size_type> CrsHierBase;
+typedef Example::CrsMatrixBase<CrsMatrixView,ordinal_type,size_type,space_type> CrsHierBase;
+typedef Example::CrsMatrixHelper CrsMatrixHelper;
 
 typedef Example::Uplo Uplo;
 
@@ -23,7 +35,13 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  CrsMatrixBase A;
+  Kokkos::initialize();
+  cout << "Default execution space initialized = "
+       << typeid(Kokkos::DefaultExecutionSpace).name()
+       << endl;
+
+  // create a base matrix and import a sparse matrix from matrix market
+  CrsMatrixBase A("A");
 
   ifstream in;
   in.open(argv[1]);
@@ -33,15 +51,18 @@ int main (int argc, char *argv[]) {
   }
   A.importMatrixMarket(in);
 
-  CrsMatrixBase L(A, Uplo::Lower);
-  cout << "Lower Triangular L = " << endl
-       << L << endl;
+  // copy and create for lower triangular 
+  CrsMatrixBase L("L");
+  L.copy(Uplo::Lower, A);
+  cout << L << endl;
 
-  // only 1x1 block matrix is implemented 
-  // later scotch interface will be placed here 
-  CrsHierBase H(L, 1, 1); 
-  cout << "Hierarchical Block Matrix of L = " << endl
-       << H << endl;
+  // test hierarchical matrix
+  CrsHierBase H("H");
+
+  CrsMatrixHelper::flat2hier(L, H);
+  cout << H << endl;
+
+  Kokkos::finalize();
 
   return 0;
 }
