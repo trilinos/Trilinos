@@ -184,6 +184,7 @@ void set_input_file_required(bool value)
 void set_sm_preprocessing(bool value)
 {
     stk::EnvData::instance().m_checkSubCycle = value;
+    stk::EnvData::instance().m_checkSmRegion = value;
 }
 
 void set_zapotec(bool value)
