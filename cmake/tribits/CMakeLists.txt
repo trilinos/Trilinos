@@ -7,8 +7,8 @@
 
 IF (NOT TriBITS_PROCESSED_BASE_PROJECT AND NOT PACKAGE_NAME STREQUAL "TriBITS")
 
-  # This CMakeLists.txt file is being processed as the TriBITSProj projects's
-  # base CMakeLists.txt file!  (See comments at bottom of this file.)
+  # This CMakeLists.txt file is being processed as the TriBITS projects's base
+  # CMakeLists.txt file!  (See comments at bottom of this file.)
 
   INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
   SET(${PROJECT_NAME}_VERSION 1.0)
@@ -50,14 +50,9 @@ ELSE()
 
 ENDIF()
 
-# NOTE: In order to allow the `tribits` directory to be both a TriBITS package
-# (for inclusion in other TriBITS projects) and to be a TriBITS project
-# itself, you only have to put in a simple if statement in this top-level
-# CMakeLists.txt file and need to use a different package binary directory in
-# PackagesList.cmake.  That is all!  In fact, this `tribits` directory shows
-# how the same directory can be used for a TriBITS package, a TriBITS
-# repository, and a TriBITS project!  However, you can't name the project the
-# same as the package, otherwise, TriBITS woiuld try to try to create two
-# targets with the name, such as ${PROJECT_NAME}_libs.  Therefore a different
-# name and different binary directory must be used for the TriBITS package.
-# But that is all.
+# NOTE: In order to allow the `TriBITS/` directory to be both a TriBITS
+# package (for inclusion in other TriBITS projects) and to be a TriBITS
+# project itself, you only have to put in a simple if statement in this
+# top-level CMakeLists.txt file.  That is all!  In fact, this `TriBiTS/`
+# directory shows how the same directory can be used for a TriBITS package, a
+# TriBITS repository, and a TriBITS project!
