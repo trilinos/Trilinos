@@ -293,11 +293,11 @@ namespace MueLu {
     size_t *Pptr;
     SC *Pvals;
     int    MaxStencilSize, MaxNnzPerRow;
-    int    *LayDiff=NULL;
+    LO    *LayDiff=NULL;
     int    CurRow, LastGuy = -1, NewPtr;
     int    Ndofs;
     int    Nghost;
-    int    *Layerdofs = NULL, *Col2Dof = NULL;
+    LO    *Layerdofs = NULL, *Col2Dof = NULL;
 
     Teuchos::LAPACK<LO,SC> lapack;
 
@@ -314,12 +314,12 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> TLayerdofs= Teuchos::arcp<LO>(Ntotal*DofsPerNode+Nghost+1); Layerdofs = TLayerdofs.getRawPtr();
     Teuchos::ArrayRCP<LO> TCol2Dof= Teuchos::arcp<LO>(Ntotal*DofsPerNode+Nghost+1); Col2Dof= TCol2Dof.getRawPtr();
 
-    RCP<Vector> localdtemp = VectorFactory::Build(Amat->getDomainMap());
-    RCP<Vector> dtemp      = VectorFactory::Build(Amat->getColMap());
-    ArrayRCP<SC> valptr= localdtemp->getDataNonConst(0);
+    RCP<Xpetra::Vector<LO,LO,GO> > localdtemp = Xpetra::VectorFactory<LO,LO,GO>::Build(Amat->getDomainMap());
+    RCP<Xpetra::Vector<LO,LO,GO> > dtemp      = Xpetra::VectorFactory<LO,LO,GO>::Build(Amat->getColMap());
+    ArrayRCP<LO> valptr= localdtemp->getDataNonConst(0);
 
     for (i = 0; i < Ntotal*DofsPerNode; i++)
-      valptr[i]= (SC)LayerId[i/DofsPerNode];
+      valptr[i]= LayerId[i/DofsPerNode];
 
     RCP< const Import> importer;
     importer = Amat->getCrsGraph()->getImporter();
@@ -329,12 +329,12 @@ namespace MueLu {
     dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
 
     valptr= dtemp->getDataNonConst(0);
-    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]= Teuchos::as<LO>( valptr[i] );
+    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]= valptr[i];
     valptr= localdtemp->getDataNonConst(0);
-    for (i = 0; i < Ntotal*DofsPerNode;        i++) valptr[i]= (SC) (i%DofsPerNode);
+    for (i = 0; i < Ntotal*DofsPerNode;        i++) valptr[i]= i%DofsPerNode;
     dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
     valptr= dtemp->getDataNonConst(0);
-    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]= Teuchos::as<LO>( valptr[i] );
+    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]= valptr[i];
 
     if (Ntotal != 0) {
       NLayers   = LayerId[0];
@@ -800,6 +800,7 @@ namespace MueLu {
     LO l, r, j, i, flag;
     LO RR2;
     SC       dRR, dK;
+    typedef Teuchos::ScalarTraits<SC> STS;
 
     if (N <= 1) return;
 
@@ -823,9 +824,9 @@ namespace MueLu {
             flag = 0;
           else {
             if (j < r + 1)
-              if (dlist[j] > dlist[j - 1]) j = j + 1;
+              if (STS::magnitude(dlist[j]) > STS::magnitude(dlist[j - 1])) j = j + 1;
 
-            if (dlist[j - 1] > dK) {
+            if (STS::magnitude(dlist[j - 1]) > STS::magnitude(dK)) {
               dlist[ i - 1] = dlist[ j - 1];
               list2[i - 1] = list2[j - 1];
             }
@@ -866,8 +867,8 @@ namespace MueLu {
             flag = 0;
           else {
             if (j < r + 1)
-              if (dlist[j] > dlist[j - 1]) j = j + 1;
-            if (dlist[j - 1] > dK) {
+              if (STS::magnitude(dlist[j]) > STS::magnitude(dlist[j - 1])) j = j + 1;
+            if (STS::magnitude(dlist[j - 1]) > STS::magnitude(dK)) {
               dlist[ i - 1] = dlist[ j - 1];
             }
             else {
