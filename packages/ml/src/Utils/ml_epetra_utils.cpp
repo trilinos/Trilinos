@@ -2837,6 +2837,7 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
 
   map = new Epetra_Map(numeq_total,numeq,update,0,comm);
 
+  delete [] update; update = 0;
   return map;
 }
 
