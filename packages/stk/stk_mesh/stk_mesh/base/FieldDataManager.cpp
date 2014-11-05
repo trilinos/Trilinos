@@ -34,6 +34,7 @@
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include <string.h>                     // for memcpy, memmove, memset
 #include <algorithm>                    // for swap
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldMetaData, etc
 #include <stk_mesh/base/FieldDataManager.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
@@ -103,6 +104,17 @@ void setInitialValue(unsigned char* data_location, const FieldBase& field, const
 void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
         const std::vector< FieldBase * > & fields, const PartVector& superset_parts, const size_t capacity)
 {
+    if (m_field_raw_data.empty()) {
+      ThrowRequireMsg(!fields.empty(),"allocate_bucket_field_data ERROR, field-data-manager was constructed with 0 entity-ranks, and there are no fields. Mesh has not been initialized correctly.");
+
+      for(size_t i=0; i<fields.size(); ++i) {
+        if (fields[i] != NULL) {
+          m_field_raw_data.resize(fields[i]->get_mesh().mesh_meta_data().entity_rank_count());
+          break;
+        }
+      }
+    }
+
     if ( m_num_bytes_allocated_per_field.empty() )
     {
         m_num_bytes_allocated_per_field.resize(fields.size(), 0);
