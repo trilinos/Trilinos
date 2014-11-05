@@ -1948,7 +1948,7 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
     (*recv_neighbors) = NULL;
     (*N_rcv) = 0;
   }
-  if(Request != NULL) free(Request);
+  ML_free(Request);
   return 0;
 }
 
@@ -2618,11 +2618,9 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
            */
         length = mat_indx[inode+1] - mat_indx[inode];
         if (length>0) {
-          if (int_array != NULL) free(int_array);
+	  ML_free(int_array);
+          ML_free(int_array2);
           int_array  = (int *) ML_allocate(length * sizeof(int));
-        }
-        if (length>0) {
-          if (int_array2 != NULL) free(int_array2);
           int_array2 = (int *) ML_allocate(length * sizeof(int));
         }
         for ( i = 0; i < length; i++ ) int_array2[i] = i;
