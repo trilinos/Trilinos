@@ -220,9 +220,6 @@ int main(int argc, char *argv[]) {
       // sum up number of iterations
       total_iters += SLSolver->GetIterations();
 
-#     ifdef HAVE_MUELU_DEBUG
-      M.ResetDebugData();
-#     endif
       
     }
 
