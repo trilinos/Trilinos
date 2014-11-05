@@ -29,7 +29,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase Abase("Abase");
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -37,11 +37,11 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  Abase.importMatrixMarket(in);
+  AA.importMatrixMarket(in);
 
   {
-    CrsRowView a = CrsMatrixView(Abase, /**/ 2, 6, /**/ 3, 8).extractRow(2);
-    CrsRowView b = CrsMatrixView(Abase, /**/ 3, 7, /**/ 3, 8).extractRow(2);
+    CrsRowView a = CrsMatrixView(AA, /**/ 2, 6, /**/ 3, 8).extractRow(2);
+    CrsRowView b = CrsMatrixView(AA, /**/ 3, 7, /**/ 3, 8).extractRow(2);
     
     cout << " a = " << endl << a << endl;
     cout << " b = " << endl << b << endl;

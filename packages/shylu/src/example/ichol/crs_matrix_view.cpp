@@ -11,9 +11,9 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Kokkos::OpenMP host_type;
+typedef Kokkos::OpenMP space_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 int main (int argc, char *argv[]) {
@@ -27,7 +27,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase Abase("Abase");
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -35,12 +35,12 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  Abase.importMatrixMarket(in);
+  AA.importMatrixMarket(in);
 
   {
-    CrsMatrixView A(Abase, 2, 6, 
+    CrsMatrixView A(AA,    2, 6, 
                     /**/   3, 8);
-    cout << A << endl;
+    A.showMeDetail(cout);
   }
 
   Kokkos::finalize();

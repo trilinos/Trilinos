@@ -9,45 +9,45 @@
 namespace Example { 
 
   using namespace std;
+
+  template<int ArgSide,int ArgUplo, int ArgTrans> 
+  struct Trsm {
+    template<typename ScalarType,
+             typename CrsMatViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int invoke(const int diag,
+                      const ScalarType alpha,
+                      const CrsMatViewType A,
+                      const CrsMatViewType B);
+
+    template<typename ScalarType,
+             typename CrsMatViewType>
+    class TaskFunctor {
+    private:
+      int _diag;
+      ScalarType _alpha;
+      CrsMatViewType _A, _B;
+
+    public:
+      TaskFunctor(const int diag,
+                  const ScalarType alpha,
+                  const CrsMatViewType A,
+                  const CrsMatViewType B)
+        : _diag(diag),
+          _alpha(alpha),
+          _A(A),
+          _B(B) 
+      { } 
+      
+      typedef int value_type;
+      void apply(value_type &r_val) {
+        r_val = Trsm::invoke(_diag, _alpha, _A, _B);
+      }
+    };
+  };
   
-  template<typename ScalarType,
-           typename CrsMatViewType>
-  KOKKOS_INLINE_FUNCTION 
-  int
-  trsm_r_l_t(const int diag,
-             const ScalarType alpha,
-             const CrsMatViewType A,
-             const CrsMatViewType B) {
-    
-    CrsMatViewType BT,   B0,
-      /**/         BB,   b1t,
-      /**/               B2;
-
-    scale(alpha, B);
-    
-    Part_2x1(B,   BT,
-             /**/ BB,
-             0, Partition::Top);
-
-    while (BT.NumRows() < B.NumRows()) {
-      Part_2x1_to_3x1(BT,  B0,
-                      /**/ b1t,
-                      BB,  B2,
-                      1, Partition::Bottom);
-      // -----------------------------------------------------
-
-      trsv_l_n_t(diag, A, b1t);
-
-      // -----------------------------------------------------      
-      Merge_3x1_to_2x1(B0,  BT,
-                       b1t, 
-                       B2,  BB,
-                       Partition::Top);
-    }
-    
-    return 0;
-  }
-
 }
+
+#include "trsm_r_l_t.hpp"
 
 #endif
