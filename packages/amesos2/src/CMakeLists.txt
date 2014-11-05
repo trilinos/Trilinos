@@ -180,19 +180,47 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
    APPEND_SET(SOURCES
       Amesos2_KLU2.cpp
       )
+
+    APPEND_SET(HEADERS
+        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
+        SuiteSparse/KLU2/Source/klu2_analyze.hpp
+        SuiteSparse/KLU2/Source/klu2_defaults.hpp
+        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp 
+        SuiteSparse/KLU2/Source/klu2_dump.hpp
+        SuiteSparse/KLU2/Source/klu2_extract.hpp
+        SuiteSparse/KLU2/Source/klu2_factor.hpp
+        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp 
+        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
+        SuiteSparse/KLU2/Source/klu2_refactor.hpp
+        SuiteSparse/KLU2/Source/klu2.hpp
+        SuiteSparse/KLU2/Source/klu2_kernel.hpp
+        SuiteSparse/KLU2/Source/klu2_memory.hpp
+        SuiteSparse/KLU2/Source/klu2_refactor.hpp
+        SuiteSparse/KLU2/Source/klu2_scale.hpp
+        SuiteSparse/KLU2/Source/klu2_solve.hpp
+        SuiteSparse/KLU2/Source/klu2_sort.hpp
+        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
+        SuiteSparse/KLU2/Include/klu2_ext.hpp
+        SuiteSparse/KLU2/Include/klu2.h
+        SuiteSparse/KLU2/Include/klu2_internal.h
+        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
+        SuiteSparse/KLU2/Include/klu2_scalartraits.h
+        SuiteSparse/KLU2/Include/klu2_version.h
+     )
+
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_SuperLU)
-  APPEND_SET(HEADERS
-    Amesos2_Superlu.hpp
-    Amesos2_Superlu_decl.hpp
-    Amesos2_Superlu_def.hpp
-    Amesos2_Superlu_FunctionMap.hpp
-    Amesos2_Superlu_TypeMap.hpp
-    )
+    IF (${PACKAGE_NAME}_ENABLE_SuperLU)
+      APPEND_SET(HEADERS
+        Amesos2_Superlu.hpp
+        Amesos2_Superlu_decl.hpp
+        Amesos2_Superlu_def.hpp
+        Amesos2_Superlu_FunctionMap.hpp
+        Amesos2_Superlu_TypeMap.hpp
+        )
 
-   APPEND_SET(SOURCES
-     Amesos2_Superlu_TypeMap.cpp
+       APPEND_SET(SOURCES
+         Amesos2_Superlu_TypeMap.cpp
      )
 
   IF(KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
