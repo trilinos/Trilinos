@@ -67,6 +67,7 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_mesh/base/BulkDataParallel.hpp" // for BulkDataParallel
 
 namespace sierra { namespace Fmwk { class MeshBulkData; } }
 namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
@@ -155,13 +156,13 @@ public:
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
 
   /** \brief  The parallel machine */
-  ParallelMachine parallel() const { return m_parallel_machine ; }
+  ParallelMachine parallel() const { return m_parallel.parallel() ; }
 
   /** \brief  Size of the parallel machine */
-  int parallel_size()   const { return m_parallel_size ; }
+  int parallel_size()   const { return m_parallel.parallel_size() ; }
 
   /** \brief  Rank of the parallel machine's local processor */
-  int parallel_rank()   const { return m_parallel_rank ; }
+  int parallel_rank()   const { return m_parallel.parallel_rank() ; }
 
   const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
 
@@ -975,9 +976,6 @@ protected: //data
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  ParallelMachine m_parallel_machine;
-  int m_parallel_size;
-  int m_parallel_rank;
   size_t m_sync_count;
   BulkDataSyncState m_sync_state;
   std::vector<int> m_mark_entity;
@@ -985,6 +983,7 @@ protected: //data
   std::vector<uint16_t> m_closure_count;
 
 private: // data
+  BulkDataParallel m_parallel;
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;

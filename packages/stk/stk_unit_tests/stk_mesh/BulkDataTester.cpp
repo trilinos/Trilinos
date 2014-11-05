@@ -47,6 +47,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
+#include "stk_mesh/base/BulkDataParallel.hpp" // for BulkDataParallel
 
 using namespace stk::mesh;
 using namespace stk;
@@ -74,9 +75,9 @@ void BulkDataTester::internal_change_entity_owner_exp( const std::vector<EntityP
   require_ok_to_modify();
 
   const MetaData  & meta = m_mesh_meta_data ;
-  const int       p_rank = m_parallel_rank ;
-  const int       p_size = m_parallel_size ;
-  ParallelMachine p_comm = m_parallel_machine ;
+  const int       p_rank = parallel_rank() ;
+  const int       p_size = parallel_size() ;
+  ParallelMachine p_comm = parallel() ;
 
   //------------------------------
   // Verify the input changes, generate a clean local change list, and
@@ -299,7 +300,7 @@ void BulkDataTester::internal_update_distributed_index_exp(
         std::vector<Entity> & shared_new )
 {
     Trace_("stk::mesh::BulkData::internal_update_distributed_index");
-    BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
+    BABBLE_STK_PARALLEL_COMM(parallel(), "      entered internal_update_distributed_index");
 
     // Scoop up a list of all nodes that have had their sharing information
     // provided directly by the end-user.  These need special handling so
@@ -398,7 +399,7 @@ void BulkDataTester::internal_update_distributed_index_exp(
 void BulkDataTester::internal_resolve_parallel_create_exp()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
-  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_parallel_create");
+  BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_resolve_parallel_create");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
   std::vector<Entity> shared_modified ;
