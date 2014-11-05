@@ -166,14 +166,6 @@ SET(HEADERS ${HEADERS}
   Sacado_Handle.hpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
-
-SET(HEADERS ${HEADERS}
-  Kokkos_View_Fad.hpp
-  )
-
-ENDIF()
-
 IF (${PACKAGE_NAME}_ENABLE_Teuchos)
 
   # BLAS
@@ -264,6 +256,9 @@ SET(HEADERS ${HEADERS}
   Sacado_Version.hpp
   Sacado_Traits.hpp
   Sacado.hpp
+  Sacado_Kokkos.hpp
+  Kokkos_View_Fad.hpp
+  Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp
   Sacado_cmath.hpp
   Sacado_dummy_arg.hpp
