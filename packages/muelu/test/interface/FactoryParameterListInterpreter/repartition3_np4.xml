@@ -7,12 +7,17 @@
       <Parameter name="lightweight wrap"                            type="bool"     value="true"/>
     </ParameterList>
 
+    <ParameterList name="myFilteredFact">
+      <Parameter name="factory"                                     type="string"   value="FilteredAFactory"/>
+    </ParameterList>
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                                     type="string"   value="TentativePFactory"/>
     </ParameterList>
 
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                                     type="string"   value="SaPFactory"/>
+      <Parameter name="A"                                           type="string"   value="myFilteredFact"/>
       <Parameter name="P"                                           type="string"   value="myTentativePFact"/>
     </ParameterList>
 
