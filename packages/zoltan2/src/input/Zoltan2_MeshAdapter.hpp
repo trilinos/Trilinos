@@ -119,7 +119,7 @@ public:
   typedef int LO;
   typedef int GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  /*typedef Tpetra::CrsGraph<LO GO Node> sparse_graph_type;*/
+  typedef Tpetra::CrsGraph<LO, GO, Node> sparse_graph_type;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
