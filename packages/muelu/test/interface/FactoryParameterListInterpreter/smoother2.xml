@@ -7,6 +7,15 @@
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
     </ParameterList>
 
+    <ParameterList name="myFilteredFact">
+      <Parameter name="factory"                             type="string"   value="FilteredAFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myPFact">
+      <Parameter name="factory"                             type="string"   value="SaPFactory"/>
+      <Parameter name="A"                                   type="string"   value="myFilteredFact"/>
+    </ParameterList>
+
   </ParameterList>
 
   <ParameterList name="Hierarchy">
@@ -16,6 +25,7 @@
 
       <Parameter name="DofsPerNode"                         type="string"   value="myCoalesceDropFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
+      <Parameter name="P"                                   type="string"   value="myPFact"/>
       <Parameter name="PostSmoother"                        type="string"   value="NoFactory"/>
     </ParameterList>
 
