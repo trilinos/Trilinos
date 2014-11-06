@@ -144,16 +144,16 @@ Level 2
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 2.56
+Operator complexity = 2.11
 
 matrix rows    nnz  nnz/row procs
 A 0    9999  29995     3.00  1
-A 1    3336  26676     8.00  1
-A 2    1116  20016    17.94  1
+A 1    3333  23319     7.00  1
+A 2    1113   9999     8.98  1
 
 Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94914, alpha: 20, lambdaMin: 0.0974568}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 2.18766, alpha: 20, lambdaMin: 0.109383}, Global matrix dimensions: [3336, 3336], Global nnz: 26676}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 2.17965, alpha: 20, lambdaMin: 0.108983}, Global matrix dimensions: [3333, 3333], Global nnz: 23319}
 
 Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
