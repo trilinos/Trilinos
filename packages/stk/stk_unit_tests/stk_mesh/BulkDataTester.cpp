@@ -47,7 +47,6 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
-#include "stk_mesh/base/BulkDataParallel.hpp" // for BulkDataParallel
 
 using namespace stk::mesh;
 using namespace stk;
