@@ -1,6 +1,6 @@
 CC=g++
 
-basker: basker_driver.o basker.o
+basker: basker.o basker_driver.o
 	$(CC)  -o basker.exe basker_driver.o basker.o -lm
 basker.o: basker.cpp basker.hpp basker_decl.hpp basker_def.hpp
 	$(CC)  -c basker.cpp

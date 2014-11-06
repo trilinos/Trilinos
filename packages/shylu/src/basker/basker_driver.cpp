@@ -3,7 +3,9 @@
 #include <string>
 #include <cstdlib>
 
-#include "basker.hpp"
+#include "basker_decl.hpp"
+#include "basker_def.hpp"
+
 
 using namespace std;
 
@@ -77,20 +79,52 @@ int main(int argc, char* argv[])
  
 
   //Allocate some work space.
-  Int* ws = (Int *)calloc((ancol)+(4*anrow), sizeof(Int));
-  Entry* X = (Entry *)calloc(2*anrow, sizeof(Entry));
-  Int* pinv = (Int *)calloc(ancol, sizeof(Int));
-  Int* Lp = (Int *)calloc(ancol+1, sizeof(Int));
-  Int* Li = (Int *)calloc(lnnz, sizeof(Int));
-  Entry* Lx = (Entry *)calloc(lnnz, sizeof(Entry));
-  Int* Up = (Int *)calloc(ancol+1, sizeof(Int));
-  Int* Ui = (Int *)calloc(unnz, sizeof(Int));
-  Entry* Ux = (Entry *)calloc(unnz,sizeof(Int));
   
-  pinv[0] = -1;
+  
+  
 
   cout << "Done allocating space" << endl;
-  Int result = basker::basker<Int, Entry>(Ap, Ai, Ax, anrow, ancol, ws, X, Lp, &Li, &Lx, Up, &Ui, &Ux, &lnnz, &unnz, pinv);
+  Basker::Basker<int, double> mybasker;
+  mybasker.factor(anrow, ancol,annz, Ap, Ai, Ax); 
+
+  Int *pp;
+  mybasker.returnP(&pp);
+
+
+  free(pp);
+  //cout << "pp(0): " << pp[0] << endl;
+  //cout << "pp(2): " << pp[2] << endl;
+
+  /*Try to solve a problem*/
+  Entry *x = (Entry *)calloc(anrow, sizeof(Entry));
+  Entry *b = (Entry *)calloc(anrow, sizeof(Entry));
+
+
+  /*Make a fake rhs so the solution is all ones*/
+ 
+  for(int i = 0; i < anrow; i++)
+    {
+       b[i] = (Entry) 1.0;
+    }
+
+ mybasker.solve(b, x);
+
+  
+  cout << "Solution:" << endl;
+  for(int i = 0; i < anrow; i++)
+    {
+      cout << x[i] << endl;
+    }
+  
+
+
+  free(x);
+  free(b);
+  delete [] Ap;
+  delete [] Ai;
+  delete [] Ax;
+
+  //Int result = basker::basker<Int, Entry>(Ap, Ai, Ax, anrow, ancol, ws, X, Lp, &Li, &Lx, Up, &Ui, &Ux, &lnnz, &unnz, pinv);
 
 }
 
