@@ -327,7 +327,12 @@ namespace Details {
 template<class T>
 class ArithTraits {
 public:
-  //! The type T itself.
+  /// \brief A type that acts like T and works with Kokkos.
+  ///
+  /// This is usually just an alias for T.  However, some types T do
+  /// not work well with Kokkos.  In that case, we use a mostly
+  /// equivalent type here.  For example, ArithTraits<std::complex<R>
+  /// >::val_type is Kokkos::complex<R>.
   typedef T val_type;
   /// \brief The type of the magnitude (absolute value) of T.
   ///
@@ -687,7 +692,7 @@ public:
 template<class RealFloatType>
 class ArithTraits<std::complex<RealFloatType> > {
 public:
-  typedef std::complex<RealFloatType> val_type;
+  typedef ::Kokkos::complex<RealFloatType> val_type;
   typedef RealFloatType mag_type;
 
   static const bool is_specialized = true;

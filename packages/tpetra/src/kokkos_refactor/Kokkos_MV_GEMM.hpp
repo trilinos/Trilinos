@@ -53,6 +53,135 @@
 #ifdef KOKKOS_HAVE_CUDA
 #include<cublas.h>
 #endif
+
+namespace Teuchos {
+
+  // mfh 11 Nov 2014: The DeviceGEMM specializations below need to be
+  // able to use Teuchos::BLAS::{GEMM, GEMV}.  We provide just enough
+  // of a specialization for Kokkos::complex<{float, double}> to make
+  // DeviceGEMM work.  They just defer to BLAS<int,
+  // std::complex<{float, double}> > via reinterpret_cast.  Please
+  // feel free to expand these specializations if you need to.
+
+  template<>
+  class BLAS<int, ::Kokkos::complex<float> > {
+  public:
+    typedef float mag_type;
+    typedef ::Kokkos::complex<float> val_type;
+    typedef std::complex<float> impl_type;
+
+    BLAS () {}
+    BLAS (const BLAS<int, val_type>&) {}
+    virtual ~BLAS () {}
+
+    // void ROTG (val_type* da, val_type* db, mag_type* c, val_type* s) const;
+    // void ROT (const int n, val_type* dx, const int incx, val_type* dy, const int incy, RealType* c, val_type* s) const;
+    // RealType ASUM (const int n, const val_type* x, const int incx) const;
+    //void AXPY (const int n, const val_type alpha, const val_type* x, const int incx, val_type* y, const int incy) const;
+    //void COPY (const int n, const val_type* x, const int incx, val_type* y, const int incy) const;
+    //val_type DOT(const int n, const val_type* x, const int incx, const val_type* y, const int incy) const;
+    //RealType NRM2(const int n, const val_type* x, const int incx) const;
+    //void SCAL(const int n, const val_type alpha, val_type* x, const int incx) const;
+    //int IAMAX(const int n, const val_type* x, const int incx) const;
+
+    void
+    GEMV (ETransp trans, const int m, const int n, const val_type alpha,
+          const val_type* A, const int lda, const val_type* x, const int incx,
+          const val_type beta, val_type* y, const int incy) const
+    {
+      BLAS<int, impl_type> blas;
+      blas.GEMV (trans, m, n, static_cast<impl_type> (alpha),
+                 reinterpret_cast<const impl_type*> (A), lda,
+                 reinterpret_cast<const impl_type*> (x), incx,
+                 static_cast<impl_type> (beta),
+                 reinterpret_cast<impl_type*> (y), incy);
+    }
+
+    //void TRMV(EUplo uplo, ETransp trans, EDiag diag, const int n, const val_type* A, const int lda, val_type* x, const int incx) const;
+    //void GER(const int m, const int n, const val_type alpha, const val_type* x, const int incx, const val_type* y, const int incy, val_type* A, const int lda) const;
+
+    void
+    GEMM (ETransp transa, ETransp transb, const int m, const int n, const int k,
+          const val_type alpha, const val_type* A, const int lda,
+          const val_type* B, const int ldb, const val_type beta, val_type* C,
+          const int ldc) const
+    {
+      BLAS<int, impl_type> blas;
+      blas.GEMM (transa, transb, m, n, k,
+                 static_cast<impl_type> (alpha),
+                 reinterpret_cast<const impl_type*> (A), lda,
+                 reinterpret_cast<const impl_type*> (B), ldb,
+                 static_cast<impl_type> (beta),
+                 reinterpret_cast<impl_type*> (C), ldc);
+    }
+
+    //void SYMM(ESide side, EUplo uplo, const int m, const int n, const val_type alpha, const val_type* A, const int lda, const val_type *B, const int ldb, const val_type beta, val_type *C, const int ldc) const;
+    //void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const val_type alpha, const val_type* A, const int lda, const val_type beta, val_type* C, const int ldc) const;
+    //void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const val_type alpha, const val_type* A, const int lda, val_type* B, const int ldb) const;
+    //void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const val_type alpha, const val_type* A, const int lda, val_type* B, const int ldb) const;
+  };
+
+  template<>
+  class BLAS<int, ::Kokkos::complex<double> > {
+  public:
+    typedef double mag_type;
+    typedef ::Kokkos::complex<double> val_type;
+    typedef std::complex<double> impl_type;
+
+    BLAS () {}
+    BLAS (const BLAS<int, val_type>&) {}
+    virtual ~BLAS () {}
+
+    // void ROTG (val_type* da, val_type* db, mag_type* c, val_type* s) const;
+    // void ROT (const int n, val_type* dx, const int incx, val_type* dy, const int incy, RealType* c, val_type* s) const;
+    // RealType ASUM (const int n, const val_type* x, const int incx) const;
+    //void AXPY (const int n, const val_type alpha, const val_type* x, const int incx, val_type* y, const int incy) const;
+    //void COPY (const int n, const val_type* x, const int incx, val_type* y, const int incy) const;
+    //val_type DOT(const int n, const val_type* x, const int incx, const val_type* y, const int incy) const;
+    //RealType NRM2(const int n, const val_type* x, const int incx) const;
+    //void SCAL(const int n, const val_type alpha, val_type* x, const int incx) const;
+    //int IAMAX(const int n, const val_type* x, const int incx) const;
+
+    void
+    GEMV (ETransp trans, const int m, const int n, const val_type alpha,
+          const val_type* A, const int lda, const val_type* x, const int incx,
+          const val_type beta, val_type* y, const int incy) const
+    {
+      BLAS<int, impl_type> blas;
+      blas.GEMV (trans, m, n, static_cast<impl_type> (alpha),
+                 reinterpret_cast<const impl_type*> (A), lda,
+                 reinterpret_cast<const impl_type*> (x), incx,
+                 static_cast<impl_type> (beta),
+                 reinterpret_cast<impl_type*> (y), incy);
+    }
+
+    //void TRMV(EUplo uplo, ETransp trans, EDiag diag, const int n, const val_type* A, const int lda, val_type* x, const int incx) const;
+    //void GER(const int m, const int n, const val_type alpha, const val_type* x, const int incx, const val_type* y, const int incy, val_type* A, const int lda) const;
+
+    void
+    GEMM (ETransp transa, ETransp transb, const int m, const int n, const int k,
+          const val_type alpha, const val_type* A, const int lda,
+          const val_type* B, const int ldb, const val_type beta, val_type* C,
+          const int ldc) const
+    {
+      BLAS<int, impl_type> blas;
+      blas.GEMM (transa, transb, m, n, k,
+                 static_cast<impl_type> (alpha),
+                 reinterpret_cast<const impl_type*> (A), lda,
+                 reinterpret_cast<const impl_type*> (B), ldb,
+                 static_cast<impl_type> (beta),
+                 reinterpret_cast<impl_type*> (C), ldc);
+    }
+
+    //void SYMM(ESide side, EUplo uplo, const int m, const int n, const val_type alpha, const val_type* A, const int lda, const val_type *B, const int ldb, const val_type beta, val_type *C, const int ldc) const;
+    //void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const val_type alpha, const val_type* A, const int lda, const val_type beta, val_type* C, const int ldc) const;
+    //void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const val_type alpha, const val_type* A, const int lda, val_type* B, const int ldb) const;
+    //void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const val_type alpha, const val_type* A, const int lda, val_type* B, const int ldb) const;
+  };
+
+} // namespace Teuchos
+
+
 namespace Kokkos {
   namespace Impl {
 
