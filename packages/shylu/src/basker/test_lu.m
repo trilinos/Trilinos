@@ -10,10 +10,12 @@ f = f (i) ;
 skiplist = [ 905 ] ;
 
 fid = fopen('test.data', 'w');
-
+%fid = 1;
 for i = f
   fprintf (fid, '%d: %s/%s: ', i, index.Group {i}, index.Name{i}) ;
-	%input(' Hit enter to continue') ;
+	
+   %pause;
+  %input(' Hit enter to continue') ;
     Problem = UFget (i) ;
     A = Problem.A ;
     clear Problem
@@ -43,10 +45,13 @@ for i = f
         [LU, info] = klu(B, opts) ;
         klu_t = toc;
 
+        ttt = 2*nnz(B);    
         tic
-        [L1, U1, P1] = basker(B) ;
+        [L1, U1, P1] = basker(B, ttt, ttt) ;
         basker_t = toc;
-
+         L1 = (L1')';
+         U1 = (U1')';
+        
         nn = norm (L1*U1 - P1*B, 1)/norm(B, 1);
 fprintf (fid,'                        your   resid: %g klu_time:%g basker_time:%g speedup: %g\n', nn, klu_t, basker_t, klu_t/basker_t) ;
         % compare with MATLAB
