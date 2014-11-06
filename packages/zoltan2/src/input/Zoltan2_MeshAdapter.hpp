@@ -119,6 +119,7 @@ public:
   typedef int LO;
   typedef int GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<LO, GO, Node>      map_type;
   typedef Tpetra::CrsGraph<LO, GO, Node> sparse_graph_type;
 #endif
   
@@ -257,11 +258,30 @@ public:
 
       return false;
 
+      /*Array<GO> overlappedGIDs;
+      RCP<const map_type> overlappedMapG;
+
+      // Count owned nodes
+      int overlappedNodes = ;
+
+      // Build a list of the OVERLAPPED global ids...
+      overlappedGIDs.resize (overlappedNodes);
+      for (int i = 0; i < ; ++i) {
+	overlappedGIDs[i] = as<int> ();
+      }
+
+      //Generate overlapped Map for nodes.
+      overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm, node));
+
       RCP<sparse_graph_type> adjsGraph;
-      /*adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+
+      // Construct Tpetra::CrsGraph objects.
+      adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
 
       for (int i = 0; i < LocalNumIDs; ++i) {
+
 	int Row = Ids[i];
+	//globalRow for Tpetra Graph
 	global_size_t globalRowT = as<global_size_t> (Row);
 	int NumAdj;
 
@@ -276,12 +296,15 @@ public:
 	  int globalCol = as<int> (Col);
 	  //create ArrayView globalCol object for Tpetra
 	  ArrayView<int> globalColAV = arrayView (&globalCol, 1);
+
 	  //Update Tpetra overlap Graph
 	  adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
-	}
-      }
+	}// *** col loop ***
+      }// *** row loop ***
 
+      // Fill-complete overlapping distribution Graph.
       adjsGraph->fillComplete ();*/
+
       return true;
     }
   }
