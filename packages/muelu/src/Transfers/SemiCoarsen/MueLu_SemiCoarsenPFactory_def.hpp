@@ -314,8 +314,8 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> TLayerdofs= Teuchos::arcp<LO>(Ntotal*DofsPerNode+Nghost+1); Layerdofs = TLayerdofs.getRawPtr();
     Teuchos::ArrayRCP<LO> TCol2Dof= Teuchos::arcp<LO>(Ntotal*DofsPerNode+Nghost+1); Col2Dof= TCol2Dof.getRawPtr();
 
-    RCP<Xpetra::Vector<LO,LO,GO> > localdtemp = Xpetra::VectorFactory<LO,LO,GO>::Build(Amat->getDomainMap());
-    RCP<Xpetra::Vector<LO,LO,GO> > dtemp      = Xpetra::VectorFactory<LO,LO,GO>::Build(Amat->getColMap());
+    RCP<Xpetra::Vector<LO,LO,GO,NO> > localdtemp = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(Amat->getDomainMap());
+    RCP<Xpetra::Vector<LO,LO,GO,NO> > dtemp      = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(Amat->getColMap());
     ArrayRCP<LO> valptr= localdtemp->getDataNonConst(0);
 
     for (i = 0; i < Ntotal*DofsPerNode; i++)
