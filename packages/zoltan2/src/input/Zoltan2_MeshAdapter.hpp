@@ -257,8 +257,8 @@ public:
 
       return false;
 
-      /*RCP<sparse_graph_type> adjsGraph;
-      adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+      RCP<sparse_graph_type> adjsGraph;
+      /*adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
 
       for (int i = 0; i < LocalNumIDs; ++i) {
 	int Row = Ids[i];
