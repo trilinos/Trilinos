@@ -12,7 +12,7 @@
 
 using namespace std;
 
-//#define BASKER_DEBUG 1
+#define BASKER_DEBUG 1
 //#undef UDEBUG
 
 namespace Basker{
@@ -255,11 +255,11 @@ namespace Basker{
 	
 	for(i = 0; i < nrow; i++)
 	  {
-	    ASSERT(X[i] == 0);
+	    ASSERT(X[i] == (Entry)0);
 	  }
 	for(i = 0; i < ncol; i++)
 	  {
-	    ASSERT(color[i] ==0); 
+	    ASSERT(color[i] == 0); 
 	  }
 #endif
 	/* Reachability for every nonzero in Ak */
@@ -313,12 +313,12 @@ namespace Basker{
 	    value = X[j];
 	    /*note may want to change this to traits*/
 	    //absv = (value < 0.0 ? -value : value);
-	    absv = BASKER_ScalarTraits<Entry>::abs(value);
+	    absv = BASKER_ScalarTraits<Entry>::approxABS(value);
 
 	    if(t == ncol)
 	      {
 		lcnt++;
-		if( absv > maxv)
+		if( BASKER_ScalarTraits<Entry>::gt(absv , maxv))
 		  {
 		    maxv = absv;
 		    pivot = value;
@@ -328,7 +328,7 @@ namespace Basker{
 	  }
 	ucnt = nrow - top -lcnt + 1;
 	
-	if(maxindex == ncol || pivot ==0)
+	if(maxindex == ncol || pivot == ((Entry)0))
 	  {
 	    cout << "Matrix is singular at index: " << maxindex << " pivot: " << pivot << endl;
 	    return 1;
@@ -398,7 +398,8 @@ namespace Basker{
 	    t = pinv[j];
 
 	    /* check for numerical cancellations */
-	    if(X[j] != 0)
+	    
+	    if(X[j] != ((Entry)0))
 	      {
 		
 		if(t != ncol)
