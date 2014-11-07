@@ -316,8 +316,6 @@ int main(int argc, char *argv[]) {
 
       int runCount = 1;
       do {
-        A->SetMaxEigenvalueEstimate(-one);
-
         solveType = dsolveType;
         tol       = dtol;
 
@@ -474,8 +472,15 @@ int main(int argc, char *argv[]) {
         tm = Teuchos::null;
         globalTimeMonitor = Teuchos::null;
 
-        if (printTimings)
-          TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
+        if (printTimings) {
+          const bool alwaysWriteLocal = false;
+          const bool writeGlobalStats = true;
+          const bool writeZeroTimers  = false;
+          const bool ignoreZeroTimers = true;
+          const std::string filter    = "";
+          TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                                 writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+        }
 
         TimeMonitor::clearCounters();
 
@@ -486,8 +491,12 @@ int main(int argc, char *argv[]) {
             fclose(openedOut);
             openedOut = NULL;
           }
-          runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
-          mueluList = runList  .sublist("MueLu", mustAlreadyExist);
+          try {
+            runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
+            mueluList = runList  .sublist("MueLu", mustAlreadyExist);
+          } catch (Teuchos::Exceptions::InvalidParameterName& e) {
+            stop = true;
+          }
         }
 
       } while (!stop);
@@ -498,4 +507,4 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} //main
+}
