@@ -2,12 +2,15 @@
 #include <matrix.h>
 #include <stdlib.h>
 #include <string.h>
+#include <complex>
+
 
 #include "basker_decl.hpp"
 #include "basker_def.hpp"
 
 /* TODO: Need a better way to do this with matlab.*/
 #define Int mwIndex
+
 //#define mwIndex long
 /*
  * 
@@ -27,8 +30,14 @@ void mexFunction
     mwIndex *Lp, *Ap, *Ai, *Up, *pp, *pi ;
     Int *Li, *Ui;
     mwIndex *Lp1, *Li1, *Up1, *Ui1 ;
-    double *Lx, *Ax, *Ux, *px ;
-    double *Lx1, *Ux1 ;
+    double *Axr, *Axi;
+    double *Lx1r, *Lx1i, *Ux1r, *Ux1i;
+
+    complex<double> *Ax;
+    complex<double> *Ux;
+    complex<double> *Lx;
+
+
     double *t1, *t2 ;
 
     mwIndex anrow ;
@@ -41,10 +50,7 @@ void mexFunction
     mwIndex memsize ;
     mwIndex result ;
 
-    mwIndex *ws;  /* workspace */
-    double *X ;     /* space to scatter x */
-    mwIndex *pinv ; /* column permutation inverse */
-
+  
     if ( nlhs != 3 || nrhs < 3 )
     {
       //mexErrMsgTxt (" Incorrect number of arguments to sproductmex \n") ;
@@ -52,7 +58,8 @@ void mexFunction
 
     Ap = mxGetJc(prhs[0]) ;
     Ai = mxGetIr(prhs[0]) ;
-    Ax = mxGetPr(prhs[0]) ;
+    Axr = mxGetPr(prhs[0]) ;
+    Axi = mxGetPi(prhs[0]);
 
     anrow = mxGetM (prhs[0]) ;
     ancol = mxGetN (prhs[0]) ;
@@ -62,26 +69,33 @@ void mexFunction
 
     lnnz = (mwIndex)*t1 ;
     unnz = (mwIndex)*t2 ;
-    /*printf("lnnz=%d unnz=%d\n", lnnz, unnz);*/
 
-   
-    Basker::Basker <mwIndex, double> mybasker;
+    /*Form complex numbers*/
+    Ax = (complex<double> *) mxCalloc(lnnz, sizeof(complex<double>));
+
+    for(i = 0; i < lnnz; i++)
+      {
+	Ax[i] = complex<double>(Axr[i], Axi[i]);
+      }
+
+    Basker::Basker <mwIndex, complex<double> > mybasker;
     mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
     mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
     mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
     mybasker.returnP(&pp);
     
-
-    plhs[0] = mxCreateSparse (anrow, ancol, lnnz+1, mxREAL) ;
+    
+    plhs[0] = mxCreateSparse (anrow, ancol, lnnz+1, mxCOMPLEX) ;
     Lp1 = mxGetJc (plhs[0]) ;
     Li1 = mxGetIr (plhs[0]) ;
-    Lx1 = mxGetPr (plhs[0]) ;
+    Lx1r = mxGetPr (plhs[0]) ;
+    Lx1i = mxGetPi (plhs[0]);
 
-    plhs[1] = mxCreateSparse (anrow, ancol, unnz, mxREAL) ;
+    plhs[1] = mxCreateSparse (anrow, ancol, unnz, mxCOMPLEX) ;
     Up1 = mxGetJc (plhs[1]) ;
     Ui1 = mxGetIr (plhs[1]) ;
-    Ux1 = mxGetPr (plhs[1]) ;
-
+    Ux1r = mxGetPr (plhs[1]);
+    Ux1i = mxGetPi (plhs[1]);
     
     mwIndex *pp1, *pp2;
     double *ppx;
@@ -98,7 +112,8 @@ void mexFunction
         for ( j = Lp[i] ; j < Lp[i+1] ; j++ )
         {
             Li1[j] = Li[j];
-            Lx1[j] = Lx[j];
+            Lx1r[j] = std::real(Lx[j]);
+	    Lx1i[j] = std::imag(Lx[j]);
         }
     } 
 
@@ -109,7 +124,8 @@ void mexFunction
         for ( j = Up[i] ; j < Up[i+1] ; j++ )
         {
             Ui1[j] = Ui[j];
-            Ux1[j] = Ux[j];
+            Ux1r[j] = std::real(Ux[j]);
+	    Ux1i[j] = std::imag(Ux[j]);
         }
     } 
   
@@ -126,8 +142,7 @@ void mexFunction
       }
     pp1[ancol] = ancol;
 
-   
-    
+  
     mxFree (pp) ;
     mxFree (Lp) ;
     mxFree (Li) ;

@@ -1,6 +1,8 @@
 #ifndef BASKER_SCALARTRAITS_HPP
 #define BASKER_SCALARTRAITS_HPP
 
+#define SCALAR_ABS(x) (((x) < 0) ? -(x) : (x))
+
 
 template <class T>
 struct BASKER_ScalarTraits
@@ -11,6 +13,7 @@ struct BASKER_ScalarTraits
   static inline double divideConjugate(double a, double b){}
   static inline magnitudeType approxABS(double a){}
   static inline magnitudeType abs(double a){}
+  static inline bool gt (double a, double b){}
 };
 
 //double
@@ -25,6 +28,7 @@ struct BASKER_ScalarTraits<double>
   { return (SCALAR_ABS(a));}
   static inline magnitudeType abs(double a)
   { return (SCALAR_ABS(a));}
+  static inline bool gt (double a, double b){return (a>b);}
 };
 
 //float
@@ -39,6 +43,7 @@ struct BASKER_ScalarTraits<float>
   { return (SCALAR_ABS(a));}
   static inline magnitudeType abs(float a)
   { return (SCALAR_ABS(a));}
+  static inline bool gt (float a, float b){return (a>b);}
 };
 
 
@@ -159,6 +164,134 @@ struct BASKER_ScalarTraits< std::complex<T> >
         }
         return s;
     }
+  static inline bool gt(ComplexT a, ComplexT b)
+  {
+    return (   (Teuchos::ScalarTraits<ComplexT>::real(a)+Teuchos::ScalarTraits<ComplexT>::imag(a)) > (Teuchos::ScalarTraits<ComplexT>::real(b)+Teuchos::ScalarTraits<ComplexT>::imag(b)));
+  }
+
+};
+
+#else  //C++ complexx
+#include <complex>
+
+template <class T>
+struct BASKER_ScalarTraits< std::complex<T> >
+{
+    typedef std::complex<T> ComplexT ;
+    typedef typename BASKER_ScalarTraits<T>::magnitudeType magnitudeType ;
+
+    static inline ComplexT reciprocal (ComplexT c)
+    {
+        T r, den, cr, ci ;
+        ComplexT ret ;
+        cr = (std::real(c)) ;
+        ci = (std::imag(c)) ;
+        if (SCALAR_ABS (cr) >= SCALAR_ABS (ci))
+        {
+            r = ci / cr ;
+            den = cr + r * ci ;
+            ret = std::complex<T>(1.0 / den, -r / den) ;
+        }
+        else
+        {
+            r = cr / ci ;
+            den = r * cr + ci ;
+            ret = std::complex<T>(r / den, -1.0 / den) ;
+        }
+        return ret;
+    }
+
+    static inline ComplexT divide (ComplexT a, ComplexT b)
+    {
+        T r, den, ar, ai, br, bi ;
+        ComplexT ret;
+
+        br = (std::real(b)) ;
+        bi = (std::imag(b)) ;
+        ar = (std::real(a)) ;
+        ai = (std::imag(a)) ;
+        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
+        {
+            r = bi / br ;
+            den = br + r * bi ;
+            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
+        }
+        else
+        {
+            r = br / bi ;
+            den = r * br + bi ;
+            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
+        }
+        return ret;
+    }
+
+    static inline ComplexT divideConjugate (ComplexT a, ComplexT b)
+    {
+        T r, den, ar, ai, br, bi ;
+        ComplexT ret;
+
+        br = (std::real(b)) ;
+        bi = (std::imag(b)) ;
+        ar = (std::real(a)) ;
+        ai = (std::imag(a)) ;
+        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
+        {
+            r = (-bi) / br ;
+            den = br - r * bi ;
+            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
+        }
+        else
+        {
+            r = br / (-bi) ;
+            den =  r * br - bi;
+            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
+        }
+        return ret;
+    }
+
+    static inline magnitudeType approxABS (ComplexT a)
+    {
+        return ( SCALAR_ABS (std::real(a)) +
+                    SCALAR_ABS (std::imag(a)) ) ;
+    }
+
+    static inline magnitudeType abs (ComplexT a)
+    {
+        T r, ar, ai ;
+        magnitudeType s;
+
+        ar = SCALAR_ABS (std::real(a)) ;
+        ai = SCALAR_ABS (std::imag(a)) ;
+        if (ar >= ai)
+        {
+            if (ar + ai == ar)
+            {
+                (s) = ar ;
+            }
+            else
+            {
+                r = ai / ar ;
+                (s) = ar * sqrt (1.0 + r*r) ;
+            }
+        }
+        else
+        {
+            if (ai + ar == ai)
+            {
+                (s) = ai ;
+            }
+            else
+            {
+                r = ar / ai ;
+                (s) = ai * sqrt (1.0 + r*r) ;
+            }
+        }
+        return s;
+    }
+  static inline bool gt(ComplexT a, ComplexT b)
+  {
+    return (   (std::real(a)+std::imag(a)) > (std::real(b)+std::imag(b)));
+  }
 };
 
 

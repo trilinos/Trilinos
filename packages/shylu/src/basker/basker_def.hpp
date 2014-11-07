@@ -2,7 +2,7 @@
 #define BASKER_DEF_HPP
 
 #include "basker_decl.hpp"
-//#include "basker_scalartraits.hpp"
+#include "basker_scalartraits.hpp"
 #include "basker.hpp"
 
 
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-//#define BASKER_DEBUG 1
+#define BASKER_DEBUG 1
 //#undef UDEBUG
 
 namespace Basker{
@@ -130,7 +130,6 @@ namespace Basker{
 	  }
 	if (done)
 	  {
-	    // std::cout << "done called " << std::endl;
 	    pattern[--*top] = j ;
 	    color[j] = 2 ;
 	    if(head == 0)
@@ -256,11 +255,11 @@ namespace Basker{
 	
 	for(i = 0; i < nrow; i++)
 	  {
-	    ASSERT(X[i] == 0);
+	    ASSERT(X[i] == (Entry)0);
 	  }
 	for(i = 0; i < ncol; i++)
 	  {
-	    ASSERT(color[i] ==0); 
+	    ASSERT(color[i] == 0); 
 	  }
 #endif
 	/* Reachability for every nonzero in Ak */
@@ -313,12 +312,13 @@ namespace Basker{
 	    t = pinv[j];
 	    value = X[j];
 	    /*note may want to change this to traits*/
-	    absv = (value < 0.0 ? -value : value);
-	    
+	    //absv = (value < 0.0 ? -value : value);
+	    absv = BASKER_ScalarTraits<Entry>::approxABS(value);
+
 	    if(t == ncol)
 	      {
 		lcnt++;
-		if( absv > maxv)
+		if( BASKER_ScalarTraits<Entry>::gt(absv , maxv))
 		  {
 		    maxv = absv;
 		    pivot = value;
@@ -328,7 +328,7 @@ namespace Basker{
 	  }
 	ucnt = nrow - top -lcnt + 1;
 	
-	if(maxindex == ncol || pivot ==0)
+	if(maxindex == ncol || pivot == ((Entry)0))
 	  {
 	    cout << "Matrix is singular at index: " << maxindex << " pivot: " << pivot << endl;
 	    return 1;
@@ -341,7 +341,6 @@ namespace Basker{
 	    cout << "Permuting pivot: " << k << " for row: " << maxindex << endl;
 	  }
 #endif	
-
 
 	if(lnnz + lcnt >= L->nnz)
 	  {
@@ -399,7 +398,8 @@ namespace Basker{
 	    t = pinv[j];
 
 	    /* check for numerical cancellations */
-	    if(X[j] != 0)
+	    
+	    if(X[j] != ((Entry)0))
 	      {
 		
 		if(t != ncol)
@@ -423,7 +423,8 @@ namespace Basker{
 		      }
 		    
 		    L->row_idx[lnnz]  = j;
-		    L->val[lnnz] = X[j]/pivot;
+		    //L->val[lnnz] = X[j]/pivot;
+		    L->val[lnnz] = BASKER_ScalarTraits<Entry>::divide(X[j],pivot);
 		    lnnz++;
 		    
 		  }

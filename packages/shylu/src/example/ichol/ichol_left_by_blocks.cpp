@@ -13,6 +13,7 @@
 
 #include "crs_matrix_helper.hpp"
 
+#include "task_graphviz.hpp"
 #include "task_factory.hpp"
 #include "crs_task_view.hpp"
 
@@ -35,8 +36,11 @@ typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
 
 // tasking environments
-typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
-                             Kokkos::Future<int,space_type> > TaskFactory;
+//typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
+//                             Kokkos::Future<int,space_type> > TaskFactory;
+#define USE_GRAPHVIZ
+typedef Example::TaskFactory<Example::TaskPolicy,
+                             Example::Future> TaskFactory;
 
 // flat2hier
 typedef Example::CrsMatrixHelper CrsMatrixHelper; 
@@ -73,22 +77,25 @@ int main (int argc, char *argv[]) {
   }
   AA.importMatrixMarket(in);
 
-  //GraphHelper S(AA);
-  //S.computeOrdering();
+  GraphHelper S(AA);
+  S.computeOrdering();
 
-  //CrsMatrixBase PA("Permuted AA");
-  //PA.copy(S.PermVector(), S.InvPermVector(), AA);
+  CrsMatrixBase PA("Permuted AA");
+  PA.copy(S.PermVector(), S.InvPermVector(), AA);
   
-  //cout << PA << endl;
-
   CrsMatrixBase LL("LL");
-  LL.copy(Uplo::Lower, AA);
+  LL.copy(Uplo::Lower, PA);
 
   cout << LL << endl;
 
   CrsHierBase HH("HH");
-  CrsMatrixHelper::flat2hier(LL, HH);
-  
+
+  //CrsMatrixHelper::flat2hier(LL, HH);
+  CrsMatrixHelper::flat2hier(LL, HH,
+                             S.NumBlocks(),
+                             S.RangeVector(),
+                             S.TreeVector());
+
   cout << HH << endl;
 
   TaskFactory::policy_type policy;
@@ -100,13 +107,15 @@ int main (int argc, char *argv[]) {
 
   cout << LL << endl;
 
-  // ofstream out;
-  // out.open("task_graph.gv");
-  // if (!out.good()) {
-  //   cout << "Error in open the file: task_graph.gv" << endl;
-  //   return -1;
-  // }
-  // TaskFactory::graphviz(out);
+#ifdef USE_GRAPHVIZ
+  ofstream out;
+  out.open("graph.gv");
+  if (!out.good()) {
+    cout << "Error in open the file: task_graph.gv" << endl;
+    return -1;
+  }
+  policy.graphviz(out);
+#endif
 
   Kokkos::finalize(); 
 
