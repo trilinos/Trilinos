@@ -80,8 +80,8 @@ enum MeshEntityType {
     \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
-    See IdentifierTraits to understand why the user's global ID type (\c zgid_t)
-    may differ from that used by Zoltan2 (\c gno_t).
+    See IdentifierTraits to understand why the user's global ID type
+    (\c zgid_t) may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
 
@@ -248,27 +248,29 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      /*int LocalNumIDs = getLocalNumIDs();
-	int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);*/
-      zgid_t const *Ids=NULL;
-      getIDsView(Ids);
-      lno_t const *offsets=NULL;
-      zgid_t const *adjacencyIds=NULL;
-      getAdjsView(sourcetarget, through, offsets, adjacencyIds);
-
       return false;
 
       /*Array<GO> adjsGIDs;
       RCP<const map_type> adjsMapG;
 
+      int LocalNumIDs = getLocalNumIDs();
+      lno_t const *offsets=NULL;
+      zgid_t const *adjacencyIds=NULL;
+      getAdjsView(sourcetarget, through, offsets, adjacencyIds);
+      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+
       // Count owned nodes
-      int adjsNodes = ;
+      int adjsNodes = getLocalNumOf(MESH_VERTEX);
 
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (adjsNodes);
-      for (int i = 0; i < ; ++i) {
-	adjsGIDs[i] = as<int> ();
+      zgid_t const *Ids=NULL;
+      getIDsViewOf(Ids);
+      for (int i = 0; i < adjsNodes; ++i) {
+	adjsGIDs[i] = as<int> (Ids[i]);
       }
+
+      getIDsView(Ids);
 
       //Generate adjs Map for nodes.
       adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
@@ -283,8 +285,8 @@ public:
 	int Row = Ids[i];
 	//globalRow for Tpetra Graph
 	global_size_t globalRowT = as<global_size_t> (Row);
-	int NumAdj;
 
+	int NumAdj;
 	if (i + 1 < LocalNumIDs) {
 	  NumAdjs = offsets[i+1];
 	} else {
@@ -297,7 +299,7 @@ public:
 	  //create ArrayView globalCol object for Tpetra
 	  ArrayView<int> globalColAV = arrayView (&globalCol, 1);
 
-	  //Update Tpetra overlap Graph
+	  //Update Tpetra adjs Graph
 	  adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
 	}// *** col loop ***
       }// *** row loop ***
@@ -334,8 +336,8 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-// TODO:  Later may allow user to not implement second adjacencies and, if we want them,
-// TODO:  we compute A^T A, where A is matrix of first adjacencies.
+// TODO:  Later may allow user to not implement second adjacencies and,
+// TODO:  if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
