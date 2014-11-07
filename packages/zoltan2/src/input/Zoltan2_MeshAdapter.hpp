@@ -250,22 +250,24 @@ public:
     else {
       return false;
 
-      /*Array<GO> adjsGIDs;
-      RCP<const map_type> adjsMapG;
-
-      int LocalNumIDs = getLocalNumIDs();
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
+
+      zgid_t const *Ids=NULL;
+      getIDsViewOf(Ids);
+
+      /*int LocalNumIDs = getLocalNumIDs();
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+
+      Array<GO> adjsGIDs;
+      RCP<const map_type> adjsMapG;
 
       // Count owned nodes
       int adjsNodes = getLocalNumOf(MESH_VERTEX);
 
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (adjsNodes);
-      zgid_t const *Ids=NULL;
-      getIDsViewOf(Ids);
       for (int i = 0; i < adjsNodes; ++i) {
 	adjsGIDs[i] = as<int> (Ids[i]);
       }
