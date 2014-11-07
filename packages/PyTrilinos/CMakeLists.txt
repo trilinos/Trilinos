@@ -202,6 +202,11 @@ IF(TPL_ENABLE_MPI)
   FIND_PACKAGE(Mpi4Py)
 ENDIF(TPL_ENABLE_MPI)
 
+# Python module petsc4py is required if NOX_ENABLE_PETSC is true
+IF(NOX_ENABLE_PETSC)
+  FIND_PACKAGE(PETSc4Py REQUIRED)
+ENDIF(NOX_ENABLE_PETSC)
+
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled PyTrilinos modules:")
 MESSAGE(STATUS "    ${PyTrilinos_PACKAGES}")
