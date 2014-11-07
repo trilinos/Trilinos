@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define BASKER_DEBUG 1
+//#define BASKER_DEBUG 1
 //#undef UDEBUG
 
 namespace Basker{
@@ -581,15 +581,15 @@ namespace Basker{
     /*permute x to new ordering*/
     for(i = 0 ; i < A->ncol; i++) 
       {
-
-		
+	
 	x[i] = b[pinv[i]];
 	b[pinv[i]] = 0;
       }
     //ASSERT(L->nrow == L->ncol);
     low_tri_solve_csc(L->nrow, L->col_ptr, L->row_idx, L->val, b, x); 
-    cout << " back solve " << endl;
     up_tri_solve_csc(U->nrow, U->col_ptr, U->row_idx, U->val, x, b);
+
+    //we could permute it back if need?
     return 0;
   }
   
@@ -600,10 +600,11 @@ namespace Basker{
         /*for each column*/
     for(i = 0; i < n ; i++)
       {
-	ASSERT(val[col_ptr[i]] != 0);
+	ASSERT(val[col_ptr[i]] != (Entry)0);
 	
-	x[i] = b[i]/val[col_ptr[i]]; //diag
-	
+	//x[i] = b[i]/val[col_ptr[i]]; //diag
+	x[i] = BASKER_ScalarTraits<Entry>::divide(b[i], val[col_ptr[i]]); 
+
 	for(j = col_ptr[i]+1; j < (col_ptr[i+1]); j++) //update all rows
 	  {
 	    b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[i]);
@@ -618,18 +619,26 @@ namespace Basker{
   {
     Int i, j;
         /*for each column*/
-    for(i = n; i > 0 ; i--)
+    for(i = n; i > 1 ; i--)
       {
 	int ii = i-1;
-	ASSERT(val[col_ptr[i]-1] != 0);
+
+	//cout << "i: " << i << "ii: " << ii <<  "col_ptr[i]-1: " << col_ptr[i]-1 << endl;
+	ASSERT(val[col_ptr[i]-1] != (Entry)0);
 			
-	x[ii] = b[ii]/val[col_ptr[i]-1]; //diag
-		
+	//x[ii] = b[ii]/val[col_ptr[i]-1]; //diag
+	x[ii] = BASKER_ScalarTraits<Entry>::divide(b[ii],val[col_ptr[i]-1]);
+	
+	//cout << "rows: ";
 	for(j = (col_ptr[i]-2); j >= (col_ptr[ii]); j--)
-	  {    
+	  {
+	    //cout << "j: " << j << "row_idx: " << row_idx[j] << endl;
 	    b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[ii]);
 	  }
       }
+    //x[0] = b[0]/val[col_ptr[1]-1];
+    x[0] = BASKER_ScalarTraits<Entry>::divide(b[0],val[col_ptr[1]-1]); 
+
     return 0;
   }
 
