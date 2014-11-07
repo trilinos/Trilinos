@@ -75,6 +75,9 @@ NOX.PETSC provides the following user-level classes:
 using namespace NOX::Petsc;
 %}
 
+// Include the PETSc4Py SWIG interface file
+%include "petsc4py/petsc4py.i"
+
 // General exception handling
 %include "exception.i"
 
@@ -167,7 +170,6 @@ del sys, op
 //////////////////////////////
 // NOX.Petsc.Vector support //
 //////////////////////////////
-struct Vec;
 %ignore NOX::Petsc::Vector::Vector(const Vec &, std::string,  NOX::CopyType);
 %include "NOX_Petsc_Vector.H"
 

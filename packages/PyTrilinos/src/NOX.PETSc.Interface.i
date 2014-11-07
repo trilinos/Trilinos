@@ -72,50 +72,12 @@ NOX.Epetra.Interface provides the following user-level class:
 // PETSc include
 #include "petsc.h"
 
-// Epetra includes
-// #include "Epetra_LocalMap.h"
-// #include "Epetra_MapColoring.h"
-// #include "Epetra_SrcDistObject.h"
-// #include "Epetra_IntVector.h"
-// #include "Epetra_MultiVector.h"
-// #include "Epetra_Vector.h"
-// #include "Epetra_FEVector.h"
-// #include "Epetra_Operator.h"
-// #include "Epetra_RowMatrix.h"
-// #include "Epetra_BasicRowMatrix.h"
-// #include "Epetra_JadMatrix.h"
-// #include "Epetra_InvOperator.h"
-// #include "Epetra_FEVbrMatrix.h"
-// #include "Epetra_FECrsMatrix.h"
-// #include "Epetra_SerialDistributor.h"
-// #include "Epetra_SerialDenseSVD.h"
-// #include "Epetra_SerialDenseSolver.h"
-// #include "Epetra_Import.h"
-// #include "Epetra_Export.h"
-// #include "Epetra_OffsetIndex.h"
-// #include "Epetra_Time.h"
-// #ifdef HAVE_MPI
-// #include "Epetra_MpiComm.h"
-// #endif
-
-// Local Epetra includes
-// #include "PyTrilinos_Epetra_Util.hpp"
-// #include "Epetra_NumPyIntVector.hpp"
-// #include "Epetra_NumPyMultiVector.hpp"
-// #include "Epetra_NumPyVector.hpp"
-// #include "Epetra_NumPyFEVector.hpp"
-// #include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-// #include "Epetra_NumPyIntSerialDenseVector.hpp"
-// #include "Epetra_NumPySerialDenseMatrix.hpp"
-// #include "Epetra_NumPySerialSymDenseMatrix.hpp"
-// #include "Epetra_NumPySerialDenseVector.hpp"
-
 // NOX::Petsc::Interface includes
 #include "NOX_Petsc_Interface.H"
 %}
 
-// General ignore directives
-// %ignore *::operator=;   // temp removal
+// Include the PETSc4Py SWIG interface file
+%include "petsc4py/petsc4py.i"
 
 // Include NOX documentation
 %include "NOX_dox.i"
@@ -125,9 +87,6 @@ NOX.Epetra.Interface provides the following user-level class:
 
 // Trilinos module imports
 %import "Teuchos.i"
-
-// Epetra module imports
-// %import "Epetra.i"
 
 // Exception handling
 %include "exception.i"
@@ -163,11 +122,6 @@ NOX.Epetra.Interface provides the following user-level class:
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-///////////////////////
-// NOX_Utils support //
-///////////////////////
-// %import "NOX_Utils.i"
 
 /////////////////////////////////
 // NOX_Petsc_Interface support //
