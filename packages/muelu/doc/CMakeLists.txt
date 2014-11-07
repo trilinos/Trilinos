@@ -9,4 +9,4 @@ COMMENT "Generating API documentation with Doxygen" VERBATIM
 )
 endif(DOXYGEN_FOUND)
 
-ADD_SUBDIRECTORY(Tutorial)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(Tutorial)
