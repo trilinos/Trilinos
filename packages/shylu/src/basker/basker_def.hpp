@@ -2,7 +2,7 @@
 #define BASKER_DEF_HPP
 
 #include "basker_decl.hpp"
-//#include "basker_scalartraits.hpp"
+#include "basker_scalartraits.hpp"
 #include "basker.hpp"
 
 
@@ -130,7 +130,6 @@ namespace Basker{
 	  }
 	if (done)
 	  {
-	    // std::cout << "done called " << std::endl;
 	    pattern[--*top] = j ;
 	    color[j] = 2 ;
 	    if(head == 0)
@@ -313,8 +312,9 @@ namespace Basker{
 	    t = pinv[j];
 	    value = X[j];
 	    /*note may want to change this to traits*/
-	    absv = (value < 0.0 ? -value : value);
-	    
+	    //absv = (value < 0.0 ? -value : value);
+	    absv = BASKER_ScalarTraits<Entry>::abs(value);
+
 	    if(t == ncol)
 	      {
 		lcnt++;
@@ -341,7 +341,6 @@ namespace Basker{
 	    cout << "Permuting pivot: " << k << " for row: " << maxindex << endl;
 	  }
 #endif	
-
 
 	if(lnnz + lcnt >= L->nnz)
 	  {
@@ -423,7 +422,8 @@ namespace Basker{
 		      }
 		    
 		    L->row_idx[lnnz]  = j;
-		    L->val[lnnz] = X[j]/pivot;
+		    //L->val[lnnz] = X[j]/pivot;
+		    L->val[lnnz] = BASKER_ScalarTraits<Entry>::divide(X[j],pivot);
 		    lnnz++;
 		    
 		  }

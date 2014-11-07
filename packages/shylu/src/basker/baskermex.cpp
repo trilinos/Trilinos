@@ -2,7 +2,9 @@
 #include <matrix.h>
 #include <stdlib.h>
 #include <string.h>
-#include "basker.hpp"
+
+#include "basker_decl.hpp"
+#include "basker_def.hpp"
 
 /* TODO: Need a better way to do this with matlab.*/
 #define Int mwIndex
@@ -45,7 +47,7 @@ void mexFunction
 
     if ( nlhs != 3 || nrhs < 3 )
     {
-        mexErrMsgTxt (" Incorrect number of arguments to sproductmex \n") ;
+      //mexErrMsgTxt (" Incorrect number of arguments to sproductmex \n") ;
     }
 
     Ap = mxGetJc(prhs[0]) ;
@@ -62,54 +64,33 @@ void mexFunction
     unnz = (mwIndex)*t2 ;
     /*printf("lnnz=%d unnz=%d\n", lnnz, unnz);*/
 
-    /* O(n) initialization */
-    ws = (mwIndex *) mxCalloc ( (ancol)+(4*anrow), sizeof(mwIndex)) ;
-    X = (double *) mxCalloc ( 2*anrow, sizeof(double)) ;
-    pinv = (mwIndex *) mxCalloc ( ancol, sizeof(mwIndex)) ;
-
-    Lp = (mwIndex *) mxCalloc ( ancol+1, sizeof(mwIndex)) ;
-    Li = (mwIndex *) mxCalloc ( lnnz, sizeof(Int)) ;
-    Lx = (double *) mxCalloc ( lnnz, sizeof(double)) ;
-
-    Up = (mwIndex *) mxCalloc ( ancol+1, sizeof(mwIndex)) ;
-    Ui = (mwIndex *) mxCalloc ( unnz, sizeof(Int)) ;
-    Ux = (double *) mxCalloc ( unnz, sizeof(double)) ;
-
-    //printf("Calling basker \n");
-    //result = basker_basker_l(Ap, Ai, Ax, anrow, ancol, ws , X, 
-    //            Lp, &Li, &Lx, Up, &Ui, &Ux, &lnnz, &unnz, pinv) ;
-    //   result = basker::basker<long, double>((long *)Ap, (long *)Ai, Ax, anrow, ancol, (long *)ws , X, (long *) Lp,(long **) &Li,  &Lx, (long *)Up, (long **)&Ui,  &Ux, (long *) &lnnz, (long *) &unnz, (long *)pinv) ;
-    result = basker::basker<mwIndex, double>(Ap, Ai, Ax, anrow, ancol, ws , X, Lp, &Li,  &Lx, Up, &Ui,  &Ux,  &lnnz, &unnz,pinv); 
-    //printf("Back in mex function %d \n",Lp[ancol]);
+   
+    Basker::Basker <mwIndex, double> mybasker;
+    mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
+    mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
+    mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
+    mybasker.returnP(&pp);
     
-    if (result)
-    {
-        mxFree (X) ;
-        mxFree (ws) ;
-        mxFree (Lp) ;
-        mxFree (Li) ;
-        mxFree (Lx) ;
-        mxFree (Up) ;
-        mxFree (Ui) ;
-        mxFree (Ux) ;
-        mexErrMsgTxt (" basker failed \n") ;
-    }
-    
-    plhs[0] = mxCreateSparse (anrow, ancol, Lp[ancol], mxREAL) ;
+
+    plhs[0] = mxCreateSparse (anrow, ancol, lnnz+1, mxREAL) ;
     Lp1 = mxGetJc (plhs[0]) ;
     Li1 = mxGetIr (plhs[0]) ;
     Lx1 = mxGetPr (plhs[0]) ;
 
-    plhs[1] = mxCreateSparse (anrow, ancol, Up[ancol], mxREAL) ;
+    plhs[1] = mxCreateSparse (anrow, ancol, unnz, mxREAL) ;
     Up1 = mxGetJc (plhs[1]) ;
     Ui1 = mxGetIr (plhs[1]) ;
     Ux1 = mxGetPr (plhs[1]) ;
 
-    plhs[2] = mxCreateSparse (ancol, ancol, ancol, mxREAL) ;
-    pp = mxGetJc (plhs[2]) ;
-    pi = mxGetIr (plhs[2]) ;
-    px = mxGetPr (plhs[2]) ;
-
+    
+    mwIndex *pp1, *pp2;
+    double *ppx;
+    plhs[2] = mxCreateSparse (ancol, ancol, ancol, mxREAL);
+    pp1 = mxGetJc (plhs[2]);
+    pp2 = mxGetIr (plhs[2]);
+    ppx = mxGetPr (plhs[2]);
+    
+    
     Lp1[0] = Lp[0];
     for ( i = 0 ; i < ancol ; i++)
     {
@@ -131,34 +112,28 @@ void mexFunction
             Ux1[j] = Ux[j];
         }
     } 
-
-    for ( i = 0 ; i < ancol ; i++)
-    {
-      pp[i] = i ;
-      pi[ pinv[i] ] = i ;
-      px[i] = 1 ;
-    }  
-    pp[anrow] = ancol ;
-
-    // for ( i = 0 ; i < ancol ; i++)
-    //   printf("pinv[%d] = %d\n", i, pinv[i]);
-
-    for ( i = 0 ; i < ancol ; i++)
-    {
-        for ( j = Lp1[i] ; j < Lp1[i+1] ; j++ )
-        {
-	  // Li1[j] = pinv[Li1[j]] ;
-        }
-    }
+  
     
+    //mexPrintf("Perm \n");
+    for ( i = 0; i < ancol; i++)
+      {
 
-    mxFree (X) ;
-    mxFree (ws) ;
-    mxFree (pinv) ;
+	//mexPrintf("%d ", pp[i]);
+	pp1[i] = i;
+	//pp2[i] = i;
+	pp2[pp[i]] = i ;
+	ppx[i] = 1;
+      }
+    pp1[ancol] = ancol;
+
+   
+    
+    mxFree (pp) ;
     mxFree (Lp) ;
     mxFree (Li) ;
     mxFree (Lx) ;
     mxFree (Up) ;
     mxFree (Ui) ;
     mxFree (Ux) ;
+    
 }
