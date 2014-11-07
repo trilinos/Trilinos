@@ -76,8 +76,8 @@ ENDIF(APPLE)
 
 #
 # Add the current binary and source directories, the python include
-# path, the NumPy include path, and the Mpi4Py include path to the
-# include directories
+# path, the NumPy include path, the Mpi4Py include path, and the
+# PETSc4Py include path to the include directories
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
@@ -87,6 +87,9 @@ IF(TPL_ENABLE_MPI)
     INCLUDE_DIRECTORIES(${Mpi4Py_INCLUDE_DIR})
   ENDIF(Mpi4Py_FOUND)
 ENDIF(TPL_ENABLE_MPI)
+IF(NOX_ENABLE_PETSC)
+  INCLUDE_DIRECTORIES(${PETSC4PY_INCLUDES})
+ENDIF(NOX_ENABLE_PETSC)
 
 #
 # Copy the pyfragments.swg file to the build directory
