@@ -258,25 +258,25 @@ public:
 
       return false;
 
-      /*Array<GO> overlappedGIDs;
-      RCP<const map_type> overlappedMapG;
+      /*Array<GO> adjsGIDs;
+      RCP<const map_type> adjsMapG;
 
       // Count owned nodes
-      int overlappedNodes = ;
+      int adjsNodes = ;
 
-      // Build a list of the OVERLAPPED global ids...
-      overlappedGIDs.resize (overlappedNodes);
+      // Build a list of the ADJS global ids...
+      adjsGIDs.resize (adjsNodes);
       for (int i = 0; i < ; ++i) {
-	overlappedGIDs[i] = as<int> ();
+	adjsGIDs[i] = as<int> ();
       }
 
-      //Generate overlapped Map for nodes.
-      overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm, node));
+      //Generate adjs Map for nodes.
+      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
 
       RCP<sparse_graph_type> adjsGraph;
 
       // Construct Tpetra::CrsGraph objects.
-      adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+      adjsGraph = rcp (new sparse_graph_type (adjsMapG, 0));
 
       for (int i = 0; i < LocalNumIDs; ++i) {
 
@@ -302,7 +302,7 @@ public:
 	}// *** col loop ***
       }// *** row loop ***
 
-      // Fill-complete overlapping distribution Graph.
+      // Fill-complete adjs Graph.
       adjsGraph->fillComplete ();*/
 
       return true;
