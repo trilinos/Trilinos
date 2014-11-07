@@ -52,8 +52,10 @@ int main (int argc, char *argv[]) {
     //int r_val = Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::invoke(L);
     int r_val = 0;
     Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
-    if (r_val != 0) 
+    if (r_val != 0)  {
       cout << " Error = " << r_val << endl;
+      return r_val;
+    }
   }
 
   cout << LL << endl;

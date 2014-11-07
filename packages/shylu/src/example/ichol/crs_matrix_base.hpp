@@ -287,7 +287,7 @@ namespace Example {
           ijv_type aij(i, jj, b._ax[j]);
           tmp.push_back(aij);
         }
-        // does std algorithm universally work on Kokkos any memory space ?
+
         sort(tmp.begin(), tmp.end(), less<ijv_type>());
         for (auto it=tmp.begin();it<tmp.end();++it) {
           ijv_type aij = (*it);
