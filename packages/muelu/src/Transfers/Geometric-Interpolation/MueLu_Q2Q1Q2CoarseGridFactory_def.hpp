@@ -72,7 +72,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Q2Q1Q2CoarseGridFactory(){
-    std::cout << "I constructed a Q2Q1Q2CoarseGridFactory object... Nothing else to do here." << std::endl;
+    GetOStream(Runtime1) << "I constructed a Q2Q1Q2CoarseGridFactory object... Nothing else to do here." << std::endl;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -98,7 +98,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
 
-    std::cout << "Starting 'build' routine...\n";
+    GetOStream(Runtime1) << "Starting 'build' routine...\n";
 
     // This will create a list of elements on the coarse grid with a
     // predictable structure, as well as modify the fine grid list of
@@ -115,7 +115,7 @@ namespace MueLu {
   void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const
   {
 
-    std::cout << "starting 'BuildCoarseGrid' routine...\n";
+    GetOStream(Runtime1) << "starting 'BuildCoarseGrid' routine...\n";
 
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineElementPDOFs = Get< RCP<Teuchos::SerialDenseMatrix<GO,GO> > >(fineLevel,"PElementList");
 
