@@ -255,7 +255,7 @@ public:
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
       zgid_t const *Ids=NULL;
-      getIDsViewOf(Ids);
+      getIDsViewOf(MESH_VERTEX, Ids);
 
       /*int LocalNumIDs = getLocalNumIDs();
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
