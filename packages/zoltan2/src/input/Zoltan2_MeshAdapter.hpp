@@ -248,6 +248,8 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
+      return false;
+
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -318,8 +320,6 @@ public:
 
       // Fill-complete adjs Graph.
       adjsGraph->fillComplete ();
-
-      return false;
     }
   }
 
