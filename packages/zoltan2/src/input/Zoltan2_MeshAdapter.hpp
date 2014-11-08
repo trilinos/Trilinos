@@ -248,7 +248,17 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      return false;
+      using Tpetra::DefaultPlatform;
+      using Tpetra::global_size_t;
+      using Teuchos::Array;
+      using Teuchos::as;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      // Get the default communicator and Kokkos Node instance
+      RCP<const Comm<int> > comm =
+	DefaultPlatform::getDefaultPlatform ().getComm ();
+      RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
 
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
@@ -257,8 +267,8 @@ public:
       zgid_t const *Ids=NULL;
       getIDsViewOf(MESH_VERTEX, Ids);
 
-      /*int LocalNumIDs = getLocalNumIDs();
-	int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);*/
+      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       Array<GO> adjsGIDs;
       RCP<const map_type> adjsMapG;
@@ -269,13 +279,13 @@ public:
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (adjsNodes);
       for (int i = 0; i < adjsNodes; ++i) {
-	adjsGIDs[i] = Teuchos::as<int> (Ids[i]);
+	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
       getIDsView(Ids);
 
       //Generate adjs Map for nodes.
-      /*adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
+      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
 
       RCP<sparse_graph_type> adjsGraph;
 
@@ -288,7 +298,7 @@ public:
 	//globalRow for Tpetra Graph
 	global_size_t globalRowT = as<global_size_t> (Row);
 
-	int NumAdj;
+	int NumAdjs;
 	if (i + 1 < LocalNumIDs) {
 	  NumAdjs = offsets[i+1];
 	} else {
@@ -299,7 +309,7 @@ public:
 	  int Col = adjacencyIds[j];
 	  int globalCol = as<int> (Col);
 	  //create ArrayView globalCol object for Tpetra
-	  ArrayView<int> globalColAV = arrayView (&globalCol, 1);
+	  ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol, 1);
 
 	  //Update Tpetra adjs Graph
 	  adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
@@ -307,9 +317,9 @@ public:
       }// *** row loop ***
 
       // Fill-complete adjs Graph.
-      adjsGraph->fillComplete ();*/
+      adjsGraph->fillComplete ();
 
-      return true;
+      return false;
     }
   }
 
