@@ -268,14 +268,14 @@ public:
 
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (adjsNodes);
-      /*for (int i = 0; i < adjsNodes; ++i) {
-	adjsGIDs[i] = as<int> (Ids[i]);
+      for (int i = 0; i < adjsNodes; ++i) {
+	adjsGIDs[i] = Teuchos::as<int> (Ids[i]);
       }
 
       getIDsView(Ids);
 
       //Generate adjs Map for nodes.
-      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
+      /*adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
 
       RCP<sparse_graph_type> adjsGraph;
 
