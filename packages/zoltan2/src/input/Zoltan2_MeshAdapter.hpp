@@ -258,7 +258,7 @@ public:
       getIDsViewOf(MESH_VERTEX, Ids);
 
       /*int LocalNumIDs = getLocalNumIDs();
-      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+	int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);*/
 
       Array<GO> adjsGIDs;
       RCP<const map_type> adjsMapG;
@@ -268,7 +268,7 @@ public:
 
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (adjsNodes);
-      for (int i = 0; i < adjsNodes; ++i) {
+      /*for (int i = 0; i < adjsNodes; ++i) {
 	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
