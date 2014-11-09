@@ -59,6 +59,8 @@
 // These files must be included last
 #include <MueLu_UseDefaultTypes.hpp>
 
+void run_sed(const std::string& pattern, const std::string& baseFile);
+
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
@@ -217,6 +219,11 @@ int main(int argc, char *argv[]) {
           std::cout.rdbuf(oldbuffer);
           buffer.close();
 
+          // Create a copy of outputs
+          cmd = "cp -f ";
+          system((cmd + baseFile + ".res " + baseFile + ".resorig").c_str());
+          system((cmd + baseFile + ".out " + baseFile + ".outorig").c_str());
+
           // Tpetra produces different eigenvalues in Chebyshev due to using
           // std::rand() for generating random vectors, which may be initialized
           // using different seed, and may have different algorithm from one
@@ -224,48 +231,36 @@ int main(int argc, char *argv[]) {
           // This leads to us always failing this test.
           // NOTE1 : Epetra, on the other hand, rolls out its out random number
           // generator, which always produces same results
-          // NOTE2 : sed behaviour differs between Mac and Linux
-          // You can run "sed -i 's//' " in Linux, but you always have to specify
-          // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
 
           // Ignore the value of "lambdaMax"
-          std::string sed_cmd = "sed -iorig 's/lambdaMax:\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
-          system((sed_cmd + baseFile + ".res").c_str());
-          system((sed_cmd + baseFile + ".out").c_str());
-
-          std::string sed_pref = "sed -i ";
-#ifdef __APPLE__
-          sed_pref = sed_pref +  "\"\" ";
-#endif
+          run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
 
           // Ignore the value of "lambdaMin"
-          sed_cmd = sed_pref + "'s/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
-          system((sed_cmd + baseFile + ".res").c_str());
-          system((sed_cmd + baseFile + ".out").c_str());
+          run_sed("'s/lambdaMin: [0-9]*.[0-9]*/lambdaMin = <ignored>/'", baseFile);
 
           // Ignore the value of "chebyshev: max eigenvalue"
           // NOTE: we skip lines with default value ([default])
-          sed_cmd = sed_pref + "'/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
-          system((sed_cmd + baseFile + ".res").c_str());
-          system((sed_cmd + baseFile + ".out").c_str());
+          run_sed("'/[default]/! s/chebyshev: max eigenvalue = [0-9]*.[0-9]*/chebyshev: max eigenvalue = <ignored>/'", baseFile);
 
-          // Stript template args for some classes
+          // Ignore the exact type of direct solver (it is selected semi-automatically
+          // depending on how Trilinos was configured
+          run_sed("'s/Amesos\\([2]*\\)Smoother{type = .*}/Amesos\\1Smoother{type = <ignored>}/'", baseFile);
+          run_sed("'s/SuperLU solver interface, direct solve/<Direct> solver interface/'", baseFile);
+          run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
+
+          // Strip template args for some classes
           std::vector<std::string> classes;
           classes.push_back("Xpetra::Matrix");
           classes.push_back("MueLu::Constraint");
-          for (size_t q = 0; q < classes.size(); q++) {
-            sed_cmd = sed_pref + "'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/' ";
-            system((sed_cmd + baseFile + ".res").c_str());
-            system((sed_cmd + baseFile + ".out").c_str());
-          }
+          for (size_t q = 0; q < classes.size(); q++)
+            run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
 #ifdef __APPLE__
           // Some Macs print outs ptrs as 0x0 instead of 0, fix that
-          sed_cmd = sed_pref + "'/RCP/ s/=0x0/=0/g' ";
-          system((sed_cmd + baseFile + ".out").c_str());
+          run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);
 #endif
 
-          // Run comparison
+          // Run comparison (ignoring whitespaces)
           cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
           int ret = system(cmd.c_str());
           if (ret)
@@ -284,4 +279,17 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+}
+
+void run_sed(const std::string& pattern, const std::string& baseFile) {
+  // sed behaviour differs between Mac and Linux
+  // You can run "sed -i 's//' " in Linux, but you always have to specify
+  // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
+  std::string sed_pref = "sed -i ";
+#ifdef __APPLE__
+  sed_pref = sed_pref +  "\"\" ";
+#endif
+
+  system((sed_pref + pattern + " " + baseFile + ".res").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".out").c_str());
 }
