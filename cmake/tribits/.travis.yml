@@ -11,4 +11,4 @@ install:
   - cmake -DCMAKE_BUILD_TYPE:STRING=DEBUG -DTriBITS_ENABLE_Fortran:BOOL=ON ../
   - make
 script:
-  - ctest
+  - ctest -VV
