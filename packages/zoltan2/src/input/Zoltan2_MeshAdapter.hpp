@@ -339,6 +339,9 @@ public:
 
       // Fill-complete adjs Graph.
       adjsGraph->fillComplete ();
+
+      //Fill-complete adjs Graph Transpose.
+      adjsGraphTranspose->fillComplete ();
     }
   }
 
