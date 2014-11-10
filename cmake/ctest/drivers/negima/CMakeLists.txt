@@ -73,7 +73,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  OPENMPI_1.8.3_RELEASE_MueLu
+  OPENMPI_1.8.3_DEBUG_MueLu_KLU2
   ctest_linux_nightly_mpi_debug_muelu_klu2_negima.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
