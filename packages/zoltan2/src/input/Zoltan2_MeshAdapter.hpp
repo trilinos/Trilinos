@@ -273,7 +273,9 @@ public:
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       Array<GO> adjsGIDs;
+      Array<GO> GIDs;
       RCP<const map_type> adjsMapG;
+      RCP<const map_type> MapG;
 
       // Count owned nodes
       int adjsNodes = getLocalNumOf(MESH_VERTEX);
@@ -286,19 +288,33 @@ public:
 
       getIDsView(Ids);
 
+      // Build a list of the global ids...
+      GIDs.resize (LocalNumIDs);
+      for (int i = 0; i < LocalNumIDs; ++i) {
+	GIDs[i] = as<int> (Ids[i]);
+      }
+
       //Generate adjs Map for nodes.
       adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
 
+      //Generate Map for elements.
+      MapG = rcp (new map_type (-1, GIDs (), 0, comm, node));
+
       RCP<sparse_graph_type> adjsGraph;
+      RCP<sparse_graph_type> adjsGraphTranspose;
 
       // Construct Tpetra::CrsGraph objects.
       adjsGraph = rcp (new sparse_graph_type (adjsMapG, 0));
+      adjsGraphTranspose = rcp (new sparse_graph_type (MapG, 0));
 
       for (int i = 0; i < LocalNumIDs; ++i) {
 
 	int Row = Ids[i];
 	//globalRow for Tpetra Graph
 	global_size_t globalRowT = as<global_size_t> (Row);
+	int globalRow = as<int> (Row);
+	//create ArrayView globalRow object for Tpetra
+	ArrayView<int> globalRowAV = Teuchos::arrayView (&globalRow, 1);
 
 	int NumAdjs;
 	if (i + 1 < LocalNumIDs) {
@@ -309,12 +325,15 @@ public:
 
 	for (int j = offsets[i]; j < NumAdjs; ++j) {
 	  int Col = adjacencyIds[j];
+	  //globalCol for Tpetra Graph
+	  global_size_t globalColT = as<global_size_t> (Col);
 	  int globalCol = as<int> (Col);
 	  //create ArrayView globalCol object for Tpetra
 	  ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol, 1);
 
 	  //Update Tpetra adjs Graph
 	  adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
+	  adjsGraphTranspose->insertGlobalIndices (globalColT, globalColAV);
 	}// *** col loop ***
       }// *** row loop ***
 
