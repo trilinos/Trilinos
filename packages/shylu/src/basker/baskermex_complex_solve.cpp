@@ -53,8 +53,7 @@ void mexFunction
     mwIndex j ;
     mwIndex app_xnnz ;
     mwIndex memsize ;
-    mwIndex result ;
-
+   
   
     if ( nlhs != 3 || nrhs < 3 )
     {
@@ -92,13 +91,31 @@ void mexFunction
       {
 	b[i] = complex<double>(br[i], bi[i]);
       }
-	
+
+    int result;
     Basker::Basker <mwIndex, complex<double> > mybasker;
-    mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
-    mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
-    mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
-    mybasker.returnP(&pp);
-    mybasker.solve(b, sol);
+    result = mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
+    if(result == 0)
+      {
+	mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
+	mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
+	mybasker.returnP(&pp);
+	mybasker.solve(b, sol);
+      }
+    else
+      {
+	Lp = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Li = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Lx = (complex<double> *) mxCalloc(anrow, sizeof(complex<double>));
+
+	Up = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Ui = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Ux = (complex<double> *) mxCalloc(anrow, sizeof(complex<double>));
+	
+	pp = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	solution = (complex<double> *) mxCalloc(anrow, sizeof(complex<double>));
+
+      }
     
     plhs[0] = mxCreateSparse (anrow, ancol, lnnz+1, mxCOMPLEX) ;
     Lp1 = mxGetJc (plhs[0]) ;

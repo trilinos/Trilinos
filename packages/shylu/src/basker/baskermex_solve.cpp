@@ -42,9 +42,7 @@ void mexFunction
     mwIndex j ;
     mwIndex app_xnnz ;
     mwIndex memsize ;
-    mwIndex result ;
-
-    
+       
 
     if ( nlhs != 3 || nrhs < 3 )
     {
@@ -69,13 +67,29 @@ void mexFunction
     unnz = (mwIndex)*t2 ;
     /*printf("lnnz=%d unnz=%d\n", lnnz, unnz);*/
 
-   
+    int result;
     Basker::Basker <mwIndex, double> mybasker;
-    mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
-    mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
-    mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
-    mybasker.returnP(&pp);
-    mybasker.solve(rhs, solution);
+    result = mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
+    if(result == 0)
+      {
+	mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
+	mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
+	mybasker.returnP(&pp);
+	mybasker.solve(rhs, solution);
+      }
+    else
+      {
+	Lp = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Li = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Lx = (double *) mxCalloc(anrow, sizeof(double));
+
+	Up = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Ui = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	Ux = (double *) mxCalloc(anrow, sizeof(double));
+	
+	pp = (mwIndex *) mxCalloc(anrow, sizeof(mwIndex));
+	solution = (double *) mxCalloc(anrow, sizeof(double));
+      }
 
 
     plhs[0] = mxCreateSparse (anrow, ancol, lnnz+1, mxREAL) ;
