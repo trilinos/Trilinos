@@ -150,7 +150,7 @@ namespace {
 
     for(size_t ncnt=0; ncnt < mesh->num_nodes; ncnt++) {
       if(graph->sur_elem[ncnt].empty()) {
-	printf("WARNING: Node = "ST_ZU" has no elements\n", ncnt+1);
+	printf("WARNING: Node = " ST_ZU " has no elements\n", ncnt+1);
       } else {
 	size_t nsur = graph->sur_elem[ncnt].size();
 	if (nsur > graph->max_nsur)
@@ -238,6 +238,10 @@ namespace {
       /* tmp_element used to speed up the in_list calc */
       int *tmp_element = (int*)malloc(sizeof(int)*mesh->num_elems);
       if(!tmp_element) {
+	if (problem->face_adj) {
+	  free(hold_elem);
+	  free(pt_list);
+	}
 	Gen_Error(0, "fatal: insufficient memory");
 	return 0;
       }
@@ -449,7 +453,6 @@ namespace {
 		    if (nelem > 1) {
 
 		      /* Then get the correct elements out of the hold array */
-		      nhold = nelem;
 		      for (size_t i = 0; i < nelem; i++)
 			hold_elem[i] = graph->sur_elem[side_nodes[inode]][pt_list[i]];
 		      break;
@@ -590,12 +593,12 @@ namespace {
 			  sprintf(cmesg,
 				  "Error returned while getting side id for communication map.");
 			  Gen_Error(0, cmesg);
-			  sprintf(cmesg, "Element 1: "ST_ZU"", (ecnt+1));
+			  sprintf(cmesg, "Element 1: " ST_ZU "", (ecnt+1));
 			  Gen_Error(0, cmesg);
 			  nnodes = get_elem_info(NNODES, etype);
 			  strcpy(cmesg, "connect table:");
 			  for (int ii = 0; ii < nnodes; ii++) {
-			    sprintf(tmpstr, " "ST_ZU"", (size_t)(mesh->connect[ecnt][ii]+1));
+			    sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[ecnt][ii]+1));
 			    strcat(cmesg, tmpstr);
 			  }
 			  Gen_Error(0, cmesg);
@@ -603,16 +606,16 @@ namespace {
 			  Gen_Error(0, cmesg);
 			  strcpy(cmesg, "side nodes:");
 			  for (int ii = 0; ii < side_cnt; ii++) {
-			    sprintf(tmpstr, " "ST_ZU"", (size_t)(side_nodes[ii]+1));
+			    sprintf(tmpstr, " " ST_ZU "", (size_t)(side_nodes[ii]+1));
 			    strcat(cmesg, tmpstr);
 			  }
 			  Gen_Error(0, cmesg);
-			  sprintf(cmesg, "Element 2: "ST_ZU"", (entry+1));
+			  sprintf(cmesg, "Element 2: " ST_ZU "", (entry+1));
 			  Gen_Error(0, cmesg);
 			  nnodes = get_elem_info(NNODES, etype2);
 			  strcpy(cmesg, "connect table:");
 			  for (int ii = 0; ii < nnodes; ii++) {
-			    sprintf(tmpstr, " "ST_ZU"", (size_t)(mesh->connect[entry][ii]+1));
+			    sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[entry][ii]+1));
 			    strcat(cmesg, tmpstr);
 			  }
 			  Gen_Error(0, cmesg);

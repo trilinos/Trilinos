@@ -47,17 +47,61 @@
 #include <cstdio>
 #include <typeinfo>
 
-int main() {
-  // initialize DefaultExecutionSpace (and potentially HostSpace::execution_space)
-  Kokkos::initialize();
-  printf("Hello World running on %s\n",typeid(Kokkos::DefaultExecutionSpace).name());
+//
+// "Hello world" parallel_for example:
+//   1. Start up Kokkos
+//   2. Execute a parallel for loop in the default execution space,
+//      using a C++11 lambda to define the loop body
+//   3. Shut down Kokkos
+//
+// This example only builds if C++11 is enabled.  Compare this example
+// to 01_hello_world, which uses functors (explicitly defined classes)
+// to define the loop body of the parallel_for.  Both functors and
+// lambdas have their places.
+//
 
-  // run lambda with 15 iterations in parallel on DefaultExecutionSpace
-  Kokkos::parallel_for(15, [=] (int i) {
-    printf("HelloWorld %i\n",i);
+int main (int argc, char* argv[]) {
+  // You must call initialize() before you may call Kokkos.
+  //
+  // With no arguments, this initializes the default execution space
+  // (and potentially its host execution space) with default
+  // parameters.  You may also pass in argc and argv, analogously to
+  // MPI_Init().  It reads and removes command-line arguments that
+  // start with "--kokkos-".
+  Kokkos::initialize (argc, argv);
+
+  // Print the name of Kokkos' default execution space.  We're using
+  // typeid here, so the name might get a bit mangled by the linker,
+  // but you should still be able to figure out what it is.
+  printf ("Hello World on Kokkos execution space %s\n",
+          typeid (Kokkos::DefaultExecutionSpace).name ());
+
+  // Run lambda on the default Kokkos execution space in parallel,
+  // with a parallel for loop count of 15.  The lambda's argument is
+  // an integer which is the parallel for's loop index.  As you learn
+  // about different kinds of parallelism, you will find out that
+  // there are other valid argument types as well.
+  //
+  // NOTE: The lambda's argument MUST be passed by value, NOT by
+  // reference!  Passing it in by reference may cause incorrect
+  // results.  Different iterations of the parallel loop need to have
+  // their own values of the loop counter, which is why you pass it in
+  // by value and not reference.
+  //
+  // The following line of code would look like this in OpenMP:
+  //
+  // #pragma omp parallel for
+  // for (int i = 0; i < 15; ++i) {
+  //   printf ("Hello from i = %i\n", i);
+  // }
+  //
+  // You may notice that the printed numbers do not print out in
+  // order.  Parallel for loops may execute in any order.
+  Kokkos::parallel_for (15, [=] (const int i) {
+    printf ("Hello from i = %i\n", i);
   });
-  
-  // finalize DefaultExecutionSpace (and potentially HostSpace::execution_space)
-  Kokkos::finalize();
+
+  // You must call finalize() after you are done using Kokkos.
+  Kokkos::finalize ();
 }
 

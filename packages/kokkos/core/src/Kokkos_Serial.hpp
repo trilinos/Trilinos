@@ -56,7 +56,7 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
-/*--------------------------------------------------------------------------*/
+#if defined( KOKKOS_HAVE_SERIAL )
 
 namespace Kokkos {
 
@@ -77,11 +77,7 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-
-  //! The device type (same as this class).
-  typedef Serial                device_type ;
+  //! Tag this class as an execution space:
   typedef Serial                execution_space ;
   //! The size_type typedef best suited for this device.
   typedef HostSpace::size_type  size_type ;
@@ -92,6 +88,9 @@ public:
 
   /// \brief  Scratch memory space
   typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
+
+  //! For backward compatibility:
+  typedef Serial                device_type ;
 
   //@}
 
@@ -283,7 +282,7 @@ public:
   // Execution space specific:
 
   SerialTeamMember( int arg_league_rank
-                  , int arg_league_size 
+                  , int arg_league_size
                   , int arg_shared_size
                   );
 };
@@ -466,7 +465,7 @@ public:
 
 namespace Kokkos {
 
-/* 
+/*
  * < Kokkos::Serial , WorkArgTag >
  * < WorkArgTag , Impl::enable_if< Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value >::type >
  *
@@ -480,9 +479,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef TeamPolicy                 execution_policy ; ///< Execution policy
-  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+  //! Tag this class as a kokkos execution policy
+  typedef TeamPolicy      execution_policy ;
+
+  //! Execution space of this execution policy:
+  typedef Kokkos::Serial  execution_space ;
 
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
@@ -523,9 +524,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef TeamVectorPolicy           execution_policy ; ///< Execution policy
-  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+  //! Tag this class as a kokkos execution policy
+  typedef TeamVectorPolicy  execution_policy ;
+
+  //! Execution space of this execution policy:
+  typedef Kokkos::Serial    execution_space ;
 
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
@@ -626,7 +629,7 @@ public:
       }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
+
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update );
@@ -655,7 +658,7 @@ public:
       }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
+
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( typename PType::work_tag() , i , update );
@@ -690,7 +693,7 @@ public:
         Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
+
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update , true );
@@ -712,7 +715,7 @@ public:
         Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
+
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( typename PType::work_tag() , i , update , true );
@@ -808,7 +811,7 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > > 
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > >
 {
 private:
 
@@ -827,7 +830,7 @@ private:
   KOKKOS_FORCEINLINE_FUNCTION static
   void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
                  const FunctorType & >::type functor
-             , const typename Policy::member_type  & member 
+             , const typename Policy::member_type  & member
              ,       typename Reduce::reference_type update )
     { functor( TagType() , member , update ); }
 
@@ -846,11 +849,11 @@ public:
       void * const scratch_reduce = Kokkos::Serial::scratch_memory_resize( reduce_size , shared_size );
 
       const pointer_type result_ptr =
-        result.ptr_on_device() ? result.ptr_on_device() 
+        result.ptr_on_device() ? result.ptr_on_device()
                                : (pointer_type) scratch_reduce ;
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
-      
+
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
         ParallelReduce::template driver< typename Policy::work_tag >
           ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
@@ -863,6 +866,7 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
+#endif // defined( KOKKOS_HAVE_SERIAL )
 #endif /* #define KOKKOS_SERIAL_HPP */
 
 //----------------------------------------------------------------------------

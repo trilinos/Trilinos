@@ -127,7 +127,9 @@ public:
   /** \brief Run algorithm on equality constrained problems (Type-E).
   */
   virtual std::vector<std::string> run( Vector<Real>             &x,
+                                        Vector<Real>             &g, 
                                         Vector<Real>             &l, 
+                                        Vector<Real>             &c, 
                                         Objective<Real>          &obj,
                                         EqualityConstraint<Real> &con,
                                         bool                     print = false ) {
@@ -149,7 +151,7 @@ public:
     Teuchos::RCP<Vector<Real> > s = x.clone();
 
     // Initialize Step
-    this->step_->initialize(x, l, obj, con, *this->state_);
+    this->step_->initialize(x, g, l, c, obj, con, *this->state_);
     output.push_back(this->step_->print(*this->state_,true));
     if ( print ) {
       std::cout << this->step_->print(*this->state_,true);

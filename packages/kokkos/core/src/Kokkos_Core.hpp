@@ -59,11 +59,13 @@
 #include <Kokkos_OpenMP.hpp>
 #endif
 
+#if defined( KOKKOS_HAVE_SERIAL )
+#include <Kokkos_Serial.hpp>
+#endif
+
 #if defined( KOKKOS_HAVE_PTHREAD )
 #include <Kokkos_Threads.hpp>
 #endif
-
-#include <Kokkos_Serial.hpp>
 
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_View.hpp>
@@ -85,7 +87,7 @@ namespace Kokkos {
   void initialize(const int arg1, const int arg2, const int arg3);
 
   void finalize();
-  
+
   void fence();
 }
 

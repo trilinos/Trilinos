@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_04_simple_memoryspaces
   SOURCES simple_memoryspaces.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )

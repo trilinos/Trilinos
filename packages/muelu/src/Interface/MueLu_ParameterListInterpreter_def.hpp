@@ -48,6 +48,8 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#include <Xpetra_Matrix.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_ParameterListInterpreter_decl.hpp"
@@ -119,38 +121,49 @@ namespace MueLu {
   //! Helper functions to compare two paramter lists
   static inline bool areSame(const ParameterList& list1, const ParameterList& list2);
 
-  // This macro is tricky. The use case is when we do not have a level specific parameter, so we
-  // need to take the default value from the general list for all levels, or set it to the default.
-#define MUELU_READ_2LIST_PARAM(paramList, defaultList, paramStr, varType, defaultValue, varName) \
-  varType varName; \
-  if      (paramList.isParameter(paramStr))   varName = paramList.get<varType>(paramStr); \
-  else if (defaultList.isParameter(paramStr)) varName = defaultList.get<varType>(paramStr); \
-  else                                        varName = defaultValue;
+  // Get value from one of the lists, or set it to default
+  // Use case: check for a parameter value in a level-specific sublist, then in a root level list;
+  // if it is absent from both, set it to default
+#define MUELU_SET_VAR_2LIST(paramList, defaultList, paramName, paramType, varName) \
+  paramType varName; \
+  if      (paramList.isParameter(paramName))   varName = paramList.get<paramType>(paramName); \
+  else if (defaultList.isParameter(paramName)) varName = defaultList.get<paramType>(paramName); \
+  else                                         varName = MasterList::getDefault<paramType>(paramName);
 
-  // This macro check whether the variable is in the list.
-  // If it is, it copies its value to the second list, possibly with a new name
-  // Similar to the above macro, we all try to take a value from the default list
-  // NOTE: this essentially converts UserAPI parameter names into MueLu internal ones
-#define MUELU_TEST_AND_SET_PARAM(listWrite, varName, paramList, defaultList, T) \
-  if      (paramList.isParameter(varName)) { \
-    try { \
-      listWrite.set(varName, paramList.get<T>(varName)); \
-    } \
-    catch(Teuchos::Exceptions::InvalidParameterType) { \
-      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType, \
-                                          "Error: parameter \"" << varName << "\" must be of type " << Teuchos::TypeNameTraits<T>::name()); \
-    } \
+#define MUELU_TEST_AND_SET_VAR(paramList, paramName, paramType, varName) \
+  (paramList.isParameter(paramName) ? varName = paramList.get<paramType>(paramName), true : false)
+
+  // Set parameter in a list if it is present in any of two lists
+  // User case: set factory specific parameter, first checking for a level-specific value, then cheking root level value
+#define MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, paramName, paramType, listWrite) \
+  try { \
+      if      (paramList  .isParameter(paramName)) listWrite.set(paramName, paramList  .get<paramType>(paramName)); \
+      else if (defaultList.isParameter(paramName)) listWrite.set(paramName, defaultList.get<paramType>(paramName)); \
   } \
-  else if (defaultList.isParameter(varName)) listWrite.set(varName, defaultList.get<T>(varName));
+  catch(Teuchos::Exceptions::InvalidParameterType) { \
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType, \
+        "Error: parameter \"" << paramName << "\" must be of type " << Teuchos::TypeNameTraits<paramType>::name()); \
+  } \
 
-#define MUELU_TEST_AND_SET_VAR(var, varName, paramList, T) \
-  (paramList.isParameter(varName) ? var = paramList.get<T>(varName), true : false)
+#define MUELU_TEST_PARAM_2LIST(paramList, defaultList, paramName, paramType, cmpValue) \
+  (cmpValue == ( \
+    paramList.isParameter(paramName)   ? paramList  .get<paramType>(paramName) : ( \
+    defaultList.isParameter(paramName) ? defaultList.get<paramType>(paramName) : \
+                                         MasterList::getDefault<paramType>(paramName) ) ) )
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
-    // Create a non const copy of the parameter list
-    // Working with a modifiable list is much much easier than with original one
-    ParameterList paramList = constParamList;
+    ParameterList paramList;
+    MUELU_SET_VAR_2LIST(constParamList, constParamList, "problem: type", std::string, problemType);
+    if (problemType != "unknown") {
+      paramList = *MasterList::GetProblemSpecificList(problemType);
+      paramList.setParameters(constParamList);
+
+    } else {
+      // Create a non const copy of the parameter list
+      // Working with a modifiable list is much much easier than with original one
+      paramList = constParamList;
+    }
 
     // Translate cycle type parameter
     if (paramList.isParameter("cycle type")) {
@@ -165,9 +178,9 @@ namespace MueLu {
 
     this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    MasterList::getDefault<int>("coarse: max size"));
     this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
-    blockSize_              = paramList.get<int> ("number of equations", 1);
+    blockSize_              = paramList.get<int> ("number of equations", MasterList::getDefault<int>("number of equations"));
 
-    (void)MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
+    (void)MUELU_TEST_AND_SET_VAR(paramList, "debug: graph level", int, this->graphOutputLevel_);
 
     // Save level data
     if (paramList.isSublist("export data")) {
@@ -181,9 +194,8 @@ namespace MueLu {
         this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
     }
 
-    // Translate verbosity parameter
-    this->verbosity_ = static_cast<MsgType>(Hierarchy::GetDefaultVerbLevel());      // cast int to enum
-    if (paramList.isParameter("verbosity")) {
+    // Set verbosity parameter
+    {
       std::map<std::string,MsgType> verbMap;
       verbMap["none"]    = None;
       verbMap["low"]     = Low;
@@ -192,8 +204,10 @@ namespace MueLu {
       verbMap["extreme"] = Extreme;
       verbMap["test"]    = Test;
 
-      std::string verbosityLevel = paramList.get<std::string>("verbosity");
-      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError, "Invalid verbosity level: \"" << verbosityLevel << "\"");
+      MUELU_SET_VAR_2LIST(paramList, paramList, "verbosity", std::string, verbosityLevel);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
+                                 "Invalid verbosity level: \"" << verbosityLevel << "\"");
       this->verbosity_ = verbMap[verbosityLevel];
       this->SetVerbLevel(this->verbosity_);
     }
@@ -204,8 +218,8 @@ namespace MueLu {
     // This is not ideal, as we may have "repartition: enable" turned on by default
     // and not present in the list, but it is better than nothing.
     useCoordinates_ = false;
-    if ((paramList.isParameter("repartition: enable")      && paramList.get<bool>("repartition: enable")             == true) ||
-        (paramList.isParameter("aggregation: drop scheme") && paramList.get<std::string>("aggregation: drop scheme") == "distance laplacian")) {
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true) ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian")) {
       useCoordinates_ = true;
 
     } else {
@@ -215,8 +229,8 @@ namespace MueLu {
         if (paramList.isSublist(levelStr)) {
           const ParameterList& levelList = paramList.sublist(levelStr);
 
-          if ((levelList.isParameter("repartition: enable")      && levelList.get<bool>("repartition: enable")             == true) ||
-              (levelList.isParameter("aggregation: drop scheme") && levelList.get<std::string>("aggregation: drop scheme") == "distance laplacian")) {
+          if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "repartition: enable", bool, true) ||
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance laplacian")) {
             useCoordinates_ = true;
             break;
           }
@@ -226,22 +240,16 @@ namespace MueLu {
 
     // Detect if we do implicit P and R rebalance
     changedPRrebalance_ = false;
-    if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      changedPRrebalance_ = MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true))
+      changedPRrebalance_ = MUELU_TEST_AND_SET_VAR(paramList, "repartition: rebalance P and R", bool, this->doPRrebalance_);
 
     // Detect if we use implicit transpose
-    changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
+    changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
 
     // Create default manager
+    // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
-    std::string problemType = paramList.get<std::string>("problem: type", MasterList::getDefault<std::string>("problem: type"));
-    Teuchos::RCP<Teuchos::ParameterList> newParamList;
-    if (problemType != "unknown") {
-      newParamList = MasterList::GetProblemSpecificList(problemType);
-      newParamList->setParameters(paramList);
-      paramList = *newParamList;
-    }
     UpdateFactoryManager(paramList, ParameterList(), *defaultManager);
     defaultManager->Print();
 
@@ -269,10 +277,10 @@ namespace MueLu {
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
-    if (!paramList.isParameter("print initial parameters") || paramList.get<bool>("print initial parameters") == true)
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "print initial parameters", bool, true))
       this->GetOStream(static_cast<MsgType>(Runtime1), 0) << paramList << std::endl;
 
-    if (!paramList.isParameter("print unused parameters") || paramList.get<bool>("print unused parameters") == true) {
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "print unused parameters", bool, true)) {
       // Check unused parameters
       ParameterList unusedParamList;
 
@@ -318,13 +326,14 @@ namespace MueLu {
     // SetParameterList sets default values for non mentioned parameters, including factories
 
     // === Smoothing ===
+    // FIXME: should custom smoother check default list too?
     bool isCustomSmoother =
         paramList.isParameter("smoother: pre or post") ||
         paramList.isParameter("smoother: type")    || paramList.isParameter("smoother: pre type")    || paramList.isParameter("smoother: post type")   ||
         paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
         paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
         paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");;
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: pre or post", std::string, PreOrPost);
     if (PreOrPost == "none") {
       manager.SetFactory("Smoother", Teuchos::null);
 
@@ -368,7 +377,7 @@ namespace MueLu {
         if (paramList.isParameter("smoother: pre type")) {
           preSmootherType = paramList.get<std::string>("smoother: pre type");
         } else {
-          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", preSmootherTypeTmp);
+          MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: type", std::string, preSmootherTypeTmp);
           preSmootherType = preSmootherTypeTmp;
         }
         if (paramList.isParameter("smoother: pre overlap"))
@@ -390,7 +399,7 @@ namespace MueLu {
         if (paramList.isParameter("smoother: post type"))
           postSmootherType = paramList.get<std::string>("smoother: post type");
         else {
-          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", postSmootherTypeTmp);
+          MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: type", std::string, postSmootherTypeTmp);
           postSmootherType = postSmootherTypeTmp;
         }
 
@@ -421,17 +430,18 @@ namespace MueLu {
     }
 
     // === Coarse solver ===
+    // FIXME: should custom coarse solver check default list too?
     bool isCustomCoarseSolver =
         paramList.isParameter("coarse: type")   ||
         paramList.isParameter("coarse: params");
-    if (paramList.isParameter("coarse: type") && paramList.get<std::string>("coarse: type") == "none") {
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "coarse: type", std::string, "none")) {
       manager.SetFactory("CoarseSolver", Teuchos::null);
 
     } else if (isCustomCoarseSolver) {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, "", coarseType);
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "coarse: type", std::string, coarseType);
 
       int overlap = 0;
       if (paramList.isParameter("coarse: overlap"))
@@ -462,31 +472,29 @@ namespace MueLu {
     RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
     ParameterList dropParams;
     dropParams.set("lightweight wrap", true);
-    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
-    // Rename classical to original
-    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
-    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop tol",            paramList, defaultList, double);
-    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: Dirichlet threshold", paramList, defaultList, double);
-
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
     dropFactory->SetParameterList(dropParams);
     manager.SetFactory("Graph", dropFactory);
 
     // Aggregation sheme
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: type", std::string, "uncoupled", aggType);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
     RCP<Factory> aggFactory;
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
       ParameterList aggParams;
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: mode",                      paramList, defaultList, std::string);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: ordering",                  paramList, defaultList, std::string);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: min agg size",              paramList, defaultList, int);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: max agg size",              paramList, defaultList, int);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: max selected neighbors",    paramList, defaultList, int);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 1",            paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 2a",           paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 2b",           paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: enable phase 3",            paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(aggParams, "aggregation: preserve Dirichlet points", paramList, defaultList, bool);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode",               std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",           std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: min agg size",               int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max agg size",               int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max selected neighbors",     int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
 
     } else if (aggType == "coupled") {
@@ -513,7 +521,7 @@ namespace MueLu {
     manager.SetFactory("Nullspace", nullSpace);
 
     // === Prolongation ===
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, "sa", multigridAlgo);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     if (multigridAlgo == "unsmoothed") {
       manager.SetFactory("P", Ptent);
 
@@ -521,14 +529,14 @@ namespace MueLu {
       // Smoothed aggregation
       RCP<SaPFactory> P = rcp(new SaPFactory());
       ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM(Pparams, "sa: damping factor", paramList, defaultList, double);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
       P->SetParameterList(Pparams);
 
-      if (paramList.isParameter("sa: use filtered matrix") && paramList.get<bool>("sa: use filtered matrix")) {
-        // Filtering
+      // Filtering
+      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, true)) {
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
         ParameterList fParams;
-        MUELU_TEST_AND_SET_PARAM(fParams, "filtered matrix: use lumping", paramList, defaultList, bool);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
         P->SetFactory("A", filterFactory);
@@ -538,13 +546,13 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "emin") {
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "emin: pattern", std::string, "AkPtent", patternType);
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
       TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
                                  "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
       // Pattern
       RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
       ParameterList patternParams;
-      MUELU_TEST_AND_SET_PARAM(patternParams, "emin: pattern order", paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
       patternFactory->SetParameterList(patternParams);
       patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
       manager.SetFactory("Ppattern", patternFactory);
@@ -558,8 +566,8 @@ namespace MueLu {
       // Energy minimization
       RCP<EminPFactory> P = rcp(new EminPFactory());
       ParameterList Pparams;
-      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: num iterations",   paramList, defaultList, int);
-      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: iterative method", paramList, defaultList, std::string);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
       P->SetParameterList(Pparams);
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
@@ -574,7 +582,7 @@ namespace MueLu {
 
     // === Restriction ===
     if (!this->implicitTranspose_) {
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "problem: symmetric", bool, true, isSymmetric);
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
       if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
         this->GetOStream(Warnings0) << "Switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
         isSymmetric = true;
@@ -594,13 +602,12 @@ namespace MueLu {
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     ParameterList RAPparams;
-    MUELU_TEST_AND_SET_PARAM(RAPparams, "transpose: use implicit", paramList, defaultList, bool);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
     RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: export visualization data", bool, false, visAgg);
-    if (visAgg) {
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
       RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
       aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       RAP->AddTransferFactory(aggExport);
@@ -618,10 +625,10 @@ namespace MueLu {
     }
 
     // === Repartitioning ===
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
     if (enableRepart) {
 #ifdef HAVE_MPI
-      MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, "zoltan", partName);
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
       // Partitioner
@@ -651,13 +658,13 @@ namespace MueLu {
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
       ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: start level",       paramList, defaultList, int);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: min rows per proc", paramList, defaultList, int);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: max imbalance",     paramList, defaultList, double);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: keep proc 0",       paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: print partition distribution", paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: remap parts",       paramList, defaultList, bool);
-      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: remap num values",  paramList, defaultList, int);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: keep proc 0",                  bool, repartParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
@@ -710,8 +717,10 @@ namespace MueLu {
 #endif
     }
   }
-#undef MUELU_READ_2LIST_PARAM
-#undef MUELU_TEST_AND_SET_PARAM
+#undef MUELU_SET_VAR_2LIST
+#undef MUELU_TEST_AND_SET_VAR
+#undef MUELU_TEST_AND_SET_PARAM_2LIST
+#undef MUELU_TEST_PARAM_2LIST
 
   int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
@@ -788,10 +797,10 @@ namespace MueLu {
     //     <ParameterList name="Matrix">
     //   </ParameterList>
     if (paramList.isSublist("Matrix"))
-      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", 1);
+      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
 
     // create new FactoryFactory object if necessary
-    if (factFact_ == Teuchos::null) 
+    if (factFact_ == Teuchos::null)
       factFact_ = Teuchos::rcp(new FactoryFactory());
 
     // Parameter List Parsing:
@@ -997,12 +1006,18 @@ namespace MueLu {
   // ======================================= MISC functions ==============================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupMatrix(Matrix& A) const {
-    if (A.GetFixedBlockSize() != blockSize_)
-      this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
-          << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator& Op) const {
+    try {
+      Matrix& A = dynamic_cast<Matrix&>(Op);
+      if (A.GetFixedBlockSize() != blockSize_)
+        this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
-    A.SetFixedBlockSize(blockSize_);
+      A.SetFixedBlockSize(blockSize_);
+
+    } catch (std::bad_cast& e) {
+      this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

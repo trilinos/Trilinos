@@ -64,6 +64,7 @@ namespace stk {
       m_shutdownRequested(false),
       m_inputFileRequired(true),
       m_checkSubCycle(false),
+      m_checkSmRegion(false),
       m_isZapotec(false),
       m_worldComm(MPI_COMM_NULL),
       m_parallelComm(MPI_COMM_NULL),

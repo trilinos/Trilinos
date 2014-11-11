@@ -201,6 +201,26 @@ struct ApplyView<DataType,NoLayout,DeviceType> {
 const int global_num_rows = 11;
 const int global_num_cols = 9;
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Size, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef Sacado::UQ::PCE<Storage> PCE;
+  typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename PCE::cijk_type Cijk;
+
+  // Build Cijk tensor
+  const int stoch_dim = 2;
+  const int poly_ord = 3;
+  Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
+
+  const size_type num_rows = 11;
+  const size_type num_cols = cijk.dimension();
+  ViewType v("view", cijk, num_rows, num_cols);
+  TEUCHOS_TEST_EQUALITY(v.size(), num_rows, out, success);
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy, Storage, Layout )
 {
   typedef typename Storage::device_type Device;
@@ -578,6 +598,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
 */
 
 #define VIEW_UQ_PCE_TESTS_STORAGE_LAYOUT( STORAGE, LAYOUT )             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_PCE, Size, STORAGE, LAYOUT )                            \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, DeepCopy, STORAGE, LAYOUT )                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \

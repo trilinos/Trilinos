@@ -84,9 +84,9 @@ namespace MueLu {
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
-  "<Parameter name=\"smoother: type\" type=\"string\" value=\"gs\"/>"
-  "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"gs\"/>"
-  "<Parameter name=\"smoother: post type\" type=\"string\" value=\"gs\"/>"
+  "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+  "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
+  "<Parameter name=\"smoother: post type\" type=\"string\" value=\"RELAXATION\"/>"
   "<ParameterList name=\"smoother: params\"/>"
   "<ParameterList name=\"smoother: pre params\"/>"
   "<ParameterList name=\"smoother: post params\"/>"
@@ -102,7 +102,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
-  "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"2147483647\"/>"
+  "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: enable phase 1\" type=\"bool\" value=\"true\"/>"
@@ -118,7 +118,7 @@ namespace MueLu {
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
-  "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33333333\"/>"
+  "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
@@ -151,6 +151,8 @@ namespace MueLu {
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           
+            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
@@ -163,6 +165,8 @@ namespace MueLu {
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           
+            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
@@ -171,9 +175,11 @@ namespace MueLu {
 
     "<ParameterList name=\"MueLu\">"
     
-            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
           
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
@@ -183,9 +189,11 @@ namespace MueLu {
 
     "<ParameterList name=\"MueLu\">"
     
-            "<Parameter name=\"number of equations\" type=\"int\" value=\"6\"/>"
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
           
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
@@ -243,6 +251,8 @@ namespace MueLu {
         
     "</ParameterList>"
   
+            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
           
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"

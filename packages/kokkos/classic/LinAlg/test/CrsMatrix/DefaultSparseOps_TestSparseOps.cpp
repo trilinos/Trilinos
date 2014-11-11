@@ -72,7 +72,27 @@ namespace {
 
   typedef double scalar_type;
   typedef int ordinal_type;
+
+  // mfh 28 Oct 2014: This test uses the default Node type.  It
+  // doesn't build correctly if the default Node type is one of the
+  // CUDA Node types.  Thus, we go through a bit of effort not to use
+  // a CUDA Node type here.
+#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) || defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::SerialNode node_type;
+#  elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+  // FIXME (mfh 28 Oct 2014) Currently, this Node type ALWAYS exists
+  // if KokkosCompat and KokkosCore are enabled, because
+  // Kokkos::Serial always exists if KokkosCore is enabled.  There is
+  // currently no macro for protecting use of Kokkos::Serial, other
+  // than HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT.
+  typedef Kokkos::Compat::KokkosSerialWrapperNode node_type;
+#  else
+#    error "Sorry, this file will not build because no Node type other than the CUDA wrapper Node is defined."
+#  endif
+#else
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+#endif
 
   typedef Teuchos::ScalarTraits<double> STM;
 

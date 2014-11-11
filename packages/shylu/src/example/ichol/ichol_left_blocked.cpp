@@ -1,11 +1,11 @@
+#include <Kokkos_Core.hpp>
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
-
-#include "crs_row_view.hpp"
 #include "crs_matrix_view.hpp"
+#include "crs_row_view.hpp"
 
-#include "ichol_left_blocked.hpp"
+#include "ichol.hpp"
 
 using namespace std;
 
@@ -13,18 +13,28 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+typedef Kokkos::OpenMP space_type; 
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 typedef Example::Uplo Uplo;
+typedef Example::Algo Algo;
+
+using Example::IChol;
 
 int main (int argc, char *argv[]) {
   if (argc < 3) {
     cout << "Usage: " << argv[0] << " filename" << " blksize" << endl;
     return -1;
   }
+
+  Kokkos::initialize();
+  cout << "Default execution space initialized = "
+       << typeid(Kokkos::DefaultExecutionSpace).name()
+       << endl;
   
-  CrsMatrixBase A;
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -32,16 +42,28 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  A.importMatrixMarket(in);
-  A.showMe(cout);
+  AA.importMatrixMarket(in);
+  cout << AA << endl;
 
-  CrsMatrixBase L(A, Uplo::Lower);
+  CrsMatrixBase LL("Lower Triangular of AA");
+  LL.copy(Uplo::Lower, AA);
 
-  int r_val = Example::ichol_left_blocked_lower(CrsMatrixView(L), atoi(argv[2]));
-  if (r_val != 0) 
-    cout << " Error = " << r_val << endl;
+  {
+    CrsMatrixView L(LL);
 
-  L.showMe(cout);  
+    //int r_val = IChol<Uplo::Lower,Algo::LeftBlocked>::invoke(L);
+    int r_val = 0;
+    IChol<Uplo::Lower,Algo::LeftBlocked>::blocksize = atoi(argv[2]);
+    IChol<Uplo::Lower,Algo::LeftBlocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
+    if (r_val != 0) { 
+      cout << " Error = " << r_val << endl;
+      return r_val;
+    }
+  }
+
+  cout << LL << endl;
+
+  Kokkos::finalize();
 
   return 0;
 }

@@ -47,6 +47,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include <Xpetra_Operator.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -807,7 +808,7 @@ namespace MueLuTests {
       // fix proposed here is to simply set corresponding fatories to NoFactory, so
       // they would fetch user data.
       FactoryManager M0, M1, M2;
-      M0.SetFactory("Smoother", SmooFact);
+      M0.SetFactory("Smoother", Teuchos::null);               // no smoother, as we assume Operator != Matrix
       M1.SetFactory("A",        MueLu::NoFactory::getRCP());
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
@@ -825,12 +826,12 @@ namespace MueLuTests {
       H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
 
       RCP<Level> l0 = H.GetLevel(0);
-      l0->Set("A",          A);
+      l0->Set("A",          rcp_dynamic_cast<Operator>(A));
       H.AddNewLevel();
       RCP<Level> l1     = H   .GetLevel(1);
       RCP<Level> l1_aux = Haux.GetLevel(1);
-      l1->Set("P",          l1_aux->Get<RCP<Matrix> >     ("P"));
-      l1->Set("R",          l1_aux->Get<RCP<Matrix> >     ("R"));
+      l1->Set("P",          l1_aux->Get<RCP<Operator> >   ("P"));
+      l1->Set("R",          l1_aux->Get<RCP<Operator> >   ("R"));
       l1->Set("A",          l1_aux->Get<RCP<Matrix> >     ("A"));
       l1->Set("Nullspace",  l1_aux->Get<RCP<MultiVector> >("Nullspace", nullFactory));
 

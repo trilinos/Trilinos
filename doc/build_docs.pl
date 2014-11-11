@@ -14,10 +14,13 @@ use Getopt::Long;
 
 # Read in commandline options
 my $skipBuild = 0;
+my $build_dir = 0;
 
 GetOptions(
-  "skip-build!" => \$skipBuild
-   );
+  "skip-build!" => \$skipBuild,
+  "build_dir:s" => \$build_dir );
+
+print "Build Directory is $build_dir\n";
 
 # Figure out Trilinos directory
 my $trilinosDir = `pwd`;
@@ -35,6 +38,9 @@ print "\n";
 if(!$skipBuild) {
   print "\nGenerating package documentation ...\n";
   find (\&buildDocs, $trilinosDir);
+  if($build_dir) {
+    find (\&copyXML, $trilinosDir);
+  }
 }
 else {
   print "\nSkipping generation of package documentation ...\n";
@@ -141,10 +147,33 @@ sub buildDocs {
         
         my $output = `$absFile 2>&1`;
         my $failed = $?;
-    
     }    
     
 } # buildDocs
+
+# Run any copy_xml_to_src_html.py script in any doc directory
+sub copyXML {
+
+    use File::Basename;
+    my $absFile = $File::Find::name;
+    my $file = basename($absFile);
+    my $dir = dirname($absFile);
+
+    # Is this file in a 'doc' directory?
+    # Is this file named 'copy_xml_to_src_html.py'?
+
+    if ($dir =~ m/doc$/ && $file =~ m/copy_xml_to_src_html.py$/) {
+
+        my $shortDir = $absFile;
+        $shortDir =~ m/.*\/packages\/(.*)\/doc.*/;
+        $shortDir = $1;
+        print "copy XML for $shortDir...\n";
+
+        my $output = `$absFile $build_dir 2>&1`;
+        my $failed = $?;
+    }
+
+} # copyXML
 
 # Fill array of html/index.html paths
 sub fillIndexList {

@@ -258,7 +258,8 @@ TEST_F( qthread , team_vector )
 
 TEST_F( qthread , task_policy )
 {
-  // TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
+  TestTaskPolicy::test_task_dep< Kokkos::Qthread >( 10 );
+  TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
   for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Qthread >(i);
   for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
 }

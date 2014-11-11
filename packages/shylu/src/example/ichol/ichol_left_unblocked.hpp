@@ -2,6 +2,11 @@
 #ifndef __ICHOL_LEFT_UNBLOCKED_HPP__
 #define __ICHOL_LEFT_UNBLOCKED_HPP__
 
+/// \file ichol_left_unblocked.hpp
+/// \brief Unblocked incomplete Chloesky factorization.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
+#include "util.hpp"
 #include "partition.hpp"
 #include "scale.hpp"
 #include "dot.hpp"
@@ -10,18 +15,18 @@
 namespace Example { 
 
   using namespace std;
-  
-  // use Lower Triangular part only
+
+  template<>
   template<typename CrsMatViewType>
-  inline int 
-  ichol_left_unblocked_lower(const CrsMatViewType A) {
-    typedef typename CrsMatViewType::value_type   value_type;
-    typedef typename CrsMatViewType::ordinal_type ordinal_type;
-
-    // if succeed, return 0 
-    int r_val = 0;
+  KOKKOS_INLINE_FUNCTION
+  int 
+  IChol<Uplo::Lower,Algo::LeftUnblocked>::invoke(const CrsMatViewType A) {
+    typedef typename CrsMatViewType::value_type    value_type;
+    typedef typename CrsMatViewType::ordinal_type  ordinal_type;
+    typedef typename CrsMatViewType::row_view_type row_view_type;
+    
     value_type zero = 0.0;
-
+    
     CrsMatViewType ATL, ATR,      A00,  a01,     A02,
       /**/         ABL, ABR,      a10t, alpha11, a12t,
       /**/                        A20,  a21,     A22;    
@@ -38,28 +43,26 @@ namespace Example {
       // -----------------------------------------------------
 
       // extract diagonal from alpha11 
-      auto alpha = alpha11.extractRow(0);
+      row_view_type alpha = alpha11.extractRow(0);
       ordinal_type id = alpha.Index(0);
       value_type &alpha_val = (id < 0 ? zero : alpha.Value(id));
                            
       // if encounter null diag, return the -(row + 1)
-      if (abs(alpha_val) == 0.0) {
-        r_val = -(ATL.NumRows() + 1);
-        break;
-      }
+      if (abs(alpha_val) == 0.0) 
+        return -(ATL.NumRows() + 1);
 
       // update on alpha_val
-      auto r10t = a10t.extractRow(0);
+      row_view_type r10t = a10t.extractRow(0);
       alpha_val -= dot(r10t, r10t);
 
       // sparse gemv 
       gemv_nt_t(-1.0, A20, a10t, 1.0, a21);
 
       // sqrt on diag
-      alpha_val = sqrt(alpha_val);
+      alpha_val = sqrt(real(alpha_val));
 
       // sparse inverse scale
-      scale(1.0/alpha_val, a21);
+      scale(1.0/real(alpha_val), a21);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,
@@ -68,7 +71,7 @@ namespace Example {
                        Partition::TopLeft);
     }
 
-    return r_val;
+    return 0;
   }
 
 }

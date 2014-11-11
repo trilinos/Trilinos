@@ -1,0 +1,23 @@
+/*!
+\page Tpetra_Lesson06 Tpetra Lesson 06: Custom Operator
+\brief Writing a custom subclass of Tpetra::Operator
+
+\section Tpetra_Lesson06_Topics Lesson topics
+
+This lesson shows an example of a custom subclass of Tpetra::Operator.
+Tpetra::Operator generalizes the idea of a sparse matrix-vector
+product.  While Tpetra::CrsMatrix always represents a sparse matrix, a
+Tpetra::Operator is just a function from an input Tpetra::MultiVector
+to an output Tpetra::MultiVector.
+
+This example implements a Tpetra::Operator subclass that applies a 1-D
+Laplacian with Dirichlet boundary conditions.  It accepts a
+communicator and a global number of mesh points.
+
+\section Tpetra_Lesson06_Example Code example
+
+This example shows how to implement a custom Tpetra::Operator.
+
+\include lesson06_custom_operator.cpp
+
+*/

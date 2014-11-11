@@ -29,8 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Sacado_Random.hpp"
 #include "Sacado.hpp"
+#include "Sacado_Random.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 
 #include "Fad/fad.h"

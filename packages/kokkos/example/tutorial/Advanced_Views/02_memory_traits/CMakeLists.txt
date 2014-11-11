@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_advancedviews_02_memory_traits
   SOURCES memory_traits.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )

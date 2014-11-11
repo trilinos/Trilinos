@@ -11,61 +11,73 @@
 namespace Example { 
 
   using namespace std;
-  
+
   /// \class CrsRowView
-  template<typename CrsMatType>
+  template<typename CrsMatBaseType>
   class CrsRowView : public Disp {
   public:
-    typedef CrsMatType::value_type   value_type;
-    typedef CrsMatType::ordinal_type ordinal_type;
-
+    typedef typename CrsMatBaseType::ordinal_type            ordinal_type;
+    typedef typename CrsMatBaseType::value_type              value_type;
+    typedef typename CrsMatBaseType::ordinal_type_array_view ordinal_type_array_view;
+    typedef typename CrsMatBaseType::value_type_array_view   value_type_array_view;
+    
   private:
-    ordinal_type  _offn;    // offset in columns
-    ordinal_type  _n;       // column size  
-    ordinal_type  _nnz;     // # of nonzeros in row
-    ordinal_type *_aj;      // column index compressed format in row
-    value_type   *_ax;      // values 
+    ordinal_type _offn;    // offset in columns
+    ordinal_type _n;       // column size  
+    ordinal_type _nnz;     // # of nonzeros in row
+
+    // this assumes a contiguous memory buffer
+    ordinal_type_array_view _aj;      // column index compressed format in row
+    value_type_array_view   _ax;      // values 
 
   public:
     KOKKOS_INLINE_FUNCTION
-    ordinal_type NumCols() const                   { return _n;             }
+    ordinal_type NumCols() const { return _n; }
 
     KOKKOS_INLINE_FUNCTION
-    ordinal_type NumNonZeros() const               { return _nnz;           } 
+    ordinal_type NumNonZeros() const { return _nnz; } 
 
     KOKKOS_INLINE_FUNCTION
-    ordinal_type Col(const ordinal_type j) const   { return _aj[j] - _offn; }
+    ordinal_type Col(const ordinal_type j) const { return _aj[j] - _offn; }
 
     KOKKOS_INLINE_FUNCTION
-    value_type&  Value(const ordinal_type j)       { return _ax[j];         }
+    value_type& Value(const ordinal_type j) { return _ax[j]; }
 
     KOKKOS_INLINE_FUNCTION
-    value_type   Value(const ordinal_type j) const { return _ax[j];         }
-
+    value_type Value(const ordinal_type j) const { return _ax[j]; }
+    
     KOKKOS_INLINE_FUNCTION    
     ordinal_type Index(const ordinal_type col) const {
-      // empty; return 0
-      if (_aj == NULL) return -1;
+      if (_aj.dimension_0() == 0)
+        return -1;
       
-      // search 
-      ordinal_type base_col = (_offn + col);
-      ordinal_type j = (lower_bound(_aj, _aj+_nnz, base_col) - _aj);
+      // Qeustion : parallel scan ? 
+      ordinal_type base_col = _offn + col;
+      ordinal_type *ptr = _aj.ptr_on_device();
+      ordinal_type j = lower_bound(ptr, ptr+_nnz, base_col) - ptr;
       
       return (_aj[j] == base_col ? j : -1);
     }
 
     KOKKOS_INLINE_FUNCTION
-    value_type get(const ordinal_type col) const {
+    value_type ValueAtColumn(const ordinal_type col) const {
       ordinal_type j = Index(col);
       return (j < 0 ? value_type(0) : _ax[j]);
     }
 
-    KOKKOS_INLINE_FUNCTION
-    CrsRowView(ordinal_type offn,
-               ordinal_type n,
-               ordinal_type nnz,
-               ordinal_type *aj,
-               value_type   *ax) 
+    CrsRowView()
+      : _offn(0),
+        _n(0),
+        _nnz(0),
+        _aj(),
+        _ax() 
+    { }
+
+    CrsRowView(const ordinal_type            offn,
+               const ordinal_type            n,
+               const ordinal_type            nnz,
+               const ordinal_type_array_view aj,
+               const value_type_array_view   ax) 
       : _offn(offn),
         _n(n),
         _nnz(nnz),
@@ -73,13 +85,15 @@ namespace Example {
         _ax(ax) 
     { }
 
-    KOKKOS_INLINE_FUNCTION    
     ostream& showMe(ostream &os) const {                                                
-      const int w = 6;
-      os << " offset = " << setw(w) << _offn << endl; 
+      os << "  offset = " << _offn
+         << ", nnz = " << _nnz 
+         << endl; 
       for (ordinal_type j=0;j<_nnz;++j) {
-        os << setw(w) << Col(j) << "  "
-           << _ax[j] << endl;
+        const value_type val = _ax[j];
+        os << "(" << Col(j) << ", "
+           << val << ")"
+           << endl;
       }                                                                                                   
       return os;
     }

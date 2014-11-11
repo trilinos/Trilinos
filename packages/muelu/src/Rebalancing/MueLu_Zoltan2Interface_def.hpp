@@ -104,9 +104,6 @@ namespace MueLu {
 
     GO               numParts = level.Get<GO>("number of partitions");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError,
-                               "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
-
     size_t dim       = coords->getNumVectors();
     LO     blkSize   = A->GetFixedBlockSize();
 

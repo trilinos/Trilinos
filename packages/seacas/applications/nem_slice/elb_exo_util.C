@@ -300,11 +300,11 @@ int read_mesh_params(const std::string &exo_file,
   printf("ExodusII mesh information\n");
   if(strlen(mesh->title) > 0)
     printf("\ttitle: %s\n", mesh->title);
-  printf("\tgeometry dimension: "ST_ZU"\n", mesh->num_dims);
-  printf("\tnumber of nodes: "ST_ZU"\tnumber of elements: "ST_ZU"\n", mesh->num_nodes,
+  printf("\tgeometry dimension: " ST_ZU "\n", mesh->num_dims);
+  printf("\tnumber of nodes: " ST_ZU "\tnumber of elements: " ST_ZU "\n", mesh->num_nodes,
          mesh->num_elems);
-  printf("\tnumber of element blocks: "ST_ZU"\n", mesh->num_el_blks);
-  printf("\tnumber of node sets: "ST_ZU"\tnumber of side sets: "ST_ZU"\n",
+  printf("\tnumber of element blocks: " ST_ZU "\n", mesh->num_el_blks);
+  printf("\tnumber of node sets: " ST_ZU "\tnumber of side sets: " ST_ZU "\n",
          mesh->num_node_sets, mesh->num_side_sets);
 
   return 1;

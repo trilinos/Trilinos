@@ -814,6 +814,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     "\n"
     "SET(FAIL_FAST ${PARSE_FAIL_FAST})\n"
     "\n"
+    "SET(SHOW_START_END_DATE_TIME ${${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME})\n"
+    "\n"
     "#\n"
     "# Test invocation\n"
     "#\n"

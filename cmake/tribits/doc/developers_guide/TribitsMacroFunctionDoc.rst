@@ -1640,47 +1640,49 @@ tests and examples in a uniform way.
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 +++++++++++++++++++++++++++++++++++++++++
 
-Allow listed packages to be missing.  This macro is typically called in a
-Package's Dependencies.cmake file.
+Allow listed packages to be missing and automatically excluded from the
+package dependency data-structures.
 
 Usage::
 
   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pkg0> <plg1> ...)
 
 If the missing upstream SE package ``<pkgi>`` is optional, then the effect
-will be to simply ignore the missing package and remove it from the
-dependency list for downstream SE packages that have an optional dependency
-on the missing upstream SE package.  However, all downstream SE packages
-that have a required dependency on the missing upstream SE package
+will be to simply ignore the missing package (never added to package's list
+and not added to dependency data-structures) and remove it from the
+dependency lists for downstream SE packages that have an optional dependency
+on the missing upstream SE package ``<pkgi>``.  However, all downstream SE
+packages that have a required dependency on the missing upstream SE package
 ``<pkgi>`` will be hard disabled,
 i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF``.
 
-This function is typically used for marking packages in external TriBITS
-repos where the repos might be missing.  This allows the downstream repos
-and packages to still be enabled (assuming they don't have required
-dependencies on the missing packages) when one or more upstream repos are
-missing.
+This macro just sets the cache variable
+``<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE`` for each SE package
+``<pkgi>``.  **WARNING**: Using this function effectively turns off error
+checking for misspelled package names so it is important to only use it when
+it absolutely is needed.  Therefore, when doing development involving these
+packages, it is usually a good idea to set::
 
-Using this function effectively turns off error checking for misspelled
-package names so it is important to only use it when it absolutely is
-needed.  The typical place to call this macro is in the
-`<packageDir>/cmake/Dependencies.cmake`_ files for the packages who list
-dependencies on the possibility missing upstream SE package(s).  Therefore,
-if a given package is not defined, the ``Dependencies.cmake`` file that
-calls this macro will not be processed and the error checking for the listed
-packages will not be turned off.  Otherwise, this macro can also be called
-from any file processed at the top-level scope *before* all of the
-``<packageDir>/cmake/Dependencies.cmake`` files are processed (see `Reduced
-Package Dependency Processing`_).  For tweaking at the project level, likely
-the best place to call this macro is in the file
-`<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.  In this way, it will
-not turn off error checking in other projects where the given packages may
-always be required and therefore one does not want to turn off error
-checking for mispelled package names.
+  -D<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE
 
-NOTE: Currently, this macro just sets the non-cache local variables
-``<pkgi>__ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE``.  Therefore this macro must
-be called from the top-level CMake project scope for it to have an effect.
+so that it will catch errors in the mispelling of package names or source
+directories.
+
+This macro is typically called in one of two different contexts:
+
+* Called from `<packageDir>/cmake/Dependencies.cmake`_ when the upstream
+  package ``<pkgi>`` is defined in an optional upstream `TriBITS
+  Repository`_.  This allows the downstream repos and packages to still be
+  enabled (assuming they don't have required dependencies on the missing
+  packages) when one or more upstream repos are missing.
+
+* Called from `<repoDir>/PackagesList.cmake`_ when the package ``<pkgi>``
+  might be defined in an optional non-TriBITS repo (see `How to insert a
+  package into an upstream repo`_).
+
+For some meta-projects that composes packages from may different TriBITS
+repositories, one might need to call this function from the file
+`<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.
 
 TRIBITS_CONFIGURE_FILE()
 ++++++++++++++++++++++++
@@ -2523,6 +2525,11 @@ Usage::
 This macro must be called after `TRIBITS_PACKAGE_DECL()`_ but before
 `TRIBITS_PACKAGE_DEF()`_.
 
+TRIBITS_PROCESS_ENABLED_TPL()
++++++++++++++++++++++++++++++
+
+Processs an enabled TPL's FindTPL${TPL_NAME}.cmake module.
+
 TRIBITS_PROJECT()
 +++++++++++++++++
 
@@ -2750,7 +2757,7 @@ specifies a TPL which contains the columns (ordered 0-2):
    find module will be assumed to be under that this directory with the
    standard name (e.g. ``cmake/tpls/FindTPL<tplName>.cmake``).  A standard
    way to write a ``FindTPL<tplName>.cmake`` module is to use the function
-   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+   `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.
 
 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
@@ -2854,16 +2861,17 @@ Usage::
 NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
 this macro but limitations of the CMake language make it necessary to do so.
 
-TRIBITS_TPL_DECLARE_LIBRARIES()
-+++++++++++++++++++++++++++++++
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
++++++++++++++++++++++++++++++++++++++++++++++
 
 Function that sets up cache variables for users to specify where to find a
 `TriBITS TPL`_'s headers and libraries.  This function is typically called
-inside of a ``FindTPL<tplName>.cmake`` file (see `${TPL_NAME}_FINDMOD`_).
+inside of a ``FindTPL<tplName>.cmake`` moulde file (see
+`${TPL_NAME}_FINDMOD`_).
 
 Usage::
 
-  TRIBITS_TPL_DECLARE_LIBRARIES(
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES(
     <tplName>
     [REQUIRED_HEADERS <header1> <header2> ...]
     [MUST_FIND_ALL_HEADERS]
@@ -2880,22 +2888,22 @@ The input arguments to this function are:
   ``<tplName>``
 
     Name of the TPL that is listed in a `<repoDir>/TPLsList.cmake`_ file.
-    Below, this is referred to as the local CMake variable ``TPL_NAME``.
 
   ``REQUIRED_HEADERS``
 
     List of header files that are searched in order to find the TPL's
-    include directories files using ``FIND_PATH()``.
+    include directories files using ``FIND_PATH()``. 
 
   ``MUST_FIND_ALL_HEADERS``
 
     If set, then all of the header files listed in ``REQUIRED_HEADERS`` must
-    be found in order for ``TPL_${TPL_NAME}_INCLUDE_DIRS`` to be defined.
+    be found in order for ``TPL_<tplName>_INCLUDE_DIRS`` to be defined.
 
   ``REQUIRED_LIBS_NAMES``
 
     List of libraries that are searched for when looking for the TPL's
-    libraries using ``FIND_LIBRARY()``.
+    libraries using ``FIND_LIBRARY()``.  This list can be overridden by the
+    user by setting ``<tplName>_LIBRARY_DIRS`` (see below).
 
   ``MUST_FIND_ALL_LIBS``
 
@@ -2911,22 +2919,19 @@ support for an optional Third-Party Library (TPL)`_.
 
 The following (cache) variables, if set, will be used by that this function:
 
-  ``${TPL_NAME}_INCLUDE_DIRS`` (type ``PATH``)
+  ``<tplName>_INCLUDE_DIRS`` (type ``PATH``)
 
     List of paths to search first for header files defined in
     ``REQUIRED_HEADERS``.
 
-  ``${TPL_NAME}_INCLUDE_NAMES`` (type ``STRING``)
-
-    List of include file names to be looked for instead of what is specified
-    in ``REQUIRED_HEADERS``.
-
-  ``${TPL_NAME}_LIBRARY_DIRS`` (type ``PATH``)
+  ``<tplName>_LIBRARY_DIRS`` (type ``PATH``)
 
     The list of directories to search first for libraries defined in
-    ``REQUIRED_LIBS_NAMES``.
+    ``REQUIRED_LIBS_NAMES``.  If, for some reason, no libraries should be
+    linked in for this particular configuration, then setting
+    ``<tplName>_LIBRARY_DIRS=OFF`` will 
 
-  ``${TPL_NAME}_LIBRARY_NAMES`` (type ``STRING``)
+  ``<tplName>_LIBRARY_NAMES`` (type ``STRING``)
 
     List of library names to be looked for instead of what is specified in
     ``REQUIRED_LIBS_NAMES``.
@@ -2935,20 +2940,54 @@ This function sets global variables to return state so it can be called from
 anywhere in the call stack.  The following cache variables are defined that
 are intended for the user to set and/or use:
 
-  ``TPL_${TPL_NAME}_INCLUDE_DIRS`` (type ``PATH``)
+  ``TPL_<tplName>_INCLUDE_DIRS`` (type ``PATH``)
 
     A list of common-separated full directory paths that contain the TPL's
     header files.  If this variable is set before calling this function,
     then no headers are searched for and this variable will be assumed to
     have the correct list of header paths.
 
-  ``TPL_${TPL_NAME}_LIBRARIES`` (type ``FILEPATH``)
+  ``TPL_<tplName>_LIBRARIES`` (type ``FILEPATH``)
 
     A list of commons-separated full library names (i.e. output from
     ``FIND_LIBRARY()``) for all of the libraries found for the TPL.  If this
     variable is set before calling this function, then no libraries are
     searched for and this variable will be assumed to have the correct list
     of libraries to link to.
+
+  ``TPL_<tplName>_NOT_FOUND`` (type ``BOOL``)
+
+    Will be set to ``ON`` if all of the parts of the TPL could not be found.
+
+ToDo: Document the behavior of this function for finding headers and
+libraries and when a find is successful and when it is not.
+
+Note, if ``TPL_TENTATIVE_ENABLE_<tplName>=ON``, then if all of the parts of
+the TPL can't be found, then ``TPL_ENABLE_<tplName>`` will be (forced) set
+to ``OFF`` in the cache.  See `TRIBITS_TPL_TENTATIVELY_ENABLE()`_.
+
+TRIBITS_TPL_TENTATIVELY_ENABLE()
+++++++++++++++++++++++++++++++++
+
+Function that sets up for an optionally enabled TPL that is attempted to be
+enabled but will be disabled if all of the parts are not found.
+
+Usage::
+
+  TRIBITS_TPL_TENTATIVELY_ENABLE(<tplName>)
+
+This function can be called from any CMakeLists.txt file to put a TPL in
+tentative enable mode.
+
+This should only be used for optional TPLs.  It will not work correctly for
+required TPLs because any enabled packages that require this TPL will not be
+disabled and instead will fail to configure or fail to build.
+
+All this function does is to force set ``TPL_ENABLE_<tplName>=ON`` if it has
+not already been set. and ``TPL_TENTATIVE_ENABLE_<tplName>`` in the cache.
+
+NOTE: This function will only tentatively enable a TPL it its enable has not
+be explicitly set on input, i.e. if ``TPL_ENABLE_<tplName>=""``.
 
 TRIBITS_VERBOSE_PRINT_VAR()
 +++++++++++++++++++++++++++

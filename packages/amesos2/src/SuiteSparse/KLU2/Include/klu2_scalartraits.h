@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Mike A. Heroux (maherou@sandia.gov)
 //
@@ -61,6 +61,23 @@ struct KLU_ScalarTraits<double>
         return (SCALAR_ABS (a));
     }
     static inline magnitudeType abs (double a)
+    {
+        return (SCALAR_ABS (a));
+    }
+};
+
+template <>
+struct KLU_ScalarTraits<float>
+{
+    typedef float magnitudeType ;
+    static inline float reciprocal (float c) { return 1.0/c ; }
+    static inline float divide (float a, float b) { return a/b ; }
+    static inline float divideConjugate (float a, float b) { return a/b ; }
+    static inline magnitudeType approxABS (float a)
+    {
+        return (SCALAR_ABS (a));
+    }
+    static inline magnitudeType abs (float a)
     {
         return (SCALAR_ABS (a));
     }

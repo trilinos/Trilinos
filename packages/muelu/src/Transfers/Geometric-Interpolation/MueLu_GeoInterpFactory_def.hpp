@@ -72,7 +72,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GeoInterpFactory(){
-    std::cout << "I constructed a GeoInterpFactory object... Nothing else to do here." << std::endl;
+    GetOStream(Runtime1) << "I constructed a GeoInterpFactory object... Nothing else to do here." << std::endl;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -113,7 +113,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
 
-    std::cout << "Starting 'build' routine...\n";
+    GetOStream(Runtime1) << "Starting 'build' routine...\n";
 
     // This will create a list of elements on the coarse grid with a
     // predictable structure, as well as modify the fine grid list of
@@ -130,10 +130,10 @@ namespace MueLu {
 
     typedef Teuchos::SerialDenseMatrix<GO,GO> SerialDenseMatrixType;
 
-    std::cout << "Starting 'BuildP' routine...\n";
+    GetOStream(Runtime1) << "Starting 'BuildP' routine...\n";
 
     //DEBUG
-    //Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    //Teuchos::FancyOStream fout(*GetOStream(Runtime1));
     //fineLevel.print(fout,Teuchos::VERB_HIGH);
 
     // Get finegrid element lists
@@ -142,8 +142,8 @@ namespace MueLu {
     RCP<SerialDenseMatrixType> fineElementMDOFs = Get< RCP<SerialDenseMatrixType> > (fineLevel, "MElementList");
 
     //DEBUG
-    std::cout << "done getting fine level elements...\n";
-    std::cout << "getting coarse level elements...\n";
+    GetOStream(Runtime1) << "done getting fine level elements...\n";
+    GetOStream(Runtime1) << "getting coarse level elements...\n";
     //coarseLevel.print(fout,Teuchos::VERB_HIGH);
 
 
@@ -157,7 +157,7 @@ namespace MueLu {
     coarseLevel.Get("MElementList",coarseElementMDOFs,coarseLevel.GetFactoryManager()->GetFactory("MElementList").get());
 
 
-    std::cout << "computing various numbers...\n";
+    GetOStream(Runtime1) << "computing various numbers...\n";
     // Number of elements?
     GO totalFineElements = fineElementMDOFs->numRows();
     LO nFineElements = (int) sqrt(totalFineElements);
@@ -174,7 +174,7 @@ namespace MueLu {
     RCP<Matrix> fineA10 = Get<RCP<Matrix> > (fineLevel,"A10");
     RCP<Matrix> fineA20 = Get<RCP<Matrix> > (fineLevel,"A20");
 
-    std::cout << "creating coarse grid maps...\n";
+    GetOStream(Runtime1) << "creating coarse grid maps...\n";
 
     RCP<const Map> rowMapforPV = fineA00->getRowMap();
     RCP<const Map> rowMapforPP = fineA10->getRowMap();
@@ -197,7 +197,7 @@ namespace MueLu {
     RCP<const Map> colMapforPM = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nM,comm);
 
 
-    std::cout << "creating coarse grid matrices...\n";
+    GetOStream(Runtime1) << "creating coarse grid matrices...\n";
     //Create our final output Ps for the coarseGrid
     size_t maxEntriesPerRowV = 9,//No overlap of VX and VY
       maxEntriesPerRowP = 4,
@@ -268,8 +268,8 @@ namespace MueLu {
     //About which fine-grid elements do we care?
     GO fineElement[4] = {0,1,nFineElements,nFineElements+1};
 
-    std::cout << "start building matrices...\n";
-    std::cout << "nCoarseElements = " << nCoarseElements << std::endl;
+    GetOStream(Runtime1) << "start building matrices...\n";
+    GetOStream(Runtime1) << "nCoarseElements = " << nCoarseElements << std::endl;
 
     for ( GO coarseElement=0; coarseElement<totalCoarseElements; coarseElement++)
       {

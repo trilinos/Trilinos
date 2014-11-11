@@ -77,7 +77,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTeptra_ENABLE_Kokkos_Refactor_Map:BOOL=ON"
   "-DTpetra_ENABLE_KokkosCompat:BOOL=ON"
   "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=OFF"
-  "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
 
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTeuchos_ENABLE_COMPLEX:BOOL=OFF"
@@ -115,6 +114,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosMpiComm=ON"
 )
 
+#"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #

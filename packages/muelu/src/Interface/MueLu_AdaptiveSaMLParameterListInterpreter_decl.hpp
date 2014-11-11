@@ -12,6 +12,7 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
@@ -190,11 +191,11 @@ namespace MueLu {
     //! initialization phase
     Array<RCP<FactoryManagerBase> > init_levelManagers_;
 
-    //@{ Matrix configuration
+    //@{ Operator configuration
 
-    //! Setup Matrix object
+    //! Setup Operator object
     //! overloaded from HierarchyManager to set nDofsPerNode
-    virtual void SetupMatrix(Matrix & Op) const;
+    virtual void SetupOperator(Operator & Op) const;
 
     //! Matrix configuration storage
     int blksize_;

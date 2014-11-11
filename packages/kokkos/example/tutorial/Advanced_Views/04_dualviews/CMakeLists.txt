@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_advancedviews_04_dualviews
   SOURCES dual_view.cpp
   COMM serial mpi
-  DEPLIBS kokkoscontainers kokkoscore
   )

@@ -154,7 +154,7 @@ namespace SEAMS {
     stringInteractive = true;
 
     if(ap_file_list.size() == 1)
-      ap_file_list.top().name == "interactive_input";
+      ap_file_list.top().name = "interactive_input";
 
     if (!ap_options.include_file.empty()) {
       file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);

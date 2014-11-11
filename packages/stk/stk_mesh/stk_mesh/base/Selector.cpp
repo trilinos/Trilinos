@@ -339,6 +339,17 @@ Selector selectIntersection( const PartVector& intersection_part_vector )
   }
   return selector;
 }
+Selector selectIntersection( const ConstPartVector& intersection_part_vector )
+{
+  Selector selector;
+  if (intersection_part_vector.size() > 0) {
+    selector = *intersection_part_vector[0];
+    for (unsigned i = 1 ; i < intersection_part_vector.size() ; ++i) {
+      selector &= *intersection_part_vector[i];
+    }
+  }
+  return selector;
+}
 
 Selector selectField( const FieldBase& field )
 {

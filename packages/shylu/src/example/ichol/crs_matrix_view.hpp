@@ -2,21 +2,31 @@
 #ifndef __CRS_MATRIX_VIEW_HPP__
 #define __CRS_MATRIX_VIEW_HPP__
 
+/// \file crs_matrix_view.hpp
+/// \brief CRS matrix view object creates 2D view to setup a computing region.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
+#include <Kokkos_Core.hpp>
+
+#include "util.hpp"
+
 namespace Example { 
 
   using namespace std;
 
   // forward declaration
-  template <typename ValueType, 
-            typename OrdinalType>
+  template <typename CrsMatBaseType>
   class CrsRowView;
 
   template<typename CrsMatBaseType>
   class CrsMatrixView : public Disp {
   public:
-    typedef typename CrsMatBaseType::value_type   value_type;
-    typedef typename CrsMatBaseType::ordinal_type ordinal_type;
-    typedef typename CrsMatBaseType::size_type    size_type;
+    typedef typename CrsMatBaseType::value_type    value_type;
+    typedef typename CrsMatBaseType::ordinal_type  ordinal_type;
+
+    typedef CrsRowView<CrsMatBaseType> row_view_type;
+
+    template<typename T> using range_type = pair<T,T>;
 
   private:
     ordinal_type  _offm;    // offset in rows
@@ -27,51 +37,54 @@ namespace Example {
     CrsMatBaseType *_base;   // pointer to the base object
     
   public:
-    CrsMatBaseType* BaseObject() const { return _base; }
-    
+    //
+    KOKKOS_INLINE_FUNCTION
     void setView(CrsMatBaseType *base,
-                 ordinal_type offm, ordinal_type m,
-                 ordinal_type offn, ordinal_type n) {
+                 const ordinal_type offm, const ordinal_type m,
+                 const ordinal_type offn, const ordinal_type n) {
       _base = base;
+
       _offm = offm; _m = m;
       _offn = offn; _n = n;
     }
-    
+
+    KOKKOS_INLINE_FUNCTION
+    CrsMatBaseType* BaseObject() const { return _base; }
+
+    KOKKOS_INLINE_FUNCTION
     ordinal_type  OffsetRows() const { return _offm; }
+
+    KOKKOS_INLINE_FUNCTION
     ordinal_type  OffsetCols() const { return _offn; }
-    
+
+    KOKKOS_INLINE_FUNCTION    
     ordinal_type  NumRows() const { return _m; }
+
+    KOKKOS_INLINE_FUNCTION
     ordinal_type  NumCols() const { return _n; }
-    
-    CrsRowView<value_type,ordinal_type> extractRow(const int i) const { 
-      ordinal_type ii = _offm + i;  // i at base
-      
-      // grep a row in base
-      ordinal_type *ci_base = _base->ColIndex(ii); 
-      value_type   *val_base = _base->Value(ii); 
-      ordinal_type nnz_base_row = _base->NumNonZerosInRow(ii);
 
-      // count
-      ordinal_type *ci_view = NULL;
-      value_type   *val_view = NULL;
-      ordinal_type nnz_view_row = 0;
+    KOKKOS_INLINE_FUNCTION
+    row_view_type extractRow(const ordinal_type i) const { 
+      typedef typename row_view_type::value_type_array_view   value_type_array_view;
+      typedef typename row_view_type::ordinal_type_array_view ordinal_type_array_view;
 
-      ordinal_type nn = (_offn + _n);
-      for (ordinal_type k=0;k<nnz_base_row;++k) {
-        if (ci_base[k] >= nn)
-          break;
+      // grep a row from base
+      ordinal_type ii = _offm + i;  
+      ordinal_type_array_view cols = _base->ColsInRow(ii);
+      value_type_array_view   vals = _base->ValuesInRow(ii);
 
-        if (ci_base[k] >= _offn)
-          ++nnz_view_row;
+      ordinal_type *ptr_begin = cols.ptr_on_device();
+      ordinal_type *ptr_end   = cols.ptr_on_device() + cols.dimension_0();
 
-        if (nnz_view_row == 1) {
-          ci_view = &ci_base[k];
-          val_view = &val_base[k];
-        }
-      }
+      ordinal_type view_begin = lower_bound(ptr_begin, ptr_end, _offn     ) - ptr_begin; 
+      ordinal_type view_end   = upper_bound(ptr_begin, ptr_end, _offn+_n-1) - ptr_begin; 
 
-      // global view
-      return CrsRowView<value_type,ordinal_type>(_offn, _n, nnz_view_row, ci_view, val_view);
+      range_type<ordinal_type> range(view_begin, view_end);
+
+      cols = Kokkos::subview<ordinal_type_array_view>(cols, range);
+      vals = Kokkos::subview<value_type_array_view>(vals, range);
+
+      return row_view_type(_offn, _n, view_end - view_begin, cols, vals);
     }
 
     CrsMatrixView()
@@ -98,41 +111,38 @@ namespace Example {
         _n(b.NumCols())
     { } 
 
-    CrsMatrixView(CrsMatBaseType &b,
+    CrsMatrixView(CrsMatBaseType *b,
                   const ordinal_type offm, const ordinal_type m,
                   const ordinal_type offn, const ordinal_type n) 
-      : _base(&b),
+      : _base(b),
         _offm(offm),
         _offn(offn),
         _m(m),
         _n(n) 
     { } 
 
+    CrsMatrixView transpose() const {
+      return CrsMatrixView(_base, _offn, _n, _offm, _m);
+    }
     
-
     ostream& showMe(ostream &os) const {
-      streamsize prec = os.precision();
-      os.precision(15);
-      os << scientific;
-      
-      os << endl
-         << " -- CrsMatrixView -- " << endl
-         << "    Offset in Rows = " << _offm << endl
-         << "    Offset in Cols = " << _offn << endl
-         << "    # of Rows      = " << _m << endl
-         << "    # of Cols      = " << _n << endl;
-
-      const int w = 6;
-      for (ordinal_type i=0;i<_m;++i) {
-        os << endl;
-        CrsRowView<value_type,ordinal_type> row = extractRow(i);
-        row.showMe(os);
-      }
-
-      os.unsetf(ios::scientific);
-      os.precision(prec);
+      const int w = 4;
+      if (_base != NULL) 
+        os << _base->Label() << "::View, "
+           << " Offs ( " << setw(w) << _offm << ", " << setw(w) << _offn << " ); "
+           << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); ";
+      //<< " BaseObject = " << BaseObject() << ";" ;
+      else 
+        os << "-- Base object is null --";
       
       return os;
+    }
+
+    ostream& showMeDetail(ostream &os) const {
+      showMe(os);
+      os << endl << endl;
+      for (ordinal_type i=0;i<_m;++i)
+        os << extractRow(i) << endl;
     }
 
   };

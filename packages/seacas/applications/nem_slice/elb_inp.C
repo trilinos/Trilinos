@@ -1934,7 +1934,7 @@ int check_inp_specs(std::string &exoII_inp_file,
       /* now loop through, and make sure that we don't have multiple values */
       for (cnt=1; cnt < (int)weight->elemblk.size(); cnt++)
         if (weight->elemblk[cnt] == weight->elemblk[cnt-1]) {
-          sprintf(ctemp, "warning: multiple weight specified for block "ST_ZU"",
+          sprintf(ctemp, "warning: multiple weight specified for block " ST_ZU "",
                   (size_t)weight->elemblk[cnt]);
           Gen_Error(1, ctemp);
         }

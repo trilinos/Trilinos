@@ -65,8 +65,8 @@ namespace MueLu {
   void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    LO minNodesPerAggregate = params.get<LO>("aggregation: min agg size");
-    LO maxNodesPerAggregate = params.get<LO>("aggregation: max agg size");
+    int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
+    int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();

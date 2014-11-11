@@ -63,6 +63,7 @@ namespace {
 enum EMLProblemType {
   ML_PROBTYPE_NONE,
   ML_PROBTYPE_SMOOTHED_AGGREGATION, 
+  ML_PROBTYPE_NONSYMMETRIC_SMOOTHED_AGGREGATION,
   ML_PROBTYPE_DOMAIN_DECOMPOSITION,
   ML_PROBTYPE_DOMAIN_DECOMPOSITION_ML,
   ML_PROBTYPE_MAXWELL
@@ -72,6 +73,7 @@ const Teuchos::Array<std::string> BaseMethodDefaults_valueNames
 = Teuchos::tuple<std::string>(
   BaseMethodDefaults_valueNames_none,
   "SA", 
+  "NSSA",
   "DD",
   "DD-ML",
   "maxwell"
@@ -436,6 +438,7 @@ MLPreconditionerFactory::getValidParameters() const
         tuple<std::string>(
           "Do not set any default parameters",
           "Set default parameters for a smoothed aggregation method",
+	  "Set default parameters for a nonsymmetric smoothed aggregation method",
           "Set default parameters for a domain decomposition method",
           "Set default parameters for a domain decomposition method special to ML",
           "Set default parameters for a Maxwell-type of linear operator"
@@ -443,6 +446,7 @@ MLPreconditionerFactory::getValidParameters() const
         tuple<EMLProblemType>(
           ML_PROBTYPE_NONE,
           ML_PROBTYPE_SMOOTHED_AGGREGATION,
+	  ML_PROBTYPE_NONSYMMETRIC_SMOOTHED_AGGREGATION,
           ML_PROBTYPE_DOMAIN_DECOMPOSITION,
           ML_PROBTYPE_DOMAIN_DECOMPOSITION_ML,
           ML_PROBTYPE_MAXWELL

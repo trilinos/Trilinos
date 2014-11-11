@@ -85,9 +85,9 @@ public:
      {}
   virtual void getNodeCoordinates(Scalar * field, const size_t ix, const size_t iy, const size_t iz) const
   {
-    field[0] = (double)ix/(m_nx)*m_maxx;
-    field[1] = (double)iy/(m_ny)*m_maxy;
-    field[2] = (double)iz/(m_nz)*m_maxz;
+    field[0] = static_cast<double>(ix)/(m_nx)*m_maxx;
+    field[1] = static_cast<double>(iy)/(m_ny)*m_maxy;
+    field[2] = static_cast<double>(iz)/(m_nz)*m_maxz;
   }
 private:
   const size_t m_nx, m_ny, m_nz;

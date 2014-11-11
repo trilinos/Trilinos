@@ -473,7 +473,10 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
 
   if(i_started)
   {
+    bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
+    mesh.set_use_entity_ids_for_resolving_sharing(false);
     mesh.modification_end_for_entity_creation( stk::topology::EDGE_RANK, BulkData::MOD_END_COMPRESS_AND_SORT );
+    mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
   }
 }
 

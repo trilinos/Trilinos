@@ -92,8 +92,8 @@
 #include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_ctassert.hpp"
 
-#ifdef HAVE_AMESOS2_KLU2
-#include "Amesos2_Klu2.hpp"
+#if defined(HAVE_AMESOS2_KLU2)
+#include "Amesos2_KLU2.hpp"
 #endif
 #ifdef HAVE_AMESOS2_SUPERLUDIST // Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
@@ -504,10 +504,11 @@ struct throw_no_scalar_support_exception {
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
     //
     // We use compiler guards in case a user does want to disable KLU2
-#ifdef HAVE_AMESOS2_KLU2
-    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
-       (solverName == "amesos2_klu")  || (solverName == "klu")){
-      return handle_solver_type_support<Klu2,Matrix,Vector>::apply(A, X, B);
+#ifdef HAVE_AMESOS2_KLU2 
+
+if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
+   (solverName == "amesos2_klu")  || (solverName == "klu")){
+      return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 

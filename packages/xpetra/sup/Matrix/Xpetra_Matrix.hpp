@@ -59,6 +59,7 @@
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
 #include "Xpetra_MatrixView.hpp"
+#include "Xpetra_Operator.hpp"
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_StridedMapFactory.hpp"
 
@@ -89,19 +90,14 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar = MultiVector<>::scalar_type,
-            class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
-  class Matrix : virtual public Teuchos::Describable {
+  template <class Scalar        = Operator<>::scalar_type,
+            class LocalOrdinal  = Operator<>::local_ordinal_type,
+            class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
+            class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type>
+  class Matrix : public Xpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
     typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
-#ifdef HAVE_XPETRA_TPETRA
-    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
-#endif
     typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
     typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
@@ -458,53 +454,29 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Methods implementing Matrix
-    //@{
-
-    //! \brief Computes the sparse matrix-multivector multiplication.
-    /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
-      - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
-    */
-    virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                       Scalar alpha = ScalarTraits<Scalar>::one(),
-                       Scalar beta = ScalarTraits<Scalar>::zero()) const =0;
-
-    //! \brief Returns the Map associated with the domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    virtual const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const =0;
-
-    //! Returns the Map associated with the domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    virtual const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
-
-    virtual void removeEmptyProcessesInPlace(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> >& newMap) = 0;
-
-    //@}
-
     //! Implements DistObject interface
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    virtual const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const =0;
+    virtual const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const = 0;
 
     // TODO: first argument of doImport/doExport should be a Xpetra::DistObject
 
     //! Import.
     virtual void doImport(const Matrix &source,
-                          const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) =0;
+                          const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) = 0;
 
     //! Export.
     virtual void doExport(const Matrix &dest,
-                          const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) =0;
+                          const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) = 0;
 
     //! Import (using an Exporter).
     virtual void doImport(const Matrix &source,
-                          const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) =0;
+                          const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) = 0;
 
     //! Export (using an Importer).
     virtual void doExport(const Matrix &dest,
-                          const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) =0;
+                          const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) = 0;
 
     // @}
 
@@ -539,8 +511,13 @@ namespace Xpetra {
 
     // ----------------------------------------------------------------------------------
     // "TEMPORARY" VIEW MECHANISM
-    // TODO: the view mechanism should be implemented as in MueMat.
-    void SetFixedBlockSize(LocalOrdinal blksize) {
+    /**
+     * Set fixed block size of operator (e.g., 3 for 3 DOFs per node).
+     * 
+     * @param blksize: block size denoting how many DOFs per node are used (LocalOrdinal)
+     * @param offset:  global offset allows to define operators with global indices starting from a given value "offset" instead of 0. (GlobalOrdinal, default = 0)
+     * */
+    void SetFixedBlockSize(LocalOrdinal blksize, GlobalOrdinal offset=0) {
 
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Matrix::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
 
@@ -549,14 +526,16 @@ namespace Xpetra {
       LocalOrdinal stridedBlockId = -1;
 
       RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
-                                                    getRangeMap(),
+                                                    this->getRangeMap(),
                                                     stridingInfo,
-                                                    stridedBlockId
+                                                    stridedBlockId,
+                                                    offset
                                                     );
       RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
-                                              getDomainMap(),
+                                              this->getDomainMap(),
                                               stridingInfo,
-                                              stridedBlockId
+                                              stridedBlockId,
+                                              offset
                                               );
 
       if(IsView("stridedMaps") == true) RemoveView("stridedMaps");

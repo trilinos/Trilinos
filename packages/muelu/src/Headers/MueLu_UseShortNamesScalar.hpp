@@ -246,10 +246,6 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchurComplementFactory;
 #endif
 
-#ifdef MUELU_SCHWARZSMOOTHER_SHORT
-typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchwarzSmoother;
-#endif
-
 #ifdef MUELU_SHIFTEDLAPLACIAN_SHORT
 typedef MueLu::ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node> ShiftedLaplacian;
 #endif

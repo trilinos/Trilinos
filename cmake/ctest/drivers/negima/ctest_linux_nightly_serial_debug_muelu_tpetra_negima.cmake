@@ -75,6 +75,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
   "-DTrilinos_ENABLE_ML:BOOL=OFF"
   "-DTrilinos_ENABLE_Zoltan:BOOL=OFF"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 )
 
 #

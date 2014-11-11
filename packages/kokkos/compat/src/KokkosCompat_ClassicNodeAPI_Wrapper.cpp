@@ -18,7 +18,9 @@ namespace Kokkos {
 #ifdef KOKKOS_HAVE_PTHREAD
     template<> int KokkosThreadsWrapperNode::count = 0;
 #endif
+#ifdef KOKKOS_HAVE_SERIAL
     template<> int KokkosSerialWrapperNode::count = 0;
+#endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_PTHREAD
     template<>
@@ -86,14 +88,19 @@ namespace Kokkos {
     }
 #endif
 
+#ifdef KOKKOS_HAVE_SERIAL
     template<>
     KokkosDeviceWrapperNode<Kokkos::Serial>::~KokkosDeviceWrapperNode<Kokkos::Serial>() {
       count--;
       if (count == 0 && Serial::is_initialized ()) {
+        // FIXME (mfh 02 Nov 2014) This doesn't look right to me
+        // somehow.  What if CUDA is NOT enabled?  Wouldn't that
+        // disable the first branch of the OR, which could trigger
+        // even if CUDA is not enabled?
 #ifdef KOKKOS_HAVE_CUDA
         if (! Impl::is_same<Kokkos::Serial, HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
-#endif
+#endif // KOKKOS_HAVE_CUDA
           Serial::finalize ();
       }
     }
@@ -110,7 +117,7 @@ namespace Kokkos {
     std::string KokkosDeviceWrapperNode<Kokkos::Serial>::name () {
       return "Serial/Wrapper";
     }
-
+#endif // KOKKOS_HAVE_SERIAL
 
   }
 }

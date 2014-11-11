@@ -1428,7 +1428,7 @@ void Teuchos::reduceAll(
 
 namespace Teuchos {
 
-#ifdef TEUCHOS_HAVE_COMPLEX
+#ifdef HAVE_TEUCHOS_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1506,7 +1506,7 @@ isend<int, std::complex<float> > (const ArrayRCP<const std::complex<float> >& se
                                   const int destRank,
                                   const int tag,
                                   const Comm<int>& comm);
-#endif // TEUCHOS_HAVE_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX
 
 // Specialization for Ordinal=int and Packet=double.
 template<>
@@ -1586,7 +1586,7 @@ isend<int, float> (const ArrayRCP<const float>& sendBuffer,
                    const int tag,
                    const Comm<int>& comm);
 
-#ifdef TEUCHOS_HAVE_LONG_LONG_INT
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1698,7 +1698,7 @@ isend<int, unsigned long long> (const ArrayRCP<const unsigned long long>& sendBu
                                 const int destRank,
                                 const int tag,
                                 const Comm<int>& comm);
-#endif // TEUCHOS_HAVE_LONG_LONG_INT
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
 template<>

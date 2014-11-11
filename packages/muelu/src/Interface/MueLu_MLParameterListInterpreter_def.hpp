@@ -56,6 +56,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_MLParameterListInterpreter_decl.hpp"
 
@@ -434,23 +435,27 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy & H) const {
-
     // if nullspace_ has already been extracted from ML parameter list
     if (nullspace_ != NULL) {
       RCP<Level> fineLevel = H.GetLevel(0);
-      const RCP<const Map> rowMap = fineLevel->Get< RCP<Matrix> >("A")->getRowMap();
-      RCP<MultiVector> nullspace = MultiVectorFactory::Build(rowMap, nullspaceDim_, true);
 
-      for ( size_t i=0; i < Teuchos::as<size_t>(nullspaceDim_); i++) {
-        Teuchos::ArrayRCP<Scalar> nullspacei = nullspace->getDataNonConst(i);
-        const size_t              myLength   = nullspace->getLocalLength();
+      RCP<Operator> Op = fineLevel->Get<RCP<Operator> >("A");
+      RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Op);
+      if (!A.is_null()) {
+        const RCP<const Map> rowMap = fineLevel->Get< RCP<Matrix> >("A")->getRowMap();
+        RCP<MultiVector> nullspace = MultiVectorFactory::Build(rowMap, nullspaceDim_, true);
 
-        for (size_t j = 0; j < myLength; j++) {
-          nullspacei[j] = nullspace_[i*myLength + j];
+        for ( size_t i=0; i < Teuchos::as<size_t>(nullspaceDim_); i++) {
+          Teuchos::ArrayRCP<Scalar> nullspacei = nullspace->getDataNonConst(i);
+          const size_t              myLength   = nullspace->getLocalLength();
+
+          for (size_t j = 0; j < myLength; j++) {
+            nullspacei[j] = nullspace_[i*myLength + j];
+          }
         }
-      }
 
-      fineLevel->Set("Nullspace", nullspace);
+        fineLevel->Set("Nullspace", nullspace);
+      }
     }
     HierarchyManager::SetupHierarchy(H);
   }
@@ -511,8 +516,8 @@ namespace MueLu {
 
       ifpackType = "CHEBYSHEV";
 
-      MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,  smootherParamList, "chebyshev: degree");
-      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", int, 30, smootherParamList, "chebyshev: alpha");
+      MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,     smootherParamList, "chebyshev: degree");
+      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 30, smootherParamList, "chebyshev: ratio eigenvalue");
 
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);
@@ -601,8 +606,18 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupMatrix(Matrix & Op) const {
-    Op.SetFixedBlockSize(blksize_);
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator & Op) const {
+    try {
+      Matrix& A = dynamic_cast<Matrix&>(Op);
+      if (A.GetFixedBlockSize() != blksize_)
+        this->GetOStream(Warnings0) << "Setting matrix block size to " << blksize_ << " (value of the parameter in the list) "
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+
+      A.SetFixedBlockSize(blksize_);
+
+    } catch (std::bad_cast& e) {
+      this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
+    }
   }
 
 } // namespace MueLu

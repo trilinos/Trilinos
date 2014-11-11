@@ -5,3 +5,9 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
+#cmakedefine HAVE_SHYLU_TPETRA
+
+#cmakedefine HAVE_SHYLU_ZOLTAN2
+
+#cmakedefine HAVE_SHYLU_AMESOS2
+

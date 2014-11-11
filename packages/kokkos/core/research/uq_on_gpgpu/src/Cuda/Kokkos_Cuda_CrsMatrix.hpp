@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -51,7 +51,7 @@
 #include <cuda_runtime.h>
 #include <cusparse.h>
 
-#include <Kokkos_Serial.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -127,7 +127,7 @@ public:
                       A.values.ptr_on_device() ,
                       A.graph.row_map.ptr_on_device() ,
                       A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() , 
+                      x.ptr_on_device() ,
                       beta ,
                       y.ptr_on_device() );
 
@@ -169,7 +169,7 @@ public:
                       A.values.ptr_on_device() ,
                       A.graph.row_map.ptr_on_device() ,
                       A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() , 
+                      x.ptr_on_device() ,
                       beta ,
                       y.ptr_on_device() );
 
@@ -198,7 +198,7 @@ public:
   static void apply( const matrix_type & A ,
                      const multi_vector_type & x ,
                      const multi_vector_type & y ,
-		     const std::vector<Ordinal> & col_indices )
+                     const std::vector<Ordinal> & col_indices )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
@@ -220,23 +220,23 @@ public:
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -266,7 +266,7 @@ public:
   static void apply( const matrix_type & A ,
                      const multi_vector_type & x ,
                      const multi_vector_type & y ,
-		     const std::vector<Ordinal> & col_indices )
+                     const std::vector<Ordinal> & col_indices )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
@@ -288,23 +288,23 @@ public:
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -352,23 +352,23 @@ public:
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -415,23 +415,23 @@ public:
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -445,7 +445,7 @@ template< typename MatrixValue>
 class MatrixMarketWriter<MatrixValue,Kokkos::Cuda>
 {
 public:
-  typedef Serial                                    device_type ;
+  typedef Kokkos::HostSpace::execution_space        device_type ;
   typedef device_type::size_type                    size_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 
@@ -453,7 +453,7 @@ public:
   ~MatrixMarketWriter() {}
 
   static void write(const matrix_type & A ,
-		    const std::string& filename) {}
+                    const std::string& filename) {}
 };
 
 //----------------------------------------------------------------------------

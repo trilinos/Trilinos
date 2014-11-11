@@ -1,0 +1,201 @@
+\label{sec:muelu_options}
+
+In this section, we report the complete list of \muelu{} input parameters.  It
+is important to notice, however, that \muelu{} relies on other \trilinos{}
+packages to provide support for some of its algorithms. For instance,
+\ifpack{}/\ifpacktwo{} provide standard smoothers like Jacobi, Gauss-Seidel or
+Chebyshev, while \amesos{}/\amesostwo{} provide access to direct solvers. The
+parameters affecting the behavior of the algorithms in those packages are
+simply passed by \muelu{} to a routine from the corresponding library. Please
+consult corresponding packages' documentation for a full list of supported
+algorithms and corresponding parameters.
+
+\section{Using parameters on individual levels}
+Some of the parameters that affect the preconditioner can in principle be
+different from level to level. By default, parameters affect all levels in
+a multigrid hierarchy.
+
+The settings on a particular levels can be changed by using level sublists.
+A level sublist is a \parameterlist{} sublist with the name ``level XX'', where XX is the level number. The
+parameter names in the sublist do not require any modifications. For example,
+the following fragment of code
+\begin{lstlisting}[language=XML]
+  <ParameterList name="level 2">
+    <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
+  </ParameterList>
+\end{lstlisting}
+changes the smoother for level 2 to be a polynomial smoother.
+
+\section{Parameter validation}
+By default, \muelu{} validates the input parameter list. A parameter that is
+misspelled, is unknown, or has an incorrect value type will cause an exception to be
+thrown and execution to halt.
+
+\begin{mycomment}
+Spaces are important within a parameter's name. Please separate words
+by just one space, and make sure there are no leading or trailing spaces.
+\end{mycomment}
+
+The option \verb|print initial parameters| prints the initial list given to the
+interpreter. The option \verb|print unused parameters| prints the list of unused
+parameters.
+
+% ==================== GENERAL ====================
+\section{General options}
+\label{sec:options_general}
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{p{4.3cm} p{4.3cm} c p{4.5cm}}
+      \toprule
+      Problem type               & Multigrid algorithm    & Block size  & Smoother \\
+      \midrule
+      \verb!unknown!             & --                     & --          & -- \\
+      \verb!Poisson-2D!          & Smoothed aggregation   & 1           & Chebyshev \\
+      \verb!Poisson-3D!          & Smoothed aggregation   & 1           & Chebyshev \\
+      \verb!Elasticity-2D!       & Smoothed aggregation   & 2           & Chebyshev \\
+      \verb!Elasticity-3D!       & Smoothed aggregation   & 3           & Chebyshev \\
+      \verb!ConvectionDiffusion! & Petrov-Galerkin  AMG   & 1           & Gauss-Seidel \\
+      \verb!MHD!                 & Unsmoothed aggregation & --          & Additive Schwarz method with one level of overlap and ILU(0) as a subdomain solver \\
+      \bottomrule
+    \end{tabular}
+    \caption{Supported problem types (``--'' means not set).}
+\label{t:problem_types}
+  \end{center}
+\end{table}
+
+\input{options_general}
+
+% ==================== SMOOTHERS ====================
+\section{Smoothing and coarse solver options}
+\label{sec:options_smoothing}
+
+\muelu{} relies on other \trilinos{} packages to provide level smoothers and
+coarse solvers. \ifpack{} and \ifpacktwo{} provide standard smoothers (see
+Table~\ref{tab:smoothers}), and \amesos{} and \amesostwo{} provide direct
+solvers (see Table~\ref{tab:coarse}). Note that it is completely possible to use
+any level smoother as a direct solver.
+
+\muelu{} checks parameters \verb|smoother: * type| and \verb|coarse: type| to
+determine:
+\begin{itemize}
+  \item what package to use (i.e., is it a smoother or a direct solver);
+  \item (possibly) transform a smoother type
+
+    \ding{42} \ifpack{} and \ifpacktwo{} use different smoother type names,
+    e.g., ``point relaxation stand-alone'' vs ``RELAXATION''.  \muelu{} tries to follow
+    \ifpacktwo{} notation for smoother types. Please consult \ifpacktwo{}
+    documentation~\cite{Ifpack2URL} for more information.
+\end{itemize}
+The parameter lists \verb|smoother: * params| and \verb|coarse: params| are
+passed directly to the corresponding package without any examination of their
+content. Please consult the documentation of the corresponding packages for a list of
+possible values.
+
+By default, \muelu{} uses one sweep of symmetric Gauss-Seidel for both pre- and
+post-smoothing, and SuperLU for coarse system solver.
+
+\begin{table}[tbh]
+  \begin{center}
+    \begin{tabular}{p{4.0cm} p{10cm}}
+      \toprule
+      \texttt{smoother: type}           & \\
+      \midrule
+      \verb|RELAXATION|                 & Point relaxation smoothers, including
+                                          Jacobi, Gauss-Seidel, symmetric Gauss-Seidel, etc. The exact
+                                          smoother is chosen by specifying \texttt{relaxation: type} parameter in
+                                          the \texttt{smoother: params} sublist. \\
+      \verb|CHEBYSHEV|                  & Chebyshev polynomial smoother. \\
+      \verb|ILUT|, \verb|RILUK|         & Local (processor-based) incomplete factorization methods. \\
+      \bottomrule
+    \end{tabular}
+    \caption{Commonly used smoothers provided by \ifpack{}/\ifpacktwo{}. Note
+    that these smoothers can also be used as coarse grid solvers.}
+\label{tab:smoothers}
+  \end{center}
+\end{table}
+
+\begin{table}[tbh]
+  \begin{center}
+    \begin{tabular}{p{4.0cm} c c p{7cm}}
+      \toprule
+      \texttt{coarse: type}             & \amesos{} & \amesostwo{} &  \\
+      \midrule
+      \verb|KLU|                        & x & & Default \amesos{} solver~\cite{klu}. \\
+      \verb|KLU2|                       & & x & Default \amesostwo{} solver~\cite{amesos2_belos}. \\
+      \verb|SuperLU|                    & x & x & Third-party serial sparse direct solver~\cite{Li2011}. \\
+      \verb|SuperLU_dist|               & x & x & Third-party parallel sparse direct solver~\cite{Li2011}. \\
+      \verb|Umfpack|                    & x & & Third-party solver~\cite{umfpack}. \\
+      \verb|Mumps|                      & x & & Third-party solver~\cite{mumps}. \\
+      \bottomrule
+    \end{tabular}
+    \caption{Commonly used direct solvers provided by \amesos{}/\amesostwo{}}
+\label{tab:coarse}
+  \end{center}
+\end{table}
+
+\input{options_smoothing_and_coarse}
+
+% ==================== AGGREGATION ====================
+\section{Aggregation options}
+\label{sec:options_aggregation}
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{p{5.0cm} p{10cm}}
+      \toprule
+      \verb!uncoupled! & Attempts to construct aggregates of optimal size ($3^d$
+                         nodes in $d$ dimensions). Each process works independently, and
+                         aggregates cannot span multiple processes.\\
+      \verb!coupled!   & Attempts to construct aggregates of optimal size ($3^d$
+                         nodes in $d$ dimensions). Aggregates are allowed to
+                         cross processor boundaries. \textbf{Use carefully}. If
+                         unsure, use \verb!uncoupled! instead.\\
+      %\verb!METIS!     & Use graph partitioning algorithm to create aggregates,
+      %                   working process-wise. Number of nodes in each aggregate
+      %                   is specified with option \texttt{aggregation: max agg
+      %                   size}. \\
+      % \verb!ParMETIS!  & As \verb!METIS!, but partition global graph. Aggregates
+                         % can span arbitrary number of processes. Specify global
+                         % number of aggregates with {\tt aggregation: global
+                         % number}. \\
+      \bottomrule
+    \end{tabular}
+    \caption{Available coarsening schemes. }
+\label{t:aggregation}
+  \end{center}
+\end{table}
+
+\input{options_aggregation}
+
+% ==================== REBALANCING ====================
+\section{Rebalancing options}
+\label{sec:options_rebalancing}
+
+\input{options_rebalancing}
+
+% ==================== MULTIGRID ====================
+\section{Multigrid algorithm options}
+\label{sec:options_mg}
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{p{3.5cm} p{11cm}}
+      \toprule
+      \verb!sa!         & Classic smoothed aggregation~\cite{VMB1996}\\
+      \verb!unsmoothed! & Aggregation-based, same as \verb!sa! but without damped Jacobi prolongator improvement step\\
+      \verb!pg!         & Prolongator smoothing using $A$, restriction smoothing using $A^T$, local damping factors~\cite{ST2008}\\
+      \verb!emin!       & Constrained minimization of energy in basis functions of grid transfer operator~\cite{WTWG2014,OST2011}\\
+      \bottomrule
+    \end{tabular}
+    \caption{Available multigrid algorithms for generating grid transfer matrices. }
+\label{t:mgs}
+  \end{center}
+\end{table}
+
+\input{options_multigrid}
+
+% ==================== MISCELLANEOUS ====================
+\section{Miscellaneous options}
+
+\input{options_misc}

@@ -34,12 +34,6 @@
 #ifndef STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP
 #define STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_precision.hpp>
-#include <glm/gtx/transform.hpp>
-
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
@@ -49,6 +43,93 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 namespace stk { namespace mesh {
+
+class matrix3x3
+{
+    public:
+        matrix3x3() : m_data(9,0) { }
+
+        void setData(const int index, const double data)
+        {
+            ThrowErrorIf(index<0 or index>8);
+            m_data[index] = data;
+        }
+
+        double getData(const int index) const
+        {
+            ThrowErrorIf(index<0 or index>8);
+            return m_data[index];
+        }
+
+        double getData(const int row, const int col) const
+        {
+            ThrowErrorIf(row<0 or row >2);
+            ThrowErrorIf(col<0 or col>2);
+            int index = row*3 + col;
+            return m_data[index];
+        }
+
+        int numEntries() const { return 9; }
+
+        void transformVec(const double *in, double *result) const
+        {
+            result[0] = m_data[0] * in[0] + m_data[1] * in[1] + m_data[2] * in[2];
+            result[1] = m_data[3] * in[0] + m_data[4] * in[1] + m_data[5] * in[2];
+            result[2] = m_data[6] * in[0] + m_data[7] * in[1] + m_data[8] * in[2];
+        }
+
+        void transformVec(const std::vector<double>& in, std::vector<double> &result) const
+        {
+            result.resize(3);
+            this->transformVec(&in[0], &result[0]);
+        }
+
+        ~matrix3x3() {}
+
+        // matrix3x3& operator=(const matrix3x3& rhs); using default assignment operator
+        // matrix3x3( const matrix3x3& ); Using default copy constructor
+
+    private:
+        std::vector<double> m_data;
+};
+
+inline void fillRotationMatrix(const double angleInRadians,  double axisX,  double axisY,  double axisZ, matrix3x3 &rotationMatrix)
+{
+    double magnitude = sqrt(axisX*axisX + axisY*axisY + axisZ*axisZ);
+    ThrowErrorIf(magnitude == 0);
+
+    axisX /= magnitude;
+    axisY /= magnitude;
+    axisZ /= magnitude;
+
+    double cosAngle = cos(angleInRadians);
+    double oneMinusCosAngle = 1 - cosAngle;
+    double sinAngle = sin(angleInRadians);
+
+    rotationMatrix.setData(0,cosAngle + axisX*axisX*oneMinusCosAngle);
+    rotationMatrix.setData(1,axisX*axisY*oneMinusCosAngle - axisZ*sinAngle);
+    rotationMatrix.setData(2,axisX*axisZ*oneMinusCosAngle + axisY*sinAngle);
+
+    rotationMatrix.setData(3,axisX*axisY*oneMinusCosAngle + axisZ*sinAngle);
+    rotationMatrix.setData(4,cosAngle + axisY*axisY*oneMinusCosAngle);
+    rotationMatrix.setData(5,axisY*axisZ*oneMinusCosAngle - axisX*sinAngle);
+
+    rotationMatrix.setData(6,axisX*axisZ*oneMinusCosAngle - axisY*sinAngle);
+    rotationMatrix.setData(7,axisY*axisZ*oneMinusCosAngle + axisX*sinAngle);
+    rotationMatrix.setData(8,cosAngle + axisZ*axisZ*oneMinusCosAngle);
+
+//    rotationMatrix.setData(0,cosAngle + axisX*axisX*oneMinusCosAngle);
+//    rotationMatrix.setData(3,axisX*axisY*oneMinusCosAngle - axisZ*sinAngle);
+//    rotationMatrix.setData(6,axisX*axisZ*oneMinusCosAngle + axisY*sinAngle);
+//
+//    rotationMatrix.setData(1,axisX*axisY*oneMinusCosAngle + axisZ*sinAngle);
+//    rotationMatrix.setData(4,cosAngle + axisY*axisY*oneMinusCosAngle);
+//    rotationMatrix.setData(7,axisY*axisZ*oneMinusCosAngle - axisX*sinAngle);
+//
+//    rotationMatrix.setData(2,axisX*axisZ*oneMinusCosAngle - axisY*sinAngle);
+//    rotationMatrix.setData(5,axisY*axisZ*oneMinusCosAngle + axisX*sinAngle);
+//    rotationMatrix.setData(8,cosAngle + axisZ*axisZ*oneMinusCosAngle);
+}
 
 struct GetCoordiantes;
 
@@ -74,34 +155,43 @@ public:
   struct TransformHelper {
 
     CoordinatesTransform m_transform_type;
-    glm::f64mat3x3 m_rotation;
-    glm::f64vec3 m_translation;
+    matrix3x3 m_rotation;
+    std::vector<double> m_translation;
 
     TransformHelper()
       : m_transform_type(TRANSLATION)
-      , m_translation(0)
+      , m_translation(3,0)
     {
       // Default is identity transform.
     }
 
     TransformHelper(const boost::array<double, 3> & trans_arg)
       : m_transform_type(TRANSLATION)
-      , m_translation(trans_arg[0], trans_arg[1], trans_arg[2] )
-    { }
+      , m_translation(3,0)
+    {
+        m_translation[0] = trans_arg[0];
+        m_translation[1] = trans_arg[1];
+        m_translation[2] = trans_arg[2];
+    }
 
     TransformHelper(double angle, const double axis[3])
       : m_transform_type(ROTATIONAL)
-      , m_translation(0)
+      , m_translation(3,0)
     {
-      m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
+        fillRotationMatrix(angle, axis[0], axis[1], axis[2], m_rotation);
     }
 
     TransformHelper(double angle, const double axis[3], const double point[3])
       : m_transform_type(PROPER_RIGID)
-      , m_translation(point[0], point[1], point[2])
+      , m_translation(point, point+3)
     {
-      m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
-      m_translation = m_translation - m_rotation*m_translation;  // Can't safely use -=.
+      fillRotationMatrix(angle, axis[0], axis[1], axis[2], m_rotation);
+
+      std::vector<double> result;
+      m_rotation.transformVec(m_translation, result);
+      m_translation[0] = m_translation[0] - result[0];
+      m_translation[1] = m_translation[1] - result[1];
+      m_translation[2] = m_translation[2] - result[2];
     }
 
     template<typename RealType>
@@ -113,7 +203,7 @@ public:
       size_t dim = ((buff.size() == 4) ? 2 : 3);
       for (size_t col = 0; col < dim; ++col) {
         for (size_t row = 0; row < dim; ++row) {
-          buff[dim * col + row] = m_rotation[row][col];
+          buff[dim * col + row] = m_rotation.getData(col, row);
         }
       }
       return true;
@@ -550,7 +640,7 @@ private:
   void translate_coordinates(
       SphereIdVector & side_1_vector,
       SphereIdVector & side_2_vector,
-      const glm::f64vec3 &translate) const
+      const std::vector<double> &translate) const
   {
     // translate domain to range, i.e. master to slave
     for (size_t i = 0, size = side_1_vector.size(); i < size; ++i)
@@ -565,32 +655,29 @@ private:
   void rotate_coordinates(
       SphereIdVector & side_1_vector,
       SphereIdVector & side_2_vector,
-      const glm::f64mat3x3 & rotation) const
+      const matrix3x3 & rotation) const
   {
     for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
     {
       double *center = &side_1_vector[iPoint].first.center()[0];
-      glm::f64vec3 ctr(center[0], center[1], center[2]);
-      ctr = rotation * ctr;
-      for (int i = 0; i < 3; ++i) {
-        center[i] = ctr[i];
-      }
+      std::vector<double> ctr(center, center+3);
+      rotation.transformVec(&ctr[0], center);
     }
   }
 
   void apply_affine_to_coordinates(
       SphereIdVector & side_1_vector,
       SphereIdVector & side_2_vector,
-      const glm::f64mat3x3 & rotation,
-      const glm::f64vec3 & translation) const
+      const matrix3x3 & rotation,
+      const std::vector<double> & translation) const
   {
     for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
     {
       double *center = &side_1_vector[iPoint].first.center()[0];
-      glm::f64vec3 ctr(center[0], center[1], center[2]);
-      ctr = rotation * ctr + translation; // Can't safely use LHS in RHS.
+      std::vector<double> ctr(center, center+3);
+      rotation.transformVec(&ctr[0], center);
       for (int i = 0; i < 3; ++i) {
-        center[i] = ctr[i];
+        center[i] += translation[i];
       }
     }
   }

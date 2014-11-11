@@ -791,7 +791,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           MyMeshNumbering = "vertical";
        }
 
-       double *xvals= NULL, *yvals = NULL, *zvals = NULL;
+       double *xvals= NULL, *yvals = NULL, *zvals = NULL, *ztemp = NULL;
        ML_Aggregate_Viz_Stats *grid_info = NULL;
 
        if ((MyMeshNumbering != "horizontal") && (MyMeshNumbering != "vertical")) {
@@ -800,6 +800,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (grid_info != NULL) xvals = grid_info->x;
           if (grid_info != NULL) yvals = grid_info->y;
           if (grid_info != NULL) zvals = grid_info->z;
+
+          ztemp = zvals;
+          if (ml_->Amat[currentLevel].coarsencoord == 'x')
+             {zvals = xvals; if (ztemp == NULL) xvals=yvals; else xvals= ztemp;}
+          if (ml_->Amat[currentLevel].coarsencoord == 'y')
+             {zvals = yvals; if (ztemp == NULL) yvals=xvals; else yvals= ztemp;}
+          if (ml_->Amat[currentLevel].coarsencoord == 'z') {
+            if ( (zvals == NULL) && (xvals != NULL) && (yvals != NULL) ) {
+              printf("Cannot coarsen 2D problems in z direction. Must set semicoarsen_coordinate to x or y\n");
+            }
+          }
 
           TEUCHOS_TEST_FOR_EXCEPT_MSG(
               (nnn != 0) && ((xvals == NULL) || (yvals == NULL) || (zvals == NULL)),

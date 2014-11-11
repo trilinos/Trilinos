@@ -174,24 +174,24 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
 
   tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-8;
 
-  // Set initial guess to zero, for now.
-  v1.zero();
-  v2.zero();
+  // Set initial guess to zero.
+  v1.zero(); v2.zero();
 
-  Teuchos::RCP<Vector<Real> > r1 = v1.clone();
-  Teuchos::RCP<Vector<Real> > r2 = v2.clone();
-  Teuchos::RCP<Vector<Real> > r2temp = v2.clone();
-  Teuchos::RCP<Vector<Real> > v2temp = v2.clone();
+  // Allocate static memory.
+  Teuchos::RCP<Vector<Real> > r1 = b1.clone();
+  Teuchos::RCP<Vector<Real> > r2 = b2.clone();
   Teuchos::RCP<Vector<Real> > z1 = v1.clone();
   Teuchos::RCP<Vector<Real> > z2 = v2.clone();
-  Teuchos::RCP<Vector<Real> > w1 = v1.clone();
-  Teuchos::RCP<Vector<Real> > w2 = v2.clone();
-  Teuchos::RCP<Vector<Real> > w1temp = v1.clone();
-  Teuchos::RCP<Vector<Real> > w2temp = v2.clone();
-  std::vector<Real> res(m+1, zero); 
+  Teuchos::RCP<Vector<Real> > w1 = b1.clone();
+  Teuchos::RCP<Vector<Real> > w2 = b2.clone();
   std::vector<Teuchos::RCP<Vector<Real> > > V1;
   std::vector<Teuchos::RCP<Vector<Real> > > V2;
+  Teuchos::RCP<Vector<Real> > V2temp = b2.clone();
   std::vector<Teuchos::RCP<Vector<Real> > > Z2;
+  Teuchos::RCP<Vector<Real> > w1temp = b1.clone();
+  Teuchos::RCP<Vector<Real> > Z2temp = v2.clone();
+
+  std::vector<Real> res(m+1, zero); 
   Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
   Teuchos::SerialDenseVector<int, Real> cs(m);
   Teuchos::SerialDenseVector<int, Real> sn(m);
@@ -202,7 +202,7 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
 
   // Compute initial residual.
   applyAdjointJacobian(*r1, v2, x, zerotol);
-  r1->scale(-one); r1->axpy(-one, v1); r1->plus(b1);
+  r1->scale(-one); r1->axpy(-one, v1.dual()); r1->plus(b1);
   applyJacobian(*r2, v1, x, zerotol);
   r2->scale(-one); r2->plus(b2);
   res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
@@ -213,22 +213,22 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
     return res;
   }
 
-  V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0]);
-  V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0]);
+  V1.push_back(b1.clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0]);
+  V2.push_back(b2.clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0]);
 
   s(0) = res[0];
 
   for (i=0; i<m; i++) {
 
     // Apply right preconditioner.
-    v2temp->set(*(V2[i]));
-    applyPreconditioner(*w2temp, *v2temp, x, zerotol);
-    Z2.push_back(w2temp->clone()); (Z2[i])->set(*w2temp);
+    V2temp->set(*(V2[i]));
+    applyPreconditioner(*Z2temp, *V2temp, x, zerotol);
+    Z2.push_back(v2.clone()); (Z2[i])->set(*Z2temp);
 
     // Apply operator.
     w1->set(*(V1[i]));
-    applyJacobian(*w2, *w1, x, zerotol);
-    applyAdjointJacobian(*w1temp, *w2temp, x, zerotol);
+    applyJacobian(*w2, w1->dual(), x, zerotol);
+    applyAdjointJacobian(*w1temp, *Z2temp, x, zerotol);
     w1->plus(*w1temp);
     
     // Evaluate coefficients and orthogonalize using Gram-Schmidt.
@@ -238,8 +238,9 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
       w2->axpy(-H(k,i), *(V2[k]));
     }
     H(i+1,i) = std::sqrt(w1->dot(*w1) + w2->dot(*w2));
-    V1.push_back(w1->clone()); (V1[i+1])->set(*w1); (V1[i+1])->scale(one/H(i+1,i));
-    V2.push_back(w2->clone()); (V2[i+1])->set(*w2); (V2[i+1])->scale(one/H(i+1,i));
+    
+    V1.push_back(b1.clone()); (V1[i+1])->set(*w1); (V1[i+1])->scale(one/H(i+1,i));
+    V2.push_back(b2.clone()); (V2[i+1])->set(*w2); (V2[i+1])->scale(one/H(i+1,i));
 
     // Apply Givens rotations.
     for (k=0; k<=i-1; k++) {
@@ -402,6 +403,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
 template <class Real>
 std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacobian(const Vector<Real> &x,
                                                                                     const Vector<Real> &v,
+                                                                                    const Vector<Real> &c,
                                                                                     const bool printToScreen,
                                                                                     const int numSteps) {
   Real tol = std::sqrt(ROL_EPSILON);
@@ -412,22 +414,22 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
+  // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > c0   = c.clone();
+  Teuchos::RCP<Vector<Real> > AJv  = x.clone();
+  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  Teuchos::RCP<Vector<Real> > e    = x.clone();
+  Teuchos::RCP<Vector<Real> > cnew = c.clone();
+  Teuchos::RCP<Vector<Real> > ajv  = x.clone();
+
   std::ios::fmtflags f( std::cout.flags() );
 
   // Compute constraint value at x.
-  Teuchos::RCP<Vector<Real> > c = v.clone();
-  this->value(*c, x, tol);
+  this->value(*c0, x, tol);
 
   // Compute (Jacobian at x) times (vector v).
-  Teuchos::RCP<Vector<Real> > AJv = x.clone();
   this->applyAdjointJacobian(*AJv, v, x, tol);
   Real normAJv = AJv->norm();
-
-  // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
-  Teuchos::RCP<Vector<Real> > e    = x.clone();
-  Teuchos::RCP<Vector<Real> > cnew = v.clone();
-  Teuchos::RCP<Vector<Real> > ajv  = x.clone();
 
   for (int i=0; i<numSteps; i++) {
 
@@ -438,7 +440,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
       xnew->axpy(eta,*e);
       this->update(*xnew);
       this->value(*cnew,*xnew,tol);
-      cnew->axpy(-1.0,*c);
+      cnew->axpy(-1.0,*c0);
       cnew->scale(1.0/eta);
       ajv->axpy(cnew->dot(v),*e);
     }
@@ -498,20 +500,20 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
+  // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > AJu = v.clone();
+  Teuchos::RCP<Vector<Real> > AHuv = v.clone();
+  Teuchos::RCP<Vector<Real> > AJnew = v.clone();
+  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+
   std::ios::fmtflags f( std::cout.flags() );
 
   // Apply adjoint Jacobian to u.
-  Teuchos::RCP<Vector<Real> > AJu = v.clone();
   this->applyAdjointJacobian(*AJu, u, x, tol);
 
   // Apply adjoint Hessian at x, in direction v, to u.
-  Teuchos::RCP<Vector<Real> > AHuv = v.clone();
   this->applyAdjointHessian(*AHuv, u, v, x, tol);
   Real normAHuv = AHuv->norm();
-
-  // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > AJnew = v.clone();
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
     // Apply adjoint Jacobian to u at x+eta*v.
