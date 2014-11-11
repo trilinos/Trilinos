@@ -2,11 +2,12 @@
 // @HEADER
 // ***********************************************************************
 //
-//            Domi: Multidimensional Datastructures Package
-//                 Copyright (2004) Sandia Corporation
+//     Domi: Multi-dimensional Distributed Linear Algebra Services
+//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia
+// Corporation, the U.S. Government retains certain rights in this
+// software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
