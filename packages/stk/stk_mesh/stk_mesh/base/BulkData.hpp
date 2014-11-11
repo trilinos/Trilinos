@@ -155,13 +155,13 @@ public:
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
 
   /** \brief  The parallel machine */
-  ParallelMachine parallel() const { return m_parallel_machine ; }
+  ParallelMachine parallel() const { return m_parallel.parallel() ; }
 
   /** \brief  Size of the parallel machine */
-  int parallel_size()   const { return m_parallel_size ; }
+  int parallel_size()   const { return m_parallel.parallel_size() ; }
 
   /** \brief  Rank of the parallel machine's local processor */
-  int parallel_rank()   const { return m_parallel_rank ; }
+  int parallel_rank()   const { return m_parallel.parallel_rank() ; }
 
   const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
 
@@ -710,6 +710,8 @@ public:
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
+  bool use_entity_ids_for_resolving_sharing() const { return m_use_identifiers_for_resolving_sharing; }
+  void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
 
 protected: //functions
   void update_deleted_entities_container();
@@ -795,12 +797,12 @@ protected: //functions
   void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                            const std::vector<EntityProc> & shared_change,
                            const std::vector<EntityProc> & ghosted_change,
-                           NodeToDependentProcessorsMap & owned_node_sharing_map);
+                           EntityToDependentProcessorsMap & owned_node_sharing_map);
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps();
 
-  void internal_apply_node_sharing(const NodeToDependentProcessorsMap & owned_node_sharing_map);
+  void internal_apply_node_sharing(const EntityToDependentProcessorsMap & owned_node_sharing_map);
   void internal_add_node_sharing( Entity node, int sharing_proc );
   void internal_remove_node_sharing( EntityKey node, int sharing_proc );
   void internal_compute_proposed_owned_closure_count(const std::vector<EntityProc> & local_change,
@@ -812,12 +814,13 @@ protected: //functions
                                      const std::vector<EntityProc> & ghosted_change,
                                      NewOwnerMap & new_owner_map);
   void update_dependent_processor_map_from_closure_count(const std::vector<uint16_t> & proposed_closure_count,
-                                                         NodeToDependentProcessorsMap & entity_to_dependent_processors_map);
+                                                         EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
   void internal_print_comm_map( std::string title);
   void internal_communicate_entity_to_dependent_processors_map(
-          NodeToDependentProcessorsMap & entity_to_dependent_processors_map);
+          EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
+  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
 private: //functions
 
@@ -899,7 +902,6 @@ private: //functions
 
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
-  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
@@ -973,9 +975,6 @@ protected: //data
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  ParallelMachine m_parallel_machine;
-  int m_parallel_size;
-  int m_parallel_rank;
   size_t m_sync_count;
   BulkDataSyncState m_sync_state;
   std::vector<int> m_mark_entity;
@@ -983,6 +982,7 @@ protected: //data
   std::vector<uint16_t> m_closure_count;
 
 private: // data
+  Parallel m_parallel;
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
@@ -1015,6 +1015,7 @@ private: // data
   FieldDataManager *m_field_data_manager;
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
+  bool m_use_identifiers_for_resolving_sharing;
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
   static unsigned m_num_bulk_data_counter;

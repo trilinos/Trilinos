@@ -35,7 +35,7 @@ INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(Transfer)
 
-#this is apparently a header only library so no need to add the stk_transfer directory
+ADD_SUBDIRECTORY(stk_transfer)
 
 TRIBITS_ADD_TEST_DIRECTORIES(use_cases)
 

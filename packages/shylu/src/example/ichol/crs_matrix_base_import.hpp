@@ -98,64 +98,6 @@ namespace Example {
     return 0;
   }
   
-  template<typename VT,
-           typename OT,
-           typename ST,
-           typename SpT,
-           typename MT>
-  inline ostream& 
-  CrsMatrixBase<VT,OT,ST,SpT,MT>::showMe(ostream &os) const {
-    os << " -- " << _label << " -- " << endl
-       << "    # of Rows          = " << _m << endl
-       << "    # of Cols          = " << _n << endl
-       << "    # of NonZeros      = " << _nnz << endl
-       << endl
-       << "    RowPtrArray length = " << _ap.dimension_0() << endl
-       << "    ColsArray   length = " << _aj.dimension_0() << endl 
-       << "    ValuesArray length = " << _ax.dimension_0() << endl
-       << endl;
-      
-    const int w = 15;
-    if (_ap.size() && _aj.size() && _ax.size()) {
-      os << setw(w) <<  "Row" << "  " 
-         << setw(w) <<  "Col" << "  " 
-         << setw(w) <<  "Val" << endl;
-      for (ordinal_type i=0;i<_m;++i) {
-        size_type jbegin = _ap[i], jend = _ap[i+1];
-        for (size_type j=jbegin;j<jend;++j) 
-          os << setw(w) <<      i << "  " 
-             << setw(w) << _aj[j] << "  " 
-             << setw(w) << _ax[j] << endl;
-      }
-    }
-
-    return os;
-  }
-
-  template<typename VT,
-           typename OT,
-           typename ST,
-           typename SpT,
-           typename MT>
-  inline int 
-  CrsMatrixBase<VT,OT,ST,SpT,MT>::convertGraph(size_type &nnz,
-                                               size_type *rptr,
-                                               ordinal_type *cidx) const {
-    ordinal_type ii = 0;
-    size_type jj = 0;
-
-    for (ordinal_type i=0;i<_m;++i) {
-      size_type jbegin = _ap[i], jend = _ap[i+1];
-      rptr[ii++] = jj;
-      for (size_type j=jbegin;j<jend;++j) 
-        if (i != _aj[j]) 
-          cidx[jj++] = _aj[j];
-    }
-    rptr[ii] = nnz = jj;
-
-    return 0;
-  }
-
 }
 
 

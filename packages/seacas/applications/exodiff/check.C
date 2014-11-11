@@ -168,7 +168,7 @@ namespace {
 	INT n2 = node_map != 0 ? node_map[n] : n;
 	double dx = interface.coord_tol.Delta(x1[n], x2[n2]);
 	if (dx > interface.coord_tol.value) {
-	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		  interface.coord_tol.abrstr(),
 		  x1[n], x2[n2], dx, (size_t)id_map[n]);
 	  std::cout << buf << std::endl;
@@ -179,7 +179,7 @@ namespace {
 	if (file1.Dimension() > 1 && file2.Dimension() > 1) {
 	  double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
 	  if (dy > interface.coord_tol.value) {
-	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		    interface.coord_tol.abrstr(),
 		    y1[n], y2[n2], dy, (size_t)id_map[n]);
 	    std::cout << buf << std::endl;
@@ -191,7 +191,7 @@ namespace {
 	if (file1.Dimension() > 2 && file2.Dimension() > 2) {
 	  double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
 	  if (dz > interface.coord_tol.value) {
-	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		    interface.coord_tol.abrstr(),
 		    z1[n], z2[n2], dz, (size_t)id_map[n]);
 	    std::cout << buf << std::endl;
@@ -224,24 +224,26 @@ namespace {
       Exo_Block<INT>* block1 = file1.Get_Elmt_Block_by_Index(b);
       Exo_Block<INT>* block2 = file2.Get_Elmt_Block_by_Index(b);
       if (interface.map_flag != DISTANCE && interface.map_flag != PARTIAL) {
-	if (block1->Id() != block2->Id()) {
-	  block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
-	  if (block2 == NULL) {
-	    std::cout << "exodiff: ERROR .. Block id " << block1->Id()
-		      << " exists in first "
-		      << "file but not the second." << std::endl;
-	    is_same = false;
+	if (block1 != NULL) {
+	  if (block2 == NULL || block1->Id() != block2->Id()) {
+	    block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
+	    if (block2 == NULL) {
+	      std::cout << "exodiff: ERROR .. Block id " << block1->Id()
+			<< " exists in first "
+			<< "file but not the second." << std::endl;
+	      is_same = false;
+	    }
 	  }
-	}
-	if (block1 != NULL && block2 != NULL) {
-	  if (!Check_Elmt_Block_Params(block1, block2)) {
-	    is_same = false;
-	  } else {
-	    // Only do this check if Check_Elmt_Block_Params does not fail.
-	    // TODO: Pass in node_map and node_id_map...
-	    if (!interface.map_flag) {
-	      if (!Check_Elmt_Block_Connectivity(block1, block2))
-		is_same = false;
+	  if (block2 != NULL) {
+	    if (!Check_Elmt_Block_Params(block1, block2)) {
+	      is_same = false;
+	    } else {
+	      // Only do this check if Check_Elmt_Block_Params does not fail.
+	      // TODO: Pass in node_map and node_id_map...
+	      if (!interface.map_flag) {
+		if (!Check_Elmt_Block_Connectivity(block1, block2))
+		  is_same = false;
+	      }
 	    }
 	  }
 	}

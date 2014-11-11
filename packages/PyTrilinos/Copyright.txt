@@ -1,12 +1,12 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
+//          PyTrilinos: Python Interfaces to Trilinos Packages
+//                 Copyright (2014) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia
+// Corporation, the U.S. Government retains certain rights in this
+// software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,24 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
-//
 // @HEADER
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
-#define XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
-
-namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class $TMPL_CLASS;
-}
-
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_SHORT
-#define XPETRA_$TMPL_UPPERCASECLASS_SHORT
-#endif
-
-#endif // XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP

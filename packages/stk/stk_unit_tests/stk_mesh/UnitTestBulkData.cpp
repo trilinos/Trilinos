@@ -1431,7 +1431,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
   //                   {elem1, 1}
 
   {
-    stk::mesh::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
+    stk::mesh::EntityToDependentProcessorsMap entity_to_dependent_processors_map;
     for (std::vector<EntityProc>::const_iterator shared_giving_away_eproc = shared_change.begin();
          shared_giving_away_eproc != shared_change.end(); ++shared_giving_away_eproc)
     {
@@ -1446,7 +1446,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     if (p_rank == 1)
     {
       EXPECT_EQ(1u, entity_to_dependent_processors_map.size());
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
       EXPECT_TRUE(node4_it != entity_to_dependent_processors_map.end());
       const std::set<int> & node4_procs = node4_it->second;
       EXPECT_EQ(1, *(node4_procs.begin()));
@@ -1454,7 +1454,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
   }
 
   {
-    stk::mesh::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
+    stk::mesh::EntityToDependentProcessorsMap entity_to_dependent_processors_map;
     for (std::vector<EntityProc>::const_iterator ghosted_giving_away_eproc = ghosted_change.begin();
          ghosted_giving_away_eproc != ghosted_change.end(); ++ghosted_giving_away_eproc)
     {
@@ -1465,10 +1465,10 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     if (p_rank == 0)
     {
       EXPECT_EQ(4u, entity_to_dependent_processors_map.size());
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node5_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node6_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node5_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node6_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
       ASSERT_TRUE(node3_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node4_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node5_it != entity_to_dependent_processors_map.end());
@@ -1489,10 +1489,10 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     if (p_rank == 1)
     {
       EXPECT_EQ(4u, entity_to_dependent_processors_map.size());
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node1_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node2_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2));
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node1_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node2_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
       ASSERT_TRUE(node1_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node2_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node3_it != entity_to_dependent_processors_map.end());
@@ -1542,7 +1542,7 @@ TEST(BulkData, test_nominal_internal_get_processor_dependencies_shared_or_ghoste
     {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
-        stk::mesh::NodeToDependentProcessorsMap owned_node_sharing_map;
+        stk::mesh::EntityToDependentProcessorsMap owned_node_sharing_map;
         stk::mesh::impl::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
 
         EntityKey node7_key(stk::topology::NODE_RANK,7);
@@ -1910,7 +1910,6 @@ TEST(BulkData, testParallelSideCreation)
             mesh.declare_relation(side, *itr, side_rel_id);
         }
         mesh.declare_relation(elem, side, 0);
-
         mesh.modification_end();
 
         // Expect that the side is not shared, but the nodes of side are shared
@@ -3044,6 +3043,88 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     }
 }
 
+//TEST(BulkData, testProblem)
+//{
+//    MPI_Comm communicator = MPI_COMM_WORLD;
+//    //int numProcs = stk::parallel_machine_size(communicator);
+//
+//    //if(numProcs == 4)
+//    {
+//        const int spatialDim = 2;
+//        stk::mesh::MetaData stkMeshMetaData(spatialDim);
+//        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
+//
+//        std::string exodusFileName = getOption("-i", "mesh.exo");
+//
+//        // STK IO module will be described in separate chapter.
+//        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+//        // The order of the following lines in {} are important
+//        {
+//            stk::io::StkMeshIoBroker exodusFileReader(communicator);
+//
+//            // Inform STK IO which STK Mesh objects to populate later
+//            exodusFileReader.set_bulk_data(*stkMeshBulkData);
+//
+//            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+//
+//            // Populate the MetaData which has the descriptions of the Parts and Fields.
+//            exodusFileReader.create_input_mesh();
+//
+//            // Populate entities in STK Mesh from Exodus file
+//            exodusFileReader.populate_bulk_data();
+//        }
+//
+//        stkMeshBulkData->modification_begin();
+//        stkMeshBulkData->modification_end();
+//
+//        std::vector<size_t> globalCounts;
+//        stk::mesh::comm_mesh_counts(*stkMeshBulkData, globalCounts);
+//
+//        delete stkMeshBulkData;
+//    }
+//}
+//
+//TEST(BulkData, testProblem1)
+//{
+//    MPI_Comm communicator = MPI_COMM_WORLD;
+//    //int numProcs = stk::parallel_machine_size(communicator);
+//
+//    //if(numProcs == 4)
+//    {
+//        const int spatialDim = 3;
+//        stk::mesh::MetaData stkMeshMetaData(spatialDim);
+//        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
+//
+//        std::string exodusFileName = getOption("-i", "mesh.exo");
+//
+//        // STK IO module will be described in separate chapter.
+//        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+//        // The order of the following lines in {} are important
+//        {
+//            stk::io::StkMeshIoBroker exodusFileReader(communicator);
+//
+//            // Inform STK IO which STK Mesh objects to populate later
+//            exodusFileReader.set_bulk_data(*stkMeshBulkData);
+//
+//            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+//
+//            // Populate the MetaData which has the descriptions of the Parts and Fields.
+//            exodusFileReader.create_input_mesh();
+//
+//            // Populate entities in STK Mesh from Exodus file
+//            exodusFileReader.populate_bulk_data();
+//        }
+//
+//        stkMeshBulkData->modification_begin();
+//        stkMeshBulkData->modification_end();
+//
+//        std::vector<size_t> globalCounts;
+//        stk::mesh::comm_mesh_counts(*stkMeshBulkData, globalCounts);
+//
+//        delete stkMeshBulkData;
+//    }
+//}
+
 TEST(BulkData, ModificationEnd)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -3407,6 +3488,82 @@ TEST(BulkData, verify_closure_count_is_correct)
         delete stkMeshBulkData;
     }
 
+}
+
+TEST(BulkData, change_entity_owner_no_aura_check)
+{
+//   id/owner_proc
+//
+//   1/0---4/0---5/0      1/0---4/1---5/1
+//    |     |     |        |     |     |
+//    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
+//    |     |     |        |     |     |
+//   2/0---3/0---6/0      2/0---3/0---6/1
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta( spatial_dimension );
+  BulkDataTester bulk( meta, pm);
+
+  std::vector<stk::mesh::Entity> elems;
+  CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
+
+  stk::mesh::EntityProcVec entity_procs;
+  if (p_rank == 0) {
+    entity_procs.push_back(stk::mesh::EntityProc(elems[1], 1));
+    entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 4), 1));
+    entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 5), 1));
+    entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 6), 1));
+  }
+  bulk.change_entity_owner(entity_procs, false); //regenerate_aura, don't do it
+
+  CEOUtils::checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(bulk);
+}
+
+TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
+{
+  //   id/owner_proc
+  //
+  //   1/0---4/0---5/1        1/1---4/0---5/0
+  //    |     |     |          |     |     |
+  //    | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
+  //    |     |     |          |     |     |
+  //   2/0---3/0---6/1        2/1---3/0---6/0
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta( spatial_dimension );
+  BulkDataTester mesh( meta, pm);
+
+  CEOUtils::fillMeshfor2Elem2ProcFlipAndTest_no_ghost(mesh, meta);
+
+  stk::mesh::EntityProcVec entity_procs_flip;
+  if (p_rank == 0) {
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::ELEM_RANK, 1), 1));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 1), 1));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 2), 1));
+  } else {
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::ELEM_RANK, 2), 0));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 5), 0));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 6), 0));
+  }
+  mesh.change_entity_owner(entity_procs_flip, false); //also want to make sure and not generate an aura here
+
+  CEOUtils::checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(mesh);
 }
 
 //==============================================================================

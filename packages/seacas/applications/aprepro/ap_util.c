@@ -171,13 +171,18 @@ char *get_temp_filename()
 #else
   fd = mkstemp(template);
 #endif
-  close(fd);
+  if (fd >= 0) {
+    close(fd);
+  }
   return template;
 }  
 
 int is_directory(char *filepath)
 {
   struct stat s;
-  stat(filepath, &s);
-  return S_ISDIR(s.st_mode);
+  int ok = stat(filepath, &s);
+  if (ok == 0)
+    return S_ISDIR(s.st_mode);
+  else
+    return 0;
 }

@@ -2002,6 +2002,7 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 #define EX_WRONGFILETYPE 1003   /**< wrong file type for function             */
 #define EX_LOOKUPFAIL    1004   /**< id table lookup failed                   */
 #define EX_BADPARAM      1005   /**< bad parameter passed                     */
+#define EX_INTERNAL      1006   /**< internal logic error                     */
 #define EX_MSG          -1000   /**< message print code - no error implied    */
 #define EX_PRTLASTMSG   -1001   /**< print last error message msg code        */
 #define EX_NOTROOTID    -1002   /**< file id is not the root id; it is a subgroup id */

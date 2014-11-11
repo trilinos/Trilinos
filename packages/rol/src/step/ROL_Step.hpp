@@ -112,7 +112,8 @@ public:
 
   /** \brief Initialize step with equality constraint.
   */
-  virtual void initialize( Vector<Real> &x, Vector<Real> &l, Objective<Real> &obj, EqualityConstraint<Real> &con, 
+  virtual void initialize( Vector<Real> &x, Vector<Real> &g, Vector<Real> &l, Vector<Real> &c,
+                           Objective<Real> &obj, EqualityConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
   }
 

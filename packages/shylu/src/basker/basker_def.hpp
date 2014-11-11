@@ -2,7 +2,9 @@
 #define BASKER_DEF_HPP
 
 #include "basker_decl.hpp"
+#include "basker_scalartraits.hpp"
 #include "basker.hpp"
+
 
 //#include <assert.h>
 #include <iostream>
@@ -13,428 +15,765 @@ using namespace std;
 //#define BASKER_DEBUG 1
 //#undef UDEBUG
 
-namespace basker{
-
-  template<class Int>
-  inline
- bool basker_ordinal_type_valid
-  (
-   Int a
-   )
+namespace Basker{
+   
+  template <class Int, class Entry>
+  Basker<Int, Entry>::Basker()
   {
-    if(a == ((Int)-1)) return false;
-    else return true;
+    //A = new basker_matrix<Int,Entry>;
+    A = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    //L = new basker_matrix<Int,Entry>;
+    L = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    L->nnz = 0;
+    //U = new basker_matrix<Int,Entry>;
+    U = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    U->nnz = 0;
+
+    been_fact = false;
+    perm_flag = false;
+  }
+ 
+ 
+  template <class Int, class Entry>
+  Basker<Int, Entry>::Basker(Int nnzL, Int nnzU)
+  {
+    A = new basker_matrix<Int,Entry>;
+    L = new basker_matrix<Int,Entry>;
+    L->nnz = nnzL;
+    U = new basker_matrix<Int,Entry>;
+    U->nnz = nnzU;
+
+    been_fact = false;
+    perm_flag = false;
+  }
+ 
+
+  template <class Int, class Entry>
+  Basker<Int, Entry>::~Basker()
+  {
+    //free factor
+    if(been_fact)
+      {
+	free_factor();
+	FREE(pinv);
+      }
+    if(perm_flag)
+      {
+	free_perm_matrix();
+      }
+    FREE(A);
+    FREE(L);
+    FREE(U);
+    
   }
 
 
-
   template <class Int, class Entry>
-  void basker_dfs
+  int Basker<Int,Entry>:: basker_dfs
   ( 
    Int n,
    Int j, 
-   Int Li [], 
-   Int Lp [], 
-   Int color [], 
-   Int pattern [], /* o/p */
+   Int *Li, 
+   Int *Lp, 
+   Int *color, 
+   Int *pattern, /* o/p */
    Int *top,       /* o/p */ 
    Int k,
-   Int pinv [],
-   Int stack []
+   Int *pinv,
+   Int *stack
   )
   {
-    //int head;
-    int have_elements = 1;
+    Int have_elements = 1;
     Int i, t, i1, head ; 
-   Int start, end, done, *store ;
+    Int start, end, done, *store ;
+   
 
-   store = stack + n ;
-   head = 0;
-   stack[head] = j;
-
-   //while (head >= 0)
-        
-   while(basker_ordinal_type_valid<Int>(head))
-   {
-       j = stack[head] ;
-#ifdef BASKER_DEBUG
-       std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
-#endif
-       t = pinv [j] ;
-       if (color[j] == 0)
-       {
-           /* Seeing this column for first time */
-           color[j] = 1 ;
-           start = Lp[t] ;
-       }
-       else
-       {
-	 ASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
-           start = store[j];
-       }
-       done = 1;
-
-       if ( t != -1 )
-       {
-           end = Lp[t+1] ;
-           for ( i1 = start ; i1 < end ; i1++ )
-           {
-               i = Li[i1] ;
-               if ( color[i] == 0 )
-               {
-                   stack[++head] = i;
-                   store[j] = i1+1;
-                   done = 0;
-                   break;
-               }
-           }
-           /*if (i1 == end)
-               done = 1;*/
-       }
-       if (done)
-       {
-	 // std::cout << "done called " << std::endl;
-           pattern[--*top] = j ;
-           color[j] = 2 ;
-	   head--;
-       }
-   }
-#ifdef BASKER_DEBUG
-   std::cout << "Out of DFS: " << j << std::endl;
-#endif
-}
-
-/* ==================== basker function ============== */
-  template <class Int, class Entry>
-  Int basker
-  (
-   Int Ap [],
-   Int Ai [],
-   Entry Ax [],
-   Int anrow,
-   Int ancol,
-   Int ws [],
-   Entry X [],
-   Int *Lp, 
-   Int **Li_p,
-   Entry **Lx_p,
-   Int *Up,
-   Int **Ui_p,
-   Entry **Ux_p,
-   Int *llnnz_p,
-   Int *uunnz_p,
-   Int *pinv
-   )   
-  {
-
-    Int i, j, k;
-    Int *tptr, *color, *pattern, *stack ;
-    Int *Li, *Ui ;
-    Int top, top1, maxindex, t, j1, j2, llnnz, uunnz ;
-    Int lnnz, unnz, xnnz, lcnt, ucnt;
-    Int cu_ltop, cu_utop ;
-    Int pp, p2, p ;
-    Int newsize;
-    Entry pivot, value, xj ;
-    Entry absv, maxv ;
-    Entry *Lx, *Ux ;
-
-    llnnz = *llnnz_p;
-    uunnz = *uunnz_p;
-    Li = *Li_p ;
-    Lx = *Lx_p ;
-    Ui = *Ui_p ;
-    Ux = *Ux_p ;
-
-    tptr = ws ;
-
-    color = ws ;
-    tptr += ancol ;
-
-    
-    pattern = tptr ;
-    tptr += anrow ;
-
-    stack = tptr ;
-    tptr += 2*anrow ;
-
-    cu_ltop = 0 ;
-    cu_utop = 0 ;
-    top = ancol ;
-    top1 = ancol ;
-    lnnz = 0 ;
-    unnz = 0 ;
-    
-
-    for (k = 0; k<ancol ; k++)
-    {
-        pinv[k] = -1 ;
-    }
-
-    
-    /* for all the columns in A ... */
-    for (k = 0; k<ancol ; k++)
-    {
-      //std::cout << "K: " << k << std::endl;
-#ifdef BASKER_DEBUG
-      std::cout << "k = " << k << std::endl;
-#endif
-
-        value = 0.0 ;
-        pivot = 0.0 ; 
-        maxindex = -1 ;
-        j1 = 0 ;
-        j2 = 0 ;
-        lcnt = 0;
-        ucnt = 0;
-
-#ifdef BASKER_DEBUG
-        ASSERT( top == ancol ) ;
-
-        for ( i = 0 ; i < anrow ;i++)
-        {
-          ASSERT( X[i] == 0 ) ;
-        }
-
-        for ( i = 0 ; i < ancol ;i++)
-        {
-          ASSERT ( color[i] == 0 ) ;
-        }
-#endif
-	//printf("here \n");
-	//return 1;
-
-        /* reachability for every non zero in Ak */
-        for (i = Ap[k] ;  i < Ap[k+1] ; i++ )
-        {
-            j = Ai[i] ;
-            X [j] = Ax[i] ;
-
-            if ( color[j] == 0 )
-            {
-                /*BASKER(dfs) (j, Li, Lp, color, pattern, &top, k, pinv) ;*/
-	      //std::cout << "Before dfs \n";
-	      basker_dfs<Int, Entry> (anrow, j, Li, Lp, color, pattern, &top, k,
-                        pinv, stack) ;
-	      //std::cout << "After dfs \n";
-
-	      
-            }    
-        }
-
-       
-	
-
-        xnnz = ancol - top ;
-        //assert ( xnnz <= anrow ) ;
-
-        /* Lx = b where x will be the column k in in L and U */
-        top1 = top ;
-        for ( pp = 0 ; pp < xnnz ; pp++ )
-        {
-            j = pattern[top1++] ;
-            color[j] = 0 ;
-            t = pinv[j] ;
-
-            if (basker_ordinal_type_valid<Int>(t))
-            {
-                xj = X [j] ;
-                p2 = Lp [t+1] ; /* TBV */
-                for (p = Lp [t]+1 ;  p < p2 ; p++)
-                {
-                    X [Li [p]] -= Lx [p] * xj ;
-                }
-            }
-        }
-
-        /* get the pivot */
-        maxv = 0.0 ; 
-        for ( i = top ; i < anrow ;i++)
-        {
-            j = pattern[i] ;
-            t = pinv[j] ;
-            value =  X[j] ;
-            absv = ( value < 0.0 ? -value : value ) ;
-
-            if (!basker_ordinal_type_valid<Int>(t))
-            {
-                lcnt++;
-                if( absv > maxv)
-                {
-                    maxv = absv ;
-                    pivot = value ;
-                    maxindex = j ;
-                }
-            }
-        }
-        ucnt = anrow - top - lcnt  + 1;
-	
-	//cout << "Max Index" << maxindex << std::endl;
-        if (!basker_ordinal_type_valid<Int>(maxindex) || pivot == 0 )
-        {
-	  std::cout << "Matrix is singular at index: " << maxindex << " pivot: " << pivot << std::endl;       
-            return 1;
-        }
-
-        pinv[maxindex] = k ;
-        if (maxindex != k)
-        {
-#ifdef BASKER_DEBUG
-	  std::cout << "Permuting pivot: " << k << " for row: " << maxindex << std::endl;
-	  //std::cout
-#endif
+    store = stack + n ;
+    head = 0;
+    stack[head] = j;
+    bool has_elements = true;
      
-        }
-
-       if (lnnz + lcnt >= llnnz)
-        {
-            /* reallocate space for L */
-            /* Note that there can be atmost anrow - top - 1 entries in L
-             * from the for loop below as P[maxindex] != -1.
-             * The index and value for maxindex entry is assigned outside
-             * the loop. */
-             newsize = llnnz * 1.1 + 2 * anrow + 1;
-#ifdef BASKER_DEBUG
-	     std::cout << "Out of memory -- Reallocating: OldSize: " << llnnz << "NewSize: " << newsize << std::endl;
-	     std::cout << "MY NOTES:  Check reallocs in C++" << std::endl;
-#endif
-	     Li = (Int *)REALLOC(Li, newsize*sizeof(Int));
-             if (!Li)
-             {
-	       std::cout << "Cannot Realloc Memory" << std::endl;
-               return 1;
-             }
-             //Lx = REALLOC(Lx, newsize * sizeof(double));
-	     Lx = (Entry *)REALLOC(Lx, newsize*sizeof(Entry));
-             if (!Lx)
-             {
-	       std::cout << "Cannot Realloc Memory" << std::endl;
-               return 1;
-             }
-             llnnz = newsize;
-        }
-
-        if (unnz + ucnt >= uunnz)
-        {
-            /* reallocate space for U */
-             newsize = uunnz * 1.1 + 2 * anrow + 1;
-#ifdef BASKER_DEBUG
-	     std::cout << "Out of memory -- Reallocating U:  OldSize: " << uunnz << " NewSize " << newsize << std::endl;
-#endif
-             //PRINT(("Reallocating L oldsize=%d, newsize=%d\n", uunnz, newsize));
-             Ui = (Int *) REALLOC(Ui, newsize * sizeof(Int));
-             
-	     //Ui = (Int *)realloc(Ui, newsize*sizeof(Int));
-	     if (!Ui)
-             {
-	       std::cout << "Cannot allocate memory\n";
-	       //printf("Cannot allocate memory\n");
-                 return 1;
-             }
-	     
-             Ux = (Entry *) REALLOC(Ux, newsize * sizeof(Entry));
-	     //Ux = (Entry *)realloc(Ux, newsize*sizeof(Entry));
-             if (!Ux)
-             {
-	       std::cout << "Cannot allocate memory\n";
-	       //printf("Cannot allocate memory\n");
-                 return 1;
-             }
-             uunnz = newsize;
-        }
-
-        /* L(k,k) = 1 */
-        //assert(lnnz < llnnz);
-        Li[lnnz] = maxindex ;
-        Lx[lnnz] = 1.0 ;
-        lnnz++;
-
-        for ( i = top ; i < anrow ;i++ )
-        {
-            j = pattern[i] ;
-            t = pinv[j] ;
-
-            /*  chk for numerical cancellation */
-            if ( X[j] != 0 )
-            {
-	      if ( basker_ordinal_type_valid<Int>(t) )
-                {
-                    if ( unnz >= uunnz )
-                    {
-		      std::cout << "basker: Insufficient memory for U" << std::endl;
-		      //printf ("basker : Insufficient memory for U %d %d \n", unnz, uunnz); 
-                        return 1;
-                    }
-                    /* ASSERT(unnz < uunnz ) ; */
-                    Ui[unnz] = pinv[j] ;
-                    Ux[unnz] = X[j] ;
-                    unnz++ ;
-                }
-	      else if (!basker_ordinal_type_valid<Int>(t))
-                {
-                    if ( lnnz >= llnnz )
-                    {
-		      std::cout << "basker: Insufficient memroy for L" << std::endl;
-		      //printf ("basker : Insufficient memory for L \n"); 
-                        return 1;
-                    }
-		    // assert(lnnz < llnnz ) ;
-            /*printf("I am assigning Li[%d]=%d  Lx[%d]=%g t=%d, j =%d\n", lnnz, j, lnnz, X[j]/pivot, t, j) ;*/
-                    Li[lnnz] = j ;
-                    Lx[lnnz] = X[j]/pivot ;
-                    lnnz++;
-                }
-            }
-            X[j] = 0 ;
-        }
-
-        xnnz = 0;
-        top = ancol ;
-
-        Lp[k] = cu_ltop ;
-        Lp[k+1] = lnnz ;
-        cu_ltop = lnnz ;
-
-        Up[k] = cu_utop ;
-        Up[k+1] = unnz ;
-        cu_utop = unnz ;
-
-    }
-
-#ifdef BASKER_DEBUG
-    for (k = 0; k<lnnz ; k++)
-    {
-        printf("L[%d]=%g", k, Lx[k]);
-    }
-    printf("\n");
-
-    for (k = 0; k<lnnz ; k++)
-    {
-        printf("Li[%d]=%d", k, Li[k]);
-    }
-    printf("\n");
-#endif
-    /*repermute L*/
-    for(i = 0; i < ancol; i++)
+    while(has_elements)
       {
-	for(k = Lp[i]; k < Lp[i+1]; k++)
+	j = stack[head] ;
+#ifdef BASKER_DEBUG
+	//std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
+#endif
+	t = pinv [j] ;
+	if (color[j] == 0)
 	  {
-	    Li[k] =pinv[Li[k]]; 	    
+	    /* Seeing this column for first time */
+	    color[j] = 1 ;
+	    start = Lp[t] ;
+	  }
+	else
+	  {
+	    ASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
+	    start = store[j];
+	  }
+	done = 1;
+
+	if ( t != n )
+	  {
+	    end = Lp[t+1] ;
+	    for ( i1 = start ; i1 < end ; i1++ )
+	      {
+		i = Li[i1] ;
+		if ( color[i] == 0 )
+		  {
+		    stack[++head] = i;
+		    store[j] = i1+1;
+		    done = 0;
+		    break;
+		  }
+	      }
+	  }
+	if (done)
+	  {
+	    pattern[--*top] = j ;
+	    color[j] = 2 ;
+	    if(head == 0)
+	      {
+		has_elements = false;
+	      }
+	    else
+	      {
+		head--;
+	      }
 	  }
       }
-
-
-
-
-
-    *llnnz_p = llnnz;
-    *uunnz_p = uunnz;
-    *Li_p = Li ;
-    *Lx_p = Lx ;
-    *Ui_p = Ui ;
-    *Ux_p = Ux ;
-
-    return 0 ;
-}
-  }//end namespace
+#ifdef BASKER_DEBUG
+    std::cout << "Out of DFS: " << j << std::endl;
 #endif
+    return 0;
+  } //End dfs
+
+
+
+  template <class Int, class Entry>
+  int Basker<Int,Entry>::factor(Int nrow, Int ncol , Int nnz, Int *col_ptr, Int *row_idx, Entry *val)
+  {
+
+    /*Initalize A basker matrix struc */
+#ifdef  BASKER_DEBUG
+
+    ASSERT(nrow > 0);
+    ASSERT(ncol > 0);
+    ASSERT(nnz > 0);
+
+#endif
+
+    A->nrow = nrow;
+    A->ncol = ncol;
+    A->nnz = nnz;
+    A->col_ptr = col_ptr;
+    A->row_idx = row_idx;
+    A->val = val;
+    /*End initalize A*/
+
+    /*Creating space for L and U*/
+    L->nrow = nrow;
+    L->ncol = ncol;
+    if(L->nnz == 0)
+      {
+	L->nnz = 2*A->nnz;
+      }
+    L->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
+    L->row_idx = (Int *) CALLOC(L->nnz, sizeof(Int));
+    L->val =     (Entry *) CALLOC(L->nnz, sizeof(Entry));
+
+    U->nrow = nrow;
+    U->ncol = ncol;
+    if(U->nnz == 0)
+      {
+	U->nnz = 2*A->nnz;
+      }
+    U->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
+    U->row_idx = (Int *) CALLOC(U->nnz, sizeof(Int));
+    U->val =     (Entry *) CALLOC(U->nnz, sizeof(Entry));
+    /*End creating space for L and U*/
+
+    /*Creating working space*/
+    Int *tptr;
+    Entry *X;
+    tptr = (Int *)   CALLOC( (ncol)+(4*nrow), sizeof(Int));
+    X =    (Entry *) CALLOC(2*nrow, sizeof(Entry));
+    pinv = (Int * )  CALLOC(ncol+1, sizeof(Int)); //Note extra pad
+    /*End creating working space */
+    
+    /*Defining Variables Used*/
+    Int i, j, k;
+    Int *color, *pattern, *stack; // pointers into the work space
+    Int top, top1, maxindex, t, j1, j2;
+    Int lnnz, unnz, xnnz, lcnt, ucnt;
+    Int cu_ltop, cu_utop;
+    Int pp, p2, p;
+    Int newsize;
+    Entry pivot, value, xj;
+    Entry absv, maxv;
+
+    color = tptr;
+    tptr += ncol;
+    
+    pattern = tptr;
+    tptr += nrow;
+    
+    stack = tptr;
+    tptr += 2*(nrow);
+
+    
+    cu_ltop = 0;
+    cu_utop = 0;
+    top =  ncol;
+    top1 = ncol;
+    lnnz = 0; //real found lnnz
+    unnz = 0; //real found unnz
+
+    for(k = 0 ; k < ncol; k++)
+      {
+	pinv[k] = ncol;      
+      }
+
+    /*For all columns in A .... */
+    for (k = 0; k < ncol; k++)
+      {
+
+#ifdef BASKER_DEBUG
+	cout << "k = " << k << endl;
+#endif
+	
+	value = 0.0;
+	pivot = 0.0;
+	maxindex = ncol;
+	j1 = 0;
+	j2 = 0;
+	lcnt = 0;
+	ucnt = 0;
+
+#ifdef BASKER_DEBUG
+	ASSERT (top == ncol);
+	
+	for(i = 0; i < nrow; i++)
+	  {
+	    ASSERT(X[i] == (Entry)0);
+	  }
+	for(i = 0; i < ncol; i++)
+	  {
+	    ASSERT(color[i] == 0); 
+	  }
+#endif
+	/* Reachability for every nonzero in Ak */
+	for( i = col_ptr[k];  i < col_ptr[k+1]; i++)
+	  {
+	    j = row_idx[i];
+	    X[j] = val[i];
+	    
+	    if(color[j] == 0)
+	      {
+		//do dfs
+		basker_dfs(nrow, j, L->row_idx, L->col_ptr, color, pattern, &top, k, pinv, stack);
+
+	      }
+
+	  }//end reachable
+
+	xnnz = ncol - top;
+#ifdef BASKER_DEBUG
+	cout << top << endl;
+	cout << ncol << endl;
+	cout << xnnz << endl;
+	//ASSERT(xnnz <= nrow);
+#endif
+	/*Lx = b where x will be the column k in L and U*/
+	top1 = top;
+	for(pp = 0; pp < xnnz; pp++)
+	  {
+	    j = pattern[top1++];
+	    color[j] = 0;
+	    t = pinv[j];
+	    
+	    if(t!=ncol) //it has not been assigned
+	      {
+		xj = X[j];
+		p2 = L->col_ptr[t+1];
+		for(p = L->col_ptr[t]+1; p < p2; p++)
+		  {
+		    X[L->row_idx[p]] -= L->val[p] * xj;
+		  }//over all rows
+	      }
+
+	  }
+
+	/*get the pivot*/
+	maxv = 0.0;
+	for(i = top; i < nrow; i++)
+	  {
+	    j = pattern[i];
+	    t = pinv[j];
+	    value = X[j];
+	    /*note may want to change this to traits*/
+	    //absv = (value < 0.0 ? -value : value);
+	    absv = BASKER_ScalarTraits<Entry>::approxABS(value);
+
+	    if(t == ncol)
+	      {
+		lcnt++;
+		if( BASKER_ScalarTraits<Entry>::gt(absv , maxv))
+		  {
+		    maxv = absv;
+		    pivot = value;
+		    maxindex= j;
+		  }
+	      }
+	  }
+	ucnt = nrow - top -lcnt + 1;
+	
+	if(maxindex == ncol || pivot == ((Entry)0))
+	  {
+	    cout << "Matrix is singular at index: " << maxindex << " pivot: " << pivot << endl;
+	    return 1;
+	  }
+
+	pinv[maxindex] = k;
+#ifdef BASKER_DEBUG
+	if(maxindex != k )
+	  {
+	    cout << "Permuting pivot: " << k << " for row: " << maxindex << endl;
+	  }
+#endif	
+
+	if(lnnz + lcnt >= L->nnz)
+	  {
+	    
+	    newsize = L->nnz * 1.1 + 2*nrow + 1;
+#ifdef BASKER_DEBUG
+	    cout << "Out of memory -- Reallocating.  Old Size: " << L->nnz << " New Size: " << newsize << endl;
+#endif
+	    L->row_idx = (Int *) REALLOC(L->row_idx, newsize*sizeof(Int));
+	    if(!(L->row_idx))
+	      {
+		cout << "WARNING: Cannot Realloc Memory" << endl;
+		return 1;
+	      }
+	    L->val = (Entry *) REALLOC(L->val, newsize*sizeof(Entry));
+	    if(!(L->val))
+	      {
+		cout << "WARNING: Cannot Realloc Memory" << endl;
+		return 1;
+	      }
+	    L->nnz = newsize;
+	    
+	  }//realloc if L is out of memory
+	
+	if(unnz + ucnt >= U->nnz)
+	  {
+	    newsize = U->nnz*1.1 + 2*nrow + 1;
+#ifdef BASKER_DEBUG
+	    cout << "Out of memory -- Reallocating.  Old Size: " << L->nnz << " New Size: " << newsize << endl;
+#endif
+	    U->row_idx = (Int *) REALLOC(U->row_idx, newsize*sizeof(Int));
+	    if(!(U->row_idx))
+	      {
+		cout << "WARNING: Cannot Realloc Memory" << endl;
+		return 1;
+	      }
+
+	    U->val = (Entry *) REALLOC(U->val, newsize*sizeof(Entry));
+	    if(!(U->val))
+	      {
+		cout << "WARNING: Cannot Realloc Memory" << endl;
+		return 1;
+	      }
+	    U->nnz = newsize;
+	  }//realloc if U is out of memory
+	
+	//L->col_ptr[lnnz] = maxindex;
+	L->row_idx[lnnz] = maxindex;
+	L->val[lnnz] = 1.0;
+	lnnz++;
+
+	for(i = top; i < nrow; i++)
+	  {
+	    j = pattern[i];
+	    t = pinv[j];
+
+	    /* check for numerical cancellations */
+	    
+	    if(X[j] != ((Entry)0))
+	      {
+		
+		if(t != ncol)
+		  {
+		    if(unnz >= U->nnz)
+		      {
+			cout << "BASKER: Insufficent memroy for U" << endl;
+			return 1;
+		      }
+		    U->row_idx[unnz] = pinv[j];
+		    U->val[unnz] = X[j];
+		    unnz++;
+		    
+		  }
+		else if (t ==  ncol)
+		  {
+		    if(lnnz >= L->nnz)
+		      {
+			cout << "BASKER: Insufficent memroy for L" << endl;
+			return 1;
+		      }
+		    
+		    L->row_idx[lnnz]  = j;
+		    //L->val[lnnz] = X[j]/pivot;
+		    L->val[lnnz] = BASKER_ScalarTraits<Entry>::divide(X[j],pivot);
+		    lnnz++;
+		    
+		  }
+
+	      }
+	    X[j] = 0;
+
+	  }
+
+	xnnz = 0;
+	top = ncol;
+
+	L->col_ptr[k] = cu_ltop;
+	L->col_ptr[k+1] = lnnz;
+	cu_ltop = lnnz;
+	
+	U->col_ptr[k] = cu_utop;
+	U->col_ptr[k+1] = unnz;
+	cu_utop = unnz;
+
+      } //end for every column
+
+#ifdef BASKER_DEBUG
+    /*Print out found L and U*/
+    for(k = 0; k < lnnz; k++)
+      {
+	printf("L[%d]=%g" , k , L->val[k]);	
+      }
+    cout << endl;
+    for(k = 0; k < lnnz; k++)
+      {
+	printf("Li[%d]=%d", k, L->row_idx[k]);
+      }
+    cout << endl;
+    for(k = 0; k < nrow; k++)
+      {
+	printf("p[%d]=%d", k, pinv[k]);
+      }
+    cout << endl;
+
+#endif    
+    /*  Repermute   */
+    for( i = 0; i < ncol; i++)
+      {
+	for(k = L->col_ptr[i]; k < L->col_ptr[i+1]; k++)
+	  {
+	    L->row_idx[k] = pinv[L->row_idx[k]];
+	  }
+      }
+    //Max sure correct location of min in L and max in U for CSC format//
+    //Speeds up tri-solve//
+    sort_factors();  
+
+#ifdef BASKER_DEBUG
+    cout << "After Permuting" << endl;
+    for(k = 0; k < lnnz; k++)
+      {
+	printf("Li[%d]=%d", k, L->row_idx[k]);
+      }
+    cout << endl;
+#endif
+
+    //FREE(X);
+    //FREE(tptr);
+    return 0;
+  }//end factor
+
+  template <class Int, class Entry>
+  int Basker<Int, Entry>::returnL(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val)
+  {
+    int i;
+    *dim = L->nrow;
+    *nnz = L->nnz;
+    
+    /*Does a bad copy*/
+    
+    *col_ptr = (Int *)   CALLOC(L->nrow+1, sizeof(Int));
+    *row_idx = (Int *)   CALLOC(L->nnz, sizeof(Int));
+    *val     = (Entry *) CALLOC(L->nnz, sizeof(Entry));
+ 
+    
+    for(i = 0; i < L->nrow+1; i++)
+      {
+	(*col_ptr)[i] = L->col_ptr[i];
+      }
+    
+    for(i = 0; i < L->nnz; i++)
+      {
+	(*row_idx)[i] = L->row_idx[i];
+	(*val)[i]     = L->val[i];
+      }
+    
+  }
+
+  template <class Int, class Entry>
+  int Basker<Int, Entry>::returnU(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val)
+  {
+    int i;
+    *dim = U->nrow;
+    *nnz = U->nnz;
+    /*Does a bad copy*/
+    *col_ptr = (Int *)   CALLOC(U->nrow+1, sizeof(Int));
+    *row_idx = (Int *)   CALLOC(U->nnz, sizeof(Int));
+    *val     = (Entry *) CALLOC(U->nnz, sizeof(Entry));
+ 
+    for(i = 0; i < U->nrow+1; i++)
+      {
+	(*col_ptr)[i] = U->col_ptr[i];
+      }
+    for(i = 0; i < U->nnz; i++)
+      {
+	(*row_idx)[i] = U->row_idx[i];
+	(*val)[i]     = U->val[i];
+      }
+  }
+
+  template <class Int, class Entry>
+  int Basker<Int, Entry>::returnP(Int** p)
+  {
+    Int i;
+    *p = (Int *) CALLOC(A->nrow, sizeof(Int));
+   
+    for(i = 0; i < A->nrow; i++)
+      {
+	(*p)[pinv[i]] = i;  //Matlab perm-style
+      }
+  }
+  
+  template <class Int, class Entry>
+  void Basker<Int, Entry>::free_factor()
+  {
+    //FREE L
+    FREE(L->col_ptr);
+    FREE(L->row_idx);
+    FREE(L->val);
+    
+
+    //FREE U
+    FREE(U->col_ptr);
+    FREE(U->row_idx);
+    FREE(U->val);
+    
+  }
+  template <class Int, class Entry>
+  void Basker<Int, Entry>::free_perm_matrix()
+  {
+    FREE(A->col_ptr);
+    FREE(A->row_idx);
+    FREE(A->val);
+  }
+  
+  template <class Int, class Entry>
+  int Basker<Int, Entry>::solve(Entry *b, Entry *x)
+  {
+    
+    Int i;
+    int result = 0;
+    for(i = 0 ; i < A->ncol; i++) 
+      {
+	
+	Int k = pinv[i];
+	x[k] = b[i];
+	b[i] = 0;
+	
+      }
+    
+    result = low_tri_solve_csc(L->nrow, L->col_ptr, L->row_idx, L->val, b, x); 
+    if(result == 0)
+      {
+	result = up_tri_solve_csc(U->nrow, U->col_ptr, U->row_idx, U->val, x, b);
+      }
+
+    return result;
+  }
+  
+  template < class Int, class Entry>
+  int Basker<Int, Entry>::low_tri_solve_csc( Int n, Int *col_ptr, Int *row_idx, Entry* val,  Entry *x, Entry *b)
+  {
+    Int i, j;
+    /*for each column*/
+    for(i = 0; i < n ; i++)
+      {
+#ifdef BASKER_DEBUG
+	ASSERT(val[col_ptr[i]] != (Entry)0);
+#endif
+		
+	x[i] = BASKER_ScalarTraits<Entry>::divide(b[i], val[col_ptr[i]]); 
+
+	for(j = col_ptr[i]+1; j < (col_ptr[i+1]); j++) //update all rows
+	  {
+	    b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[i]);
+	  }
+	
+      }
+    return 0;
+  }
+
+  template < class Int, class Entry>
+  int Basker<Int, Entry>::up_tri_solve_csc( Int n, Int *col_ptr, Int *row_idx, Entry *val,  Entry *x, Entry *b)
+  {
+    Int i, j;
+    /*for each column*/
+    for(i = n; i > 1 ; i--)
+      {
+	int ii = i-1;
+#ifdef BASKER_DEBUG
+	ASSERT(val[col_ptr[i]-1] != (Entry)0);
+#endif			
+	//x[ii] = b[ii]/val[col_ptr[i]-1]; //diag
+	x[ii] = BASKER_ScalarTraits<Entry>::divide(b[ii],val[col_ptr[i]-1]);
+
+	for(j = (col_ptr[i]-2); j >= (col_ptr[ii]); j--)
+	  {
+	    b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[ii]);
+	  }
+      }
+    //x[0] = b[0]/val[col_ptr[1]-1];
+    x[0] = BASKER_ScalarTraits<Entry>::divide(b[0],val[col_ptr[1]-1]); 
+    return 0;
+  }
+
+  template <class Int, class Entry>
+  int Basker<Int, Entry>::preorder(Int *row_perm, Int *col_perm)
+  {
+    
+    basker_matrix <Int, Entry> *B;
+    B = new basker_matrix<Int, Entry>;
+    B->nrow = A->nrow;
+    B->ncol = A->ncol;
+    B->nnz = A->nnz;
+    B->col_ptr = (Int *) CALLOC(A->ncol + 1, sizeof(Int));
+    B->row_idx = (Int *) CALLOC(A->nnz, sizeof(Int));
+    B->val     = (Entry *) CALLOC(A->val, sizeof(Int));
+
+    int resultcol = permute_column(col_perm, B);
+    int resultrow = permute_row(row_perm, B);
+
+    /*Note: the csc matrices of A are the problem of the user
+      therefore we will not free them*/
+    A->col_ptr = B->col_ptr;
+    A->row_idx = B->row_idx;
+    A->val     = A->val;
+    
+    perm_flag = true; /*Now we will free A at the end*/
+
+    return 0;
+  }
+
+  template <class Int, class Entry>
+  int Basker <Int, Entry>::permute_column(Int *p, basker_matrix<Int,Entry> *B)
+  {
+    /*p(i) contains the destination of row i in the permuted matrix*/
+    Int i,j, ii, jj;
+    
+    /*Determine column pointer of output matrix*/
+    for(j=0; j < B->ncol; j++)
+      {
+	i = p[j];
+	B->col_ptr[i+1] = A->col_ptr[j+1] - A->col_ptr[j];
+      }
+    /*get pointers from lengths*/
+    B->col_ptr[0] = 0;
+    for(j=0; j < B->ncol; j++)
+      {
+	B->col_ptr[j+1] = B->col_ptr[j+1] + B->col_ptr[j];
+      }
+
+    /*copy idxs*/
+    Int k, ko;
+    for(ii = 0 ; ii < B->ncol; ii++)
+      {// old colum ii    new column p[ii]   k->pointer
+	ko = B->col_ptr(p[ii]);
+	for(k = A->col_ptr[ii]; k < A->col_ptr[ii+1]; k++)
+	  {
+	    B->row_index[ko] = A->row_index[k];
+	    B->val[ko] = A->val[ko];
+	    ko++;
+	  }
+      }
+    return 0;
+  }
+
+  template <class Int, class Entry>
+  int Basker <Int, Entry>::permute_row(Int *p,  basker_matrix<Int,Entry> *B)
+  {
+    Int k,i;
+    for(k=0; k < A->nnz; k++)
+      {
+	B->row_idx[k] = p[A->row_idx[k]];
+      }   
+  }
+
+  template <class Int, class Entry>
+  int Basker <Int, Entry>::sort_factors()
+  {
+    
+    /*Sort CSC of L - just make sure min_index is in lowest position*/
+    Int i, j;
+    Int p;
+    Int val;
+    for(i = 0 ; i < L->ncol; i++)
+      {
+	p = L->col_ptr[i];
+	val = L->row_idx[p];
+
+	for(j = L->col_ptr[i]+1; j < (L->col_ptr[i+1]); j++)
+	  {
+	    if(L->row_idx[j] < val)
+	      {
+		p = j;
+		val = L->row_idx[p];
+	      }
+	  }
+	Int temp_index = L->row_idx[L->col_ptr[i]];
+	Entry temp_entry = L->val[L->col_ptr[i]];
+	L->row_idx[L->col_ptr[i]] = val;
+	L->val[L->col_ptr[i]] = L->val[p];
+	L->row_idx[p] = temp_index;
+	L->val[p] = temp_entry;
+      }//end for all columns
+
+
+    /* Sort CSC U --- just make sure max is in right location*/
+     for(i = 0 ; i < U->ncol; i++)
+      {
+	p = U->col_ptr[i+1]-1;
+	val = U->row_idx[p];
+
+	for(j = U->col_ptr[i]; j < (U->col_ptr[i+1]-1); j++)
+	  {
+	    if(U->row_idx[j] > val)
+	      {		
+		p = j;
+		val = U->row_idx[p];
+	      }
+	  }
+	Int temp_index = U->row_idx[U->col_ptr[i+1]-1];
+	Entry temp_entry = U->val[U->col_ptr[i+1]-1];
+	U->row_idx[U->col_ptr[i+1]-1] = val;
+	U->val[U->col_ptr[i+1]-1] = U->val[p];
+	U->row_idx[p] = temp_index;
+	U->val[p] = temp_entry;
+      }//end for all columns
+
+    return 0;
+  }
+
+
+}//end namespace
+#endif  
+  
+

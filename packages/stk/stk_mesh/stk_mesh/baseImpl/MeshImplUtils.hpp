@@ -73,7 +73,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 void internal_get_processor_dependencies_shared_or_ghosted(
           const BulkData &mesh,
           const EntityProc                  shared_or_ghosted_entry ,
-          stk::mesh::NodeToDependentProcessorsMap & owned_node_sharing_map);
+          stk::mesh::EntityToDependentProcessorsMap & owned_node_sharing_map);
 
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,

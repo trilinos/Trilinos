@@ -23,8 +23,8 @@
       <default>1</default>
       <Poisson-2D>1</Poisson-2D>
       <Poisson-3D>1</Poisson-3D>
-      <Elasticity-2D>3</Elasticity-2D>
-      <Elasticity-3D>6</Elasticity-3D>
+      <Elasticity-2D>2</Elasticity-2D>
+      <Elasticity-3D>3</Elasticity-3D>
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
     </parameter>
 

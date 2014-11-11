@@ -8,7 +8,7 @@ before_install:
 install:
   - mkdir build
   - cd build/
-  - cmake -DCMAKE_BUILD_TYPE:STRING=DEBUG -DTriBITSProj_ENABLE_Fortran:BOOL=ON ../
+  - cmake -DCMAKE_BUILD_TYPE:STRING=DEBUG -DTriBITS_ENABLE_Fortran:BOOL=ON ../
   - make
 script:
   - ctest

@@ -65,6 +65,14 @@ typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVect
 typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
 #endif
 
+#ifdef XPETRA_OPERATOR_SHORT
+typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Operator;
+#endif
+
+#ifdef XPETRA_TPETRAOPERATOR_SHORT
+typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraOperator;
+#endif
+
 #ifdef XPETRA_BLOCKEDCRSMATRIX_SHORT
 typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
 #endif

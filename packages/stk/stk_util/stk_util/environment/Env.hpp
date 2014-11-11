@@ -154,10 +154,10 @@ std::string getInputFileName();
 
 
 /**
- * @brief Function <b>set_check_subcycle</b> sets whether to check input
- * file for subcycling.  The default behavior corresponds to false.
+ * @brief Function <b>set_sm_preprocessing</b> sets whether to check input
+ * file for sm specific preprocessing.  The default behavior corresponds to false.
  */
-void set_check_subcycle(bool value);
+void set_sm_preprocessing(bool value);
 
 /**
  * @brief Function <b>set_zapotec</b> sets whether this code is

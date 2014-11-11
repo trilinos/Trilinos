@@ -691,6 +691,16 @@ int ex_get_side_set_node_list(int exoid,
 	}
       elem_ctr = elem_blk_parms[parm_ndx].elem_ctr;
     }
+
+    if (connect == NULL) {
+      sprintf(errmsg,
+	      "Error: internal error -- connect pointer is NULL for file id %d",
+	      exoid);
+      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
+      err_stat = EX_FATAL;
+      goto cleanup;
+    }
+    
     /*  For each side in side set, use the appropriate lookup table to  
 	determine the nodes from the connect array. */
 

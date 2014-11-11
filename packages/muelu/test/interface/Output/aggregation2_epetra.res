@@ -6,14 +6,19 @@ Level 0
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
+  Matrix filtering (MueLu::FilteredAFactory)
+   Build (MueLu::CoalesceDropFactory)
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::CoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 1
-
    [empty list]
 
    Build (MueLu::AmalgamationFactory)
@@ -50,14 +55,19 @@ Level 1
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
+  Matrix filtering (MueLu::FilteredAFactory)
+   Build (MueLu::CoalesceDropFactory)
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::CoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 1
-
    [empty list]
 
    Build (MueLu::AmalgamationFactory)

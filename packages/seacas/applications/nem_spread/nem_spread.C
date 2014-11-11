@@ -227,7 +227,7 @@ int nem_spread(NemSpread<T,INT> &spreader, const char *salsa_cmd_file, int subcy
   /* Local declarations. */
   double start_t, end_t;
 
-  printf("Using "ST_ZU" byte integers and "ST_ZU" byte floating point values.\n", sizeof(INT), sizeof(T));
+  printf("Using " ST_ZU " byte integers and " ST_ZU " byte floating point values.\n", sizeof(INT), sizeof(T));
   
   /*
    * Read in the ASCII input file from the front end.

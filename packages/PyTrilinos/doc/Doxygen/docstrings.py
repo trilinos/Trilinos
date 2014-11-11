@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Ssytem includes
+# System includes
 import os
 import subprocess
 import sys

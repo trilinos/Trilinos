@@ -93,18 +93,18 @@ namespace Teuchos {
  *
  * @{
  */
-template <typename TypeFrom>
-class ValueTypeConversionTraits<std::complex<double>, TypeFrom>
+template <>
+class ValueTypeConversionTraits<std::complex<double>, std::complex<float> >
 {
 public:
-  static std::complex<double> convert( const TypeFrom t )
+  static std::complex<double> convert( const std::complex<float>  t )
     {
       std::complex<double> ret(Teuchos::as<double>(t.real()),
                                  Teuchos::as<double>(t.imag()));
       return( ret );
     }
 
-  static std::complex<double> safeConvert( const TypeFrom t )
+  static std::complex<double> safeConvert( const std::complex<float>  t )
     {
       std::complex<double> ret(Teuchos::as<double>(t.real()),
                                  Teuchos::as<double>(t.imag()));
@@ -114,11 +114,11 @@ public:
 
 
 // Also convert from KLU2 types
-template <typename TypeTo >
-class ValueTypeConversionTraits<TypeTo, std::complex<double> >
+template <>
+class ValueTypeConversionTraits<std::complex<float> , std::complex<double> >
 {
 public:
-  static TypeTo convert( const std::complex<double> t )
+  static std::complex<float>  convert( const std::complex<double> t )
     {
       float ret_r = Teuchos::as<float>( t.real() );
       float ret_i = Teuchos::as<float>( t.imag() );
@@ -127,7 +127,7 @@ public:
     }
 
   // No special checks for safe Convert
-  static TypeTo safeConvert( const std::complex<double> t )
+  static std::complex<float>  safeConvert( const std::complex<double> t )
     {
       float ret_r = Teuchos::as<float>( t.real() );
       float ret_i = Teuchos::as<float>( t.imag() );

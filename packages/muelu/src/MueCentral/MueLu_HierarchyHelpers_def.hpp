@@ -47,6 +47,7 @@
 #define MUELU_HIERARCHYHELPERS_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_HierarchyHelpers_decl.hpp"
 
@@ -84,22 +85,29 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level & coarseLevel) const {
     if (PFact_ != Teuchos::null) {
-      RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact_.get());
-      coarseLevel.Set           ("P", P, NoFactory::get());
+      RCP<Operator> oP = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
+      RCP<Matrix>    P = rcp_dynamic_cast<Matrix>(oP);
+      if (!P.is_null()) coarseLevel.Set("P",  P, NoFactory::get());
+      else              coarseLevel.Set("P", oP, NoFactory::get());
       coarseLevel.AddKeepFlag   ("P", NoFactory::get(), MueLu::Final);    // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
       coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead. FIXME3: Should not be removed if flag was there already
+
     }
 
     if (RFact_ != Teuchos::null) {
-      RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R", RFact_.get());
-      coarseLevel.Set           ("R", R, NoFactory::get());
+      RCP<Operator> oR = coarseLevel.Get<RCP<Operator> >("R", RFact_.get());
+      RCP<Matrix>    R = rcp_dynamic_cast<Matrix>(oR);
+      if (!R.is_null()) coarseLevel.Set("R",  R, NoFactory::get());
+      else              coarseLevel.Set("R", oR, NoFactory::get());
       coarseLevel.AddKeepFlag   ("R", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("R", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
     if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) {
-      RCP<Matrix> Ac = coarseLevel.Get<RCP<Matrix> >("A", AcFact_.get());
-      coarseLevel.Set           ("A", Ac, NoFactory::get());
+      RCP<Operator> oA = coarseLevel.Get<RCP<Operator> >("A", AcFact_.get());
+      RCP<Matrix>    A = rcp_dynamic_cast<Matrix>(oA);
+      if (!A.is_null()) coarseLevel.Set("A",  A, NoFactory::get());
+      else              coarseLevel.Set("A", oA, NoFactory::get());
       coarseLevel.AddKeepFlag   ("A", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("A", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }

@@ -134,6 +134,7 @@ void CrsMatrixStruct::deleteContents()
   delete [] indices; indices = NULL;
   delete [] values; values = NULL;
   delete [] remote; remote = NULL;
+  delete importColMap; importColMap = NULL;
   numRemote = 0;
   delete importMatrix; importMatrix=0;
   // origMatrix is not owned by me, so don't delete

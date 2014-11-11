@@ -51,7 +51,7 @@
 
 #include <Teuchos_Array.hpp>
 
-#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -135,13 +135,13 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level>  l  = H.GetLevel(0);
-      RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
+      RCP<Level>    l  = H.GetLevel(0);
+      RCP<Operator> Op = l->Get<RCP<Operator> >("A");
 
-      Xpetra::UnderlyingLib lib = Op->getRowMap()->lib();
+      Xpetra::UnderlyingLib lib = Op->getDomainMap()->lib();
       H.setlib(lib);
 
-      SetupMatrix(*Op);
+      SetupOperator(*Op);
       SetupExtra(H);
 
       // Setup Hierarchy
@@ -199,7 +199,7 @@ namespace MueLu {
   protected: //TODO: access function
 
     //! Setup Matrix object
-    virtual void SetupMatrix(Matrix& Op) const { }
+    virtual void SetupOperator(Operator& Op) const { }
 
     //! Setup extra data
     // TODO: merge with SetupMatrix ?

@@ -182,7 +182,7 @@ typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
 typedef TrackedVectorMetaFunc<VolatileFastSharedCommMapOneRank, VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMap;
 
 #endif
-typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
+typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
 typedef std::map<EntityKey,int> NewOwnerMap;
 
 typedef unsigned Ordinal;

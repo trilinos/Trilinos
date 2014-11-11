@@ -185,7 +185,8 @@ namespace panzer_stk_classic {
                               const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                               const panzer::BCStrategyFactory & bc_factory,
                               const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
-                              bool is_transient,bool is_explicit) const;
+                              bool is_transient,bool is_explicit,
+                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
 
   protected:
  

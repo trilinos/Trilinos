@@ -90,6 +90,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -789,7 +790,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const Matrix& Op, const MultiVector& X, const MultiVector& RHS) {
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
     TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
     const size_t numVecs = X.getNumVectors();
 
@@ -801,7 +802,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Residual(const Matrix& Op, const MultiVector& X, const MultiVector& RHS) {
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
     TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
     const size_t numVecs = X.getNumVectors();
 

@@ -1694,7 +1694,7 @@ namespace {
     global_element_map.resize(tot_size);
 
     {
-      size_t error = 0;
+      int error = 0;
       size_t offset = 0;
       for (int p = 0; p < part_count; p++) {
 	ExodusFile id(p);
@@ -1754,7 +1754,6 @@ namespace {
 								  global_element_map.end(),
 								  global_element);
 	    SMART_ASSERT(iter.first  != iter.second);
-	    element_value = iter.first - global_element_map.begin();
 	    cur_pos = iter.first;
 	  }
 	  element_value = cur_pos - global_element_map.begin();
@@ -1876,7 +1875,7 @@ namespace {
     global_node_map.resize(tot_size);
 
     size_t offset = 0;
-    size_t error = 0;
+    int error = 0;
     for (int p = 0; p < part_count; p++) {
       ExodusFile id(p);
       error = ex_get_node_num_map(id, TOPTR(global_node_numbers[p]));
@@ -1919,7 +1918,6 @@ namespace {
 								global_node_map.end(),
 								global_node);
 	  SMART_ASSERT(iter.first  != iter.second);
-	  nodal_value = iter.first - global_node_map.begin();
 	  cur_pos = iter.first;
 	}
 	nodal_value = cur_pos - global_node_map.begin();

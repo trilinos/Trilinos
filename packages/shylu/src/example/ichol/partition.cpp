@@ -31,7 +31,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase Abase("Abase");
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -39,10 +39,10 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  Abase.importMatrixMarket(in);
+  AA.importMatrixMarket(in);
 
   {
-    CrsMatrixView A(Abase);
+    CrsMatrixView A(AA);
 
     CrsMatrixView ATL, ATR,     A00,  a01,     A02,
       /**/        ABL, ABR,     a10t, alpha11, a12t,

@@ -50,9 +50,10 @@
 #include <Teuchos_Ptr.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>  // global_size_t
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include <Xpetra_Cloner.hpp>
 #include <MueLu_SmootherCloner.hpp>
@@ -88,10 +89,10 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar = Xpetra::Matrix<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar        = Xpetra::Operator<>::scalar_type,
+            class LocalOrdinal  = typename Xpetra::Operator<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node          = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -123,9 +124,11 @@ namespace MueLu {
     static bool                  GetDefaultPRrebalance()                               { return MasterList::getDefault<bool>("repartition: rebalance P and R");   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
+    bool                         GetImplicitTranspose() const                          { return implicitTranspose_; }
 
     void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
     void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
+    void                         SetImplicitTranspose(const bool& implicit)            { implicitTranspose_ = implicit; }
 
     //@}
 
@@ -154,12 +157,6 @@ namespace MueLu {
 
     // This function is global
     double GetOperatorComplexity() const;
-
-    //! Indicate that Iterate should use transpose of prolongator for restriction operations.
-    void SetImplicitTranspose(const bool &implicit);
-
-    //! If true is returned, iterate will use transpose of prolongator for restriction operations.
-    bool GetImplicitTranspose() const;
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
@@ -344,10 +341,9 @@ namespace MueLu {
   template<typename Node2>
   Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clone (const Teuchos::RCP<Node2> &node2) const
-  {
+  clone (const Teuchos::RCP<Node2> &node2) const {
     typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2>      CloneMatrix;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2>      CloneOperator;
     typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> CloneSmoother;
 
     Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
@@ -361,26 +357,26 @@ namespace MueLu {
 
     RCP<SmootherBase>  Pre, Post;
     RCP<CloneSmoother> clonePre, clonePost;
-    RCP<CloneMatrix>   cloneA, cloneR, cloneP;
-    RCP<Matrix>        A, R, P;
+    RCP<CloneOperator> cloneA, cloneR, cloneP;
+    RCP<Operator>      A, R, P;
     for (int i = 0; i < GetNumLevels(); i++) {
       RCP<Level> level      = this->Levels_[i];
       RCP<Level> clonelevel = rcp(new Level());
 
       if (level->IsAvailable("A")) {
-        A      = level->template Get<RCP<Matrix> >("A");
+        A      = level->template Get<RCP<Operator> >("A");
         cloneA = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*A, node2);
-        clonelevel->template Set<RCP<CloneMatrix> >("A", cloneA);
+        clonelevel->template Set<RCP<CloneOperator> >("A", cloneA);
       }
       if (level->IsAvailable("R")){
-        R      = level->template Get<RCP<Matrix> >("R");
+        R      = level->template Get<RCP<Operator> >("R");
         cloneR = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*R, node2);
-        clonelevel->template Set<RCP<CloneMatrix> >("R", cloneR);
+        clonelevel->template Set<RCP<CloneOperator> >("R", cloneR);
       }
       if (level->IsAvailable("P")){
-        P      = level->template Get<RCP<Matrix> >("P");
+        P      = level->template Get<RCP<Operator> >("P");
         cloneP = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*P,  node2);
-        clonelevel->template Set<RCP<CloneMatrix> >("P", cloneP);
+        clonelevel->template Set<RCP<CloneOperator> >("P", cloneP);
       }
       if (level->IsAvailable("PreSmoother")){
         Pre      = level->template Get<RCP<SmootherBase> >("PreSmoother");

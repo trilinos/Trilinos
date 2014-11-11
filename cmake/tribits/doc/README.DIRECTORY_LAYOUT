@@ -45,6 +45,6 @@ cmake
   |
   |-- ProjectName.cmake, PackagesList.cmake, TPLsList.cmake, CMakeLists.txt:
   |       Standard TriBITS project and repository and package files for the
-  |       "TriBITSProj" project and repository and the "TriBITS" package.
+  |       "TriBITS" project and repository and the "TriBITS" package.
 
 
