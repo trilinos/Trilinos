@@ -43,7 +43,7 @@
 #ifndef KOKKOS_COMPLEX_HPP
 #define KOKKOS_COMPLEX_HPP
 
-#include <Kokkos_Core.hpp>
+#include <Kokkos_Atomic.hpp>
 #include <complex>
 #include <iostream>
 
@@ -179,6 +179,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator += (const volatile RealType& src) volatile {
     re_ += src;
+  }
+
+  KOKKOS_INLINE_FUNCTION void atomic_add (const complex<RealType>& x) volatile {
+    // We can do the atomic update of a complex number componentwise,
+    // since the components don't interact in an add operation.  This
+    // does NOT work for dd_real!
+    ::Kokkos::atomic_add (&re_, x.real ());
+    ::Kokkos::atomic_add (&im_, x.imag ());
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -418,6 +426,13 @@ std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
   os >> x_std;
   x = x_std; // only assigns on success of above
   return os;
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_add (volatile ::Kokkos::complex<double>* const dest,
+            const ::Kokkos::complex<double> src)
+{
+  dest->atomic_add (src);
 }
 
 } // namespace Kokkos
