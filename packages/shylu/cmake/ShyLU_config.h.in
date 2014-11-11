@@ -4,8 +4,10 @@
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
-/* define if we want to use Tpetra  */
+
 #cmakedefine HAVE_SHYLU_TPETRA
-/* define if we want to use Zoltan2 */
+
 #cmakedefine HAVE_SHYLU_ZOLTAN2
+
+#cmakedefine HAVE_SHYLU_AMESOS2
 

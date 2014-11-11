@@ -63,6 +63,7 @@
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_ExportFactory.hpp>
@@ -299,9 +300,9 @@ namespace MueLu {
     // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
     // or
     // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
-    static Teuchos::Array<Magnitude> ResidualNorm(const Matrix& Op, const MultiVector& X, const MultiVector& RHS);
+    static Teuchos::Array<Magnitude> ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS);
 
-    static RCP<MultiVector> Residual(const Matrix& Op, const MultiVector& X, const MultiVector& RHS);
+    static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS);
 
     // NOTE:
     // A better place for the Read/Write function is probably Xpetra

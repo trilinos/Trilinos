@@ -287,30 +287,30 @@ public:
 
   /** \brief Set an enumeration option (templated by enumeration type).
    *
-   * \param  enum_option_name
-   *              [in] (null terminated std::string) The name of the option
-   *              (without the leading '--' or trailing '=').
-   * \param  enum_option_val
-   *              [in/out] On input, <tt>*enum_option_val</tt> give the default
-   *              value of the enumeration (used for printing in --help).
-   *              After <tt>parse()</tt> finished executing successfully,
-   *              <tt>*enum_option_val</tt> will contain the user-selected
-   *              value of the enumeration.
-   * \param  num_enum_opt_values
-   *              [in] Gives the number of possible option values to select
-   * \param  enum_opt_values
-   *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
-   *              the numeric values for each option.  The values in this
-   *              array are used to set the actual option <tt>*enum_option_val</tt>.
-   * \param  enum_opt_names
-   *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
-   *              the std::string names for each option.  The strings in this function
-   *              are what is used in the commandline.
-   * \param  documentation
-   *              [in] If <tt>!=NULL</tt>, then this null terminated std::string
-   *              gives the documentation for the option.
+   * \param enum_option_name [in] (null terminated std::string) The name of
+   * the option (without the leading '--' or trailing '=').
    *
-   * Warning! Only use enumeration or <tt>int</tt> for <tt>EType</tt>.
+   * \param enum_option_val [in/out] On input, <tt>*enum_option_val</tt> give
+   * the default value of the enumeration (used for printing in --help).
+   * After <tt>parse()</tt> finished executing successfully,
+   * <tt>*enum_option_val</tt> will contain the user-selected value of the
+   * enumeration.
+   *
+   * \param num_enum_opt_values [in] Gives the number of possible option
+   * values to select
+   *
+   * \param enum_opt_values [in] Array (length <tt>num_enum_opt_values</tt>)
+   * that gives the numeric values for each option.  The values in this array
+   * are used to set the actual option <tt>*enum_option_val</tt>.
+   *
+   * \param enum_opt_names [in] Array (length <tt>num_enum_opt_values</tt>)
+   * that gives the char string names for each option.  The strings in this
+   * function are what is used in the commandline.
+   *
+   * \param documentation [in] If <tt>!=NULL</tt>, then this array of
+   * null-terminated char string gives the documentation for the option.
+   *
+   * Warning! Only use an <tt>enum</tt> or <tt>int</tt> for <tt>EType</tt>.
    * Using any other type for <tt>EType</tt> could be trouble!
    */
   template <class EType>

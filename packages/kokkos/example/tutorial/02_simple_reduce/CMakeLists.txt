@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_02_simple_reduce
   SOURCES simple_reduce.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )

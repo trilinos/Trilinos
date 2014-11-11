@@ -74,6 +74,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Kokkos:BOOL=OFF"
   "-DTrilinos_ENABLE_Tpetra:BOOL=OFF"
   "-DTrilinos_ENABLE_ML:BOOL=OFF"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 )
 
 #

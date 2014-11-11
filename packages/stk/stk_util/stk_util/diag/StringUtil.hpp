@@ -827,7 +827,7 @@ struct hash_nocase<std::string>
    * @brief Member function <b>operator()</b> returns the hash value of the
    * specified string.
    *
-   * @param __s		a <b>std::string</const reference to the string to hash.
+   * @param __s		a <b>std::string</b> const reference to the string to hash.
    *
    * @return		a <b>size_t</b> value of the hash value of the specified
    *			string.
@@ -846,7 +846,7 @@ struct hash_nocase<String>
    * @brief Member function <b>operator()</b> returns the hash value of the
    * specified string.
    *
-   * @param __s		a <b>std::string</const reference to the string to hash.
+   * @param __s		a <b>std::string</b> const reference to the string to hash.
    *
    * @return		a <b>size_t</b> value of the hash value of the specified
    *			string.
@@ -865,7 +865,7 @@ struct hash_nocase<String>
 //    * @brief Member function <b>operator()</b> returns the hash value of the
 //    * specified string.
 //    *
-//    * @param __s		a <b>std::string</const reference to the string to hash.
+//    * @param __s		a <b>std::string</b> const reference to the string to hash.
 //    *
 //    * @return		a <b>size_t</b> value of the hash value of the specified
 //    *			string.

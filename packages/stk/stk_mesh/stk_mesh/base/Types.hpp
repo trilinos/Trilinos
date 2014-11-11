@@ -47,12 +47,16 @@
 #include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
+#include <set>
 #include "boost/range/iterator_range_core.hpp"  // for iterator_range
+#include "boost/unordered/unordered_map.hpp"  // for unordered_map
+
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
 namespace stk { namespace mesh { template <typename DataType = void> class Property; } }
 
@@ -153,9 +157,37 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
+#ifdef __IBMCPP__
+typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
+#else
+typedef TrackedVectorMetaFunc<
+  TrackedVectorMetaFunc<FastMeshIndex, VolatileFastSharedCommMapTag>::type,
+  VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMapOneRank;
+#endif
+
+typedef stk::topology::rank_t EntityRank ;
+
+typedef boost::unordered_map<EntityKey, size_t> GhostReuseMap;
+typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
+#ifdef __IBMCPP__
+// The IBM compiler is easily confused by complex template types...
+typedef BucketVector                                                   TrackedBucketVector;
+typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector> SelectorBucketMap;
+typedef std::vector<VolatileFastSharedCommMapOneRank>                  VolatileFastSharedCommMap;
+#else
+typedef TrackedVectorMetaFunc<Bucket*, SelectorMapTag>::type  TrackedBucketVector;
+typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
+                 std::less<std::pair<EntityRank, Selector> >,
+                 tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
+typedef TrackedVectorMetaFunc<VolatileFastSharedCommMapOneRank, VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMap;
+
+#endif
+typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
+typedef std::map<EntityKey,int> NewOwnerMap;
+
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
-typedef stk::topology::rank_t EntityRank ;
+
 //typedef Ordinal EntityRank ;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;

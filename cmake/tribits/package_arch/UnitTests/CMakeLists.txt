@@ -40,8 +40,7 @@
 
 ADD_SUBDIRECTORY(CTestScriptsUnitTests)
 ADD_SUBDIRECTORY(DependencyUnitTests)
-
-
+ADD_SUBDIRECTORY(ProcessEnabledTpls)
 
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MPI)
@@ -55,7 +54,7 @@ TRIBITS_ADD_ADVANCED_TEST( TestingFunctionMacro_UnitTests
       -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
       -P "${CMAKE_CURRENT_SOURCE_DIR}/TestingFunctionMacro_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "Final UnitTests Result: num_run = 256"
+      "Final UnitTests Result: num_run = 259"
       "Final UnitTests Result: PASSED"
   )
 

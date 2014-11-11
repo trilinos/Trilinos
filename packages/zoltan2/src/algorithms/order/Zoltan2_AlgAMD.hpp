@@ -44,7 +44,7 @@
 // @HEADER
 
 /*! \file Zoltan2_AlgAMD.hpp
-    \brief The AMD ordering algorithm.
+    \brief The AMD ordering algorithm uses SuiteSparse.
 */
 
 #ifndef _ZOLTAN2_ALGAMD_HPP_

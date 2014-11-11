@@ -243,6 +243,8 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
 
     line_i += 1
 
+    fileNameAndLinePrefix = fileName+":"+str(line_i)+": "
+
     # Determine if this is a comment line
     if len(line) == 0:
       inCommentBlock = False
@@ -262,7 +264,11 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
         if lineBlockBeginning == blockBeginning:
           #print "Matches block beginning "+blockType+"!"
           currentRstDocBlockType = blockType
-          inRstDocBlock = line.split(":")[1].strip()
+          splitOnColon = line.split(":")
+          if len(splitOnColon) != 2:
+            raise Exception(fileNameAndLinePrefix+ \
+              "error: '"+line+"' is missing the colon ':' separator!")
+          inRstDocBlock = splitOnColon[1].strip()
           #print "inRstDocBlock = '"+inRstDocBlock+"'"
           #print "currentRstDocBlockType = '"+currentRstDocBlockType+"'"
           if traceExtraction:

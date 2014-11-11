@@ -32,7 +32,6 @@ public:
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
 protected:
-  TFadBinaryAdd() {}
 
   const L& left_; const R& right_;
 
@@ -59,7 +58,6 @@ public:
   typedef TFadCst<value_type> R;
 
 protected:
-  TFadBinaryAdd() {}
 
   const L& left_; const  R right_;
 
@@ -83,7 +81,6 @@ public:
   typedef TFadCst<value_type> L;
 
 protected:
-  TFadBinaryAdd() {}
 
   const L left_; const R& right_;
 
@@ -113,7 +110,6 @@ public:
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
 protected:
-  TFadBinaryMinus() {}
 
   const L& left_; const R& right_;
 
@@ -140,7 +136,6 @@ public:
   typedef TFadCst<value_type> R;
 
 protected:
-  TFadBinaryMinus() {}
 
   const L& left_; const R right_;
 
@@ -164,7 +159,6 @@ public:
   typedef TFadCst<value_type> L;
 
 protected:
-  TFadBinaryMinus() {}
 
   const L left_; const R& right_;
 
@@ -190,7 +184,6 @@ template <class L, class R> class TFadBinaryMul {
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
  protected:
-  TFadBinaryMul() {}
 
   const L& left_; const R& right_;
 
@@ -216,7 +209,6 @@ template <class L> class TFadBinaryMul<L, TFadCst<typename L::value_type> > {
   typedef TFadCst<value_type> R;
 
  protected:
-  TFadBinaryMul() {}
 
   const L& left_; const R right_;
 
@@ -238,7 +230,6 @@ template <class R> class TFadBinaryMul< TFadCst<typename R::value_type>, R> {
   typedef TFadCst<value_type> L;
 
  protected:
-  TFadBinaryMul() {}
 
   const L left_; const R& right_;
 
@@ -263,7 +254,6 @@ template <class L, class R> class TFadBinaryDiv {
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
  protected:
-  TFadBinaryDiv() {}
 
   const L& left_; const R& right_;
 
@@ -291,7 +281,6 @@ template <class L> class TFadBinaryDiv<L, TFadCst<typename L::value_type> > {
   typedef TFadCst<value_type> R;
 
  protected:
-  TFadBinaryDiv() {}
 
   const L& left_; const R right_;
 
@@ -315,7 +304,6 @@ template <class R> class TFadBinaryDiv< TFadCst<typename R::value_type>, R> {
   typedef TFadCst<value_type> L;
 
  protected:
-  TFadBinaryDiv() {}
 
   const L left_; const R& right_;
 
@@ -342,7 +330,6 @@ public:
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
 protected:
-  TFadBinaryPow() {}
 
   const L& left_; const R& right_;
 
@@ -377,7 +364,6 @@ public:
   typedef TFadCst<value_type> R;
 
 protected:
-  TFadBinaryPow() {}
 
   const L& left_; const  R right_;
 
@@ -408,7 +394,6 @@ public:
   typedef TFadCst<value_type> L;
 
 protected:
-  TFadBinaryPow() {}
 
   const L left_; const R& right_;
 
@@ -437,7 +422,6 @@ public:
   typedef TFadCst<int> R;
 
 protected:
-  TFadBinaryPow() {}
 
   const L& left_; const R right_;
 

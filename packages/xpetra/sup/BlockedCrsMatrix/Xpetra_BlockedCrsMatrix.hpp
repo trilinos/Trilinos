@@ -598,25 +598,25 @@ namespace Xpetra {
 
     //! \brief Returns the Map associated with the full domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getDomainMap() const            { return domainmaps_->getFullMap(); }
+    RCP<const Map > getDomainMap() const            { return domainmaps_->getFullMap(); }
 
     //! \brief Returns the Map associated with the i'th block domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getDomainMap(size_t i) const    { return domainmaps_->getMap(i); }
+    RCP<const Map > getDomainMap(size_t i) const    { return domainmaps_->getMap(i); }
 
     //! Returns the Map associated with the full range of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getRangeMap() const             { return rangemaps_->getFullMap(); }
+    RCP<const Map > getRangeMap() const             { return rangemaps_->getFullMap(); }
 
     //! Returns the Map associated with the i'th block range of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getRangeMap(size_t i) const     { return rangemaps_->getMap(i); }
+    RCP<const Map > getRangeMap(size_t i) const     { return rangemaps_->getMap(i); }
 
     //! Returns map extractor class for range map
-    const RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
+    RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
 
     //! Returns map extractor for domain map
-    const RCP<const MapExtractor> getDomainMapExtractor() { return domainmaps_; }
+    RCP<const MapExtractor> getDomainMapExtractor() { return domainmaps_; }
 
     //@}
 

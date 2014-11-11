@@ -1597,17 +1597,23 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       , ViewOffsetRange< Type2 >::is_range
       };
 
-    const unsigned begin[ src_rank ] =
-      { ViewOffsetRange< Type0 >::begin( arg0 )
-      , ViewOffsetRange< Type1 >::begin( arg1 )
-      , ViewOffsetRange< Type2 >::begin( arg2 )
-      };
+    // FIXME (mfh 26 Oct 2014) Should use size_type typedef here
+    // instead of unsigned.  If we did that, the static_casts would be
+    // unnecessary.
+    const unsigned begin[ src_rank ] = {
+      static_cast<unsigned> (ViewOffsetRange< Type0 >::begin (arg0))
+      , static_cast<unsigned> (ViewOffsetRange< Type1 >::begin (arg1))
+      , static_cast<unsigned> (ViewOffsetRange< Type2 >::begin (arg2))
+    };
 
-    unsigned dim[ src_rank ] =
-      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
-      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
-      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
-      };
+    // FIXME (mfh 26 Oct 2014) Should use size_type typedef here
+    // instead of unsigned.  If we did that, the static_casts would be
+    // unnecessary.
+    unsigned dim[ src_rank ] = {
+      static_cast<unsigned> (ViewOffsetRange< Type0 >::dimension (src.m_offset_map.N0, arg0))
+      , static_cast<unsigned> (ViewOffsetRange< Type1 >::dimension (src.m_offset_map.N1, arg1))
+      , static_cast<unsigned> (ViewOffsetRange< Type2 >::dimension (src.m_offset_map.N2, arg2))
+    };
 
     size_t stride[9] = {0,0,0,0,0,0,0,0,0};
 

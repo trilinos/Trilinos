@@ -74,9 +74,9 @@ void BulkDataTester::internal_change_entity_owner_exp( const std::vector<EntityP
   require_ok_to_modify();
 
   const MetaData  & meta = m_mesh_meta_data ;
-  const int       p_rank = m_parallel_rank ;
-  const int       p_size = m_parallel_size ;
-  ParallelMachine p_comm = m_parallel_machine ;
+  const int       p_rank = parallel_rank() ;
+  const int       p_size = parallel_size() ;
+  ParallelMachine p_comm = parallel() ;
 
   //------------------------------
   // Verify the input changes, generate a clean local change list, and
@@ -299,7 +299,7 @@ void BulkDataTester::internal_update_distributed_index_exp(
         std::vector<Entity> & shared_new )
 {
     Trace_("stk::mesh::BulkData::internal_update_distributed_index");
-    BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
+    BABBLE_STK_PARALLEL_COMM(parallel(), "      entered internal_update_distributed_index");
 
     // Scoop up a list of all nodes that have had their sharing information
     // provided directly by the end-user.  These need special handling so
@@ -398,7 +398,7 @@ void BulkDataTester::internal_update_distributed_index_exp(
 void BulkDataTester::internal_resolve_parallel_create_exp()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
-  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_parallel_create");
+  BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_resolve_parallel_create");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
   std::vector<Entity> shared_modified ;
@@ -442,33 +442,38 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
     // which can cause deletion of ghost entities.
 
     //passes np1 segfaults (np2-np4) if not called
-    internal_resolve_shared_modify_delete();
+    //internal_resolve_shared_modify_delete(); //POSSIBLE CRUFT
 
     // Resolve modification or deletion of ghost entities
     // by destroying ghost entities that have been touched.
 
     //doesn't fail if not called (np1-np4)
-    internal_resolve_ghosted_modify_delete();
+    //internal_resolve_ghosted_modify_delete();//POSSIBLE CRUFT
 
     //passes np1 segfaults np2-np4 if not called
-    update_comm_list_based_on_changes_in_comm_map();
+    //update_comm_list_based_on_changes_in_comm_map();//POSSIBLE CRUFT
 
     // Resolve creation of entities: discover sharing and set unique ownership.
     //passes np1 fails on 10 tests np2, 3 tests np3, segfaults np4
-    internal_resolve_parallel_create_exp();
+
+    //internal_resolve_parallel_create_exp();  //CRUFT, UNLESS YOU DIDN'T SET UP ALL SHARING
+      //NOT CRUFT IF THE NODE SHARING IS CORRECT BUT HIGHER RANK SHARING
+      // IS NOT CORRECT, THEN YOU NEED THIS
+      //this code will figure out sharing given that node sharing is correct
+      //without the need for distributed index
 
     // Resolve part membership for shared entities.
     // This occurs after resolving creation so created and shared
     // entities are resolved along with previously existing shared entities.
 
     //doesn't fail if not called (np1-np4)
-    internal_resolve_shared_membership();
+    //internal_resolve_shared_membership(); //POSSIBLE CRUFT
 
     // Regenerate the ghosting aura around all shared mesh entities.
     if ( regenerate_aura )
     {
       //passes on np1 hangs on np2-np4 if not called
-      internal_regenerate_aura();
+      internal_regenerate_aura(); //NOT CRUFT, ACTUALLY NECESSARY FOR NOW
     }
 
     // ------------------------------
@@ -499,28 +504,27 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
   //a single larger bucket, and also does a sort.
   //If optimize_buckets has not been requested, still do the sort.
 
+  stk::mesh::impl::BucketRepository &bucket_repository = my_bucket_repository();
   if ( opt == MOD_END_COMPRESS_AND_SORT ) {
     //doesn't fail if not called (np1-np4)
-    m_bucket_repository.optimize_buckets();
+    bucket_repository.optimize_buckets();  //NO TESTS FOR BUCKETS
   }
   else {
     //doesn't fail if not called (np1-np4)
-    m_bucket_repository.internal_sort_bucket_entities();
+    bucket_repository.internal_sort_bucket_entities();  //NO TESTS FOR BUCKETS
   }
 
-  // ------------------------------
+  //doesn't fail if not called (np1-np4)
+  bucket_repository.internal_modification_end();  //NO TESTS FOR BUCKETS
 
   //doesn't fail if not called (np1-np4)
-  m_bucket_repository.internal_modification_end();
-
-  //doesn't fail if not called (np1-np4)
-  internal_update_fast_comm_maps();
+  internal_update_fast_comm_maps(); //NO TESTS FOR FIELDS
 
   m_sync_state = SYNCHRONIZED ;
   m_add_node_sharing_called = false;
 
   //doesn't fail if not called (np1-np4)
-  update_deleted_entities_container();
+  update_deleted_entities_container();  //NO TESTS
 
   return true ;
 }

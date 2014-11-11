@@ -78,7 +78,7 @@ Task::TaskMember( const function_type    arg_destroy
   : m_typeid(  arg_type )
   , m_destroy( arg_destroy )
   , m_apply(   arg_apply )
-  , m_state( STATE_CONSTRUCTING )
+  , m_state( Kokkos::TASK_STATE_CONSTRUCTING )
   , m_ref_count(0)
   , m_qfeb(0)
 {
@@ -128,9 +128,9 @@ void Mgr::assign( Task ** const lhs , Task * const rhs )
       // Should only be deallocating a completed task
       // TODO: Support deletion of canceled tasks.
 
-      if ( (**lhs).m_state != Task::STATE_COMPLETE ) {
+      if ( (**lhs).m_state != Kokkos::TASK_STATE_COMPLETE ) {
         throw std::runtime_error(
-          std::string("Kokkos::Impl::TaskManager<Kokkos::Qthread>::decrement ERROR: not STATE_COMPLETE") );
+          std::string("Kokkos::Impl::TaskManager<Kokkos::Qthread>::decrement ERROR: not TASK_STATE_COMPLETE") );
       }
 
       // Get destructor function and apply it
@@ -154,8 +154,8 @@ void Mgr::verify_set_dependence( Task * t , int n )
 {
   // Must be either constructing for original spawn or executing for a respawn.
 
-  if ( Task::STATE_CONSTRUCTING != t->m_state &&
-       Task::STATE_EXECUTING    != t->m_state ) {
+  if ( Kokkos::TASK_STATE_CONSTRUCTING != t->m_state &&
+       Kokkos::TASK_STATE_EXECUTING    != t->m_state ) {
     throw std::runtime_error(std::string("Kokkos::Impl::Task spawn or respawn state error"));
   }
 
@@ -180,7 +180,7 @@ void Mgr::schedule( Task * t )
   }
   qprecon[0] = reinterpret_cast<aligned_t *>( npre );
 
-  t->m_state = Task::STATE_WAITING ;
+  t->m_state = Kokkos::TASK_STATE_WAITING ;
 
   qthread_spawn( & Mgr::qthread_func , t , 0 , NULL
                , npre , qprecon
@@ -191,13 +191,13 @@ aligned_t Mgr::qthread_func( void * arg )
 {
   Task * const task = reinterpret_cast< Task * >(arg);
 
-  task->m_state = Task::STATE_EXECUTING ;
+  task->m_state = Kokkos::TASK_STATE_EXECUTING ;
 
   (*task->m_apply)( task );
 
-  if ( task->m_state == Task::STATE_EXECUTING ) {
+  if ( task->m_state == Kokkos::TASK_STATE_EXECUTING ) {
     // Task did not respawn, is complete
-    task->m_state = Task::STATE_COMPLETE ;
+    task->m_state = Kokkos::TASK_STATE_COMPLETE ;
 
     // Release dependences before allowing dependent tasks to run.
     // Otherwise their is a thread race condition for removing dependences.

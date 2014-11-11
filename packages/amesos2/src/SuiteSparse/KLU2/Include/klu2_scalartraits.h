@@ -66,6 +66,23 @@ struct KLU_ScalarTraits<double>
     }
 };
 
+template <>
+struct KLU_ScalarTraits<float>
+{
+    typedef float magnitudeType ;
+    static inline float reciprocal (float c) { return 1.0/c ; }
+    static inline float divide (float a, float b) { return a/b ; }
+    static inline float divideConjugate (float a, float b) { return a/b ; }
+    static inline magnitudeType approxABS (float a)
+    {
+        return (SCALAR_ABS (a));
+    }
+    static inline magnitudeType abs (float a)
+    {
+        return (SCALAR_ABS (a));
+    }
+};
+
 // mfh 13 Sep 2012: The Teuchos::ScalarTraits<std::complex<T> >
 // specialization doesn't exist unless Teuchos was built with complex
 // arithmetic support.  To enable complex arithmetic support in

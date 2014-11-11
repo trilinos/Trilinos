@@ -386,7 +386,10 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
   update_shared_faces_global_ids( mesh, shared_face_map );
 
   if (i_started) {
+    bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
+    mesh.set_use_entity_ids_for_resolving_sharing(false);
     mesh.modification_end_for_entity_creation( stk::topology::FACE_RANK, BulkData::MOD_END_COMPRESS_AND_SORT );
+    mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
   }
 }
 

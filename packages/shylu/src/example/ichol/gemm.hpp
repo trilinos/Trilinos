@@ -9,43 +9,50 @@
 namespace Example { 
 
   using namespace std;
-  
-  template<typename ScalarType, 
-           typename CrsMatViewType>
-  KOKKOS_INLINE_FUNCTION 
-  int
-  gemm_nt_t(const ScalarType alpha,
-            const CrsMatViewType A,
-            const CrsMatViewType X,
-            const ScalarType beta,
-            const CrsMatViewType Y) {
-    typedef typename CrsMatViewType::ordinal_type  ordinal_type;
-    typedef typename CrsMatViewType::value_type    value_type;
-    typedef typename CrsMatViewType::row_view_type row_view_type;
 
-    // case that X.transpose, A.no_transpose, Y.no_transpose
+  template<int ArgTransA, int ArgTransX>
+  struct Gemm {
+    template<typename ScalarType, 
+             typename CrsMatViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int invoke(const ScalarType alpha,
+                      const CrsMatViewType A,
+                      const CrsMatViewType X,
+                      const ScalarType beta,
+                      const CrsMatViewType Y);
 
-    for (ordinal_type j=0;j<X.NumRows();++j) {
-      row_view_type x = X.extractRow(j);
-      if (x.NumNonZeros()) {
-        for (ordinal_type i=0;i<Y.NumRows();++i) {
-          row_view_type y = Y.extractRow(i);
-          row_view_type a = A.extractRow(i);
+    template<typename ScalarType, 
+             typename CrsMatViewType>
+    class TaskFunctor {
+    private:
+      ScalarType _alpha, _beta;
+      CrsMatViewType _A, _X, _Y;
+      
+    public:
+      TaskFunctor(const ScalarType alpha,
+                  const CrsMatViewType A,
+                  const CrsMatViewType X,
+                  const ScalarType beta,
+                  const CrsMatViewType Y) 
+        : _alpha(alpha),
+          _beta(beta),
+          _A(A),
+          _X(X),
+          _Y(Y) 
+      { }
 
-          if (y.NumNonZeros() && a.NumNonZeros()) {
-            ordinal_type id = y.Index(j);
-            if (id >= 0) {
-              value_type &upsilon = y.Value(id);
-              upsilon = beta*upsilon + alpha*dot(a, x);
-            }
-          }
-        }
+      string Label() const { return "Gemm"; }
+
+      typedef int value_type;      
+      void apply(value_type &r_val) {
+        r_val = Gemm::invoke(_alpha, _A, _X, _beta, _Y);
       }
-    } 
-    
-    return 0;
-  }
+    };
+
+  };
 
 }
+
+#include "gemm_nt_t.hpp"
 
 #endif

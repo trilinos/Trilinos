@@ -43,14 +43,13 @@
 
 // Including this is the easy way to get access to all the Node types.
 #include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless KokkosThreadsWrapperNode is enabled.
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
-#include "Tpetra_CrsMatrix.hpp"
+// unless KokkosCudaWrapperNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-
+#include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix_def.hpp"
 
@@ -67,5 +66,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_CUDA
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_CUDA

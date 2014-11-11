@@ -137,11 +137,15 @@ namespace MueLu {
     if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
       preSmoother = preSmootherPrototype_->Copy();
 
+      int oldRank = -1;
       if (!currentLevel.GetComm().is_null())
-        preSmoother->SetProcRankVerbose(currentLevel.GetComm()->getRank());
+        oldRank = preSmoother->SetProcRankVerbose(currentLevel.GetComm()->getRank());
 
       preSmoother->Setup(currentLevel);
       preSmootherParams = preSmoother->GetParameterList();
+
+      if (oldRank != -1)
+        preSmoother->SetProcRankVerbose(oldRank);
 
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
     }
@@ -181,10 +185,14 @@ namespace MueLu {
         //  - or our postsmoother is different from presmoother
         postSmoother = postSmootherPrototype_->Copy();
 
+        int oldRank = -1;
         if (!currentLevel.GetComm().is_null())
-          postSmoother->SetProcRankVerbose(GetProcRankVerbose());
+          oldRank = postSmoother->SetProcRankVerbose(GetProcRankVerbose());
 
         postSmoother->Setup(currentLevel);
+
+        if (oldRank != -1)
+          postSmoother->SetProcRankVerbose(oldRank);
       }
       postSmootherParams = postSmoother->GetParameterList();
 

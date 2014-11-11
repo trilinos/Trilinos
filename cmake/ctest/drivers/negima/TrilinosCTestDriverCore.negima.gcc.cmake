@@ -85,13 +85,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
     "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
     "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.2")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -108,8 +107,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.1/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.1/bin/gcc"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.2/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc"
       )
 
   ENDIF()

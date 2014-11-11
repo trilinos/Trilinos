@@ -5,7 +5,7 @@
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
-#include "ichol_left_unblocked.hpp"
+#include "ichol.hpp"
 
 using namespace std;
 
@@ -13,12 +13,13 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::OpenMP host_type; 
+typedef Kokkos::OpenMP space_type; 
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 typedef Example::Uplo Uplo;
+typedef Example::Algo Algo;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -31,7 +32,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase Abase("Abase");
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -39,21 +40,25 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  Abase.importMatrixMarket(in);
-  cout << Abase << endl;
+  AA.importMatrixMarket(in);
+  cout << AA << endl;
 
-  CrsMatrixBase Lbase("Lower Triangular of Abase");
-  Lbase.copy(Uplo::Lower, Abase);
+  CrsMatrixBase LL("Lower Triangular of AA");
+  LL.copy(Uplo::Lower, AA);
 
   {
-    CrsMatrixView L(Lbase);
+    CrsMatrixView L(LL);
 
-    int r_val = Example::ichol_left_unblocked_lower(L);
-    if (r_val != 0) 
+    //int r_val = Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::invoke(L);
+    int r_val = 0;
+    Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
+    if (r_val != 0)  {
       cout << " Error = " << r_val << endl;
+      return r_val;
+    }
   }
 
-  cout << Lbase << endl;
+  cout << LL << endl;
 
   Kokkos::finalize();
 

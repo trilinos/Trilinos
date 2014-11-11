@@ -34,7 +34,6 @@ public:
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
 protected:
-  FadBinaryAdd() {}
 
   const L& left_; const R& right_;
 
@@ -61,7 +60,6 @@ public:
   typedef FadCst<value_type> R;
 
 protected:
-  FadBinaryAdd() {}
 
   const L& left_; const  R right_;
 
@@ -85,7 +83,6 @@ public:
   typedef FadCst<value_type> L;
 
 protected:
-  FadBinaryAdd() {}
 
   const L left_; const R& right_;
 
@@ -115,7 +112,6 @@ public:
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
 protected:
-  FadBinaryMinus() {}
 
   const L& left_; const R& right_;
 
@@ -142,7 +138,6 @@ public:
   typedef FadCst<value_type> R;
 
 protected:
-  FadBinaryMinus() {}
 
   const L& left_; const R right_;
 
@@ -166,7 +161,6 @@ public:
   typedef FadCst<value_type> L;
 
 protected:
-  FadBinaryMinus() {}
 
   const L left_; const R& right_;
 
@@ -192,7 +186,6 @@ template <class L, class R> class FadBinaryMul {
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
  protected:
-  FadBinaryMul() {}
 
   const L& left_; const R& right_;
 
@@ -218,7 +211,6 @@ template <class L> class FadBinaryMul<L, FadCst<typename L::value_type> > {
   typedef FadCst<value_type> R;
 
  protected:
-  FadBinaryMul() {}
 
   const L& left_; const R right_;
 
@@ -240,7 +232,6 @@ template <class R> class FadBinaryMul< FadCst<typename R::value_type>, R> {
   typedef FadCst<value_type> L;
 
  protected:
-  FadBinaryMul() {}
 
   const L left_; const R& right_;
 
@@ -265,7 +256,6 @@ template <class L, class R> class FadBinaryDiv {
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
  protected:
-  FadBinaryDiv() {}
 
   const L& left_; const R& right_;
 
@@ -293,7 +283,6 @@ template <class L> class FadBinaryDiv<L, FadCst<typename L::value_type> > {
   typedef FadCst<value_type> R;
 
  protected:
-  FadBinaryDiv() {}
 
   const L& left_; const R right_;
 
@@ -317,7 +306,6 @@ template <class R> class FadBinaryDiv< FadCst<typename R::value_type>, R> {
   typedef FadCst<value_type> L;
 
  protected:
-  FadBinaryDiv() {}
 
   const L left_; const R& right_;
 
@@ -344,7 +332,6 @@ public:
   typedef typename NumericalTraits<value_type_L,value_type_R>::promote value_type;
 
 protected:
-  FadBinaryPow() {}
 
   const L& left_; const R& right_;
 
@@ -379,7 +366,6 @@ public:
   typedef FadCst<value_type> R;
 
 protected:
-  FadBinaryPow() {}
 
   const L& left_; const  R right_;
 
@@ -410,7 +396,6 @@ public:
   typedef FadCst<value_type> L;
 
 protected:
-  FadBinaryPow() {}
 
   const L left_; const R& right_;
 
@@ -439,7 +424,6 @@ public:
   typedef FadCst<int> R;
 
 protected:
-  FadBinaryPow() {}
 
   const L& left_; const R right_;
 

@@ -49,40 +49,84 @@
 #include <cstdio>
 #include <cstdlib>
 
+// DualView helps you manage data and computations that take place on
+// two different memory spaces.  Examples include CUDA device memory
+// and (CPU) host memory (currently implemented), or Intel Knights
+// Landing MCDRAM and DRAM (not yet implemented).  For example, if you
+// have ported only some parts of you application to run in CUDA,
+// DualView can help manage moving data between the parts of your
+// application that work best with CUDA, and the parts that work
+// better on the CPU.
+//
+// A DualView takes the same template parameters as a View, but
+// contains two Views: One that lives in the DualView's memory space,
+// and one that lives in that memory space's host mirror space.  If
+// both memory spaces are the same, then the two Views just alias one
+// another.  This means that you can use DualView all the time, even
+// when not running in a memory space like CUDA.  DualView's
+// operations to help you manage memory take almost no time in that
+// case.  This makes your code even more performance portable.
+
 typedef Kokkos::DualView<double*> view_type;
 typedef Kokkos::DualView<int**> idx_type;
 
 
 template<class Device>
 struct localsum {
-  // Define the execution space for the functor (overrides the DefaultExecutionSpace)
+  // If the functor has a public 'device_type' typedef, that defines
+  // the functor's execution space (where it runs in parallel).  This
+  // overrides Kokkos' default execution space.
   typedef Device device_type;
 
-  // Get the view types on the particular device the functor is instantiated for
+  // Get the view types on the particular device for which the functor
+  // is instantiated.
+  //
+  // "const_data_type" is a typedef in View (and DualView) which is
+  // the const version of the first template parameter of the View.
+  // For example, the const_data_type version of double** is const
+  // double**.
   Kokkos::View<idx_type::const_data_type, idx_type::array_layout, Device> idx;
-  Kokkos::View<view_type::array_type, view_type::array_layout, Device> dest;
-  Kokkos::View<view_type::const_data_type, view_type::array_layout, Device, Kokkos::MemoryRandomAccess > src;
+  // "array_intrinsic_type" is a typedef in ViewTraits (and DualView) which is the
+  // array version of the value(s) stored in the View.
+  Kokkos::View<view_type::array_intrinsic_type, view_type::array_layout, Device> dest;
+  Kokkos::View<view_type::const_data_type, view_type::array_layout,
+               Device, Kokkos::MemoryRandomAccess> src;
 
-  localsum(idx_type dv_idx, view_type dv_dest,
-      view_type dv_src) {
-    // Extract the view on the correct Device from the DualView
-    idx = dv_idx.view<Device>();
-    dest = dv_dest.template view<Device>();
-    src = dv_src.template view<Device>();
+  // Constructor takes DualViews, synchronizes them to the device,
+  // then marks them as modified on the device.
+  localsum (idx_type dv_idx, view_type dv_dest, view_type dv_src)
+  {
+    // Extract the view on the correct Device (i.e., the correct
+    // memory space) from the DualView.  DualView has a template
+    // method, view(), which is templated on the memory space.  If the
+    // DualView has a View from that memory space, view() returns the
+    // View in that space.
+    idx = dv_idx.view<Device> ();
+    dest = dv_dest.template view<Device> ();
+    src = dv_src.template view<Device> ();
 
-    // Synchronize the DualView on the correct Device
-    dv_idx.sync<Device>();
-    dv_dest.template sync<Device>();
-    dv_src.template sync<Device>();
+    // Synchronize the DualView to the correct Device.
+    //
+    // DualView's sync() method is templated on a memory space, and
+    // synchronizes the DualView in a one-way fashion to that memory
+    // space.  "Synchronizing" means copying, from the other memory
+    // space to the Device memory space.  sync() does _nothing_ if the
+    // Views on the two memory spaces are in sync.  DualView
+    // determines this by the user manually marking one side or the
+    // other as modified; see the modify() call below.
 
-    // Mark dest as modified on Device
-    dv_dest.template modify<Device>();
+    dv_idx.sync<Device> ();
+    dv_dest.template sync<Device> ();
+    dv_src.template sync<Device> ();
+
+    // Mark dest as modified on Device.
+    dv_dest.template modify<Device> ();
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (int i) const {
+  void operator() (const int i) const {
     double tmp = 0.0;
-    for(int j = 0; j < idx.dimension_1(); j++) {
+    for (int j = 0; j < idx.dimension_1(); ++j) {
       const double val = src(idx(i,j));
       tmp += val*val + 0.5*(idx.dimension_0()*val -idx.dimension_1()*val);
     }
@@ -90,24 +134,24 @@ struct localsum {
   }
 };
 
-int main(int narg, char* arg[]) {
-  Kokkos::initialize(narg,arg);
+int main (int narg, char* arg[]) {
+  Kokkos::initialize (narg, arg);
 
   int size = 1000000;
 
   // Create DualViews. This will allocate on both the device and its
   // host_mirror_device.
-  idx_type idx("Idx",size,64);
-  view_type dest("Dest",size);
-  view_type src("Src",size);
+  idx_type idx ("Idx",size,64);
+  view_type dest ("Dest",size);
+  view_type src ("Src",size);
 
-  srand(134231);
+  srand (134231);
 
   // Get a reference to the host view of idx directly (equivalent to
   // idx.view<idx_type::host_mirror_space>() )
   idx_type::t_host h_idx = idx.h_view;
   for (int i = 0; i < size; ++i) {
-    for (view_type::size_type j=0; j < h_idx.dimension_1 (); ++j) {
+    for (view_type::size_type j = 0; j < h_idx.dimension_1 (); ++j) {
       h_idx(i,j) = (size + i + (rand () % 500 - 250)) % size;
     }
   }
@@ -115,7 +159,7 @@ int main(int narg, char* arg[]) {
   // Mark idx as modified on the host_mirror_space so that a
   // sync to the device will actually move data.  The sync happens in
   // the functor's constructor.
-  idx.modify<idx_type::host_mirror_space>();
+  idx.modify<idx_type::host_mirror_space> ();
 
   // Run on the device.  This will cause a sync of idx to the device,
   // since it was marked as modified on the host.

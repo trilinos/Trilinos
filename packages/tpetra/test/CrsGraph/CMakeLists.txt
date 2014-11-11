@@ -6,20 +6,10 @@ IF(Tpetra_ENABLE_Thrust)
   SET(MAXNP NUM_MPI_PROCS 1)
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda)
-  #
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
-  CUDA_COMPILE(CRSGRAPH_OBJECTS_CUDA CrsGraph_UnitTests_CU.cu)
-  CUDA_COMPILE(CRSGRAPH_REINDEXCOLUMNS_OBJECTS_CUDA CrsGraph_ReindexColumns_CU.cu)
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnitTests
   SOURCES
     CrsGraph_UnitTests
-    ${CRSGRAPH_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -31,7 +21,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_ReindexColumns
   SOURCES
     CrsGraph_ReindexColumns
-    ${CRSGRAPH_REINDEXCOLUMNS_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi

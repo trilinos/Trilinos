@@ -43,20 +43,6 @@
 // version of this file will actually be compiled.
 #include <Tpetra_config.h>
 
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#  include <KokkosCore_config.h>
-#  ifdef KOKKOS_USE_CUDA_BUILD
-#    define DO_COMPILATION
-#  else
-#    ifndef KOKKOS_HAVE_CUDA
-#      define DO_COMPILATION
-#    endif // KOKKOS_HAVE_CUDA
-#  endif // KOKKOS_USE_CUDA_BUILD
-#else
-#  define DO_COMPILATION
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-
-#ifdef DO_COMPILATION
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
@@ -627,4 +613,3 @@ namespace { // (anonymous)
 
 } // namespace (anonymous)
 
-#endif // DO_COMPILATION

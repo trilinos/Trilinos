@@ -879,10 +879,12 @@ FUNCTION(UNITEST_TRIBITS_ADD_ADVANCED_TEST_BASIC)
     REGEX_STRINGS
       "TEST_0_CMND \"ls\""
       "NUM_CMNDS 1"
+      "SET[(]SHOW_START_END_DATE_TIME [)]"
     )
 
   MESSAGE("***\n*** Add a single package executable with no arguments\n***")
   TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME ON)
   TRIBITS_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_exec_1_args_0
     TEST_0 EXEC ${EXEN}
     )
@@ -899,10 +901,12 @@ FUNCTION(UNITEST_TRIBITS_ADD_ADVANCED_TEST_BASIC)
     REGEX_STRINGS
       "TEST_0_CMND \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\""
       "NUM_CMNDS 1"
+      "SET[(]SHOW_START_END_DATE_TIME ON[)]"
     )
 
   MESSAGE("***\n*** Add a single basic command with two arguments\n***")
   TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME OFF)
   TRIBITS_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_1_args_2
     TEST_0 CMND ${CMNDN} ARGS CMakeLists.txt CMakeFiles
     )
@@ -920,6 +924,7 @@ FUNCTION(UNITEST_TRIBITS_ADD_ADVANCED_TEST_BASIC)
       "TEST_0_CMND \"ls\" \"CMakeLists.txt\" \"CMakeFiles\""
       "NUM_CMNDS 1"
       "CMAKE_MODULE_PATH"
+      "SET[(]SHOW_START_END_DATE_TIME OFF[)]"
       "DriveAdvancedTest"
       "DRIVE_ADVANCED_TEST"
     )
@@ -2066,4 +2071,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(256)
+UNITTEST_FINAL_RESULT(259)

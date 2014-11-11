@@ -43,26 +43,24 @@
 
 // Including this is the easy way to get access to all the Node types.
 #include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
 // Don't bother compiling anything, or even including anything else,
 // unless ThrustGPUNode is enabled.
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Tpetra_CrsMatrix.hpp"
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_THRUST)
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-
+#include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
 
-// Macro for instantiating only on float and double scalar types for Thrust
-
+// Instantiate only on float and double scalar types for Thrust
 #define TPETRA_MACRO_TEMPLATE_INSTANT_ALL_SCALAR_THRUSTNODE_NO_INT(LO,GO,MACRO)\
   TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_FLOAT(LO,GO,MACRO) \
   TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_DOUBLE(LO,GO,MACRO)
 
-// Macros for instantiating CrsMatrix et al for only the above on supported scalar types, for any LO, GO
-
+// Instantiate CrsMatrix et al. for only the above on supported scalar
+// types, for any LO, GO
 #define TPETRA_CRSMATRIX_THRUSTGPUNODE_ALL_SCALAR_INSTANT( LO, GO ) \
   TPETRA_MACRO_TEMPLATE_INSTANT_ALL_SCALAR_THRUSTNODE_NO_INT( LO, GO, TPETRA_CRSMATRIX_INSTANT )
 
@@ -76,5 +74,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#endif // HAVE_KOKKOSCLASSIC_THRUST
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_THRUST

@@ -1483,7 +1483,10 @@ namespace stk {
 	populate_mesh(delay_field_data_allocation);
 	populate_field_data();
 	if (i_started) {
+	  bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
+	  bulk_data().set_use_entity_ids_for_resolving_sharing(true);
 	  bulk_data().modification_end();
+	  bulk_data().set_use_entity_ids_for_resolving_sharing(saveOption);
 	}
       }
     

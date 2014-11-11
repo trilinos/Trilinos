@@ -37,8 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
-
 # Either the MPI compiler wrappers take care of these or the user has to set
 # the explicitly using basic compile flags and ${PROJECT_NAME}_EXTRA_LINK_FLAGS.
 GLOBAL_SET(TPL_MPI_INCLUDE_DIRS)

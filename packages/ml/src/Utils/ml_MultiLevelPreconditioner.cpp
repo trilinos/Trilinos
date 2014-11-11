@@ -1345,6 +1345,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
            std::cerr << ErrorMsg_ << "Must specify 'semicoarsen: line direction nodes' when using semicoarsening and orientation is given (i.e., not deduced from coordinates)" << std::endl;
          ML_EXIT(-1);
       }
+      std::string coord_dir = List_.get("semicoarsen: coarsen coordinate","z");
+      if (coord_dir == "x")       { agg_->semicoarsen_coordinate = 'x'; ml_->Amat[LevelID_[0]].coarsencoord= 'x'; }
+      else if (coord_dir == "y")  { agg_->semicoarsen_coordinate = 'y'; ml_->Amat[LevelID_[0]].coarsencoord= 'y'; }
+      else if (coord_dir == "z")  { agg_->semicoarsen_coordinate = 'z'; ml_->Amat[LevelID_[0]].coarsencoord= 'z'; }
+      else {
+           std::cerr << ErrorMsg_ << "Warning: Unrecognized coordinate direction for semicoarsening" << std::endl;
+           std::cerr << ErrorMsg_ << coord_dir << std::endl;
+      }
     }
 
 

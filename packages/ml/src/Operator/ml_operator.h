@@ -150,6 +150,7 @@ struct ML_Operator_Struct {
    int           Zorientation;      /* -1: not specified */
                                     /*  1: vertical      */
                                     /*  2: horizontal    */
+   char          coarsencoord;    /* x,y,z for semicoarsening/line smoothing */
 
    ML_Operator_Subspace *subspace;
                 /* This is just a hook into modes that we want to project out

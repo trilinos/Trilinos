@@ -35,12 +35,18 @@ namespace Example {
     typedef Kokkos::View<ordinal_type*,space_type,memory_traits> ordinal_type_array;
     typedef Kokkos::View<value_type*,  space_type,memory_traits> value_type_array;
 
+    typedef Kokkos::View<size_type*,   space_type,Kokkos::MemoryUnmanaged> size_type_array_view;
+    typedef Kokkos::View<ordinal_type*,space_type,Kokkos::MemoryUnmanaged> ordinal_type_array_view;
+    typedef Kokkos::View<value_type*,  space_type,Kokkos::MemoryUnmanaged> value_type_array_view;
+
     // range type
     template<typename T> using range_type = pair<T,T>;
 
     // external interface
     typedef Coo<CrsMatrixBase> ijv_type;
     
+    friend class CrsMatrixHelper;
+
   private:
     string             _label;   //!< object label
 
@@ -86,22 +92,22 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     size_type NumNonZeros() const { return _nnz; }
 
-    // KOKKOS_INLINE_FUNCTION
-    // size_type
-    // RowPtr(const ordinal_type i) const { 
-    //   return _ap[i];
-    // }
-    
     KOKKOS_INLINE_FUNCTION
-    ordinal_type_array 
-    ColsInRow(const ordinal_type i) const {
-      return Kokkos::subview<ordinal_type_array>(_aj, range_type<size_type>(_ap[i],_ap[i+1]));
+    size_type
+    RowPtr(const ordinal_type i) const { 
+      return _ap[i];
     }
     
     KOKKOS_INLINE_FUNCTION
-    value_type_array   
+    ordinal_type_array_view
+    ColsInRow(const ordinal_type i) const {
+      return Kokkos::subview<ordinal_type_array_view>(_aj, range_type<size_type>(_ap[i],_ap[i+1]));
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    value_type_array_view   
     ValuesInRow(const ordinal_type i) const {
-      return Kokkos::subview<value_type_array>(_ax, range_type<size_type>(_ap[i],_ap[i+1]));
+      return Kokkos::subview<value_type_array_view>(_ax, range_type<size_type>(_ap[i],_ap[i+1]));
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -109,6 +115,12 @@ namespace Example {
     NumNonZerosInRow(const ordinal_type i) const { 
       return (_ap[i+1] - _ap[i]);
     } 
+
+    KOKKOS_INLINE_FUNCTION
+    value_type& Value(const ordinal_type k) { return _ax[k]; }
+
+    KOKKOS_INLINE_FUNCTION
+    value_type Value(const ordinal_type k) const { return _ax[k]; }
 
     /// \brief Default constructor.
     CrsMatrixBase() 
@@ -275,7 +287,7 @@ namespace Example {
           ijv_type aij(i, jj, b._ax[j]);
           tmp.push_back(aij);
         }
-        // does std algorithm universally work on Kokkos any memory space ?
+
         sort(tmp.begin(), tmp.end(), less<ijv_type>());
         for (auto it=tmp.begin();it<tmp.end();++it) {
           ijv_type aij = (*it);
@@ -291,48 +303,59 @@ namespace Example {
       return 0;
     }
 
-    // // copy flat matrix into hierarchically partitioned matrix
-    // // for testing only, create 1x1
-    // template<typename CrsFlatBase>
-    // int 
-    // copy(CrsFlatBase &b,
-    //      const ordinal_type mb = 1, 
-    //      const ordinal_type nb = 1) {
-
-    //   // need partial specialization only for hierarchical matrix
-
-    //   // mb = 1, nb = 1 case only now
-    //   init(b.NumRows(), b.NumCols(), b.NumNonZeros());
+    ostream& showMe(ostream &os) const {
+      os << " -- " << _label << " -- " << endl
+         << "    # of Rows          = " << _m << endl
+         << "    # of Cols          = " << _n << endl
+         << "    # of NonZeros      = " << _nnz << endl
+         << endl
+         << "    RowPtrArray length = " << _ap.dimension_0() << endl
+         << "    ColsArray   length = " << _aj.dimension_0() << endl 
+         << "    ValuesArray length = " << _ax.dimension_0() << endl
+         << endl;
       
-    //   _nnz = 0;
-    //   for (ordinal_type i=0;i<_m;++i) {
-    //     ordinal_type jsize = (*b.RowPtr(i+1) - *b.RowPtr(i));
-    //     _ap[i] = _nnz;
-    //     ordinal_type *ci = b.Cols(i);
-    //     for (ordinal_type j=0;j<jsize;++j) {
-    //       _aj[_nnz] = ci[j];
-    //       _ax[_nnz].setView(&b,         i, 1,
-    //                         /**/_aj[_nnz], 1);
-    //       ++_nnz;
-    //     }
-    //   }
-    //   _ap[_m] = _nnz;
+      const int w = 15;
+      if (_ap.size() && _aj.size() && _ax.size()) {
+        os << setw(w) <<  "Row" << "  " 
+           << setw(w) <<  "Col" << "  " 
+           << setw(w) <<  "Val" << endl;
+        for (ordinal_type i=0;i<_m;++i) {
+          size_type jbegin = _ap[i], jend = _ap[i+1];
+          for (size_type j=jbegin;j<jend;++j) {
+            value_type val = _ax[j];
+            os << setw(w) <<      i << "  " 
+               << setw(w) << _aj[j] << "  " 
+               << setw(w) <<    val << endl;
+          }
+        }
+      }
 
-    //   // this will create a hierarchical matrix which has 1x1 block matrix
-    // }
+      return os;
+    }
 
-    //virtual~CrsMatrixBase() { }
-
+    int convertGraph(size_type &nnz,
+                     size_type_array rptr,
+                     ordinal_type_array cidx) const {
+      ordinal_type ii = 0;
+      size_type jj = 0;
+      
+      for (ordinal_type i=0;i<_m;++i) {
+        size_type jbegin = _ap[i], jend = _ap[i+1];
+        rptr[ii++] = jj;
+        for (size_type j=jbegin;j<jend;++j) 
+          if (i != _aj[j]) 
+            cidx[jj++] = _aj[j];
+      }
+      rptr[ii] = nnz = jj;
+      
+      return 0;
+    }
 
     int importMatrixMarket(ifstream &file);
-    ostream& showMe(ostream &os) const;
-    int convertGraph(size_type &nnz,
-                     size_type *rptr,
-                     ordinal_type *cidx) const; 
   };
 
 }
 
-#include "crs_matrix_base_impl.hpp"
+#include "crs_matrix_base_import.hpp"
 
 #endif

@@ -37,7 +37,6 @@ IF (KokkosClassic_ENABLE_TBB)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     )
   APPEND_SET(TIMING_INSTALLS KokkosClassic_TBBNodeTestAndTiming)
 ENDIF()
@@ -52,7 +51,6 @@ IF (KokkosClassic_ENABLE_OpenMP)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     )
   APPEND_SET(TIMING_INSTALLS KokkosClassic_OpenMPNodeTestAndTiming)
 ENDIF()
@@ -67,7 +65,6 @@ IF (KokkosClassic_ENABLE_ThreadPool)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     )
   APPEND_SET(TIMING_INSTALLS KokkosClassic_TPINodeTestAndTiming)
 ENDIF()
@@ -88,7 +85,6 @@ IF (KokkosClassic_ENABLE_Thrust)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     )
   APPEND_SET(TIMING_INSTALLS KokkosClassic_ThrustGPUNodeTestAndTiming)
 
@@ -98,7 +94,6 @@ IF (KokkosClassic_ENABLE_Thrust)
     SOURCES CUDABuiltAxpy.cpp
             ${CUDA_FILES}
     COMM serial mpi
-    DEPLIBS kokkosnodeapi
   )
 ENDIF()
 

@@ -8,6 +8,5 @@ IF (Kokkos_ENABLE_CXX11)
     tutorial_03_simple_view_lambda
     SOURCES simple_view_lambda.cpp
     COMM serial mpi
-    DEPLIBS kokkoscore
     )
 ENDIF ()

@@ -23,8 +23,8 @@
       <default>1</default>
       <Poisson-2D>1</Poisson-2D>
       <Poisson-3D>1</Poisson-3D>
-      <Elasticity-2D>3</Elasticity-2D>
-      <Elasticity-3D>6</Elasticity-3D>
+      <Elasticity-2D>2</Elasticity-2D>
+      <Elasticity-3D>3</Elasticity-3D>
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
     </parameter>
 
@@ -64,6 +64,7 @@
     <parameter>
       <name>smoother: type</name>
       <type>string</type>
+      <default>"RELAXATION"</default>
       <Poisson-2D>"CHEBYSHEV"</Poisson-2D>
       <Poisson-3D>"CHEBYSHEV"</Poisson-3D>
       <Elasticity-2D>"CHEBYSHEV"</Elasticity-2D>
@@ -76,12 +77,14 @@
     <parameter>
       <name>smoother: pre type</name>
       <type>string</type>
+      <default>"RELAXATION"</default>
       <description>Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
       <name>smoother: post type</name>
       <type>string</type>
+      <default>"RELAXATION"</default>
       <description>Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 

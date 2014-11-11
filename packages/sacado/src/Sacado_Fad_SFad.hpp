@@ -457,6 +457,7 @@ namespace Sacado {
 #if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #include "impl/Kokkos_AnalyzeShape.hpp"
+#include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Sacado_Fad_ViewFad.hpp"
 
 namespace Kokkos {
@@ -488,22 +489,17 @@ struct ViewFadType< const Sacado::Fad::SFad< ValueType, N >, length, stride > {
  */
 template< class ValueType, int N >
 struct AnalyzeShape< Sacado::Fad::SFad< ValueType, N > >
-  : ShapeInsert< typename AnalyzeShape< ValueType >::shape , N+1 >::type
+  : Shape< sizeof(Sacado::Fad::SFad< ValueType, N >) , 0 > // Treat as a scalar
 {
-private:
-
-  typedef AnalyzeShape< ValueType > nested ;
-
 public:
 
   typedef ViewSpecializeSacadoFad specialize ;
 
-  typedef typename ShapeInsert< typename nested::shape , N+1 >::type shape ;
+  typedef Shape< sizeof(Sacado::Fad::SFad< ValueType, N >) , 0 > shape ;
 
-  typedef typename nested::array_type         array_type [N+1];
-  typedef typename nested::const_array_type   const_array_type [N+1] ;
-
-  typedef array_type non_const_array_type ;
+  typedef       Sacado::Fad::SFad< ValueType, N >        array_intrinsic_type ;
+  typedef const Sacado::Fad::SFad< ValueType, N >  const_array_intrinsic_type ;
+  typedef array_intrinsic_type non_const_array_intrinsic_type ;
 
   typedef       Sacado::Fad::SFad< ValueType, N >  type ;
   typedef const Sacado::Fad::SFad< ValueType, N >  const_type ;
@@ -512,6 +508,45 @@ public:
   typedef       Sacado::Fad::SFad< ValueType, N >  value_type ;
   typedef const Sacado::Fad::SFad< ValueType, N >  const_value_type ;
   typedef       Sacado::Fad::SFad< ValueType, N >  non_const_value_type ;
+};
+
+/** \brief  Analyze the array shape of a Sacado::Fad::SFad<T,N>.
+ *
+ *  This specialization is required so that the array shape of
+ *  Kokkos::View< Sacado::Fad::SFad<T,N>, ... >
+ *  can be determined at compile-time.
+ *
+ *  We add one to the SFad dimension (N) to store the value component.
+ */
+template< class ValueType, class Layout, int N >
+struct AnalyzeSacadoShape< Sacado::Fad::SFad< ValueType, N >, Layout >
+  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape , N+1 >::type
+{
+private:
+
+  typedef AnalyzeSacadoShape< ValueType, Layout > nested ;
+
+public:
+
+  typedef ViewSpecializeSacadoFad specialize ;
+
+  typedef typename ShapeInsert< typename nested::shape , N+1 >::type shape ;
+
+  typedef typename nested::array_intrinsic_type         array_intrinsic_type [N+1];
+  typedef typename nested::const_array_intrinsic_type   const_array_intrinsic_type [N+1] ;
+  typedef array_intrinsic_type non_const_array_intrinsic_type ;
+
+  typedef       Sacado::Fad::SFad< ValueType, N >  type ;
+  typedef const Sacado::Fad::SFad< ValueType, N >  const_type ;
+  typedef       Sacado::Fad::SFad< ValueType, N >  non_const_type ;
+
+  typedef       Sacado::Fad::SFad< ValueType, N >  value_type ;
+  typedef const Sacado::Fad::SFad< ValueType, N >  const_value_type ;
+  typedef       Sacado::Fad::SFad< ValueType, N >  non_const_value_type ;
+
+  typedef typename nested::type           flat_array_type ;
+  typedef typename nested::const_type     const_flat_array_type ;
+  typedef typename nested::non_const_type non_const_flat_array_type ;
 };
 
 } // namespace Impl

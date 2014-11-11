@@ -296,7 +296,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
       if (diagVal2[r] == zero) {
-        std::cout << "Error: there are zeros left on diagonal after repair..." << std::endl;
+        GetOStream(Errors,-1) << "Error: there are zeros left on diagonal after repair..." << std::endl;
         break;
       }
     }

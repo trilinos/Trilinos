@@ -13,21 +13,22 @@
 #ifndef DEVICE
 #  define DEVICE 1
 #endif
-#pragma message "HALLO"
+
 #if DEVICE==1
-#  ifdef _OPENMP
+#  ifdef KOKKOS_HAVE_OPENMP
 typedef Kokkos::OpenMP device_type;
-#  else
+#  elif KOKKOS_HAVE_PTHREAD
 typedef Kokkos::Threads device_type;
-#  endif // _OPENMP
-//#  define KokkosHost( yourCode ) do { yourCode } while (0)
+#  endif
 #  define KokkosHost( yourCode ) yourCode
 #  define KokkosCUDA( yourCode )
 #else // DEVICE != 1
+#  ifdef KOKKOS_HAVE_CUDA
 typedef Kokkos::Cuda device_type;
-#  define KokkosHost(a)
-//#  define KokkosCUDA( yourCode ) do { yourCode } while (0)
-#  define KokkosCUDA(a) a
+#    define KokkosHost(a)
+#    define KokkosCUDA(a) a
+#  else
+#    error "You set DEVICE != 1 but KOKKOS_HAVE_CUDA is not defined."
 #endif // DEVICE == 1
 
 // FIXME (mfh 28 Sep 2013) That seems like a rather large rounding
@@ -40,9 +41,9 @@ void cuda_check_error(char* comment)
   printf ("ERROR %s in %s:%i\n", comment, __FILE__, __LINE__);
 #endif
 #if DEVICE==2
-  printf ("ERROR-CUDA %s %s in %s:%i\n", comment, 
-	  cudaGetErrorString (cudaGetLastError ()), 
-	  __FILE__, __LINE__);
+  printf ("ERROR-CUDA %s %s in %s:%i\n", comment,
+          cudaGetErrorString (cudaGetLastError ()),
+          __FILE__, __LINE__);
 #endif
 }
 
@@ -55,14 +56,14 @@ struct test_data{
 
 template<typename ScalarType, typename OrdinalType>
 int
-SparseMatrix_generate (const OrdinalType nrows, 
-		       const OrdinalType ncols, 
-		       OrdinalType& nnz, 
-		       const OrdinalType varianz_nel_row, 
-		       const OrdinalType width_row, 
-		       ScalarType* &values, 
-		       OrdinalType* &rowPtr, 
-		       OrdinalType* &colInd)
+SparseMatrix_generate (const OrdinalType nrows,
+                       const OrdinalType ncols,
+                       OrdinalType& nnz,
+                       const OrdinalType varianz_nel_row,
+                       const OrdinalType width_row,
+                       ScalarType* &values,
+                       OrdinalType* &rowPtr,
+                       OrdinalType* &colInd)
 {
   rowPtr = new OrdinalType[nrows+1];
 
@@ -90,16 +91,16 @@ SparseMatrix_generate (const OrdinalType nrows,
 
 template<typename Scalar, class Matrix, class RangeVector, class DomainVector>
 int test_crs_matrix (test_data& test_sum,
-		 Matrix A, 
-		 RangeVector y, 
-		 DomainVector x, 
-		 typename RangeVector::HostMirror h_y,
-		 typename RangeVector::HostMirror h_x, 
-		 typename RangeVector::HostMirror h_y_compare,
-		 const int alpha, 
-		 const int beta, 
-		 const bool vector_scalar, 
-		 const char* type_string)
+                 Matrix A,
+                 RangeVector y,
+                 DomainVector x,
+                 typename RangeVector::HostMirror h_y,
+                 typename RangeVector::HostMirror h_x,
+                 typename RangeVector::HostMirror h_y_compare,
+                 const int alpha,
+                 const int beta,
+                 const bool vector_scalar,
+                 const char* type_string)
 {
   typedef Matrix matrix_type ;
   typedef DomainVector mv_type;
@@ -152,7 +153,7 @@ int test_crs_matrix (test_data& test_sum,
       const Scalar val = h_graph.entries(j) + i;
       const int idx = h_graph.entries(j);
       for (int k = 0; k < numVecs; ++k) {
-	h_y_compare(i,k) += h_a(k)*val*h_x(idx,k);
+        h_y_compare(i,k) += h_a(k)*val*h_x(idx,k);
       }
     }
   }
@@ -192,7 +193,7 @@ int test_crs_matrix (test_data& test_sum,
     total_error += error[k];
     total_sum += sum[k];
   }
-  
+
   if (num_errors > 0 || print_report_always) {
     if (num_errors > 0) {
       test_sum.num_errors++;
@@ -209,9 +210,9 @@ int test_crs_matrix (test_data& test_sum,
 
     char str[512];
     sprintf (str, "%s %s y = b*y + a*A*x with A: %ix%i numVecs: %i a/b: %s a: %i b: %i Result: %e Error: %e Testnumber: %i\n",
-	     type_string, num_errors > 0 ? "FAILED" : "PASSED",
-	     numRows, numCols, numVecs, vector_scalar ? "Vector" : "Scalar",
-	     alpha, beta, total_sum, total_error, testnumber);
+             type_string, num_errors > 0 ? "FAILED" : "PASSED",
+             numRows, numCols, numVecs, vector_scalar ? "Vector" : "Scalar",
+             alpha, beta, total_sum, total_error, testnumber);
     printf ("%s", str);
     if (num_errors > 0) {
       test_sum.error_string.append (str);
@@ -225,13 +226,13 @@ int test_crs_matrix (test_data& test_sum,
 
 template<typename Scalar>
 int
-test_crs_matrix_test (test_data& test_sum, 
-		      const int numRows, 
-		      const int numCols, 
-		      int nnz,
-		      const int numVecs, 
-		      const int test, 
-		      const char* typestring) 
+test_crs_matrix_test (test_data& test_sum,
+                      const int numRows,
+                      const int numCols,
+                      int nnz,
+                      const int numVecs,
+                      const int test,
+                      const char* typestring)
 {
   typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
   typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
@@ -257,12 +258,12 @@ test_crs_matrix_test (test_data& test_sum,
   if (test == -1) {
     for (int alpha = -1; alpha < 3; ++alpha) {
       for (int beta = -1; beta < 3; ++beta) {
-	num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,false,typestring);
+        num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,false,typestring);
       }
     }
     for (int alpha = -1; alpha < 3; ++alpha) {
       for (int beta = -1; beta < 3; ++beta) {
-	num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,true,typestring);
+        num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,true,typestring);
       }
     }
   } else {
@@ -276,17 +277,17 @@ test_crs_matrix_test (test_data& test_sum,
 
 
 // Test CrsMatrix<Scalar, int> for Scalar = int, long long int, float, and double.
-// 
+//
 // FIXME (mfh 28 Sep 2013) Not every compiler supports "long long int".
 // It might be wise to depend on the C99 types instead.
 int
-test_crs_matrix_type (test_data& test_sum, 
-		      const int numrows, 
-		      const int numcols, 
-		      const int nnz, 
-		      const int numVecs, 
-		      int type,
-		      const int test) 
+test_crs_matrix_type (test_data& test_sum,
+                      const int numrows,
+                      const int numcols,
+                      const int nnz,
+                      const int numVecs,
+                      int type,
+                      const int test)
 {
   const int maxtype = type < 1 ? 4 : type;
   const int mintype = type < 1 ? 1 : type;

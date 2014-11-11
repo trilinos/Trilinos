@@ -55,7 +55,7 @@
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
 #include <TestSegmentedView.hpp>
-
+#include <TestComplex.hpp>
 
 #include <iomanip>
 
@@ -83,6 +83,11 @@ protected:
     Kokkos::OpenMP::finalize();
   }
 };
+
+TEST_F( openmp, complex )
+{
+  testComplex<Kokkos::OpenMP> ();
+}
 
 TEST_F( openmp, bitset )
 {

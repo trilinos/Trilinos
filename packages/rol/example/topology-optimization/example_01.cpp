@@ -215,7 +215,7 @@ public:
   }
 
   void set_boundary_conditions(std::vector<Real> &u) {
-    for (int i=0; i<u.size(); i++) {
+    for (unsigned i=0; i<u.size(); i++) {
       if ( this->check_on_boundary(i) ) {
         u[i] = 0.0;
       }
@@ -446,7 +446,7 @@ public:
     this->applyJacobian_1(c, u, u, z, tol);
     std::vector<Real> f;
     this->FEM_->build_force(f);
-    for (int i = 0; i < f.size(); i++) {
+    for (unsigned i = 0; i < f.size(); i++) {
       (*cp)[i] -= f[i];
     }
   }
@@ -530,7 +530,7 @@ public:
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseVector<int, Real> F(vp->size());
-    for (int i=0; i<vp->size(); i++) {
+    for (unsigned i=0; i<vp->size(); i++) {
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
@@ -600,7 +600,7 @@ public:
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseVector<int, Real> F(vp->size());
-    for (int i=0; i<vp->size(); i++) {
+    for (unsigned i=0; i<vp->size(); i++) {
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
@@ -671,7 +671,7 @@ public:
 
   Objective_TopOpt(Teuchos::RCP<FEM<Real> > FEM, 
     Real frac = 0.5, Real reg = 1.0, Real pen = 1.0, Real rmin = -1.0 )
-    : FEM_(FEM), frac_(frac), reg_(reg), pen_(pen), rmin_(rmin) {}
+    : FEM_(FEM), frac_(frac), reg_(reg), pen_(pen), rmin_(rmin), useLC_(true) {}
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =
@@ -691,12 +691,12 @@ public:
     }
     // Compliance
     Real c = 0.0;
-    for (int i=0; i<up->size(); i++) {
+    for (unsigned i=0; i<up->size(); i++) {
       c += (*up)[i]*KU[i];
     }
     // Compute Moreau-Yoshida term
     Real vol = 0.0, r = 0.0;
-    for (int i=0; i<zp->size(); i++) {
+    for (unsigned i=0; i<zp->size(); i++) {
       vol += (*zp)[i]; 
     }
     vol  = (vol <= this->frac_*this->FEM_->numZ()) ? 0.0 : (vol - this->frac_*this->FEM_->numZ());
@@ -704,7 +704,7 @@ public:
     // Compute 0-1 penalty
     Real val = 0.0, p = 0.0;
     if ( this->rmin_ <= 0.0 ) {
-      for (int i=0; i<zp->size(); i++) {
+      for (unsigned i=0; i<zp->size(); i++) {
         val += (*zp)[i]*(1.0-(*zp)[i]);
       }
     }
@@ -746,7 +746,7 @@ public:
     if ( this->useLC_ ) {
       this->FEM_->build_force(KU);
       // Apply jacobian to u
-      for (int i=0; i<up->size(); i++) {
+      for (unsigned i=0; i<up->size(); i++) {
         (*gp)[i] = KU[i];
       }
     }
@@ -756,7 +756,7 @@ public:
       this->FEM_->set_boundary_conditions(U);
       this->FEM_->apply_jacobian(KU,U,*zp);
       // Apply jacobian to u
-      for (int i=0; i<up->size(); i++) {
+      for (unsigned i=0; i<up->size(); i++) {
         (*gp)[i] = 2.0*KU[i];
       }
     }
@@ -781,11 +781,11 @@ public:
     }
     // Compute Moreau-Yoshida term
     Real vol = 0.0;
-    for (int i=0; i<zp->size(); i++) {
+    for (unsigned i=0; i<zp->size(); i++) {
       vol += (*zp)[i]; 
     }
     vol = (vol <= this->frac_*this->FEM_->numZ()) ? 0.0 : (vol - this->frac_*this->FEM_->numZ());
-    for (int i=0; i<zp->size(); i++) {
+    for (unsigned i=0; i<zp->size(); i++) {
       (*gp)[i] += (this->reg_)*3.0*std::pow(vol,2.0);
       // Compute 0-1 penalty
       if ( this->rmin_ <= 0.0 ) {
@@ -848,7 +848,7 @@ public:
       V.assign(vp->begin(),vp->end());
       this->FEM_->set_boundary_conditions(V);
       this->FEM_->apply_jacobian(KV,V,*zp);
-      for (int i=0; i<vp->size(); i++) {
+      for (unsigned i=0; i<vp->size(); i++) {
         (*hvp)[i] = 2.0*KV[i];
       }
     }
@@ -875,7 +875,7 @@ public:
       U.assign(up->begin(),up->end());
       this->FEM_->set_boundary_conditions(U);
       this->FEM_->apply_jacobian(KU,U,*zp,*vp);
-      for (int i=0; i<up->size(); i++) {
+      for (unsigned i=0; i<up->size(); i++) {
         (*hvp)[i] = 2.0*KU[i];
       }
     }
@@ -904,7 +904,7 @@ public:
       V.assign(vp->begin(),vp->end());
       this->FEM_->set_boundary_conditions(V);
       this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
-      for (int i=0; i<hvp->size(); i++) {
+      for (unsigned i=0; i<hvp->size(); i++) {
         (*hvp)[i] *= 2.0;
       }
     }
@@ -935,12 +935,12 @@ public:
     }
     // Compute Moreau-Yoshida term
     Real vol = 0.0, vvol = 0.0;
-    for (int i=0; i<zp->size(); i++) {
+    for (unsigned i=0; i<zp->size(); i++) {
       vol  += (*zp)[i]; 
       vvol += (*vp)[i];
     }
     vol  = (vol <= this->frac_*this->FEM_->numZ()) ? 0.0 : (vol - this->frac_*this->FEM_->numZ());
-    for (int i=0; i<zp->size(); i++) {
+    for (unsigned i=0; i<zp->size(); i++) {
       (*hvp)[i] += (this->reg_)*6.0*vol*vvol; //(*vzp)[i];
       // Compute 0-1 penalty
       if ( this->rmin_ <= 0.0 ) {
@@ -1077,7 +1077,7 @@ int main(int argc, char *argv[]) {
       ROL::Vector_SimOpt<RealT> y(yup,yzp);
       // Test equality constraint.
       pcon->checkApplyJacobian(x,y,jv,true);
-      pcon->checkApplyAdjointJacobian(x,yu,true);
+      //pcon->checkApplyAdjointJacobian(x,yu,jv,true);
       pcon->checkApplyAdjointHessian(x,yu,y,true);
       // Test full objective function.
       pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));

@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
     // Multigrid Hierarchy
     MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal> H(A);
-    H.setVerbLevel(Teuchos::VERB_HIGH);
+    H.SetDefaultVerbLevel(MueLu::Medium);
 
     MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal> M;
 

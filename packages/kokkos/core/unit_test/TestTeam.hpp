@@ -305,7 +305,7 @@ public:
     const long int answer =
       ( ind.league_rank() + 1 ) * ind.team_rank() +
       ( ind.team_rank() * ( ind.team_rank() + 1 ) ) / 2 ;
-    
+
     const long int result =
       ind.team_scan( ind.league_rank() + 1 + ind.team_rank() + 1 );
 
@@ -345,7 +345,7 @@ public:
 
   void run_test( const size_t nteam )
   {
-    typedef Kokkos::View< long int , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
+    typedef Kokkos::View< long int , Kokkos::HostSpace , Kokkos::MemoryUnmanaged >  result_type ;
 
     const unsigned REPEAT = 100000 ;
     const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
@@ -439,7 +439,7 @@ struct TestSharedTeam {
   void run()
   {
     typedef Test::SharedTeamFunctor<ExecSpace> Functor ;
-    typedef Kokkos::View< typename Functor::value_type , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
+    typedef Kokkos::View< typename Functor::value_type , Kokkos::HostSpace , Kokkos::MemoryUnmanaged >  result_type ;
 
     Kokkos::TeamPolicy< ExecSpace > team_exec( 8192 / ExecSpace::team_max() , ExecSpace::team_max() );
 

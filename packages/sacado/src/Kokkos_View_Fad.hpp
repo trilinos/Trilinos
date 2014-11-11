@@ -37,6 +37,7 @@
 #include "Sacado_Traits.hpp"
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "impl/Kokkos_Error.hpp"
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
 #include "Cuda/Kokkos_Cuda_abort.hpp"
@@ -150,7 +151,9 @@ private:
   /* LayoutRight has stride-one storage */
   enum { FadStaticStride = ( Impl::is_same< typename traits::array_layout , LayoutRight >::value ? 1 : 0 ) };
 
-  typedef Impl::ViewOffset< typename traits::shape_type ,
+  typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
+                                    typename traits::array_layout > analyze_sacado_shape;
+  typedef Impl::ViewOffset< typename analyze_sacado_shape::shape ,
                             typename traits::array_layout > offset_map_type ;
 
   fad_value_type                             * m_ptr_on_device ;
@@ -173,7 +176,7 @@ public:
                 typename traits::device_type ,
                 typename traits::memory_traits > non_const_type ;
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename analyze_sacado_shape::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > array_type ;
@@ -188,34 +191,48 @@ public:
 
   // Rank for multidimensional array of the Fad value_type
   // is one less than the rank of the array of intrinsic fad_value_type defined by the shape.
-  enum { Rank = traits::rank - 1 };
+  enum { Rank = traits::rank };
 
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const { return m_offset_map.N3 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const { return m_offset_map.N4 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const { return m_offset_map.N5 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const { return m_offset_map.N6 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type size() const
-  {
-    return   m_offset_map.N0
-           * m_offset_map.N1
-           * m_offset_map.N2
-           * m_offset_map.N3
-           * m_offset_map.N4
-           * m_offset_map.N5
-           * m_offset_map.N6
-           * m_offset_map.N7
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const {
+    typedef typename traits::shape_type shape_type;
+    shape_type s;
+    shape_type::assign(
+      s, m_offset_map.N0, m_offset_map.N1, m_offset_map.N2, m_offset_map.N3,
+         m_offset_map.N4, m_offset_map.N5, m_offset_map.N6, m_offset_map.N7 );
+    return s ;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const {
+    return unsigned(Rank) >= 1 ? m_offset_map.N0 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const {
+    return unsigned(Rank) >= 2 ? m_offset_map.N1 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const {
+    return unsigned(Rank) >= 3 ? m_offset_map.N2 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const {
+    return unsigned(Rank) >= 4 ? m_offset_map.N3 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const {
+    return unsigned(Rank) >= 5 ? m_offset_map.N4 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const {
+    return unsigned(Rank) >= 6 ? m_offset_map.N5 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const {
+    return unsigned(Rank) >= 7 ? m_offset_map.N6 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const {
+    return unsigned(Rank) >= 8 ? m_offset_map.N7 : 1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type size() const {
+    return   dimension_0()
+           * dimension_1()
+           * dimension_2()
+           * dimension_3()
+           * dimension_4()
+           * dimension_5()
+           * dimension_6()
+           * dimension_7()
            ;
   }
 
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type dimension( const iType & i ) const
-    { return Impl::dimension( m_offset_map , i ); }
+    { return i < iType(Rank) ? Impl::dimension( m_offset_map , i ) : 1 ; }
 
   //------------------------------------
 
@@ -225,10 +242,10 @@ private:
   inline
   void verify_dimension_storage_static_size() const
   {
-    if ( dimension( unsigned(Rank) ) % ( FadStaticDimension ? FadStaticDimension+1 : 1 ) ) {
+    if ( Impl::dimension( m_offset_map , unsigned(Rank) ) % ( FadStaticDimension ? FadStaticDimension+1 : 1 ) ) {
       std::ostringstream msg ;
       msg << "Kokkos::View< FadType , ... > allocation dimension ("
-          << dimension( unsigned(Rank) )
+          << Impl::dimension( m_offset_map , unsigned(Rank) )
           << ") must be a multiple of StorageType::static_size ("
           << FadStaticDimension+1
           << ")" ;
@@ -344,7 +361,7 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
             Impl::is_same<T,fad_value_type>::value ||
-            Impl::is_same<T,const_fad_value_type>::value 
+            Impl::is_same<T,const_fad_value_type>::value
           ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -425,9 +442,9 @@ public:
 
   //------------------------------------
   //------------------------------------
-  // Scalar operator on traits::rank == 1
+  // Scalar operator on traits::rank == 0
 
-  typedef Impl::if_c< ( traits::rank == 1 ),
+  typedef Impl::if_c< ( traits::rank == 0 ),
                       fad_view_type ,
                       Impl::ViewError::scalar_operator_called_from_non_scalar_view >
     if_scalar_operator ;
@@ -443,11 +460,11 @@ public:
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 2:
+  // Array operators, traits::rank 1:
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type , traits, LayoutLeft, 2, iType0 >::type
+  typename Impl::ViewEnableArrayOper< fad_view_type , traits, LayoutLeft, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, 0 );
@@ -462,7 +479,7 @@ public:
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 2, iType0 >::type
+                                      traits, LayoutRight, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, 0 );
@@ -475,26 +492,26 @@ public:
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type , traits, typename traits::array_layout, 2, iType0 >::type
+  typename Impl::ViewEnableArrayOper< fad_view_type , traits, typename traits::array_layout, 1, iType0 >::type
     operator[] ( const iType0 & i0 ) const
     { return operator()( i0 ); }
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 2,
+                                      traits, typename traits::array_layout, 1,
                                       iType0 >::type
     at( const iType0 & i0 , int , int , int , int , int , int , int ) const
     { return operator()(i0); }
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 3:
+  // Array operators, traits::rank 2:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutLeft, 3, iType0, iType1 >::type
+                                      traits, LayoutLeft, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0, i1, 0 );
@@ -509,7 +526,7 @@ public:
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 3, iType0, iType1 >::type
+                                      traits, LayoutRight, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0, i1, 0);
@@ -524,19 +541,19 @@ public:
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 3,
+                                      traits, typename traits::array_layout, 2,
                                       iType0, iType1 >::type
     at( const iType0 & i0 , const iType1 & i1 , int , int , int , int , int , int ) const
     { return operator()(i0,i1); }
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 4:
+  // Array operators, traits::rank 3:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
+                                      traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0, i1, i2, 0 );
@@ -552,7 +569,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 4, iType0, iType1, iType2 >::type
+                                      traits, LayoutRight, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0, i1, i2, 0 );
@@ -567,19 +584,19 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 4,
+                                      traits, typename traits::array_layout, 3,
                                       iType0, iType1, iType2 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , int , int , int , int , int ) const
     { return operator()(i0,i1,i2); }
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 5:
+  // Array operators, traits::rank 4:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
+                                      traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0, i1, i2, i3, 0 );
@@ -595,7 +612,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
+                                      traits, LayoutRight, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0, i1, i2, i3, 0 );
@@ -610,19 +627,19 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 5,
+                                      traits, typename traits::array_layout, 4,
                                       iType0, iType1, iType2, iType3 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , int , int , int , int ) const
     { return operator()(i0,i1,i2,i3); }
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 6:
+  // Array operators, traits::rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4 >::type
+                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0, i1, i2, i3, i4, 0 );
@@ -639,7 +656,7 @@ public:
             typename iType3 , typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4 >::type
+                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
@@ -656,7 +673,7 @@ public:
             typename iType3 , typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 6,
+                                      traits, typename traits::array_layout, 5,
                                       iType0, iType1, iType2, iType3, iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , int , int , int ) const
@@ -664,12 +681,12 @@ public:
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 7:
+  // Array operators, traits::rank 6:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
                  const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
     {
@@ -687,7 +704,7 @@ public:
             typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+                                      traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
@@ -704,7 +721,7 @@ public:
             typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 7,
+                                      traits, typename traits::array_layout, 6,
                                       iType0, iType1, iType2, iType3, iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , int , int ) const
@@ -712,13 +729,13 @@ public:
 
   //------------------------------------
   //------------------------------------
-  // Array operators, traits::rank 8:
+  // Array operators, traits::rank 7:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
@@ -736,7 +753,7 @@ public:
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+                                      traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
@@ -753,7 +770,7 @@ public:
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< fad_view_type ,
-                                      traits, typename traits::array_layout, 8,
+                                      traits, typename traits::array_layout, 7,
                                       iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , int ) const
@@ -775,7 +792,12 @@ public:
   // Count of contiguously allocated data members including padding.
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type capacity() const
-    { return m_offset_map.capacity(); }
+    { return size(); }
+
+  // Size (in bytes) of allocatable data
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename traits::size_type data_capacity() const
+    { return sizeof(fad_value_type) * m_offset_map.capacity(); }
 
   // Static storage size
   KOKKOS_FORCEINLINE_FUNCTION
@@ -820,9 +842,10 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewSpecializeSacadoFad> & dst ,
 
     Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    const size_t nbytes = sizeof(typename dst_type::fad_value_type) * dst.capacity();
+    const size_t nbytes = dst.data_capacity();
 
-    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+    Impl::DeepCopy< dst_memory_space , src_memory_space >(
+      dst.ptr_on_device() , src.ptr_on_device() , nbytes );
   }
 }
 
@@ -838,6 +861,40 @@ void deep_copy(
     Impl::ViewFill< typename ViewType::array_type >( view , value );
   else
     Impl::ViewFill< ViewType >( view , value );
+}
+
+template< class T , class L , class D , class M >
+typename Impl::enable_if<(
+    View<T,L,D,M,Impl::ViewSpecializeSacadoFad>::is_managed
+  ), typename View<T,L,D,M,Impl::ViewSpecializeSacadoFad>::HostMirror >::type
+inline
+create_mirror( const View<T,L,D,M,Impl::ViewSpecializeSacadoFad> & src )
+{
+  typedef View<T,L,D,M,Impl::ViewSpecializeSacadoFad>  view_type ;
+  typedef typename view_type::HostMirror    host_view_type ;
+  typedef typename view_type::memory_space  memory_space ;
+  typedef typename view_type::size_type     size_type ;
+
+  // 'view' is managed therefore we can allocate a
+  // compatible host_view through the ordinary constructor.
+
+  std::string label = memory_space::query_label( src.ptr_on_device() );
+  label.append("_mirror");
+
+  size_type dims[8];
+  for (size_type i=0; i<8; ++i)
+    dims[i] = src.dimension(i);
+  dims[unsigned(view_type::Rank)] = src.storage_size();
+
+  return host_view_type( label ,
+                         dims[0] ,
+                         dims[1] ,
+                         dims[2] ,
+                         dims[3] ,
+                         dims[4] ,
+                         dims[5] ,
+                         dims[6] ,
+                         dims[7] );
 }
 
 } // namespace Kokkos

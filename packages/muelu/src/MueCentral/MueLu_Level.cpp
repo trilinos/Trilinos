@@ -405,17 +405,17 @@ namespace MueLu {
         }
 
         if (IsAvailable(ename, factory)) {
-          std::string strType = it->second->GetData().getAny(true).typeName();
+          std::string strType = it->second->GetTypeName();
 
           if        (strType == "int") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<int>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<int>());
           } else if (strType == "double") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<double>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<double>());
           } else if (strType == "string") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<std::string>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<std::string>());
           } else {
             size_t npos = std::string::npos;
 

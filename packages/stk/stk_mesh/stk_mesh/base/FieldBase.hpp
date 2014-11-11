@@ -62,7 +62,7 @@ namespace mesh {
 struct FieldMetaData
 {
   unsigned char* m_data;
-  int m_bytes_per_entity;                                           // num bytes per entity, 0 means bucket does not have this field
+  int m_bytes_per_entity;   // num bytes per entity, 0 means bucket does not have this field
 };
 
 #ifdef __IBMCPP__
@@ -186,7 +186,7 @@ class FieldBase
 private:
 
   //  Associate this field with a bulk data.
-  //    Note, a field can be assocaited with one and only one bulk data object
+  //  Note, a field can be associated with one and only one bulk data object
   void set_mesh(stk::mesh::BulkData* bulk);
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"

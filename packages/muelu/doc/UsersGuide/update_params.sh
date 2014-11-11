@@ -106,7 +106,7 @@ echo ';
 
 SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" )
 for i in "${SECTIONS[@]}"; do
-  xsltproc --stringparam section "$i" options.xsl masterList.xml > options_general.tex
+  xsltproc --stringparam section "$i" options.xsl masterList.xml > options_$i.tex
 done
 
 # fix quotation

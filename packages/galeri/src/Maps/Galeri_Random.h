@@ -93,7 +93,7 @@ TRandom(const Epetra_Comm& Comm, const int_type n)
       MyGlobalElements[count++] = i;
 
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
-  return(new Epetra_Map(n, NumMyElements, &MyGlobalElements[0], 0, Comm));
+  return(new Epetra_Map(n, NumMyElements, (NumMyElements ? &MyGlobalElements[0] : NULL), 0, Comm));
 #else
   return(new Epetra_Map);
 #endif

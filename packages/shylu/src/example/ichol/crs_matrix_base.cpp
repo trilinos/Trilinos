@@ -9,10 +9,10 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Kokkos::OpenMP host_type;
+typedef Kokkos::OpenMP space_type;
 typedef Kokkos::OpenMP device_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
 typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,device_type> CrsMatrixBaseDevice;
 
 typedef Example::Uplo Uplo;

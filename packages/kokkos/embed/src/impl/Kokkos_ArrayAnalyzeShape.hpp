@@ -72,18 +72,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
-  typedef typename nested::scalar_type  scalar_type ;
-  typedef typename nested::array_type   array_type[ N ];
+  typedef typename nested::array_intrinsic_type   array_intrinsic_type[ N ];
   typedef Array< const T , N , void >   value_type ;
   typedef Array< const T , N , void >   type ;
 
-  typedef scalar_type const_scalar_type ;
-  typedef array_type  const_array_type ;
+  typedef array_intrinsic_type  const_array_intrinsic_type ;
   typedef value_type  const_value_type ;
   typedef type        const_type ;
 
-  typedef typename nested::non_const_scalar_type   non_const_scalar_type ;
-  typedef typename nested::non_const_array_type    non_const_array_type[ N ];
+  typedef typename nested::non_const_array_intrinsic_type    non_const_array_intrinsic_type[ N ];
   typedef Array< T , N , void >                    non_const_value_type ;
   typedef Array< T , N , void >                    non_const_type ;
 };
@@ -98,18 +95,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
-  typedef typename nested::scalar_type    scalar_type ;
-  typedef typename nested::array_type     array_type[ N ];
+  typedef typename nested::array_intrinsic_type     array_intrinsic_type[ N ];
   typedef          Array< T , N , void >  value_type ;
   typedef          Array< T , N , void >  type ;
 
-  typedef typename nested::const_scalar_type    const_scalar_type ;
-  typedef typename nested::const_array_type     const_array_type[ N ];
+  typedef typename nested::const_array_intrinsic_type     const_array_intrinsic_type[ N ];
   typedef          Array< const T , N , void >  const_value_type ;
   typedef          Array< const T , N , void >  const_type ;
 
-  typedef          scalar_type  non_const_scalar_type ;
-  typedef          array_type   non_const_array_type ;
+  typedef          array_intrinsic_type   non_const_array_intrinsic_type ;
   typedef          value_type   non_const_value_type ;
   typedef          type         non_const_type ;
 };
@@ -126,18 +120,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
-  typedef typename nested::scalar_type    scalar_type ;
-  typedef typename nested::array_type   * array_type ;
+  typedef typename nested::array_intrinsic_type   * array_intrinsic_type ;
   typedef Array< const T , 0 , void >     value_type ;
   typedef Array< const T , 0 , void >     type ;
 
-  typedef scalar_type const_scalar_type ;
-  typedef array_type  const_array_type ;
+  typedef array_intrinsic_type  const_array_intrinsic_type ;
   typedef value_type  const_value_type ;
   typedef type        const_type ;
 
-  typedef typename nested::non_const_scalar_type   non_const_scalar_type ;
-  typedef typename nested::non_const_array_type  * non_const_array_type ;
+  typedef typename nested::non_const_array_intrinsic_type  * non_const_array_intrinsic_type ;
   typedef Array< T , 0 , void >                    non_const_value_type ;
   typedef Array< T , 0 , void >                    non_const_type ;
 };
@@ -152,18 +143,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
-  typedef typename nested::scalar_type    scalar_type ;
-  typedef typename nested::array_type   * array_type ;
+  typedef typename nested::array_intrinsic_type   * array_intrinsic_type ;
   typedef          Array< T , 0 , void >  value_type ;
   typedef          Array< T , 0 , void >  type ;
 
-  typedef typename nested::const_scalar_type    const_scalar_type ;
-  typedef typename nested::const_array_type   * const_array_type ;
+  typedef typename nested::const_array_intrinsic_type   * const_array_intrinsic_type ;
   typedef          Array< const T , 0 , void >  const_value_type ;
   typedef          Array< const T , 0 , void >  const_type ;
 
-  typedef          scalar_type  non_const_scalar_type ;
-  typedef          array_type   non_const_array_type ;
+  typedef          array_intrinsic_type   non_const_array_intrinsic_type ;
   typedef          value_type   non_const_value_type ;
   typedef          type         non_const_type ;
 };

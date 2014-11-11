@@ -47,12 +47,7 @@
 
 // Don't bother compiling anything, or even including anything else,
 // unless KokkosSerialWrapperNode is enabled.
-//
-// FIXME (mfh 02 Oct 2014) I can't find a macro "KOKKOS_HAVE_SERIAL"
-// that tells me whether the Serial device is enabled.  Is it enabled
-// all the time?
-
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 #  include "Tpetra_MultiVector_decl.hpp"
 #  include "Tpetra_ETIHelperMacros.h"
 #  include "Tpetra_MultiVector_def.hpp"
@@ -68,4 +63,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)

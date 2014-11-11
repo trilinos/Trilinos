@@ -459,7 +459,6 @@ Time Scheduler::adjust_dt(Time dt, Time time)
   // a new dt which will hit the time exactly...
   if (steps <= lookAhead_) {
     Time new_dt = delta / steps;
-    assert(new_dt <= dt);
 
     // Check for truncation errors....
     double proj_time = time + (new_dt * steps);

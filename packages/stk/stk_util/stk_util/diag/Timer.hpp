@@ -398,8 +398,7 @@ public:
     return *this;
   }
 
-  virtual ~Timer()
-  {}
+  virtual ~Timer();
 
   const TimerList &getTimerList() const;
 

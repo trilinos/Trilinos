@@ -220,9 +220,9 @@ private:
 
   // struct holds all data necessary for KLU2 factorization or solve call
   mutable struct KLU2Data {
-      ::KLU2::klu_symbolic<scalar_type, local_ordinal_type> *symbolic_;
-      ::KLU2::klu_numeric<scalar_type, local_ordinal_type> *numeric_;
-      ::KLU2::klu_common<scalar_type, local_ordinal_type> common_;
+      ::KLU2::klu_symbolic<slu_type, local_ordinal_type> *symbolic_;
+      ::KLU2::klu_numeric<slu_type, local_ordinal_type> *numeric_;
+      ::KLU2::klu_common<slu_type, local_ordinal_type> common_;
   } data_ ;
 
   // The following Arrays are persisting storage arrays for A, X, and B
@@ -243,19 +243,17 @@ private:
 
 // Specialize solver_traits struct for KLU2
 // TODO
-//template <>
-//struct solver_traits<KLU2> {
-//#ifdef HAVE_TEUCHOS_COMPLEX
-  //typedef Meta::make_list6<float,
-                           //double,
-                           //std::complex<float>,
-                           //std::complex<double>,
-                           //SLU::C::complex,
-                           //SLU::Z::doublecomplex> supported_scalars;
-//#else
-  //typedef Meta::make_list2<float, double> supported_scalars;
-//#endif
-//};
+template <>
+struct solver_traits<KLU2> {
+#ifdef HAVE_TEUCHOS_COMPLEX
+  typedef Meta::make_list4<float,
+                           double,
+                           std::complex<float>,
+                           std::complex<double> > supported_scalars;
+#else
+  typedef Meta::make_list2<float, double> supported_scalars;
+#endif
+};
 
 } // end namespace Amesos2
 
