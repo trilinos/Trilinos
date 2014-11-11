@@ -262,18 +262,29 @@ public:
 	DefaultPlatform::getDefaultPlatform ().getComm ();
       RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
 
+      // Get element-node connectivity
+
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-      int LocalNumIDs = getLocalNumIDs();
-      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+      //
+      // Get global element ids
+      //
+
+      zgid_t const *Ids=NULL;
+      getIDsView(Ids);
+
+      /***********************************************************************/
+      /*********************** BUILD MAPS FOR TRANSPOSE **********************/
+      /***********************************************************************/
 
       Array<GO> GIDs;
       RCP<const map_type> MapG;
 
-      zgid_t const *Ids=NULL;
-      getIDsView(Ids);
+      // count owned elements
+      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       // Build a list of the global ids...
       GIDs.resize (LocalNumIDs);
@@ -283,6 +294,10 @@ public:
 
       //Generate Map for elements.
       MapG = rcp (new map_type (-1, GIDs (), 0, comm, node));
+
+      /***********************************************************************/
+      /********************** BUILD GRAPH FOR TRANSPOSE **********************/
+      /***********************************************************************/
 
       RCP<sparse_graph_type> adjsGraphTranspose;
 
