@@ -102,7 +102,7 @@ public:
 template<>
 class MpiTypeTraits<std::complex<double> > {
 public:
-  static MPI_Datatype getType (const T&) {
+  static MPI_Datatype getType (const std::complex<double>&) {
     return MPI_C_DOUBLE_COMPLEX;
   }
 };
@@ -110,7 +110,7 @@ public:
 template<>
 class MpiTypeTraits<std::complex<float> > {
 public:
-  static MPI_Datatype getType (const T&) {
+  static MPI_Datatype getType (const std::complex<float>&) {
     return MPI_C_FLOAT_COMPLEX;
   }
 };
