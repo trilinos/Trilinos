@@ -116,6 +116,15 @@ public:
     return *this;
   }
 
+  //! Assignment operator.
+  template<class InputRealType>
+  KOKKOS_INLINE_FUNCTION
+  complex<RealType>& operator= (const complex<InputRealType>& src) volatile {
+    re_ = src.re_;
+    im_ = src.im_;
+    return *this;
+  }
+
   //! Assignment operator (from a real number).
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
