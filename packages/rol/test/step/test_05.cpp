@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
           case ROL::TESTOPTPROBLEM_HS38:
             parlist->set("PDAS Relative Step Tolerance",           1.e-10);
             parlist->set("PDAS Relative Gradient Tolerance",       1.e-8);
-            parlist->set("PDAS Maximum Number of Iterations",      10);
+            parlist->set("PDAS Maximum Number of Iterations",      1);
             parlist->set("PDAS Dual Scaling",                      1.e-3);
             break;
           case ROL::TESTOPTPROBLEM_BVP:

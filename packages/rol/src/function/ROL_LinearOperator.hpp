@@ -41,62 +41,67 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_BARZILAIBORWEIN_H
-#define ROL_BARZILAIBORWEIN_H
+#ifndef ROL_LINEAROPERATOR_H
+#define ROL_LINEAROPERATOR_H
 
-/** \class ROL::BarzilaiBorwein
-    \brief Provides definitions for Barzilai-Borwein operators.
+#include "ROL_Vector.hpp"
+
+/** @ingroup func_group
+    \class ROL::LinearOperator
+    \brief Provides the interface to apply a linear operator.
+
+    ROL's linear operator interface is designed to interface with ROL's Krylov methods.
+    These linear operators often represent projected Hessians or preconditioners.  
+    The basic operator interace, to be implemented by the user, requires:
+    \li #apply -- apply operator to a vector.
+
+    The user may also implement:
+    \li #update -- update the state of the linear operator.
+    \li #applyInverse -- apply the inverse operator to a vector.
+
+    ---
 */
+
 
 namespace ROL {
 
-template<class Real>
-class BarzilaiBorwein : public Secant<Real> {
-private:
-
-  int type_;
-
+template <class Real>
+class LinearOperator {
 public:
-  BarzilaiBorwein(int type = 1) : Secant<Real>(1), type_(type) {}
 
-  // Apply lBFGS Approximate Inverse Hessian
-  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
-    // Get Generic Secant State
-    Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+  virtual ~LinearOperator() {}
 
-    Hv.set(v.dual());
-    if ( state->iter != 0 && state->current != -1 ) {
-      if ( type_ == 1 ) {
-        Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
-        Hv.scale(state->product[state->current]/yy);
-      }
-      else if ( type_ == 2 ) {
-        Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
-        Hv.scale(ss/state->product[state->current]);
-      }
-    }
+  /** \brief Update linear operator. 
+
+      This function updates the linear operator at new iterations. 
+      @param[in]          x      is the new iterate. 
+      @param[in]          flag   is true if the iterate has changed.
+      @param[in]          iter   is the outer algorithm iterations count.
+  */
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+
+  /** \brief Apply linear operator.
+
+      This function applies the linear operator to a vector.
+      @param[out]         Hv  is the output vector.
+      @param[in]          v   is the input vector.
+      @param[in]          tol is a tolerance for inexact linear operator application.
+  */
+  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) = 0;
+
+  /** \brief Apply inverse of linear operator.
+
+      This function applies the inverse of linear operator to a vector.
+      @param[out]         Hv  is the output vector.
+      @param[in]          v   is the input vector.
+      @param[in]          tol is a tolerance for inexact linear operator application.
+  */
+  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) {
+    Hv.set(v);
   }
 
-  // Apply lBFGS Approximate Hessian
-  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
-    // Get Generic Secant State
-    Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+}; // class LinearOperator
 
-    Bv.set(v.dual());
-    if ( state->iter != 0 && state->current != -1 ) {
-      if ( type_ == 1 ) {
-        Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
-        Bv.scale(yy/state->product[state->current]);
-      }
-      else if ( type_ == 2 ) {
-        Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
-        Bv.scale(state->product[state->current]/ss);
-      }
-    }
-  }
-
-};
-
-}
+} // namespace ROL
 
 #endif

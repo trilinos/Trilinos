@@ -132,6 +132,10 @@ private:
   Teuchos::RCP<Secant<Real> >       secant_;      ///< Container for secant approximation.
   Teuchos::RCP<TrustRegion<Real> >  trustRegion_; ///< Container for trust-region object.
 
+  Teuchos::RCP<Vector<Real> >       xnew_;        ///< Container for updated iteration vector.
+  Teuchos::RCP<Vector<Real> >       xold_;        ///< Container for previous iteration vector.
+  Teuchos::RCP<Vector<Real> >       gp_;          ///< Container for previous gradient vector.
+
   ETrustRegion      etr_;        ///< Trust-region subproblem solver type.
   ESecant           esec_;       ///< Secant type.
 
@@ -201,18 +205,17 @@ private:
   */
   Real computeCriticalityMeasure( const Vector<Real> &g, const Vector<Real> &x, BoundConstraint<Real> &con ) {
     if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > xnew = x.clone();
       if ( this->useProjectedGrad_ ) {
-        xnew->set(g);
-        con.computeProjectedGradient( *xnew, x );
+        xnew_->set(g);
+        con.computeProjectedGradient( *xnew_, x );
       }
       else {
-        xnew->set(x);
-        xnew->axpy(-1.0,g);
-        con.project(*xnew);
-        xnew->axpy(-1.0,x);
+        xnew_->set(x);
+        xnew_->axpy(-1.0,g);
+        con.project(*xnew_);
+        xnew_->axpy(-1.0,x);
       }
-      return xnew->norm();
+      return xnew_->norm();
     }
     else {
       return g.norm();
@@ -312,6 +315,8 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
+    trustRegion_->initialize(x);
+
     algo_state.nfval = 0;
     algo_state.ngrad = 0;
 
@@ -323,6 +328,12 @@ public:
 
     if ( con.isActivated() ) {
       con.project(x);
+      xnew_ = x.clone();
+      xold_ = x.clone();
+    }
+ 
+    if ( con.isActivated() || secant_ != Teuchos::null ) {
+      gp_ = x.clone();
     }
 
     // Update approximate gradient and approximate objective function.
@@ -350,11 +361,11 @@ public:
       Teuchos::RCP<Vector<Real> > cp = x.clone();
       cp->set(*(step_state->gradientVec)); 
       cp->scale(-alpha);
-      Teuchos::RCP<Vector<Real> > xnew = x.clone();
-      xnew->set(x);
-      xnew->plus(*cp);
-      obj.update(*xnew);
-      Real fnew = obj.value(*xnew,ftol); // MUST DO SOMETHING HERE WITH FTOL
+      Teuchos::RCP<Vector<Real> > xcp = x.clone();
+      xcp->set(x);
+      xcp->plus(*cp);
+      obj.update(*xcp);
+      Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
       algo_state.nfval++;
       // Perform cubic interpolation to determine initial trust region radius
       Real gs = (step_state->gradientVec)->dot(*cp);
@@ -436,10 +447,8 @@ public:
     ProjectedObjective<Real> pObj(obj,con,this->secant_,this->useSecantPrecond_,this->useSecantHessVec_,eps);
 
     // Store previous step for constraint computations
-    Teuchos::RCP<Vector<Real> > xold;
     if ( con.isActivated() ) {
-      xold = x.clone();
-      xold->set(x);
+      xold_->set(x);
     }
 
     // Update trust-region information
@@ -456,33 +465,30 @@ public:
     algo_state.ngrad += this->TR_ngrad_;
 
     // Compute new gradient and update secant storage
-    Teuchos::RCP<Vector<Real> > gp;
     if ( this->TRflag_ == 0 || this->TRflag_ == 1 ) {  
       // Perform line search (smoothing) to ensure decrease 
       if ( con.isActivated() ) {
         // Compute new gradient
-        gp = x.clone(); 
-        obj.gradient(*gp,x,tol); // MUST DO SOMETHING HERE WITH TOL
+        obj.gradient(*gp_,x,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.ngrad++;
         // Compute smoothed step
         Real alpha = 1.0;
-        Teuchos::RCP<Vector<Real> > xnew = x.clone();
-        xnew->set(x);
-        xnew->axpy(-alpha*this->alpha_init_,*gp);
-        con.project(*xnew);
+        xnew_->set(x);
+        xnew_->axpy(-alpha*this->alpha_init_,*gp_);
+        con.project(*xnew_);
         // Compute new objective value
-        obj.update(*xnew,true,algo_state.iter);
-        Real ftmp = obj.value(*xnew,tol); // MUST DO SOMETHING HERE WITH TOL
+        obj.update(*xnew_,true,algo_state.iter);
+        Real ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
         int cnt = 0;
         alpha = 1.0/this->alpha_init_;
         while ( (fnew-ftmp) <= 1.e-4*(fnew-fold) ) { 
-          xnew->set(x);
-          xnew->axpy(-alpha*this->alpha_init_,*gp);
-          con.project(*xnew);
-          obj.update(*xnew,true,algo_state.iter);
-          ftmp = obj.value(*xnew,tol); // MUST DO SOMETHING HERE WITH TOL
+          xnew_->set(x);
+          xnew_->axpy(-alpha*this->alpha_init_,*gp_);
+          con.project(*xnew_);
+          obj.update(*xnew_,true,algo_state.iter);
+          ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= this->max_fval_ ) {
             break;
@@ -492,13 +498,12 @@ public:
         }
         // Store objective function and iteration information
         fnew = ftmp;
-        x.set(*xnew);
+        x.set(*xnew_);
       }
 
       // Store previous gradient for secant update
       if ( this->secant_ != Teuchos::null ) {
-        gp = x.clone();
-        gp->set(*(state->gradientVec));
+        gp_->set(*(state->gradientVec));
       }
 
       // Update objective function and approximate model
@@ -508,19 +513,18 @@ public:
       // Update secant information
       if ( this->secant_ != Teuchos::null ) {
         if ( con.isActivated() ) { // Compute new constrained step
-          Teuchos::RCP<Vector<Real> > st;
-          st->set(x);
-          st->axpy(-1.0,*xold);
-          secant_->update(*(state->gradientVec),*gp,*st,algo_state.snorm,algo_state.iter+1);
+          xnew_->set(x);
+          xnew_->axpy(-1.0,*xold_);
+          secant_->update(*(state->gradientVec),*gp_,*xnew_,algo_state.snorm,algo_state.iter+1);
         }
         else {
-          secant_->update(*(state->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
+          secant_->update(*(state->gradientVec),*gp_,s,algo_state.snorm,algo_state.iter+1);
         }
       }
+
+      // Update algorithm state
+      (algo_state.iterateVec)->set(x);
     }    
-  
-    // Update algorithm state
-    (algo_state.iterateVec)->set(x);
   }
 
   /** \brief Print iterate header.

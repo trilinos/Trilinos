@@ -48,6 +48,7 @@
     \brief Provides definitions for Krylov solvers.
 */
 
+#include "ROL_LinearOperator.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_HelperFunctions.hpp"
 
@@ -55,6 +56,13 @@ namespace ROL {
 
 template<class Real>
 class Krylov {
+
+  bool isInitialized_;
+  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> > v_;
+  Teuchos::RCP<Vector<Real> > p_;
+  Teuchos::RCP<Vector<Real> > Hp_;
+  Teuchos::RCP<Vector<Real> > MHp_;
 
   EKrylov ekv_;
 
@@ -66,38 +74,39 @@ class Krylov {
 public:
   Krylov( EKrylov ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
           int maxit = 100, bool useInexact = false ) 
-    : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), useInexact_(useInexact) {}
+    : isInitialized_(false), ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), useInexact_(useInexact) {}
 
   // Run Krylov Method
-  void run( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-            ProjectedObjective<Real> &pObj ) {
+  void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+            int &iter, int &flag ) {
     switch ( this->ekv_ ) {
-      case KRYLOV_CG: this->CG(s,iter,flag,g,x,pObj); break;
-      case KRYLOV_CR: this->CG(s,iter,flag,g,x,pObj); break;
+      case KRYLOV_CG: this->CG(x,A,b,M,iter,flag); break;
+      case KRYLOV_CR: this->CR(x,A,b,M,iter,flag); break;
       case KRYLOV_LAST: break; // DO NOTHING
     }
   }
 
   // Use (inexact) CG to solve Newton system 
-  void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-           ProjectedObjective<Real> &pObj ) {
-    Real gnorm = g.norm(); 
-    Real gtol = std::min(tol1_,tol2_*gnorm);
+  void CG( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+           int &iter, int &flag ) {
+    if ( !isInitialized_ ) {
+      g_  = b.clone();
+      v_  = x.clone();
+      p_  = x.clone(); 
+      Hp_ = b.clone();
+      isInitialized_ = true;
+    }
+
+    Real rnorm = b.norm(); 
+    Real rtol = std::min(tol1_,tol2_*rnorm);
     Real itol = 0.0;
 
-    s.zero(); 
-
-    Teuchos::RCP<Vector<Real> > gnew = x.clone(); 
-    gnew->set(g); 
+    x.zero(); 
+    g_->set(b); 
 
     itol = 0.0;
-    Teuchos::RCP<Vector<Real> > v = x.clone();  
-    pObj.reducedPrecond(*v, *gnew, x, g, x, itol);
-
-    Teuchos::RCP<Vector<Real> > p = x.clone(); 
-    p->set(*v); 
-
-    Teuchos::RCP<Vector<Real> > Hp = x.clone();
+    M.apply(*v_, *g_, itol);
+    p_->set(*v_); 
 
     iter = 0; 
     flag = 0;
@@ -106,37 +115,202 @@ public:
     Real beta  = 0.0; 
     Real alpha = 0.0; 
     Real tmp   = 0.0;
-    Real gv    = v->dot(*gnew); 
+    Real gv    = v_->dot(*g_); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
       if ( this->useInexact_ ) {
-        itol = gtol/(this->maxit_ * gnorm); 
+        itol = rtol/(this->maxit_ * rnorm); 
       }
-      pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
+      A.apply(*Hp_, *p_, itol);
 
-      kappa = p->dot(*Hp);
+      kappa = p_->dot(*Hp_);
       if ( kappa <= 0.0 ) { 
         flag = 2;
         break;
       }
       alpha = gv/kappa;
 
-      s.axpy(alpha,*p);
+      x.axpy(alpha,*p_);
 
-      gnew->axpy(-alpha,*Hp);
-      gnorm = gnew->norm();
+      g_->axpy(-alpha,*Hp_);
+      rnorm = g_->norm();
+      if ( rnorm < rtol ) {
+        break;
+      }
+
+      itol = 0.0;
+      M.apply(*v_, *g_, itol);
+      tmp  = gv;         
+      gv   = v_->dot(*g_); 
+      beta = gv/tmp;
+ 
+      p_->scale(beta);
+      p_->axpy(1.0,*v_);
+    }
+    if ( iter == this->maxit_ ) {
+      flag = 1;
+    }    
+    else {
+      iter++;
+    }
+  }
+
+  // Use (inexact) CR to solve Newton system 
+  void CR( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+           int &iter, int &flag ) {
+    if ( !isInitialized_ ) {
+      g_ = b.clone();
+      v_ = x.clone();
+      p_ = x.clone();
+      Hp_ = b.clone();
+      MHp_ = b.clone();
+      isInitialized_ = true;
+    }
+
+    // Initialize
+    Real rnorm = b.norm(); 
+    Real rtol = std::min(tol1_,tol2_*rnorm);
+    Real itol = 0.0;
+    x.zero(); 
+
+    // Apply preconditioner to residual
+    itol = 0.0;
+    M.apply(*g_,b,itol);
+
+    // Initialize direction p
+    p_->set(*g_); 
+
+    // Get Hessian tolerance
+    if ( this->useInexact_ ) {
+      itol = rtol/(maxit_ * rnorm); 
+    }
+
+    // Apply Hessian to residual
+    A.apply(*v_, *g_, itol);
+
+    // Apply Hessian to direction p
+    //A.apply(*Hp_, *p_, itol);
+    Hp_->set(*v_);
+
+    // Initialize scalar quantities
+    iter = 0; 
+    flag = 0;
+    Real kappa = 0.0; 
+    Real beta  = 0.0; 
+    Real alpha = 0.0; 
+    Real tmp   = 0.0;
+    Real gHg   = g_->dot(*v_); 
+
+    for (iter = 0; iter < this->maxit_; iter++) {
+      itol = 0.0;
+      M.apply(*MHp_, *Hp_, itol);
+      kappa = Hp_->dot(*MHp_);
+      //if ( gHg <= 0.0 || kappa <= 0.0 ) { 
+        //flag = 2;
+        //break;
+      //}
+      alpha = gHg/kappa;
+
+      x.axpy(alpha,*p_);
+
+      g_->axpy(-alpha,*MHp_);
+      rnorm = g_->norm();
+      if ( rnorm < rtol ) {
+        break;
+      }
+
+      if ( this->useInexact_ ) {
+        itol = rtol/(this->maxit_ * rnorm); 
+      }
+      A.apply(*v_, *g_, itol);
+      tmp  = gHg;
+      gHg  = g_->dot(*v_);
+      beta = gHg/tmp;
+
+      p_->scale(beta);
+      p_->axpy(1.0,*g_);
+
+      Hp_->scale(beta);
+      Hp_->axpy(1.0,*v_); 
+    }
+    if ( iter == this->maxit_ ) {
+      flag = 1;
+    }   
+    else {
+      iter++;
+    } 
+  }
+
+  // Run Krylov Method
+  void run( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
+            ProjectedObjective<Real> &pObj ) {
+    switch ( this->ekv_ ) {
+      case KRYLOV_CG: this->CG(s,iter,flag,g,x,pObj); break;
+      case KRYLOV_CR: this->CR(s,iter,flag,g,x,pObj); break;
+      case KRYLOV_LAST: break; // DO NOTHING
+    }
+  }
+
+  // Use (inexact) CG to solve Newton system 
+  void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
+           ProjectedObjective<Real> &pObj ) {
+    if ( !isInitialized_ ) {
+      g_  = g.clone();
+      v_  = x.clone();
+      p_  = x.clone(); 
+      Hp_ = g.clone();
+      isInitialized_ = true;
+    }
+
+    Real gnorm = g.norm(); 
+    Real gtol = std::min(tol1_,tol2_*gnorm);
+    Real itol = 0.0;
+
+    s.zero(); 
+    g_->set(g); 
+
+    itol = 0.0;
+    pObj.reducedPrecond(*v_, *g_, x, g, x, itol);
+    p_->set(*v_); 
+
+    iter = 0; 
+    flag = 0;
+
+    Real kappa = 0.0; 
+    Real beta  = 0.0; 
+    Real alpha = 0.0; 
+    Real tmp   = 0.0;
+    Real gv    = v_->dot(*g_); 
+
+    for (iter = 0; iter < this->maxit_; iter++) {
+      if ( this->useInexact_ ) {
+        itol = gtol/(this->maxit_ * gnorm); 
+      }
+      pObj.reducedHessVec(*Hp_, *p_, x, g, x, itol);
+
+      kappa = p_->dot(*Hp_);
+      if ( kappa <= 0.0 ) { 
+        flag = 2;
+        break;
+      }
+      alpha = gv/kappa;
+
+      s.axpy(alpha,*p_);
+
+      g_->axpy(-alpha,*Hp_);
+      gnorm = g_->norm();
       if ( gnorm < gtol ) {
         break;
       }
 
       itol = 0.0;
-      pObj.reducedPrecond(*v, *gnew, x, g, x, itol);
+      pObj.reducedPrecond(*v_, *g_, x, g, x, itol);
       tmp  = gv;         
-      gv   = v->dot(*gnew); 
+      gv   = v_->dot(*g_); 
       beta = gv/tmp;
  
-      p->scale(beta);
-      p->axpy(1.0,*v);
+      p_->scale(beta);
+      p_->axpy(1.0,*v_);
     }
     if ( iter == this->maxit_ ) {
       flag = 1;
@@ -149,6 +323,15 @@ public:
   // Use (inexact) CR to solve Newton system 
   void CR( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
            ProjectedObjective<Real> &pObj ) {
+    if ( !isInitialized_ ) {
+      g_ = g.clone();
+      v_ = x.clone();
+      p_ = x.clone();
+      Hp_ = g.clone();
+      MHp_ = g.clone();
+      isInitialized_ = true;
+    }
+
     // Initialize
     Real gnorm = g.norm(); 
     Real gtol = std::min(tol1_,tol2_*gnorm);
@@ -157,12 +340,10 @@ public:
 
     // Apply preconditioner to residual
     itol = 0.0;
-    Teuchos::RCP<Vector<Real> > v = x.clone();  
-    pObj.reducedPrecond(*v, g, x, g, x, itol);
+    pObj.reducedPrecond(*v_, g, x, g, x, itol);
 
     // Initialize direction p
-    Teuchos::RCP<Vector<Real> > p = x.clone(); 
-    p->set(*v); 
+    p_->set(*v_); 
 
     // Get Hessian tolerance
     if ( this->useInexact_ ) {
@@ -170,13 +351,10 @@ public:
     }
 
     // Apply Hessian to residual
-    Teuchos::RCP<Vector<Real> > Hv  = x.clone();
-    pObj.reducedHessVec(*Hv, *v, x, g, x, itol);
+    pObj.reducedHessVec(*g_, *v_, x, g, x, itol);
 
     // Apply Hessian to direction p
-    Teuchos::RCP<Vector<Real> > Hp  = x.clone();
-    Teuchos::RCP<Vector<Real> > MHp = x.clone();  
-    pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
+    pObj.reducedHessVec(*Hp_, *p_, x, g, x, itol);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -185,22 +363,23 @@ public:
     Real beta  = 0.0; 
     Real alpha = 0.0; 
     Real tmp   = 0.0;
-    Real vHv   = Hv->dot(*v); 
+    Real vHv   = g_->dot(*v_); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
       itol = 0.0;
-      pObj.reducedPrecond(*MHp, *Hp, x, g, x, itol);
-      kappa = Hp->dot(*MHp);
-      if ( vHv <= 0.0 || kappa <= 0.0 ) { 
+      pObj.reducedPrecond(*MHp_, *Hp_, x, g, x, itol);
+      kappa = Hp_->dot(*MHp_);
+      //if ( vHv <= 0.0 || kappa <= 0.0 ) { 
+      if ( kappa == 0.0 ) {
         flag = 2;
         break;
       }
       alpha = vHv/kappa;
 
-      s.axpy(alpha,*p);
+      s.axpy(alpha,*p_);
 
-      v->axpy(-alpha,*MHp);
-      gnorm = v->norm();
+      v_->axpy(-alpha,*MHp_);
+      gnorm = v_->norm();
       if ( gnorm < gtol ) {
         break;
       }
@@ -208,16 +387,16 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      pObj.reducedHessVec(*Hv, *v, x, g, x, itol);
+      pObj.reducedHessVec(*g_, *v_, x, g, x, itol);
       tmp  = vHv;
-      vHv  = Hv->dot(*v);
+      vHv  = g_->dot(*v_);
       beta = vHv/tmp;
 
-      p->scale(beta);
-      p->axpy(1.0,*v);
+      p_->scale(beta);
+      p_->axpy(1.0,*v_);
 
-      Hp->scale(beta);
-      Hp->axpy(1.0,*Hv); 
+      Hp_->scale(beta);
+      Hp_->axpy(1.0,*g_); 
     }
     if ( iter == this->maxit_ ) {
       flag = 1;

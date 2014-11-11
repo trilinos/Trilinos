@@ -54,6 +54,11 @@ APPEND_SET(HEADERS
   function/ROL_EqualityConstraint_SimOpt.hpp
   function/ROL_BoundConstraint.hpp
   function/ROL_StdBoundConstraint.hpp
+  function/ROL_LinearOperator.hpp
+  function/ROL_ProjectedHessian.hpp
+  function/ROL_ProjectedPreconditioner.hpp
+  function/ROL_PrimalDualHessian.hpp
+  function/ROL_PrimalDualPreconditioner.hpp
 )
 
 #
