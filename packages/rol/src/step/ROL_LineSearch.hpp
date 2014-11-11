@@ -127,7 +127,7 @@ public:
     grad_ = Teuchos::rcp(&g, false);
     xnew_ = x.clone();
     d_    = x.clone();
-    g_    = x.clone();
+    g_    = g.clone();
   }
 
   void setData(Real &eps) {
@@ -144,8 +144,8 @@ public:
     bool armijo = false;
     if ( con.isActivated() ) {
       Real gs = 0.0;
-      if ( this->edesc_ == DESCENT_STEEPEST ) {
-        this->updateIterate(*d_,x,s,alpha,con);
+      if ( edesc_ == DESCENT_STEEPEST ) {
+        updateIterate(*d_,x,s,alpha,con);
         d_->scale(-1.0);
         d_->plus(x);
         gs = -s.dot(*d_);
@@ -153,45 +153,45 @@ public:
       else {
         d_->set(s);
         d_->scale(-1.0);
-        con.pruneActive(*d_,*(this->grad_),x,eps_);
-        gs = alpha*(this->grad_)->dot(*d_);
+        con.pruneActive(*d_,*(grad_),x,eps_);
+        gs = alpha*(grad_)->dot(*d_);
         d_->zero();
-        this->updateIterate(*d_,x,s,alpha,con);
+        updateIterate(*d_,x,s,alpha,con);
         d_->scale(-1.0);
         d_->plus(x);
-        con.pruneInactive(*d_,*(this->grad_),x,eps_);
-        gs += (this->grad_)->dot(*d_);
+        con.pruneInactive(*d_,*(grad_),x,eps_);
+        gs += d_->dot(grad_->dual());
       }
-      if ( fnew <= fold - this->c1_*gs ) {
+      if ( fnew <= fold - c1_*gs ) {
         armijo = true;
       }
     }
     else {
-      if ( fnew <= fold + this->c1_*alpha*sgold ) {
+      if ( fnew <= fold + c1_*alpha*sgold ) {
         armijo = true;
       }
     }
 
     // Check Maximum Iteration
     bool itcond = false;
-    if ( ls_neval >= this->maxit_ ) { 
+    if ( ls_neval >= maxit_ ) { 
       itcond = true;
     }
 
     // Check Curvature Condition
     bool curvcond = false;
     if ( armijo && ((type != LINESEARCH_BACKTRACKING && type != LINESEARCH_CUBICINTERP) ||
-                    (this->edesc_ == DESCENT_NONLINEARCG)) ) {
-      if (this->econd_ == CURVATURECONDITION_GOLDSTEIN) {
-        if (fnew >= fold + (1.0-this->c1_)*alpha*sgold) {
+                    (edesc_ == DESCENT_NONLINEARCG)) ) {
+      if (econd_ == CURVATURECONDITION_GOLDSTEIN) {
+        if (fnew >= fold + (1.0-c1_)*alpha*sgold) {
           curvcond = true;
         }
       }
-      else if (this->econd_ == CURVATURECONDITION_NULL) {
+      else if (econd_ == CURVATURECONDITION_NULL) {
         curvcond = true;
       }
       else { 
-        this->updateIterate(*xnew_,x,s,alpha,con);
+        updateIterate(*xnew_,x,s,alpha,con);
         obj.update(*xnew_);
         obj.gradient(*g_,*xnew_,tol);
         Real sgnew = 0.0;
@@ -199,28 +199,28 @@ public:
           d_->set(s);
           d_->scale(-alpha);
           con.pruneActive(*d_,s,x);
-          sgnew = -g_->dot(*d_);
+          sgnew = -d_->dot(g_->dual());
         }
         else {
-          sgnew = g_->dot(s);
+          sgnew = s.dot(g_->dual());
         }
         ls_ngrad++;
    
-        if (    ((this->econd_ == CURVATURECONDITION_WOLFE)       
-                     && (sgnew >= this->c2_*sgold))
-             || ((this->econd_ == CURVATURECONDITION_STRONGWOLFE) 
-                     && (std::abs(sgnew) <= this->c2_*std::abs(sgold)))
-             || ((this->econd_ == CURVATURECONDITION_GENERALIZEDWOLFE) 
-                     && (this->c2_*sgold <= sgnew && sgnew <= -this->c3_*sgold))
-             || ((this->econd_ == CURVATURECONDITION_APPROXIMATEWOLFE) 
-                     && (this->c2_*sgold <= sgnew && sgnew <= (2.0*this->c1_ - 1.0)*sgold)) ) {
+        if (    ((econd_ == CURVATURECONDITION_WOLFE)       
+                     && (sgnew >= c2_*sgold))
+             || ((econd_ == CURVATURECONDITION_STRONGWOLFE) 
+                     && (std::abs(sgnew) <= c2_*std::abs(sgold)))
+             || ((econd_ == CURVATURECONDITION_GENERALIZEDWOLFE) 
+                     && (c2_*sgold <= sgnew && sgnew <= -c3_*sgold))
+             || ((econd_ == CURVATURECONDITION_APPROXIMATEWOLFE) 
+                     && (c2_*sgold <= sgnew && sgnew <= (2.0*c1_ - 1.0)*sgold)) ) {
           curvcond = true;
         }
       }
     }
 
     if (type == LINESEARCH_BACKTRACKING || type == LINESEARCH_CUBICINTERP) {
-      if (this->edesc_ == DESCENT_NONLINEARCG) {
+      if (edesc_ == DESCENT_NONLINEARCG) {
         return ((armijo && curvcond) || itcond);
       }
       else {
@@ -236,17 +236,17 @@ public:
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
     // Determine Initial Step Length
-    if (this->useralpha_ || this->els_ == LINESEARCH_ITERATIONSCALING) {
-      alpha = this->alpha0_;
+    if (useralpha_ || els_ == LINESEARCH_ITERATIONSCALING) {
+      alpha = alpha0_;
     }
-    else if ( this->edesc_ == DESCENT_STEEPEST || this->edesc_ == DESCENT_NONLINEARCG ) {
-      this->updateIterate(*xnew_,x,s,1.0,con);
+    else if ( edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG ) {
+      updateIterate(*xnew_,x,s,1.0,con);
       Real ftol = 0.0;
       // TODO: Think about reusing for efficiency!
       obj.update(*xnew_);
       Real fnew = obj.value(*xnew_, ftol);
       alpha = -gs/(2.0*(fnew-fval-gs));
-      this->updateIterate(*xnew_,x,s,alpha,con);
+      updateIterate(*xnew_,x,s,alpha,con);
       obj.update(*xnew_);
       fnew = obj.value(*xnew_, ftol);
       bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj,con);
@@ -262,23 +262,23 @@ public:
     // Run Linesearch
     ls_neval = 0;
     ls_ngrad = 0;
-    if ( this->els_ == LINESEARCH_ITERATIONSCALING ) {
-      this->iterationscaling( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con );
+    if ( els_ == LINESEARCH_ITERATIONSCALING ) {
+      iterationscaling( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con );
     }
-    else if ( this->els_ == LINESEARCH_BACKTRACKING ) {
-      this->simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+    else if ( els_ == LINESEARCH_BACKTRACKING ) {
+      simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
-    else if ( this->els_ == LINESEARCH_CUBICINTERP ) {
-      this->backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+    else if ( els_ == LINESEARCH_CUBICINTERP ) {
+      backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
-    else if ( this->els_ == LINESEARCH_BRENTS ) {
-      this->brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+    else if ( els_ == LINESEARCH_BRENTS ) {
+      brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
-    else if ( this->els_ == LINESEARCH_BISECTION ) {
-      this->bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+    else if ( els_ == LINESEARCH_BISECTION ) {
+      bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
-    else if ( this->els_ == LINESEARCH_GOLDENSECTION ) {
-      this->goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
+    else if ( els_ == LINESEARCH_GOLDENSECTION ) {
+      goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
   }
 
@@ -287,10 +287,10 @@ public:
                          Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    this->algo_iter_++;
-    alpha /= this->algo_iter_;
+    algo_iter_++;
+    alpha /= algo_iter_;
 
-    this->updateIterate(*xnew_,x,s,alpha,con);
+    updateIterate(*xnew_,x,s,alpha,con);
 
     obj.update(*xnew_);
     fval = obj.value(*xnew_,tol);
@@ -302,7 +302,7 @@ public:
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    this->updateIterate(*xnew_,x,s,alpha,con);
+    updateIterate(*xnew_,x,s,alpha,con);
 
     Real fold = fval;
     obj.update(*xnew_);
@@ -310,8 +310,8 @@ public:
     ls_neval++;
 
     while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew_,s,obj,con) ) {
-      alpha *= this->rho_;
-      this->updateIterate(*xnew_,x,s,alpha,con);
+      alpha *= rho_;
+      updateIterate(*xnew_,x,s,alpha,con);
       obj.update(*xnew_);
       fval = obj.value(*xnew_,tol);
       ls_neval++;
@@ -323,7 +323,7 @@ public:
                      Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    this->updateIterate(*xnew_,x,s,alpha,con);
+    updateIterate(*xnew_,x,s,alpha,con);
 
     Real fold = fval;
     obj.update(*xnew_);
@@ -374,7 +374,7 @@ public:
         alpha = alpha1;
       }
 
-      this->updateIterate(*xnew_,x,s,alpha,con);
+      updateIterate(*xnew_,x,s,alpha,con);
       obj.update(*xnew_);
       fval = obj.value(*xnew_,tol);
       ls_neval++;
@@ -392,7 +392,7 @@ public:
 
     // Compute value phi(alpha)
     Real tr = alpha;
-    this->updateIterate(*xnew_,x,s,tr,con);
+    updateIterate(*xnew_,x,s,tr,con);
     obj.update(*xnew_);
     Real val_tr = obj.value(*xnew_,tol); 
     ls_neval++;
@@ -420,7 +420,7 @@ public:
 
     // Compute value phi(midpoint)
     Real tc = (tl+tr)/2.0;
-    this->updateIterate(*xnew_,x,s,tc,con);
+    updateIterate(*xnew_,x,s,tc,con);
     Real val_tc = obj.value(*xnew_,tol);
     ls_neval++;
 
@@ -436,15 +436,15 @@ public:
     Real val_t2 = 0.0;
 
     while (    !status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con)  
-            && std::abs(tr - tl) > this->tol_ ) {
+            && std::abs(tr - tl) > tol_ ) {
       t1 = (tl+tc)/2.0;
-      this->updateIterate(*xnew_,x,s,t1,con);
+      updateIterate(*xnew_,x,s,t1,con);
       obj.update(*xnew_);
       val_t1 = obj.value(*xnew_,tol);
       ls_neval++;
 
       t2 = (tr+tc)/2.0;
-      this->updateIterate(*xnew_,x,s,t2,con);
+      updateIterate(*xnew_,x,s,t2,con);
       obj.update(*xnew_);
       val_t2 = obj.value(*xnew_,tol);
       ls_neval++;
@@ -509,7 +509,7 @@ public:
 
     // Compute value phi(alpha)
     Real tr  = alpha;
-    this->updateIterate(*xnew_,x,s,tr,con);
+    updateIterate(*xnew_,x,s,tr,con);
     obj.update(*xnew_);
     Real val_tr = obj.value(*xnew_,tol);
     ls_neval++;
@@ -537,14 +537,14 @@ public:
 
     // Compute value phi(t1)
     Real tc1 = c*tl + (1.0-c)*tr;
-    this->updateIterate(*xnew_,x,s,tc1,con);
+    updateIterate(*xnew_,x,s,tc1,con);
     obj.update(*xnew_);
     Real val_tc1 = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Compute value phi(t2)
     Real tc2 = (1.0-c)*tl + c*tr;
-    this->updateIterate(*xnew_,x,s,tc2,con);
+    updateIterate(*xnew_,x,s,tc2,con);
     obj.update(*xnew_);
     Real val_tc2 = obj.value(*xnew_,tol);
     ls_neval++;
@@ -568,7 +568,7 @@ public:
     }
 
     while (    !status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con) 
-            && (std::abs(tl-tr) >= this->tol_) ) {
+            && (std::abs(tl-tr) >= tol_) ) {
       if ( val_tc1 > val_tc2 ) {
         tl      = tc1;
         val_tl  = val_tc1;
@@ -576,7 +576,7 @@ public:
         val_tc1 = val_tc2;
  
         tc2     = (1.0-c)*tl + c*tr;     
-        this->updateIterate(*xnew_,x,s,tc2,con);
+        updateIterate(*xnew_,x,s,tc2,con);
         obj.update(*xnew_);
         val_tc2 = obj.value(*xnew_,tol);
         ls_neval++;
@@ -588,7 +588,7 @@ public:
         val_tc2 = val_tc1;
 
         tc1     = c*tl + (1.0-c)*tr;
-        this->updateIterate(*xnew_,x,s,tc1,con);
+        updateIterate(*xnew_,x,s,tc1,con);
         obj.update(*xnew_);
         val_tc1 = obj.value(*xnew_,tol);
         ls_neval++;
@@ -631,7 +631,7 @@ public:
 
     // Compute value phi(alpha)
     Real tr = alpha;      // Right interval point
-    this->updateIterate(*xnew_,x,s,tr,con);
+    updateIterate(*xnew_,x,s,tr,con);
     obj.update(*xnew_);
     Real val_tr = obj.value(*xnew_,tol);
     ls_neval++;
@@ -676,7 +676,7 @@ public:
       val_tc = val_tr;
 
       tr     = goldinv * (tc + gr*tl);
-      this->updateIterate(*xnew_,x,s,tr,con);
+      updateIterate(*xnew_,x,s,tr,con);
       obj.update(*xnew_);
       val_tr = obj.value(*xnew_,tol);
       ls_neval++;
@@ -695,7 +695,7 @@ public:
 
     if ( std::abs(tc) < ROL_EPSILON ) {
       tc = tl + (gr-1.0)*(tr-tl);
-      this->updateIterate(*xnew_,x,s,tc,con);
+      updateIterate(*xnew_,x,s,tc,con);
       obj.update(*xnew_);
       val_tc = obj.value(*xnew_,tol);
       ls_neval++;
@@ -731,7 +731,7 @@ public:
       tlim = tl + max_extrap_factor * (tc-tr);
 
       if ( (tr-tm)*(tm-tc) > 0.0 ) {
-        this->updateIterate(*xnew_,x,s,tm,con);
+        updateIterate(*xnew_,x,s,tm,con);
         obj.update(*xnew_);
         val_tm = obj.value(*xnew_,tol);
         ls_neval++;
@@ -746,13 +746,13 @@ public:
           val_tc = val_tm;
         }
         tm = tc + gr*(tc-tr);
-        this->updateIterate(*xnew_,x,s,tm,con);
+        updateIterate(*xnew_,x,s,tm,con);
         obj.update(*xnew_);
         val_tm = obj.value(*xnew_,tol);
         ls_neval++;
       }
       else if ( (tc - tm)*(tm -tlim) > 0.0 ) {
-        this->updateIterate(*xnew_,x,s,tm,con);
+        updateIterate(*xnew_,x,s,tm,con);
         obj.update(*xnew_);
         val_tm = obj.value(*xnew_,tol);
         ls_neval++;
@@ -764,7 +764,7 @@ public:
           val_tc = val_tm;
 
           tm     = tc + gr*(tc-tr);
-          this->updateIterate(*xnew_,x,s,tm,con);
+          updateIterate(*xnew_,x,s,tm,con);
           obj.update(*xnew_);
           val_tm = obj.value(*xnew_,tol);
           ls_neval++;
@@ -772,14 +772,14 @@ public:
       }
       else if ( (tm-tlim)*(tlim-tc) >= 0.0 ) {
         tm = tlim;
-        this->updateIterate(*xnew_,x,s,tm,con);
+        updateIterate(*xnew_,x,s,tm,con);
         obj.update(*xnew_);
         val_tm = obj.value(*xnew_,tol);
         ls_neval++;
       }
       else {
         tm = tc + gr*(tc-tr);
-        this->updateIterate(*xnew_,x,s,tm,con);
+        updateIterate(*xnew_,x,s,tm,con);
         obj.update(*xnew_);
         val_tm = obj.value(*xnew_,tol);
         ls_neval++;
@@ -845,13 +845,13 @@ public:
     b  = (tr > tc ? tr : tc);
 
     while (    !status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj,con)
-            && std::abs(t - tm) > this->tol_*(b-a) ) {
+            && std::abs(t - tm) > tol_*(b-a) ) {
       if ( it < 2 ) {
         e = 2.0*(b-a);
       }
       tm = (a+b)/2.0;
 
-      Real tol1 = this->tol_*std::abs(t) + tiny;
+      Real tol1 = tol_*std::abs(t) + tiny;
       Real tol2 = 2.0*tol1;
 
       if ( std::abs(e) > tol1 || it < 2 ) {
@@ -880,7 +880,7 @@ public:
         d = inv_gr2*(e = (t>=tm ? a-t : b-t) );
       }
       u = (std::abs(d)>=tol1 ? t+d : t+(d>=0.0 ? std::abs(tol1) : -std::abs(tol1)));
-      this->updateIterate(*xnew_,x,s,u,con);
+      updateIterate(*xnew_,x,s,u,con);
       obj.update(*xnew_);
       fu = obj.value(*xnew_,tol);
       ls_neval++;
