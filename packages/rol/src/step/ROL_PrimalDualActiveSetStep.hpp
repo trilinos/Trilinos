@@ -191,7 +191,7 @@ private:
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     obj.gradient(*(step_state->gradientVec),x,tol);
     xtmp_->set(x);
-    xtmp_->axpy(-1.0,*(step_state->gradientVec));
+    xtmp_->axpy(-1.0,(step_state->gradientVec)->dual());
     con.project(*xtmp_);
     xtmp_->axpy(-1.0,x);
     return xtmp_->norm();
@@ -240,12 +240,12 @@ public:
              @param[in]        con         are the bound constraints
              @param[in]        algo_state  is the current state of the algorithm
   */
-  void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Initialize state descent direction and gradient storage
     step_state->descentVec  = x.clone();
-    step_state->gradientVec = x.clone();
+    step_state->gradientVec = g.clone();
     step_state->searchSize  = 0.0;
     // Initialize additional storage
     xlam_ = x.clone(); 
@@ -253,10 +253,10 @@ public:
     xbnd_ = x.clone();
     As_   = x.clone(); 
     xtmp_ = x.clone(); 
-    res_  = step_state->gradientVec->clone();
-    Ag_   = step_state->gradientVec->clone(); 
-    rtmp_ = step_state->gradientVec->clone(); 
-    gtmp_ = step_state->gradientVec->clone(); 
+    res_  = g.clone();
+    Ag_   = g.clone(); 
+    rtmp_ = g.clone(); 
+    gtmp_ = g.clone(); 
     // Project x onto constraint set
     con.project(x);
     // Update objective function, get value, and get gradient
@@ -268,9 +268,9 @@ public:
     algo_state.ngrad++;
     // Initialize dual variable
     lambda_ = x.clone(); 
-    lambda_->set(*(step_state->gradientVec));
+    lambda_->set((step_state->gradientVec)->dual());
     lambda_->scale(-1.0);
-    //con.setVectorToLowerBound(*this->lambda_);
+    //con.setVectorToLowerBound(*lambda_);
     // Initialize Hessian and preconditioner
     Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcp(&obj, false);
     Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcp(&con, false);
@@ -362,7 +362,7 @@ public:
       rtmp_->scale(-1.0);                        // rhs = -Ig - I(H*As)
       s.zero();
       if ( rtmp_->norm() > 0.0 ) {             
-        //this->solve(s,*rtmp_,*xlam_,x,obj,con);   // Call conjugate residuals
+        //solve(s,*rtmp_,*xlam_,x,obj,con);   // Call conjugate residuals
         krylov_->run(s,*hessian_,*rtmp_,*precond_,iterCR_,flagCR_);
         con.pruneActive(s,*xlam_,neps_);        // s <- Is
       }
@@ -391,15 +391,15 @@ public:
       res_->plus(*rtmp_);
       // Compute criticality measure  
       xtmp_->set(*x0_);
-      xtmp_->axpy(-1.0,*res_);
+      xtmp_->axpy(-1.0,res_->dual());
       con.project(*xtmp_);
       xtmp_->axpy(-1.0,*x0_);
 //      std::cout << s.norm()               << "  " 
 //                << tmp->norm()            << "  " 
 //                << res_->norm()           << "  " 
-//                << this->lambda_->norm()  << "  " 
-//                << this->flagCR_          << "  " 
-//                << this->iterCR_          << "\n";
+//                << lambda_->norm()  << "  " 
+//                << flagCR_          << "  " 
+//                << iterCR_          << "\n";
       if ( xtmp_->norm() < gtol_*algo_state.gnorm ) {
         flag_ = 0;
         break;
@@ -433,7 +433,7 @@ public:
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
     x.plus(s);
-    this->feasible_ = con.isFeasible(x);
+    feasible_ = con.isFeasible(x);
     algo_state.snorm = s.norm();
     algo_state.iter++;
     Real tol = std::sqrt(ROL_EPSILON);
@@ -441,14 +441,14 @@ public:
     algo_state.value = obj.value(x,tol);
     algo_state.nfval++;
     
-    if ( this->secant_ != Teuchos::null ) {
+    if ( secant_ != Teuchos::null ) {
       gtmp_->set(*(step_state->gradientVec));
     }
-    algo_state.gnorm = this->computeCriticalityMeasure(x,obj,con,tol);
+    algo_state.gnorm = computeCriticalityMeasure(x,obj,con,tol);
     algo_state.ngrad++;
 
-    if ( this->secant_ != Teuchos::null ) {
-      this->secant_->update(*(step_state->gradientVec),*gtmp_,s,algo_state.snorm,algo_state.iter+1);
+    if ( secant_ != Teuchos::null ) {
+      secant_->update(*(step_state->gradientVec),*gtmp_,s,algo_state.snorm,algo_state.iter+1);
     }
     (algo_state.iterateVec)->set(x);
   }
@@ -467,7 +467,7 @@ public:
     hist << std::setw(15) << std::left << "snorm";
     hist << std::setw(10) << std::left << "#fval";
     hist << std::setw(10) << std::left << "#grad";
-    if ( this->maxit_ > 1 ) {
+    if ( maxit_ > 1 ) {
       hist << std::setw(10) << std::left << "iterPDAS";
       hist << std::setw(10) << std::left << "flagPDAS";
     }
@@ -498,14 +498,14 @@ public:
              @param[in]        algo_state  is the current state of the algorithm
              @param[in]        printHeader if set to true will print the header at each iteration
   */
-  virtual std::string print( AlgorithmState<Real> &algo_state, bool printHeader = false ) const {
+  virtual std::string print( AlgorithmState<Real> &algo_state, bool print_header = false ) const {
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {
-      hist << this->printName();
+      hist << printName();
     }
-    if ( printHeader ) {
-      hist << this->printHeader();
+    if ( print_header ) {
+      hist << printHeader();
     }
     if ( algo_state.iter == 0 ) {
       hist << "  ";
@@ -522,15 +522,15 @@ public:
       hist << std::setw(15) << std::left << algo_state.snorm;
       hist << std::setw(10) << std::left << algo_state.nfval;
       hist << std::setw(10) << std::left << algo_state.ngrad;
-      if ( this->maxit_ > 1 ) {
-        hist << std::setw(10) << std::left << this->iter_;
-        hist << std::setw(10) << std::left << this->flag_;
+      if ( maxit_ > 1 ) {
+        hist << std::setw(10) << std::left << iter_;
+        hist << std::setw(10) << std::left << flag_;
       }
       else {
-        hist << std::setw(10) << std::left << this->iterCR_;
-        hist << std::setw(10) << std::left << this->flagCR_;
+        hist << std::setw(10) << std::left << iterCR_;
+        hist << std::setw(10) << std::left << flagCR_;
       }
-      if ( this->feasible_ ) {
+      if ( feasible_ ) {
         hist << std::setw(10) << std::left << "YES";
       }
       else {
@@ -550,43 +550,43 @@ public:
 //  void solve(Vector<Real> &sol, const Vector<Real> &rhs, const Vector<Real> &xlam, const Vector<Real> &x, 
 //             Objective<Real> &obj, BoundConstraint<Real> &con) {
 //    Real rnorm  = rhs.norm(); 
-//    Real rtol   = std::min(this->tol1_,this->tol2_*rnorm);
-//    this->itol_ = std::sqrt(ROL_EPSILON);
+//    Real rtol   = std::min(tol1_,tol2_*rnorm);
+//    itol_ = std::sqrt(ROL_EPSILON);
 //    sol.zero();
 //
 //    Teuchos::RCP<Vector<Real> > res = rhs.clone();
 //    res->set(rhs);
 //
 //    Teuchos::RCP<Vector<Real> > v = x.clone();
-//    con.pruneActive(*res,xlam,this->neps_);
-//    obj.precond(*v,*res,x,this->itol_);
-//    con.pruneActive(*v,xlam,this->neps_);
+//    con.pruneActive(*res,xlam,neps_);
+//    obj.precond(*v,*res,x,itol_);
+//    con.pruneActive(*v,xlam,neps_);
 //
 //    Teuchos::RCP<Vector<Real> > p = x.clone();
 //    p->set(*v);
 //
 //    Teuchos::RCP<Vector<Real> > Hp = x.clone();
 //
-//    this->iterCR_ = 0;
-//    this->flagCR_ = 0;
+//    iterCR_ = 0;
+//    flagCR_ = 0;
 //
 //    Real kappa = 0.0, beta  = 0.0, alpha = 0.0, tmp = 0.0, rv = v->dot(*res);
 //
-//    for (this->iterCR_ = 0; this->iterCR_ < this->maxitCR_; this->iterCR_++) {
+//    for (iterCR_ = 0; iterCR_ < maxitCR_; iterCR_++) {
 //      if ( false ) {
-//        this->itol_ = rtol/(this->maxitCR_*rnorm);
+//        itol_ = rtol/(maxitCR_*rnorm);
 //      }
-//      con.pruneActive(*p,xlam,this->neps_);
-//      if ( this->secant_ == Teuchos::null ) {
-//        obj.hessVec(*Hp, *p, x, this->itol_);
+//      con.pruneActive(*p,xlam,neps_);
+//      if ( secant_ == Teuchos::null ) {
+//        obj.hessVec(*Hp, *p, x, itol_);
 //      }
 //      else {
-//        this->secant_->applyB( *Hp, *p, x );
+//        secant_->applyB( *Hp, *p, x );
 //      }
-//      con.pruneActive(*Hp,xlam,this->neps_);
+//      con.pruneActive(*Hp,xlam,neps_);
 //
 //      kappa = p->dot(*Hp);
-//      if ( kappa <= 0.0 ) { this->flagCR_ = 2; break; }
+//      if ( kappa <= 0.0 ) { flagCR_ = 2; break; }
 //      alpha = rv/kappa;
 //      sol.axpy(alpha,*p);
 //
@@ -594,9 +594,9 @@ public:
 //      rnorm = res->norm();
 //      if ( rnorm < rtol ) { break; }
 //
-//      con.pruneActive(*res,xlam,this->neps_);
-//      obj.precond(*v,*res,x,this->itol_);
-//      con.pruneActive(*v,xlam,this->neps_);
+//      con.pruneActive(*res,xlam,neps_);
+//      obj.precond(*v,*res,x,itol_);
+//      con.pruneActive(*v,xlam,neps_);
 //      tmp  = rv;
 //      rv   = v->dot(*res);
 //      beta = rv/tmp;
@@ -604,11 +604,11 @@ public:
 //      p->scale(beta);
 //      p->axpy(1.0,*v);
 //    }
-//    if ( this->iterCR_ == this->maxitCR_ ) {
-//      this->flagCR_ = 1;
+//    if ( iterCR_ == maxitCR_ ) {
+//      flagCR_ = 1;
 //    }
 //    else {
-//      this->iterCR_++;
+//      iterCR_++;
 //    }
 //  }
 
@@ -629,14 +629,14 @@ public:
 //                      const Vector<Real> &xlam, Objective<Real> &obj, BoundConstraint<Real> &con) {
 //    Teuchos::RCP<Vector<Real> > tmp = v.clone();
 //    tmp->set(v);
-//    con.pruneActive(*tmp,xlam,this->neps_);
-//    if ( this->secant_ == Teuchos::null ) {
-//      obj.hessVec(hv,*tmp,x,this->itol_);
+//    con.pruneActive(*tmp,xlam,neps_);
+//    if ( secant_ == Teuchos::null ) {
+//      obj.hessVec(hv,*tmp,x,itol_);
 //    }
 //    else {
-//      this->secant_->applyB(hv,*tmp,x);
+//      secant_->applyB(hv,*tmp,x);
 //    }
-//    con.pruneActive(hv,xlam,this->neps_);
+//    con.pruneActive(hv,xlam,neps_);
 //  }
 //
 //  /** \brief Apply the inactive components of the preconditioner operator.
@@ -655,9 +655,9 @@ public:
 //                      const Vector<Real> &xlam, Objective<Real> &obj, BoundConstraint<Real> &con) {
 //    Teuchos::RCP<Vector<Real> > tmp = v.clone();
 //    tmp->set(v);
-//    con.pruneActive(*tmp,xlam,this->neps_);
-//    obj.precond(pv,*tmp,x,this->itol_);
-//    con.pruneActive(pv,xlam,this->neps_);
+//    con.pruneActive(*tmp,xlam,neps_);
+//    obj.precond(pv,*tmp,x,itol_);
+//    con.pruneActive(pv,xlam,neps_);
 //  }
 //
 //  /** \brief Solve the inactive part of the PDAS optimality system.  
@@ -685,13 +685,13 @@ public:
 //    Teuchos::RCP<Vector<Real> > res = rhs.clone();
 //    res->set(rhs);
 //    Real rnorm  = res->norm(); 
-//    Real rtol   = std::min(this->tol1_,this->tol2_*rnorm);
-//    if ( false ) { this->itol_ = rtol/(this->maxitCR_*rnorm); }
+//    Real rtol   = std::min(tol1_,tol2_*rnorm);
+//    if ( false ) { itol_ = rtol/(maxitCR_*rnorm); }
 //    sol.zero();
 //
 //    // Apply preconditioner to residual r = Mres
 //    Teuchos::RCP<Vector<Real> > r = x.clone();
-//    this->applyInactivePrecond(*r,*res,x,xlam,obj,con);
+//    applyInactivePrecond(*r,*res,x,xlam,obj,con);
 //
 //    // Initialize direction p = v
 //    Teuchos::RCP<Vector<Real> > p = x.clone();
@@ -699,21 +699,21 @@ public:
 //
 //    // Apply Hessian to v
 //    Teuchos::RCP<Vector<Real> > Hr = x.clone();
-//    this->applyInactiveHessian(*Hr,*r,x,xlam,obj,con);
+//    applyInactiveHessian(*Hr,*r,x,xlam,obj,con);
 //
 //    // Apply Hessian to p
 //    Teuchos::RCP<Vector<Real> > Hp  = x.clone();
 //    Teuchos::RCP<Vector<Real> > MHp = x.clone();
 //    Hp->set(*Hr);
 //
-//    this->iterCR_ = 0;
-//    this->flagCR_ = 0;
+//    iterCR_ = 0;
+//    flagCR_ = 0;
 //
 //    Real kappa = 0.0, beta  = 0.0, alpha = 0.0, tmp = 0.0, rHr = Hr->dot(*r);
 //
-//    for (this->iterCR_ = 0; this->iterCR_ < this->maxitCR_; this->iterCR_++) {
+//    for (iterCR_ = 0; iterCR_ < maxitCR_; iterCR_++) {
 //      // Precondition Hp
-//      this->applyInactivePrecond(*MHp,*Hp,x,xlam,obj,con);
+//      applyInactivePrecond(*MHp,*Hp,x,xlam,obj,con);
 //
 //      kappa = Hp->dot(*MHp);  // p' H M H p
 //      alpha = rHr/kappa;      // r' M H M r
@@ -726,8 +726,8 @@ public:
 //      if ( rnorm < rtol ) { break; }
 //
 //      // Apply Hessian to v
-//      this->itol_ = rtol/(this->maxitCR_*rnorm);
-//      this->applyInactiveHessian(*Hr,*r,x,xlam,obj,con);
+//      itol_ = rtol/(maxitCR_*rnorm);
+//      applyInactiveHessian(*Hr,*r,x,xlam,obj,con);
 //
 //      tmp  = rHr;
 //      rHr  = Hr->dot(*r);
@@ -737,10 +737,10 @@ public:
 //      Hp->scale(beta);
 //      Hp->axpy(1.0,*Hr);
 //    }
-//    if ( this->iterCR_ == this->maxitCR_ ) {
-//      this->flagCR_ = 1;
+//    if ( iterCR_ == maxitCR_ ) {
+//      flagCR_ = 1;
 //    }
 //    else {
-//      this->iterCR_++;
+//      iterCR_++;
 //    }
 //  }

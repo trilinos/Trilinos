@@ -126,7 +126,7 @@ public:
       con_->pruneActive(Hv,*g_,*x_,eps_);
       v_->set(v);
       con_->pruneInactive(*v_,*g_,*x_,eps_);
-      Hv.plus(*v_->dual());
+      Hv.plus(v_->dual());
     }
     else {
       if ( useSecant_ && secant_ != Teuchos::null ) {
