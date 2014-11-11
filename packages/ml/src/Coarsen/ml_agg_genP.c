@@ -2168,13 +2168,14 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
                          int allocated_space, int columns[], double values[],
                          int row_lengths[])
 {
+
   int ierr;
   int i, j, count, mod;
   int BlockCol, BlockRow, RowMod;
   double DiagValue = 0.0;
   int DiagID;
   int* Filter;
-
+  
   ierr = (*(data->aux_data->aux_func_ptr))(data, N_requested_rows, requested_rows,
                                       allocated_space, columns, values, row_lengths);
   if (ierr == 0)
@@ -2243,6 +2244,14 @@ after:
 
   values[DiagID] += DiagValue;
   row_lengths[0] = count;
+
+  /* EXPERIMENTAL: Special handling code for handling zero diagonals.
+     If sufficient dropping has occurred to zero the diagonal, we reset the 
+     diagonal to its normal value. This keeps the eigenvalue
+     estimate for prolongator smoothing from being hideously wrong.
+   */
+  if(ML_dabs(values[DiagID]  / (values[DiagID] - DiagValue)) < 1e-10)
+    values[DiagID]= -DiagValue;
 
   return(ierr);
 }
@@ -2643,6 +2652,12 @@ static void ML_Finalize_Aux(ML* ml, const int level)
   for (i = 0 ; i < A->aux_data->filter_size ; ++i)
     ML_free((A->aux_data->filter[i]));
   ML_free(A->aux_data->filter);
+
+  /* Kill the filtered diagonal.  This is to prevent later code, like ML_Smoother_NewGS
+   from using the filtered diagonal instead of the real thing.  */
+  ML_DVector_Destroy(&A->diagonal);
+  A->diagonal=NULL;
+  
 }
 
 /* ************************************************************************* */
