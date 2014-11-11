@@ -91,4 +91,5 @@ ENDIF()
 
 ADD_SUBDIRECTORY(EasyParameterListInterpreter)
 ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
+ADD_SUBDIRECTORY(MLParameterListInterpreter)
 ADD_SUBDIRECTORY(Output)

@@ -55,6 +55,7 @@
 #include <MueLu_TestHelpers.hpp>
 
 #include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
 
 // These files must be included last
 #include <MueLu_UseDefaultTypes.hpp>
@@ -103,22 +104,25 @@ int main(int argc, char *argv[]) {
     RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
 
-    const int numLists = 2;
+    const int numLists = 3;
 
     Teuchos::ArrayRCP<std::string> fileLists[numLists];
     std::string                    dirList  [numLists], outDir;
     dirList[0] = "EasyParameterListInterpreter/";
     dirList[1] = "FactoryParameterListInterpreter/";
+    dirList[2] = "MLParameterListInterpreter/";
     outDir     = "Output/";
 
     if (numProc == 1) {
       // Run all xml configs in serial/single mpi mode
       fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string(".xml"));
       fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string(".xml"));
+      fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string(".xml"));
     } else {
       // In addition, rerun some files in parallel mode
       fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
       fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
+      fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
     }
 
     bool failed = false;
@@ -175,23 +179,33 @@ int main(int argc, char *argv[]) {
         if (k == 0) {
           // easy
           paramList.set("verbosity", "test");
-        } else {
+        } else if (k == 1) {
           // factory
           ParameterList& hierList = paramList.sublist("Hierarchy");
           hierList.set("verbosity", "Test");
+        } else if (k == 2) {
+          // ML parameter list interpreter
+          paramList.set("ML output", 8);
         }
 
         try {
-          ParameterListInterpreter mueluFactory(paramList);
 
-          RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+            Teuchos::RCP<HierarchyManager> mueluFactory;
 
-          H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
-          // H->GetLevel(0)->Set("Nullspace",   nullspace);
-          H->GetLevel(0)->Set("Coordinates", coordinates);
+            // create parameter list interpreter
+            // here we have to distinguish between the general MueLu parameter list interpreter
+            // and the ML parameter list interpreter. Note that the ML paramter interpreter also
+            // works with Tpetra matrices.
+            if (k< 2) mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
+            else if (k==2) mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
-          mueluFactory.SetupHierarchy(*H);
+            RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
+            H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+            // H->GetLevel(0)->Set("Nullspace",   nullspace);
+            H->GetLevel(0)->Set("Coordinates", coordinates);
+
+            mueluFactory->SetupHierarchy(*H);
         } catch (Teuchos::ExceptionBase& e) {
           std::string msg = e.what();
           msg = msg.substr(msg.find_last_of('\n')+1);

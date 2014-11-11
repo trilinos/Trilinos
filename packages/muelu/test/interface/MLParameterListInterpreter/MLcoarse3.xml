@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="coarse: type"     type="string" value="Amesos-Superlu"/>
+</ParameterList>
