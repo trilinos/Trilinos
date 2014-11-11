@@ -30,7 +30,7 @@ APPEND_SET(SOURCES
   MultiVectorTransferFactory.cpp
   ParameterList/CreateSublists.cpp
   ParameterList/FactoryFactory.cpp
-# ParameterList/MLParameterListInterpreter.cpp
+  ParameterList/MLParameterListInterpreter.cpp
   ParameterList/ParameterListInterpreter.cpp
   PermutedTransferFactory.cpp
   PgPFactory.cpp
