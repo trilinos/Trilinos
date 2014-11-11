@@ -482,9 +482,12 @@ WARN_LOGFILE           =
 INPUT                  = \
 ../src/vector \
 ../src/function/ROL_Objective.hpp \
+../src/function/ROL_BoundConstraint.hpp \
 ../src/function/ROL_EqualityConstraint.hpp \
-../src/function/ROL_InequalityConstraint.hpp \
-../src/function/ROL_Constraints.hpp \
+../src/function/ROL_LinearOperator.hpp \
+../src/function/ROL_Objective_SimOpt.hpp \
+../src/function/ROL_EqualityConstraint_SimOpt.hpp \
+../src/function/ROL_Reduced_Objective_SimOpt.hpp \
 ../src/function/ \
 ../src/algorithm \
 ../src/status \
