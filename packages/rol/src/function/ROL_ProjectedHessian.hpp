@@ -49,16 +49,6 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
-/** @ingroup func_group
-    \class ROL::Hessian
-    \brief Provides the interface to apply the Hessian in unconstrained and projected methods.  
-     This class wraps the hessVec capability of the objective function and is only used inside 
-     of ROL.  The user does not need to implement this.
-
-    ---
-*/
-
-
 namespace ROL {
 
 template <class Real>

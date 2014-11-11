@@ -49,16 +49,6 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
-/** @ingroup func_group
-    \class ROL::PrimalDualPreconditioner
-    \brief Provides the interface to apply the Hessian preconditioner for primal dual
-     active set.  This class wraps the precond capability of the objective function 
-     and is only used inside of ROL.  The user does not need to implement this.
-
-    ---
-*/
-
-
 namespace ROL {
 
 template <class Real>
