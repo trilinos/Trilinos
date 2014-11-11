@@ -85,6 +85,15 @@ public:
     re_ (std::real (src)), im_ (std::imag (src))
   {}
 
+  /// \brief Conversion operator to std::complex.
+  ///
+  /// This operator cannot be called in a CUDA device function,
+  /// because std::complex's methods and nonmember functions are not
+  /// marked as CUDA device functions.
+  operator std::complex<RealType> () const {
+    return std::complex<RealType> (re_, im_);
+  }
+
   /// \brief Constructor that takes just the real part, and sets the
   ///   imaginary part to zero.
   template<class InputRealType>
