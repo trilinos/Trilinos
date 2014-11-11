@@ -2655,8 +2655,10 @@ static void ML_Finalize_Aux(ML* ml, const int level)
 
   /* Kill the filtered diagonal.  This is to prevent later code, like ML_Smoother_NewGS
    from using the filtered diagonal instead of the real thing.  */
-  ML_DVector_Destroy(&A->diagonal);
-  A->diagonal=NULL;
+  if(A->diagonal) {
+    ML_DVector_Destroy(&A->diagonal);
+    A->diagonal=NULL;
+  }
   
 }
 
