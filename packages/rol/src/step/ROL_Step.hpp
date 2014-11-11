@@ -80,12 +80,13 @@ public:
 
   /** \brief Initialize step with bound constraint.
   */
-  virtual void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  virtual void initialize( Vector<Real> &x, Vector<Real> &g, 
+                           Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
     // Initialize state descent direction and gradient storage
     state_->descentVec   = x.clone();
-    state_->gradientVec  = x.clone();
+    state_->gradientVec  = g.clone();
     state_->searchSize = 0.0;
     // Project x onto constraint set
     if ( con.isActivated() ) {
@@ -100,7 +101,7 @@ public:
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
       xnew->set(x);
-      xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+      xnew->axpy(-1.0,(Step<Real>::state_->gradientVec)->dual());
       con.project(*xnew);
       xnew->axpy(-1.0,x);
       algo_state.gnorm = xnew->norm();

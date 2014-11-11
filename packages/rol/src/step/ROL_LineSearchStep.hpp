@@ -279,9 +279,9 @@ public:
     }
   }
 
-  void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
-    Step<Real>::initialize(x,obj,con,algo_state);
+    Step<Real>::initialize(x,g,obj,con,algo_state);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     lineSearch_->initialize(x, *(step_state->gradientVec));
     if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_NEWTON || edesc_ == DESCENT_SECANT ) {
@@ -299,7 +299,7 @@ public:
     }
     if ( con.isActivated() || edesc_ == DESCENT_SECANT 
                            || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      gp_ = x.clone();
+      gp_ = g.clone();
     }
   }
 
@@ -337,7 +337,7 @@ public:
     }
 
     // Compute step s
-    switch(this->edesc_) {
+    switch(edesc_) {
       case DESCENT_NEWTONKRYLOV:
         flagKrylov_ = 0;
         krylov_->run(s,*hessian_,*(step_state->gradientVec),*precond_,iterKrylov_,flagKrylov_);
@@ -347,7 +347,7 @@ public:
         hessian_->applyInverse(s,*(step_state->gradientVec),tol);
         break;
       case DESCENT_NONLINEARCG:
-        this->nlcg_->run(s,*(step_state->gradientVec),x,obj);
+        nlcg_->run(s,*(step_state->gradientVec),x,obj);
         break;
       case DESCENT_STEEPEST:
         s.set(*(step_state->gradientVec));
@@ -358,10 +358,10 @@ public:
     // Compute g.dot(s)
     Real gs = 0.0;
     if ( !con.isActivated() ) {
-      gs = -(step_state->gradientVec)->dot(s);
+      gs = -s.dot((step_state->gradientVec)->dual());
     }
     else {
-      if ( this->edesc_ == DESCENT_STEEPEST ) {
+      if ( edesc_ == DESCENT_STEEPEST ) {
         d_->set(x);
         d_->axpy(-1.0,s);
         con.project(*d_);
@@ -370,43 +370,43 @@ public:
         //d->set(s);
         //con.pruneActive(*d,s,x,eps);
         //con.pruneActive(*d,*(step_state->gradientVec),x,eps);
-        gs = -(step_state->gradientVec)->dot(*d_);
+        gs = -d_->dot((step_state->gradientVec)->dual());
       }
       else {
         d_->set(s);
         con.pruneActive(*d_,*(step_state->gradientVec),x,eps);
-        gs = -(step_state->gradientVec)->dot(*d_);
+        gs = -d_->dot((step_state->gradientVec)->dual());
         d_->set(x);
-        d_->axpy(-1.0,*(step_state->gradientVec));
+        d_->axpy(-1.0,(step_state->gradientVec)->dual());
         con.project(*d_);
         d_->scale(-1.0);
         d_->plus(x);
         con.pruneInactive(*d_,*(step_state->gradientVec),x,eps);
-        gs -= (step_state->gradientVec)->dot(*d_);
+        gs -= d_->dot((step_state->gradientVec)->dual());
       }
     }
 
     // Check if s is a descent direction i.e., g.dot(s) < 0
-    if ( gs >= 0.0 || (this->flagKrylov_ == 2 && this->iterKrylov_ <= 1) ) {
-      s.set(*(step_state->gradientVec));
+    if ( gs >= 0.0 || (flagKrylov_ == 2 && iterKrylov_ <= 1) ) {
+      s.set((step_state->gradientVec)->dual());
       if ( con.isActivated() ) {
         d_->set(s);
         con.pruneActive(*d_,s,x);
-        gs = -(step_state->gradientVec)->dot(*d_);
+        gs = -d_->dot((step_state->gradientVec)->dual());
       }
       else {
-        gs = -(step_state->gradientVec)->dot(s);
+        gs = -s.dot((step_state->gradientVec)->dual());
       }
     }
     s.scale(-1.0);
 
     // Perform line search
     Real fnew  = algo_state.value;
-    this->ls_nfval_ = 0;
-    this->ls_ngrad_ = 0;
-    this->lineSearch_->run(step_state->searchSize,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
-    algo_state.nfval += this->ls_nfval_;
-    algo_state.ngrad += this->ls_ngrad_;
+    ls_nfval_ = 0;
+    ls_ngrad_ = 0;
+    lineSearch_->run(step_state->searchSize,fnew,ls_nfval_,ls_ngrad_,gs,s,x,obj,con);
+    algo_state.nfval += ls_nfval_;
+    algo_state.ngrad += ls_ngrad_;
 
     // Compute get scaled descent direction
     s.scale(step_state->searchSize);
@@ -446,28 +446,30 @@ public:
     obj.update(x,true,algo_state.iter);
 
     // Compute new gradient
-    if ( this->edesc_ == DESCENT_SECANT || (this->edesc_ == DESCENT_NEWTONKRYLOV && this->useSecantPrecond_) ) {
+    if ( edesc_ == DESCENT_SECANT || 
+        (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
       gp_->set(*(step_state->gradientVec));
     }
     obj.gradient(*(step_state->gradientVec),x,tol);
     algo_state.ngrad++;
 
     // Update Secant Information
-    if ( this->edesc_ == DESCENT_SECANT || (this->edesc_ == DESCENT_NEWTONKRYLOV && this->useSecantPrecond_) ) {
+    if ( edesc_ == DESCENT_SECANT || 
+        (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
       secant_->update(*(step_state->gradientVec),*gp_,s,algo_state.snorm,algo_state.iter+1);
     }
 
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
     if ( con.isActivated() ) {
-      if ( this->useProjectedGrad_ ) {
+      if ( useProjectedGrad_ ) {
         gp_->set(*(step_state->gradientVec));
         con.computeProjectedGradient( *gp_, x );
         algo_state.gnorm = gp_->norm();
       }
       else {
         d_->set(x);
-        d_->axpy(-1.0,*(step_state->gradientVec));
+        d_->axpy(-1.0,(step_state->gradientVec)->dual());
         con.project(*d_);
         d_->axpy(-1.0,x);
         algo_state.gnorm = d_->norm();
@@ -493,7 +495,7 @@ public:
     hist << std::setw(10) << std::left << "#grad";
     hist << std::setw(10) << std::left << "ls_#fval";
     hist << std::setw(10) << std::left << "ls_#grad";
-    if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
+    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
       hist << std::setw(10) << std::left << "iterCG";
       hist << std::setw(10) << std::left << "flagCG";
     }
@@ -507,19 +509,19 @@ public:
   */
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << EDescentToString(this->edesc_) 
-         << " with " << ELineSearchToString(this->els_) 
+    hist << "\n" << EDescentToString(edesc_) 
+         << " with " << ELineSearchToString(els_) 
          << " Linesearch satisfying " 
-         << ECurvatureConditionToString(this->econd_) << "\n";
-    if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
-      hist << "Krylov Type: " << EKrylovToString(this->ekv_) << "\n";
+         << ECurvatureConditionToString(econd_) << "\n";
+    if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
+      hist << "Krylov Type: " << EKrylovToString(ekv_) << "\n";
     }
-    if ( this->edesc_ == DESCENT_SECANT || 
-        (this->edesc_ == DESCENT_NEWTONKRYLOV && (this->useSecantPrecond_ || this->useSecantHessVec_)) ) {
-      hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
+    if ( edesc_ == DESCENT_SECANT || 
+        (edesc_ == DESCENT_NEWTONKRYLOV && (useSecantPrecond_ || useSecantHessVec_)) ) {
+      hist << "Secant Type: " << ESecantToString(esec_) << "\n";
     }
-    if ( this->edesc_ == DESCENT_NONLINEARCG ) {
-      hist << "Nonlinear CG Type: " << ENonlinearCGToString(this->enlcg_) << "\n";
+    if ( edesc_ == DESCENT_NONLINEARCG ) {
+      hist << "Nonlinear CG Type: " << ENonlinearCGToString(enlcg_) << "\n";
     }
     return hist.str();
   }
@@ -531,14 +533,14 @@ public:
       @param[in]     algo_state    is the current state of the algorithm
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
-  std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
+  std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {
-      hist << this->printName();
+      hist << printName();
     }
-    if ( printHeader ) {
-      hist << this->printHeader();
+    if ( print_header ) {
+      hist << printHeader();
     }
     if ( algo_state.iter == 0 ) {
       hist << "  ";
@@ -555,11 +557,11 @@ public:
       hist << std::setw(15) << std::left << algo_state.snorm; 
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
-      hist << std::setw(10) << std::left << this->ls_nfval_;              
-      hist << std::setw(10) << std::left << this->ls_ngrad_;              
-      if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
-        hist << std::setw(10) << std::left << this->iterKrylov_;
-        hist << std::setw(10) << std::left << this->flagKrylov_;
+      hist << std::setw(10) << std::left << ls_nfval_;              
+      hist << std::setw(10) << std::left << ls_ngrad_;              
+      if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
+        hist << std::setw(10) << std::left << iterKrylov_;
+        hist << std::setw(10) << std::left << flagKrylov_;
       }
       hist << "\n";
     }
