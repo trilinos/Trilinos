@@ -342,6 +342,9 @@ public:
 
       //Fill-complete adjs Graph Transpose.
       adjsGraphTranspose->fillComplete ();
+
+      // Find the local column numbers to use
+      RCP<const map_type> ColMap = adjsGraph->getColMap ();
     }
   }
 
