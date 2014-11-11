@@ -105,7 +105,7 @@ public:
       }
     }
 
-    s.set(g);
+    s.set(g.dual());
 
     if ((state_->iter % state_->restart) != 0) {
       Real beta = 0.0;
@@ -114,7 +114,7 @@ public:
         case NONLINEARCG_HESTENES_STIEFEL: {
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));
-          beta =  - g.dot(*y_) / y_->dot(*(state_->pstep[0]));
+          beta =  - g.dot(*y_) / (state_->pstep[0]->dot(y_->dual()));
           beta = std::max(beta, 0.0);
           break;
           }
@@ -127,7 +127,7 @@ public:
         case NONLINEARCG_DANIEL: {
           Real htol = 0.0;
           obj.hessVec( *y_, *(state_->pstep[0]), x, htol );
-          beta = - g.dot(*y_) / y_->dot(*(state_->pstep[0]));
+          beta = - g.dot(*y_) / (state_->pstep[0])->dot(y_->dual());
           beta = std::max(beta, 0.0);
           break;
           }
@@ -141,14 +141,14 @@ public:
           }
 
         case NONLINEARCG_FLETCHER_CONJDESC: {
-          beta =  g.dot(g) / (state_->grad[0])->dot(*(state_->pstep[0]));
+          beta =  g.dot(g) / (state_->pstep[0])->dot((state_->grad[0])->dual());
           break;
           }
 
         case NONLINEARCG_LIU_STOREY: {
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));
-          beta =  g.dot(*y_) / (state_->grad[0])->dot(*(state_->pstep[0]));
+          beta =  g.dot(*y_) / (state_->pstep[0])->dot((state_->grad[0])->dual());
           //beta = std::max(beta, 0.0); // Is this needed?  May need research.
           break;
           }
@@ -156,7 +156,7 @@ public:
         case NONLINEARCG_DAI_YUAN: {
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));
-          beta =  - g.dot(g) / y_->dot(*(state_->pstep[0]));
+          beta =  - g.dot(g) / (state_->pstep[0])->dot(y_->dual());
           break;
           }
 
@@ -165,9 +165,9 @@ public:
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));
           yd_->set(*y_);
-          Real mult = 2.0 * ( y_->dot(*y_) / y_->dot(*(state_->pstep[0])) );
-          yd_->axpy(-mult, *(state_->pstep[0]));
-          beta = - yd_->dot(g) / y_->dot(*(state_->pstep[0]));
+          Real mult = 2.0 * ( y_->dot(*y_) / (state_->pstep[0])->dot(y_->dual()) );
+          yd_->axpy(-mult, (state_->pstep[0])->dual());
+          beta = - yd_->dot(g) / (state_->pstep[0])->dot(y_->dual());
           Real eta = -1.0 / ((state_->pstep[0])->norm()*std::min(eta_0,(state_->grad[0])->norm()));
           beta = std::max(beta, eta);
           break;
