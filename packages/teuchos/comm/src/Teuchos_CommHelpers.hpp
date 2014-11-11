@@ -1428,6 +1428,12 @@ void Teuchos::reduceAll(
 
 namespace Teuchos {
 
+// amb 11 Nov 2014. I am disabling these specializations for
+// now. MPI_C_DOUBLE_COMPLEX is causing a problem in some builds. This code was
+// effectively turned on only yesterday (10 Nov 2014) when TEUCHOS_HAVE_COMPLEX
+// was corrected to be HAVE_TEUCHOS_COMPLEX, so evidently there are no users of
+// these specializations.
+#if 0
 #ifdef HAVE_TEUCHOS_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
@@ -1507,6 +1513,7 @@ isend<int, std::complex<float> > (const ArrayRCP<const std::complex<float> >& se
                                   const int tag,
                                   const Comm<int>& comm);
 #endif // HAVE_TEUCHOS_COMPLEX
+#endif // if 0
 
 // Specialization for Ordinal=int and Packet=double.
 template<>

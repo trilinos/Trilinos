@@ -98,6 +98,8 @@ public:
   static MPI_Datatype getType (const T&);
 };
 
+// amb See note in .hpp file.
+#if 0
 #ifdef HAVE_TEUCHOS_COMPLEX
 template<>
 class MpiTypeTraits<std::complex<double> > {
@@ -115,6 +117,7 @@ public:
   }
 };
 #endif // HAVE_TEUCHOS_COMPLEX
+#endif // if 0
 
 template<>
 class MpiTypeTraits<double> {
@@ -901,6 +904,8 @@ toString (const EReductionType reductType)
 // specializations (as found in this file) must _not_ use the macro.
 // That's why we don't use that macro here.
 
+// amb See note in .hpp file.
+#if 0
 #ifdef HAVE_TEUCHOS_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
@@ -1038,6 +1043,7 @@ isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
   return isendImpl<std::complex<float> > (sendBuffer, destRank, tag, comm);
 }
 #endif // HAVE_TEUCHOS_COMPLEX
+#endif // if 0
 
 
 // Specialization for Ordinal=int and Packet=double.
