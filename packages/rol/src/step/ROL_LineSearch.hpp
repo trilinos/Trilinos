@@ -65,11 +65,14 @@ private:
   Real tol_;
   Real rho_;
   Real alpha0_;
+  Real eps_;
   bool useralpha_;
   int algo_iter_;
 
-  Teuchos::RCP<Vector<Real> > grad_;
-  Real eps_;
+  Teuchos::RCP<Vector<Real> > xnew_; 
+  Teuchos::RCP<Vector<Real> > d_;
+  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<const Vector<Real> > grad_;
 
   void updateIterate(Vector<Real> &xnew, const Vector<Real> &x, const Vector<Real> &s, Real alpha, 
                      BoundConstraint<Real> &con ) {
@@ -85,7 +88,7 @@ public:
   virtual ~LineSearch() {}
 
   // Constructor
-  LineSearch( Teuchos::ParameterList &parlist ) {
+  LineSearch( Teuchos::ParameterList &parlist ) : eps_(0.0) {
     // Enumerations
     edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
     els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
@@ -120,10 +123,15 @@ public:
     }
   }
 
-  void setData( const Teuchos::RCP<Vector<Real> > &grad, const Real eps = 0.0 ) { 
-    this->grad_ = grad->clone();
-    this->grad_->set(*grad);
-    this->eps_ = eps;
+  void initialize( const Vector<Real> &x, const Vector<Real> &g ) {
+    grad_ = Teuchos::rcp(&g, false);
+    xnew_ = x.clone();
+    d_    = x.clone();
+    g_    = x.clone();
+  }
+
+  void setData(Real &eps) {
+    eps_ = eps;
   }
 
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
@@ -136,24 +144,23 @@ public:
     bool armijo = false;
     if ( con.isActivated() ) {
       Real gs = 0.0;
-      Teuchos::RCP<Vector<Real> > d = x.clone();
       if ( this->edesc_ == DESCENT_STEEPEST ) {
-        this->updateIterate(*d,x,s,alpha,con);
-        d->scale(-1.0);
-        d->plus(x);
-        gs = -s.dot(*d);
+        this->updateIterate(*d_,x,s,alpha,con);
+        d_->scale(-1.0);
+        d_->plus(x);
+        gs = -s.dot(*d_);
       }
       else {
-        d->set(s);
-        d->scale(-1.0);
-        con.pruneActive(*d,*(this->grad_),x,this->eps_);
-        gs = alpha*(this->grad_)->dot(*d);
-        d->zero();
-        this->updateIterate(*d,x,s,alpha,con);
-        d->scale(-1.0);
-        d->plus(x);
-        con.pruneInactive(*d,*(this->grad_),x,this->eps_);
-        gs += (this->grad_)->dot(*d);
+        d_->set(s);
+        d_->scale(-1.0);
+        con.pruneActive(*d_,*(this->grad_),x,eps_);
+        gs = alpha*(this->grad_)->dot(*d_);
+        d_->zero();
+        this->updateIterate(*d_,x,s,alpha,con);
+        d_->scale(-1.0);
+        d_->plus(x);
+        con.pruneInactive(*d_,*(this->grad_),x,eps_);
+        gs += (this->grad_)->dot(*d_);
       }
       if ( fnew <= fold - this->c1_*gs ) {
         armijo = true;
@@ -184,21 +191,18 @@ public:
         curvcond = true;
       }
       else { 
-        Teuchos::RCP<Vector<Real> > xnew = x.clone();
-        this->updateIterate(*xnew,x,s,alpha,con);
-        Teuchos::RCP<Vector<Real> > grad = x.clone();
-        obj.update(*xnew);
-        obj.gradient(*grad,*xnew,tol);
+        this->updateIterate(*xnew_,x,s,alpha,con);
+        obj.update(*xnew_);
+        obj.gradient(*g_,*xnew_,tol);
         Real sgnew = 0.0;
         if ( con.isActivated() ) {
-          Teuchos::RCP<Vector<Real> > d = x.clone();
-          d->set(s);
-          d->scale(-alpha);
-          con.pruneActive(*d,s,x);
-          sgnew = -grad->dot(*d);
+          d_->set(s);
+          d_->scale(-alpha);
+          con.pruneActive(*d_,s,x);
+          sgnew = -g_->dot(*d_);
         }
         else {
-          sgnew = grad->dot(s);
+          sgnew = g_->dot(s);
         }
         ls_ngrad++;
    
@@ -231,21 +235,20 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
             Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
     // Determine Initial Step Length
     if (this->useralpha_ || this->els_ == LINESEARCH_ITERATIONSCALING) {
       alpha = this->alpha0_;
     }
     else if ( this->edesc_ == DESCENT_STEEPEST || this->edesc_ == DESCENT_NONLINEARCG ) {
-      this->updateIterate(*xnew,x,s,1.0,con);
+      this->updateIterate(*xnew_,x,s,1.0,con);
       Real ftol = 0.0;
       // TODO: Think about reusing for efficiency!
-      obj.update(*xnew);
-      Real fnew = obj.value(*xnew, ftol);
+      obj.update(*xnew_);
+      Real fnew = obj.value(*xnew_, ftol);
       alpha = -gs/(2.0*(fnew-fval-gs));
-      this->updateIterate(*xnew,x,s,alpha,con);
-      obj.update(*xnew);
-      fnew = obj.value(*xnew, ftol);
+      this->updateIterate(*xnew_,x,s,alpha,con);
+      obj.update(*xnew_);
+      fnew = obj.value(*xnew_, ftol);
       bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj,con);
       if (!stat) {
         alpha = 1.0;
@@ -287,11 +290,10 @@ public:
     this->algo_iter_++;
     alpha /= this->algo_iter_;
 
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    this->updateIterate(*xnew,x,s,alpha,con);
+    this->updateIterate(*xnew_,x,s,alpha,con);
 
-    obj.update(*xnew);
-    fval = obj.value(*xnew,tol);
+    obj.update(*xnew_);
+    fval = obj.value(*xnew_,tol);
     ls_neval++;
   }
 
@@ -300,19 +302,18 @@ public:
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    this->updateIterate(*xnew,x,s,alpha,con);
+    this->updateIterate(*xnew_,x,s,alpha,con);
 
     Real fold = fval;
-    obj.update(*xnew);
-    fval = obj.value(*xnew,tol);
+    obj.update(*xnew_);
+    fval = obj.value(*xnew_,tol);
     ls_neval++;
 
-    while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj,con) ) {
+    while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew_,s,obj,con) ) {
       alpha *= this->rho_;
-      this->updateIterate(*xnew,x,s,alpha,con);
-      obj.update(*xnew);
-      fval = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,alpha,con);
+      obj.update(*xnew_);
+      fval = obj.value(*xnew_,tol);
       ls_neval++;
     }
   }
@@ -322,12 +323,11 @@ public:
                      Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    this->updateIterate(*xnew,x,s,alpha,con);
+    this->updateIterate(*xnew_,x,s,alpha,con);
 
     Real fold = fval;
-    obj.update(*xnew);
-    fval = obj.value(*xnew,tol);
+    obj.update(*xnew_);
+    fval = obj.value(*xnew_,tol);
     ls_neval++;
     Real fvalp = 0.0;
 
@@ -374,9 +374,9 @@ public:
         alpha = alpha1;
       }
 
-      this->updateIterate(*xnew,x,s,alpha,con);
-      obj.update(*xnew);
-      fval = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,alpha,con);
+      obj.update(*xnew_);
+      fval = obj.value(*xnew_,tol);
       ls_neval++;
     }
   }
@@ -392,10 +392,9 @@ public:
 
     // Compute value phi(alpha)
     Real tr = alpha;
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    this->updateIterate(*xnew,x,s,tr,con);
-    obj.update(*xnew);
-    Real val_tr = obj.value(*xnew,tol); 
+    this->updateIterate(*xnew_,x,s,tr,con);
+    obj.update(*xnew_);
+    Real val_tr = obj.value(*xnew_,tol); 
     ls_neval++;
 
     // Check if phi(alpha) < phi(0)
@@ -421,8 +420,8 @@ public:
 
     // Compute value phi(midpoint)
     Real tc = (tl+tr)/2.0;
-    this->updateIterate(*xnew,x,s,tc,con);
-    Real val_tc = obj.value(*xnew,tol);
+    this->updateIterate(*xnew_,x,s,tc,con);
+    Real val_tc = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Get min( phi(0), phi(alpha), phi(midpoint) )
@@ -439,15 +438,15 @@ public:
     while (    !status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con)  
             && std::abs(tr - tl) > this->tol_ ) {
       t1 = (tl+tc)/2.0;
-      this->updateIterate(*xnew,x,s,t1,con);
-      obj.update(*xnew);
-      val_t1 = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,t1,con);
+      obj.update(*xnew_);
+      val_t1 = obj.value(*xnew_,tol);
       ls_neval++;
 
       t2 = (tr+tc)/2.0;
-      this->updateIterate(*xnew,x,s,t2,con);
-      obj.update(*xnew);
-      val_t2 = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,t2,con);
+      obj.update(*xnew_);
+      val_t2 = obj.value(*xnew_,tol);
       ls_neval++;
 
       if (    ( (val_tl <= val_tr) && (val_tl <= val_t1) && (val_tl <= val_t2) && (val_tl <= val_tc) ) 
@@ -502,7 +501,6 @@ public:
                       Objective<Real> &obj, BoundConstraint<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    Teuchos::RCP<Vector<Real> > grad = x.clone();
     Real c   = (-1.0+sqrt(5.0))/2.0;
 
     // Compute value phi(0)
@@ -511,10 +509,9 @@ public:
 
     // Compute value phi(alpha)
     Real tr  = alpha;
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    this->updateIterate(*xnew,x,s,tr,con);
-    obj.update(*xnew);
-    Real val_tr = obj.value(*xnew,tol);
+    this->updateIterate(*xnew_,x,s,tr,con);
+    obj.update(*xnew_);
+    Real val_tr = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Check if phi(alpha) < phi(0)
@@ -540,16 +537,16 @@ public:
 
     // Compute value phi(t1)
     Real tc1 = c*tl + (1.0-c)*tr;
-    this->updateIterate(*xnew,x,s,tc1,con);
-    obj.update(*xnew);
-    Real val_tc1 = obj.value(*xnew,tol);
+    this->updateIterate(*xnew_,x,s,tc1,con);
+    obj.update(*xnew_);
+    Real val_tc1 = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Compute value phi(t2)
     Real tc2 = (1.0-c)*tl + c*tr;
-    this->updateIterate(*xnew,x,s,tc2,con);
-    obj.update(*xnew);
-    Real val_tc2 = obj.value(*xnew,tol);
+    this->updateIterate(*xnew_,x,s,tc2,con);
+    obj.update(*xnew_);
+    Real val_tc2 = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Compute min( phi(0), phi(t1), phi(t2), phi(alpha) )
@@ -579,9 +576,9 @@ public:
         val_tc1 = val_tc2;
  
         tc2     = (1.0-c)*tl + c*tr;     
-        this->updateIterate(*xnew,x,s,tc2,con);
-        obj.update(*xnew);
-        val_tc2 = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tc2,con);
+        obj.update(*xnew_);
+        val_tc2 = obj.value(*xnew_,tol);
         ls_neval++;
       }
       else {
@@ -591,9 +588,9 @@ public:
         val_tc2 = val_tc1;
 
         tc1     = c*tl + (1.0-c)*tr;
-        this->updateIterate(*xnew,x,s,tc1,con);
-        obj.update(*xnew);
-        val_tc1 = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tc1,con);
+        obj.update(*xnew_);
+        val_tc1 = obj.value(*xnew_,tol);
         ls_neval++;
       }
 
@@ -633,11 +630,10 @@ public:
     Real val_tc = 0.0;
 
     // Compute value phi(alpha)
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
     Real tr = alpha;      // Right interval point
-    this->updateIterate(*xnew,x,s,tr,con);
-    obj.update(*xnew);
-    Real val_tr = obj.value(*xnew,tol);
+    this->updateIterate(*xnew_,x,s,tr,con);
+    obj.update(*xnew_);
+    Real val_tr = obj.value(*xnew_,tol);
     ls_neval++;
 
     // Check if phi(alpha) < phi(0)
@@ -680,9 +676,9 @@ public:
       val_tc = val_tr;
 
       tr     = goldinv * (tc + gr*tl);
-      this->updateIterate(*xnew,x,s,tr,con);
-      obj.update(*xnew);
-      val_tr = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,tr,con);
+      obj.update(*xnew_);
+      val_tr = obj.value(*xnew_,tol);
       ls_neval++;
 
       itbt++;
@@ -699,9 +695,9 @@ public:
 
     if ( std::abs(tc) < ROL_EPSILON ) {
       tc = tl + (gr-1.0)*(tr-tl);
-      this->updateIterate(*xnew,x,s,tc,con);
-      obj.update(*xnew);
-      val_tc = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,tc,con);
+      obj.update(*xnew_);
+      val_tc = obj.value(*xnew_,tol);
       ls_neval++;
     }
 
@@ -735,9 +731,9 @@ public:
       tlim = tl + max_extrap_factor * (tc-tr);
 
       if ( (tr-tm)*(tm-tc) > 0.0 ) {
-        this->updateIterate(*xnew,x,s,tm,con);
-        obj.update(*xnew);
-        val_tm = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tm,con);
+        obj.update(*xnew_);
+        val_tm = obj.value(*xnew_,tol);
         ls_neval++;
         if ( val_tm < val_tc ) {
           tl     = tr;
@@ -750,15 +746,15 @@ public:
           val_tc = val_tm;
         }
         tm = tc + gr*(tc-tr);
-        this->updateIterate(*xnew,x,s,tm,con);
-        obj.update(*xnew);
-        val_tm = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tm,con);
+        obj.update(*xnew_);
+        val_tm = obj.value(*xnew_,tol);
         ls_neval++;
       }
       else if ( (tc - tm)*(tm -tlim) > 0.0 ) {
-        this->updateIterate(*xnew,x,s,tm,con);
-        obj.update(*xnew);
-        val_tm = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tm,con);
+        obj.update(*xnew_);
+        val_tm = obj.value(*xnew_,tol);
         ls_neval++;
         if ( val_tm < val_tc ) {
           tr     = tc;
@@ -768,24 +764,24 @@ public:
           val_tc = val_tm;
 
           tm     = tc + gr*(tc-tr);
-          this->updateIterate(*xnew,x,s,tm,con);
-          obj.update(*xnew);
-          val_tm = obj.value(*xnew,tol);
+          this->updateIterate(*xnew_,x,s,tm,con);
+          obj.update(*xnew_);
+          val_tm = obj.value(*xnew_,tol);
           ls_neval++;
         }
       }
       else if ( (tm-tlim)*(tlim-tc) >= 0.0 ) {
         tm = tlim;
-        this->updateIterate(*xnew,x,s,tm,con);
-        obj.update(*xnew);
-        val_tm = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tm,con);
+        obj.update(*xnew_);
+        val_tm = obj.value(*xnew_,tol);
         ls_neval++;
       }
       else {
         tm = tc + gr*(tc-tr);
-        this->updateIterate(*xnew,x,s,tm,con);
-        obj.update(*xnew);
-        val_tm = obj.value(*xnew,tol);
+        this->updateIterate(*xnew_,x,s,tm,con);
+        obj.update(*xnew_);
+        val_tm = obj.value(*xnew_,tol);
         ls_neval++;
       }
       tl     = tr;
@@ -884,9 +880,9 @@ public:
         d = inv_gr2*(e = (t>=tm ? a-t : b-t) );
       }
       u = (std::abs(d)>=tol1 ? t+d : t+(d>=0.0 ? std::abs(tol1) : -std::abs(tol1)));
-      this->updateIterate(*xnew,x,s,u,con);
-      obj.update(*xnew);
-      fu = obj.value(*xnew,tol);
+      this->updateIterate(*xnew_,x,s,u,con);
+      obj.update(*xnew_);
+      fu = obj.value(*xnew_,tol);
       ls_neval++;
 
       if ( fu <= ft ) {

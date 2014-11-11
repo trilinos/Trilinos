@@ -57,6 +57,13 @@ template<class Real>
 class TrustRegion {
 private:
 
+  Teuchos::RCP<Vector<Real> > xupdate_;
+  Teuchos::RCP<Vector<Real> > s_;
+  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> > v_;
+  Teuchos::RCP<Vector<Real> > p_;
+  Teuchos::RCP<Vector<Real> > Hp_;
+
   ETrustRegion etr_;
 
   bool useSecantPrecond_;
@@ -92,12 +99,14 @@ private:
   int  forceFactor_;
   int cnt_;
 
+  bool useCGTCP_; 
+
 public:
 
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(ROL_OVERFLOW), cnt_(0) {
+  TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(ROL_OVERFLOW), cnt_(0), useCGTCP_(false) {
     // Unravel Parameter List
     // Enumerations
     etr_ = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));
@@ -132,6 +141,33 @@ public:
     forceFactor_ = parlist.get("Value Update Forcing Sequence Reduction Factor",0.1);
   }
 
+  void initialize( Vector<Real> &x) {
+    xupdate_ = x.clone();
+    if (etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      s_ = x.clone();
+      g_ = x.clone();
+      v_ = x.clone();
+      p_ = x.clone();
+      Hp_ = x.clone();
+    }
+    else if ( etr_ == TRUSTREGION_DOGLEG ) {
+      s_ = x.clone();
+      Hp_ = x.clone();
+    }
+    else if ( etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
+      s_ = x.clone();
+      v_ = x.clone();
+      Hp_ = x.clone();
+    }
+    else if ( etr_ == TRUSTREGION_CAUCHYPOINT ) {
+      Hp_ = x.clone();
+      if ( useCGTCP_ ) {
+        g_ = x.clone();
+        p_ = x.clone();
+      }
+    }
+  }
+
   void update( Vector<Real> &x, Real &fnew, Real &del, 
                int &nfval, int &ngrad, int &flagTR,
                const Vector<Real> &s, const Real snorm, 
@@ -140,9 +176,8 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute New Function Value
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    xnew->set(x);
-    xnew->axpy(1.0,s);
+    xupdate_->set(x);
+    xupdate_->axpy(1.0,s);
     /***************************************************************************************************/
     // BEGIN INEXACT OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
@@ -158,13 +193,13 @@ public:
         this->ftol_old_ = ftol;
         fold1 = pObj.value(x,this->ftol_old_);
       }
-      pObj.update(*xnew,true,iter);
-      fnew = pObj.value(*xnew,ftol);
+      pObj.update(*xupdate_,true,iter);
+      fnew = pObj.value(*xupdate_,ftol);
       this->cnt_++;
     }
     else {
-      pObj.update(*xnew,true,iter);
-      fnew = pObj.value(*xnew,tol);
+      pObj.update(*xupdate_,true,iter);
+      fnew = pObj.value(*xupdate_,tol);
     }
     nfval = 1;   
     Real aRed = fold1 - fnew;
@@ -200,23 +235,22 @@ public:
     bool decr = true;
     if ( pObj.isConActivated() && (std::abs(aRed) > this->eps_) ) { 
       // Compute Criticality Measure || x - P( x - g ) ||
-      Teuchos::RCP<Vector<Real> > pg = x.clone();
-      pg->set(x);
-      pg->axpy(-1.0,g);
-      pObj.project(*pg);
-      pg->scale(-1.0);
-      pg->plus(x);
-      Real pgnorm = pg->norm();
+      xupdate_->set(x);
+      xupdate_->axpy(-1.0,g);
+      pObj.project(*xupdate_);
+      xupdate_->scale(-1.0);
+      xupdate_->plus(x);
+      Real pgnorm = xupdate_->norm();
       // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
-      pg->set(g);
-      pObj.pruneActive(*pg,g,x);
-      Real lam = std::min(1.0, del/pg->norm());
-      pg->scale(-lam);
-      pg->plus(x);
-      pObj.project(*pg);
-      pg->scale(-1.0);
-      pg->plus(x);      
-      pgnorm *= pg->norm();
+      xupdate_->set(g);
+      pObj.pruneActive(*xupdate_,g,x);
+      Real lam = std::min(1.0, del/xupdate_->norm());
+      xupdate_->scale(-lam);
+      xupdate_->plus(x);
+      pObj.project(*xupdate_);
+      xupdate_->scale(-1.0);
+      xupdate_->plus(x);      
+      pgnorm *= xupdate_->norm();
       // Sufficient decrease?
       decr = ( aRed >= 0.1*this->eta0_*pgnorm );
     }
@@ -227,9 +261,8 @@ public:
       fnew = fold1;
       if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
         Real gs = g.dot(s);
-        Teuchos::RCP<Vector<Real> > Hs = x.clone();
-        pObj.hessVec(*Hs,s,x,tol);
-        Real modelVal = Hs->dot(s);
+        pObj.hessVec(*xupdate_,s,x,tol);
+        Real modelVal = xupdate_->dot(s);
         modelVal *= 0.5;
         modelVal += gs + fold1;
         Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold1+gs)+this->eta2_*modelVal-fnew);
@@ -324,12 +357,11 @@ public:
   void cauchypoint( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                     const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     if ( pObj.isConActivated() ) {
-      bool useM = false;
-      if ( useM ) {
-        this->cauchypoint_M( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
+      if ( useCGTCP_ ) {
+        this->cauchypoint_CGT( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
       } 
       else {
-        this->cauchypoint_CGT( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
+        this->cauchypoint_M( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
       }
     }
     else {
@@ -346,32 +378,25 @@ public:
     s.zero(); 
     snorm = 0.0;
     Real snorm2  = 0.0;
-    Teuchos::RCP<Vector<Real> > s1 = x.clone();
-    s1->zero();
+    s_->zero();
     Real s1norm2 = 0.0;
 
     // Gradient Vector
-    Teuchos::RCP<Vector<Real> > g = x.clone(); 
-    g->set(grad);
+    g_->set(grad);
     Real normg = gnorm;
     if ( pObj.isConActivated() ) {
-      pObj.pruneActive(*g,grad,x);
-      normg = g->norm();
+      pObj.pruneActive(*g_,grad,x);
+      normg = g_->norm();
     }
 
     // Preconditioned Gradient Vector
-    Teuchos::RCP<Vector<Real> > v  = x.clone();
     //pObj.precond(*v,*g,x,tol);
-    pObj.reducedPrecond(*v,*g,x,grad,x,tol);
+    pObj.reducedPrecond(*v_,*g_,x,grad,x,tol);
 
     // Basis Vector
-    Teuchos::RCP<Vector<Real> > p = x.clone(); 
-    p->set(*v); 
-    p->scale(-1.0);
-    Real pnorm2 = v->dot(*g);
-
-    // Hessian Times Basis Vector
-    Teuchos::RCP<Vector<Real> > Hp = x.clone();
+    p_->set(*v_); 
+    p_->scale(-1.0);
+    Real pnorm2 = v_->dot(*g_);
 
     iter        = 0; 
     iflag       = 0;
@@ -380,53 +405,53 @@ public:
     Real sigma  = 0.0; 
     Real alpha  = 0.0; 
     Real tmp    = 0.0;
-    Real gv     = v->dot(*g);
+    Real gv     = v_->dot(*g_);
     Real sMp    = 0.0;
     this->pRed_ = 0.0;
 
     for (iter = 0; iter < this->maxit_; iter++) {
       //pObj.hessVec(*Hp,*p,x,tol);
-      pObj.reducedHessVec(*Hp,*p,x,grad,x,tol);
+      pObj.reducedHessVec(*Hp_,*p_,x,grad,x,tol);
 
-      kappa = p->dot(*Hp);
+      kappa = p_->dot(*Hp_);
       if (kappa <= 0.0) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
-        s.axpy(sigma,*p);
+        s.axpy(sigma,*p_);
         iflag = 2; 
         break;
       }
 
       alpha = gv/kappa;
-      s1->set(s); 
-      s1->axpy(alpha,*p);
+      s_->set(s); 
+      s_->axpy(alpha,*p_);
       s1norm2 = snorm2 + 2.0*alpha*sMp + alpha*alpha*pnorm2;
 
       if (s1norm2 >= del*del) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
-        s.axpy(sigma,*p);
+        s.axpy(sigma,*p_);
         iflag = 3; 
         break;
       }
 
       this->pRed_ += 0.5*alpha*gv;
 
-      s.set(*s1);
+      s.set(*s_);
       snorm2 = s1norm2;  
 
-      g->axpy(alpha,*Hp);
-      normg = g->norm();
+      g_->axpy(alpha,*Hp_);
+      normg = g_->norm();
       if (normg < gtol) {
         break;
       }
 
       //pObj.precond(*v,*g,x,tol);
-      pObj.reducedPrecond(*v,*g,x,grad,x,tol);
+      pObj.reducedPrecond(*v_,*g_,x,grad,x,tol);
       tmp   = gv; 
-      gv    = v->dot(*g);
+      gv    = v_->dot(*g_);
       beta  = gv/tmp;    
 
-      p->scale(beta);
-      p->axpy(-1.0,*v);
+      p_->scale(beta);
+      p_->axpy(-1.0,*v_);
       sMp    = beta*(sMp+alpha*pnorm2);
       pnorm2 = gv + beta*beta*pnorm2; 
     }
@@ -563,11 +588,10 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute quasi-Newton step
-    Teuchos::RCP<Vector<Real> > sN = x.clone();
-    pObj.reducedInvHessVec(*sN,grad,x,grad,x,tol);
-    sN->scale(-1.0);
-    Real sNnorm = sN->norm();
-    Real gsN    = grad.dot(*sN);
+    pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
+    s_->scale(-1.0);
+    Real sNnorm = s_->norm();
+    Real gsN    = grad.dot(*s_);
     bool negCurv = false;
     if ( gsN >= 0.0 ) {
       negCurv = true;
@@ -580,18 +604,17 @@ public:
     else {
       // Approximately solve trust region subproblem using double dogleg curve
       if (sNnorm <= del) {        // Use the quasi-Newton step
-        s.set(*sN); 
+        s.set(*s_); 
         snorm = sNnorm;
         this->pRed_ = -0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
-        Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-        pObj.reducedHessVec(*Bg,grad,x,grad,x,tol);
+        pObj.reducedHessVec(*Hp_,grad,x,grad,x,tol);
         Real alpha  = 0.0;
         Real beta   = 0.0;
         Real gnorm2 = gnorm*gnorm;
-        Real gBg    = grad.dot(*Bg);
+        Real gBg    = grad.dot(*Hp_);
         Real gamma  = gnorm2/gBg;
         if ( gamma*gnorm >= del || gBg <= 0.0 ) {
             alpha = 0.0;
@@ -609,7 +632,7 @@ public:
           beta   = gamma*(1.0-alpha);
           s.set(grad);
           s.scale(-beta);
-          s.axpy(alpha,*sN);
+          s.axpy(alpha,*s_);
           snorm = del;
           iflag = 1;
         }
@@ -623,11 +646,10 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute quasi-Newton step
-    Teuchos::RCP<Vector<Real> > sN = x.clone();
-    pObj.reducedInvHessVec(*sN,grad,x,grad,x,tol);
-    sN->scale(-1.0);
-    Real sNnorm = sN->norm();
-    Real tmp    = grad.dot(*sN);
+    pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
+    s_->scale(-1.0);
+    Real sNnorm = s_->norm();
+    Real tmp    = grad.dot(*s_);
     bool negCurv = false;
     if ( tmp >= 0.0 ) {
       negCurv = true;
@@ -641,25 +663,24 @@ public:
     else {
       // Approximately solve trust region subproblem using double dogleg curve
       if (sNnorm <= del) {        // Use the quasi-Newton step
-        s.set(*sN); 
+        s.set(*s_); 
         snorm = sNnorm;
         this->pRed_ = 0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
-        Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-        pObj.reducedHessVec(*Bg,grad,x,grad,x,tol);
+        pObj.reducedHessVec(*Hp_,grad,x,grad,x,tol);
         Real alpha  = 0.0;
         Real beta   = 0.0;
         Real gnorm2 = gnorm*gnorm;
-        Real gBg    = grad.dot(*Bg);
+        Real gBg    = grad.dot(*Hp_);
         Real gamma1 = gnorm/gBg;
         Real gamma2 = gnorm/gsN;
         Real eta    = 0.8*gamma1*gamma2 + 0.2;
         if (eta*sNnorm <= del || gBg <= 0.0) { // Dogleg Point is inside trust region
           alpha = del/sNnorm;
           beta  = 0.0;
-          s.set(*sN);
+          s.set(*s_);
           s.scale(alpha);
           snorm = del;
           iflag = 1;
@@ -676,15 +697,14 @@ public:
           else {              // Find convex combination of Cauchy and Dogleg point
             s.set(grad);
             s.scale(-gamma1*gnorm);
-            Teuchos::RCP<Vector<Real> > w = x.clone(); 
-            w->set(s);
-            w->scale(-1.0);
-            w->axpy(eta,*sN);
-            Real wNorm = w->dot(*w);
+            v_->set(s);
+            v_->scale(-1.0);
+            v_->axpy(eta,*s_);
+            Real wNorm = v_->dot(*v_);
             Real sigma = del*del-std::pow(gamma1*gnorm,2.0);
-            Real phi   = s.dot(*w);
+            Real phi   = s.dot(*v_);
             Real theta = (-phi + std::sqrt(phi*phi+wNorm*sigma))/wNorm;
-            s.axpy(theta,*w); 
+            s.axpy(theta,*v_); 
             snorm = del;
             alpha = theta*eta;
             beta  = (1.0-theta)*(-gamma1*gnorm);
@@ -699,9 +719,8 @@ public:
   void cauchypoint_unc( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                         const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
-    Teuchos::RCP<Vector<Real> > Bg = x.clone();
-    pObj.hessVec(*Bg,grad,x,tol);
-    Real gBg = Bg->dot(grad);
+    pObj.hessVec(*Hp_,grad,x,tol);
+    Real gBg = Hp_->dot(grad);
     Real tau = 1.0;
     if ( gBg > 0.0 ) {
       tau = std::min(1.0, gnorm*gnorm*gnorm/gBg);
@@ -740,10 +759,9 @@ public:
     s.scale(-alpha);
     pObj.computeProjectedStep(s,x);
     snorm = s.norm();
-    Teuchos::RCP<Vector<Real> > Hs = x.clone();
-    pObj.hessVec(*Hs,s,x,tol);
+    pObj.hessVec(*Hp_,s,x,tol);
     Real gs   = grad.dot(s);
-    Real val  = gs + 0.5*Hs->dot(s);
+    Real val  = gs + 0.5*Hp_->dot(s);
     Real val0 = val;
 
     // Determine whether to increase or decrease alpha
@@ -769,9 +787,9 @@ public:
       s.scale(-alpha);
       pObj.computeProjectedStep(s,x);
       snorm = s.norm();
-      pObj.hessVec(*Hs,s,x,tol);
+      pObj.hessVec(*Hp_,s,x,tol);
       gs    = grad.dot(s);
-      val   = gs + 0.5*Hs->dot(s);
+      val   = gs + 0.5*Hp_->dot(s);
 
       // Update termination criterion
       if ( decr ) {
@@ -816,27 +834,24 @@ public:
     Real c3        = 0.9;
     Real c4        = 0.25;
     Real pgnorm    = 0.0;
-    Teuchos::RCP<Vector<Real> > gnew = x.clone();
-    Teuchos::RCP<Vector<Real> > p    = x.clone();
-    Teuchos::RCP<Vector<Real> > Bs   = x.clone();
     for ( int i = 0; i < maxit; i++ ) {
       // Compute p = x + s = P(x - t*g)
-      p->set(x);
-      p->axpy(-t,grad); 
-      pObj.project(*p);
+      p_->set(x);
+      p_->axpy(-t,grad); 
+      pObj.project(*p_);
       // Compute s = p - x = P(x - t*g) - x
-      s.set(*p);
+      s.set(*p_);
       s.axpy(-1.0,x);
       snorm = s.norm();
       // Evaluate Model
-      pObj.hessVec(*Bs,s,x,tol);
+      pObj.hessVec(*Hp_,s,x,tol);
       gs = grad.dot(s);
-      this->pRed_ = -gs - 0.5*Bs->dot(s);
+      this->pRed_ = -gs - 0.5*Hp_->dot(s);
 
       // Check Stopping Conditions
-      gnew->set(grad);
-      pObj.pruneActive(*gnew,grad,*p); // Project gradient onto tangent cone at p
-      pgnorm = gnew->norm();
+      g_->set(grad);
+      pObj.pruneActive(*g_,grad,*p_); // Project gradient onto tangent cone at p
+      pgnorm = g_->norm();
       if ( snorm > del || this->pRed_ < -c2*gs ) {
         tmax = t;
         tmax_flag = false;

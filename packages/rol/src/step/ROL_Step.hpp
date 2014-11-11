@@ -96,6 +96,7 @@ public:
     algo_state.value = obj.value(x,tol);
     algo_state.nfval++;
     obj.gradient(*(state_->gradientVec),x,tol);
+    algo_state.ngrad++;
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
       xnew->set(x);
@@ -107,7 +108,6 @@ public:
     else {
       algo_state.gnorm = (state_->gradientVec)->norm();
     }
-    algo_state.ngrad++;
   }
 
   /** \brief Initialize step with equality constraint.
