@@ -689,7 +689,6 @@ typedef Sacado::ELRCacheFad::DFad<double> ELRCacheDFadType;
 typedef Sacado::ELRCacheFad::SLFad<double,2*global_fad_size> ELRCacheSLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
 
-/*
 // We can't use DFad unless we use the View specialization
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 #define VIEW_FAD_TESTS_D( D )                           \
@@ -715,13 +714,4 @@ typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
   VIEW_FAD_TESTS_FD( CacheSLFadType, D )             \
   VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )           \
   VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )
-#endif
-*/
-
-// We can't use DFad unless we use the View specialization
-#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-#define VIEW_FAD_TESTS_D( D )                           \
-  VIEW_FAD_TESTS_FD( DFadType, D )
-#else
-#define VIEW_FAD_TESTS_D( D )
 #endif
