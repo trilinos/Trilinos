@@ -1,4 +1,5 @@
 /*
+//@HEADER
 // ************************************************************************
 // 
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
@@ -37,34 +38,30 @@
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
+//@HEADER
 */
 
 #include <Kokkos_Core.hpp>
-#include <HexElement.hpp>
-#include <fenl_impl.hpp>
+
+#if defined( KOKKOS_HAVE_CUDA )
+
+#include <feint.hpp>
 
 namespace Kokkos {
 namespace Example {
-namespace FENL {
 
-template
-Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
-  MPI_Comm comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
+template void feint<Kokkos::Cuda,false>(
+  const unsigned global_elem_nx ,
+  const unsigned global_elem_ny ,
+  const unsigned global_elem_nz );
 
+template void feint<Kokkos::Cuda,true>(
+  const unsigned global_elem_nx ,
+  const unsigned global_elem_ny ,
+  const unsigned global_elem_nz );
 
-template
-Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemQuadratic >(
-  MPI_Comm comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
-
-} /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
+
+#endif
 

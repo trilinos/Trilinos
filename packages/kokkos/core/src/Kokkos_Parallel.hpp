@@ -54,7 +54,7 @@
 
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_ReductionAdapter.hpp>
+/* #include <impl/Kokkos_ReductionAdapter.hpp> */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
