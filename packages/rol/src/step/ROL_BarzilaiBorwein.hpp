@@ -64,7 +64,7 @@ public:
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    Hv.set(v);
+    Hv.set(v.dual());
     if ( state->iter != 0 && state->current != -1 ) {
       if ( type_ == 1 ) {
         Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
@@ -82,7 +82,7 @@ public:
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    Bv.set(v);
+    Bv.set(v.dual());
     if ( state->iter != 0 && state->current != -1 ) {
       if ( type_ == 1 ) {
         Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
