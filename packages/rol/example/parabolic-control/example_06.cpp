@@ -127,7 +127,7 @@ private:
     o.resize(nx_-1,dx_/6.0 - dt_*eps1_/dx_);
     // Contribution from nonlinearity
     Real phi1 = 0.0, phi2 = 0.0, f = 0.0, x = 0.0, w = 0.0;
-    for (int i=0; i<nx_; i++) {
+    for (unsigned i=0; i<nx_; i++) {
       if (i<nx_-1) {
         for (int j=0; j<4; j++) {
           x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i+1);
@@ -194,7 +194,7 @@ private:
 
   void apply_control_jacobian(std::vector<Real> &jv, const std::vector<Real> &v, bool adjoint = false) {
     jv.clear();
-    int dim = ((adjoint == true) ? nx_+2 : nx_);
+    unsigned dim = ((adjoint == true) ? nx_+2 : nx_);
     jv.resize(dim,0.0);
     for (unsigned n = 0; n < dim; n++) {
       if ( adjoint ) {
@@ -731,7 +731,7 @@ private:
 /***************************************************************/
   Real dot(const std::vector<Real> &x, const std::vector<Real> &y) {
     Real ip = 0.0;
-    Real c = (((int)x.size()==nx_) ? 4.0 : 2.0);
+    Real c = ((x.size()==nx_) ? 4.0 : 2.0);
     for (unsigned i=0; i<x.size(); i++) {
       if ( i == 0 ) {
         ip += dx_/6.0*(c*x[i] + x[i+1])*y[i];
@@ -748,7 +748,7 @@ private:
 
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) {
     Mu.resize(u.size(),0.0);
-    Real c = (((int)u.size()==nx_) ? 4.0 : 2.0);
+    Real c = ((u.size()==nx_) ? 4.0 : 2.0);
     for (unsigned i=0; i<u.size(); i++) {
       if ( i == 0 ) {
         Mu[i] = dx_/6.0*(c*u[i] + u[i+1]);

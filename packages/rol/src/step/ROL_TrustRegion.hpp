@@ -619,7 +619,7 @@ public:
         if ( gamma*gnorm >= del || gBg <= 0.0 ) {
             alpha = 0.0;
             beta  = del/gnorm;
-            s.set(grad); 
+            s.set(grad.dual()); 
             s.scale(-beta); 
             snorm = del;
             iflag = 2;
@@ -630,7 +630,7 @@ public:
           Real c = gamma*gamma*gnorm2 - del*del;
           alpha  = (-b + sqrt(b*b - a*c))/a;
           beta   = gamma*(1.0-alpha);
-          s.set(grad);
+          s.set(grad.dual());
           s.scale(-beta);
           s.axpy(alpha,*s_);
           snorm = del;
@@ -649,7 +649,7 @@ public:
     pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
     s_->scale(-1.0);
     Real sNnorm = s_->norm();
-    Real tmp    = grad.dot(*s_);
+    Real tmp    = s_->dot(grad.dual());
     bool negCurv = false;
     if ( tmp >= 0.0 ) {
       negCurv = true;
@@ -689,13 +689,13 @@ public:
           if (gnorm2*gamma1 >= del) { // Cauchy Point is outside trust region
             alpha = 0.0;
             beta  = -del/gnorm;
-            s.set(grad); 
+            s.set(grad.dual()); 
             s.scale(beta); 
             snorm = del;
             iflag = 2;
           }
           else {              // Find convex combination of Cauchy and Dogleg point
-            s.set(grad);
+            s.set(grad.dual());
             s.scale(-gamma1*gnorm);
             v_->set(s);
             v_->scale(-1.0);
@@ -719,14 +719,14 @@ public:
   void cauchypoint_unc( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                         const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
-    pObj.hessVec(*Hp_,grad,x,tol);
+    pObj.hessVec(*Hp_,grad.dual(),x,tol);
     Real gBg = Hp_->dot(grad);
     Real tau = 1.0;
     if ( gBg > 0.0 ) {
       tau = std::min(1.0, gnorm*gnorm*gnorm/gBg);
     }
 
-    s.set(grad);
+    s.set(grad.dual());
     s.scale(-tau*del/gnorm);
     snorm = tau*del;
     iflag = 0;
@@ -755,13 +755,13 @@ public:
     Real alphamax = 1.e4*alpha;
     
     // Initial model value
-    s.set(grad);
+    s.set(grad.dual());
     s.scale(-alpha);
     pObj.computeProjectedStep(s,x);
     snorm = s.norm();
     pObj.hessVec(*Hp_,s,x,tol);
-    Real gs   = grad.dot(s);
-    Real val  = gs + 0.5*Hp_->dot(s);
+    Real gs   = s.dot(grad.dual());
+    Real val  = gs + 0.5*s.dot(Hp_->dual());
     Real val0 = val;
 
     // Determine whether to increase or decrease alpha
@@ -783,13 +783,13 @@ public:
       alpha *= (beta1+beta2)*0.5;
   
       // Update model value
-      s.set(grad);
+      s.set(grad.dual());
       s.scale(-alpha);
       pObj.computeProjectedStep(s,x);
       snorm = s.norm();
       pObj.hessVec(*Hp_,s,x,tol);
-      gs    = grad.dot(s);
-      val   = gs + 0.5*Hp_->dot(s);
+      gs    = s.dot(grad.dual());
+      val   = gs + 0.5*s.dot(Hp_->dual());
 
       // Update termination criterion
       if ( decr ) {
@@ -811,7 +811,7 @@ public:
     // Reset to last 'successful' step
     val   = val0;
     alpha = alpha0;
-    s.set(grad);
+    s.set(grad.dual());
     s.scale(-alpha);
     pObj.computeProjectedStep(s,x);
     snorm = s.norm();
@@ -837,7 +837,7 @@ public:
     for ( int i = 0; i < maxit; i++ ) {
       // Compute p = x + s = P(x - t*g)
       p_->set(x);
-      p_->axpy(-t,grad); 
+      p_->axpy(-t,grad.dual()); 
       pObj.project(*p_);
       // Compute s = p - x = P(x - t*g) - x
       s.set(*p_);
@@ -845,8 +845,8 @@ public:
       snorm = s.norm();
       // Evaluate Model
       pObj.hessVec(*Hp_,s,x,tol);
-      gs = grad.dot(s);
-      pRed_ = -gs - 0.5*Hp_->dot(s);
+      gs = s.dot(grad.dual());
+      pRed_ = -gs - 0.5*s.dot(Hp_->dual());
 
       // Check Stopping Conditions
       g_->set(grad);
