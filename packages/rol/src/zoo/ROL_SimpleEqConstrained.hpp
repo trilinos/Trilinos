@@ -57,6 +57,7 @@
 #include "Teuchos_SerialDenseSolver.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /*** Declare three vector spaces. ***/
 
@@ -693,6 +694,7 @@ namespace ROL {
     (*solp)[4] = -7.636430781841294e-01;
   }
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif
