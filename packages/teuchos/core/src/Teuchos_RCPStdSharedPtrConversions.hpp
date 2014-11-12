@@ -39,21 +39,21 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_HPP
-#define TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_HPP
+#ifndef TEUCHOS_RCP_STD_SHAREDPTR_CONVERSIONS_HPP
+#define TEUCHOS_RCP_STD_SHAREDPTR_CONVERSIONS_HPP
 
-#include "Teuchos_RCPBoostSharedPtrConversionsDecl.hpp"
+#include "Teuchos_RCPStdSharedPtrConversionsDecl.hpp"
 #include "Teuchos_RCP.hpp"
 
 
 template<class T>
 Teuchos::RCP<T>
-Teuchos::rcp( const boost::shared_ptr<T> &sptr )
+Teuchos::rcp( const std::shared_ptr<T> &sptr )
 {
-  if (nonnull(sptr)) {
+  if (sptr.get()) {
     // First, see if the RCP is in the shared_ptr deleter object
-    const RCPDeleter<T>
-      *rcpd = boost::get_deleter<RCPDeleter<T> >(sptr);
+    const StdSharedPtrRCPDeleter<T>
+      *rcpd = std::get_deleter<StdSharedPtrRCPDeleter<T> >(sptr);
     if (rcpd) {
       return rcpd->ptr();
     }
@@ -67,25 +67,26 @@ Teuchos::rcp( const boost::shared_ptr<T> &sptr )
     }
 #endif
     // Lastly, we just create a new RCP and RCPNode ...
-    return rcpWithDealloc(sptr.get(), DeallocBoostSharedPtr<T>(sptr), true);
+    return rcpWithDealloc(sptr.get(), DeallocStdSharedPtr<T>(sptr), true);
   }
   return null;
 }
 
 
 template<class T>
-boost::shared_ptr<T>
-Teuchos::shared_pointer( const RCP<T> &rcp )
+std::shared_ptr<T>
+Teuchos::get_shared_ptr( const RCP<T> &rcp )
 {
   if (nonnull(rcp)) {
-    Ptr<const DeallocBoostSharedPtr<T> >
-      dbsp = get_optional_dealloc<DeallocBoostSharedPtr<T> >(rcp);
-    if (nonnull(dbsp))
+    Ptr<const DeallocStdSharedPtr<T> >
+      dbsp = get_optional_dealloc<DeallocStdSharedPtr<T> >(rcp);
+    if (nonnull(dbsp)) {
       return dbsp->ptr();
-    return boost::shared_ptr<T>(rcp.get(), RCPDeleter<T>(rcp));
+    }
+    return std::shared_ptr<T>(rcp.get(), StdSharedPtrRCPDeleter<T>(rcp));
   }
-  return boost::shared_ptr<T>();
+  return std::shared_ptr<T>();
 }
 
 
-#endif	// TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_HPP
+#endif	// TEUCHOS_RCP_STD_SHAREDPTR_CONVERSIONS_HPP

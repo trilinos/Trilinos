@@ -47,6 +47,9 @@
 #ifdef HAVE_TEUCHOS_BOOST
 #  include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 #endif
+#ifdef HAVE_TEUCHOSCORE_CXX11
+#  include "Teuchos_RCPStdSharedPtrConversions.hpp"
+#endif
 
 #include "TestClasses.hpp"
 
@@ -498,24 +501,6 @@ TEUCHOS_UNIT_TEST( RCP, nonnull )
 }
 
 
-#ifdef HAVE_TEUCHOS_BOOST
-
-
-TEUCHOS_UNIT_TEST( shared_ptr, nonnull )
-{
-  using boost::shared_ptr;
-  ECHO(shared_ptr<A> a_sptr(new A));
-  TEST_EQUALITY_CONST(is_null(a_sptr), false);
-  TEST_EQUALITY_CONST(nonnull(a_sptr), true);
-  ECHO(a_sptr = shared_ptr<A>());
-  TEST_EQUALITY_CONST(is_null(a_sptr), true);
-  TEST_EQUALITY_CONST(nonnull(a_sptr), false);
-}
-
-
-#endif // HAVE_TEUCHOS_BOOST
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
 {
 
@@ -936,6 +921,129 @@ TEUCHOS_UNIT_TEST( RCP, Fix_createRCPWithBadDealloc )
   set_extra_data( DeallocArrayDeleteExtraData<A>::create(a.getRawPtr()), "dealloc",
     inOutArg(a));
 }
+
+
+//
+// Test RCP/boost::shared_ptr covnersions
+//
+
+
+#ifdef HAVE_TEUCHOS_BOOST
+
+
+TEUCHOS_UNIT_TEST( boost_shared_ptr, nonnull_is_null )
+{
+  using boost::shared_ptr;
+  ECHO(shared_ptr<A> a_sptr(new A));
+  TEST_EQUALITY_CONST(is_null(a_sptr), false);
+  TEST_EQUALITY_CONST(nonnull(a_sptr), true);
+  ECHO(a_sptr = shared_ptr<A>());
+  TEST_EQUALITY_CONST(is_null(a_sptr), true);
+  TEST_EQUALITY_CONST(nonnull(a_sptr), false);
+}
+
+
+#endif // HAVE_TEUCHOS_BOOST
+
+
+//
+// Test RCP/std::shared_ptr covnersions
+//
+
+
+#ifdef HAVE_TEUCHOSCORE_CXX11
+
+
+TEUCHOS_UNIT_TEST( std_shared_ptr, nonnull_is_null )
+{
+  using std::shared_ptr;
+  ECHO(shared_ptr<A> a_sptr(new A));
+  TEST_EQUALITY_CONST(Teuchos::is_null(a_sptr), false);
+  TEST_EQUALITY_CONST(Teuchos::nonnull(a_sptr), true);
+  ECHO(a_sptr = shared_ptr<A>());
+  TEST_EQUALITY_CONST(Teuchos::is_null(a_sptr), true);
+  TEST_EQUALITY_CONST(Teuchos::nonnull(a_sptr), false);
+}
+
+
+TEUCHOS_UNIT_TEST( std_shared_ptr, convert_to_RCP_null )
+{
+  const std::shared_ptr<A> a_sptr1;
+  const RCP<A> a_rsptr1 = rcp(a_sptr1);
+  TEST_EQUALITY( a_rsptr1.get(), a_sptr1.get() );
+  TEST_ASSERT(is_null(a_rsptr1));
+  
+  const std::shared_ptr<A> a_sptr2 = get_shared_ptr(a_rsptr1);
+  TEST_EQUALITY( a_sptr1.get(), a_sptr1.get() );
+  TEST_ASSERT(Teuchos::is_null(a_sptr2));
+}
+
+
+TEUCHOS_UNIT_TEST( std_shared_ptr, convert_to_RCP )
+{
+  const std::shared_ptr<A> a_sptr1(new C());
+  const RCP<A> a_rsptr1 = rcp(a_sptr1);
+  TEST_EQUALITY( a_rsptr1.get(), a_sptr1.get() );
+  TEST_EQUALITY( a_rsptr1.getRawPtr(), a_sptr1.get() );
+  TEST_EQUALITY( a_rsptr1.get(), a_rsptr1.getRawPtr() );
+
+  const std::shared_ptr<A> a_sptr2 = get_shared_ptr(a_rsptr1);
+  TEST_EQUALITY( a_sptr1.get(), a_sptr1.get() );
+  // NOTE: There is no portable way to check that two std::shared_ptr objects
+  // share the same underlying shared node :-(
+}
+
+
+TEUCHOS_UNIT_TEST( std_shared_ptr, convert_from_RCP_null )
+{
+  const RCP<A> a_rcp1;
+  const std::shared_ptr<A> a_sptr1(get_shared_ptr(a_rcp1));
+  TEST_EQUALITY( a_rcp1.get(), a_sptr1.get() );
+  TEST_ASSERT(Teuchos::is_null(a_sptr1));
+
+  const RCP<A> a_rcp2 = rcp(a_sptr1);
+  TEST_EQUALITY(a_rcp2.get(), a_sptr1.get());
+  TEST_ASSERT(is_null(a_rcp2));
+}
+
+
+TEUCHOS_UNIT_TEST( std_shared_ptr, convert_from_RCP )
+{
+  const RCP<A> a_rcp1(new C());
+  const std::shared_ptr<A> a_sptr1(get_shared_ptr(a_rcp1));
+  TEST_EQUALITY( a_rcp1.get(), a_sptr1.get() );
+  TEST_EQUALITY( a_rcp1.getRawPtr(), a_sptr1.get() );
+  TEST_EQUALITY( a_sptr1.get(), a_rcp1.getRawPtr() );
+
+  const RCP<A> a_rcp2 = rcp(a_sptr1);
+  TEST_EQUALITY( a_rcp2.get(), a_sptr1.get() );
+  TEST_EQUALITY( a_rcp2.get(), a_rcp1.get() );
+  TEST_ASSERT( a_rcp1.shares_resource(a_rcp2) );
+}
+
+
+#ifdef TEUCHOS_DEBUG
+
+
+TEUCHOS_UNIT_TEST( std_shared_ptr, convert_from_RCP_lookup_node )
+{
+  const RCP<A> a_rcp1(new C());
+  const std::shared_ptr<A> a_sptr1(get_shared_ptr(a_rcp1));
+  TEST_EQUALITY( a_sptr1.get(), a_rcp1.get() );
+
+  const RCP<C> c_rcp1 = rcp(std::dynamic_pointer_cast<C>(a_sptr1));
+  TEST_EQUALITY( c_rcp1.get(), a_rcp1.get() );
+  TEST_ASSERT( c_rcp1.shares_resource(a_rcp1) );
+  // NOTE: The above test shows how Teuchos::RCP machinery will automatically
+  // look up the underlying RCPNode object and use it!
+}
+
+
+#endif // TEUCHOS_DEBUG
+
+
+#endif // HAVE_TEUCHOSCORE_CXX11
+
 
 
 //
