@@ -61,35 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to Vector types
-  template <typename S>
-  struct Promote< MP::Vector<S>,
-                  MP::Vector<S> > {
-    typedef MP::Vector<S> type;
-  };
-  template <typename S>
-  struct Promote< MP::Vector<S>,
-                  typename MP::Vector<S>::value_type > {
-    typedef MP::Vector<S> type;
-  };
-  template <typename S>
-  struct Promote< typename MP::Vector<S>::value_type,
-                  MP::Vector<S> > {
-    typedef MP::Vector<S> type;
-  };
-  template <typename S>
-  struct Promote< MP::Vector<S>,
-                  typename dummy< typename MP::Vector<S>::value_type,
-                                  typename MP::Vector<S>::scalar_type
-                                  >::type > {
-    typedef MP::Vector<S> type;
-  };
-  template <typename S>
-  struct Promote< typename dummy< typename MP::Vector<S>::value_type,
-                                  typename MP::Vector<S>::scalar_type
-                                  >::type,
-                  MP::Vector<S> > {
-    typedef MP::Vector<S> type;
-  };
+  SACADO_AD_PROMOTE_SPEC( MP, Vector )
 
   //! Specialization of %ScalarType to Vector types
   template <typename S>

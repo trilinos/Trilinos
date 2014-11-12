@@ -61,7 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to ScalarFlopCounter types
-  SACADO_AD_PROMOTE_SPEC( FlopCounterPack::ScalarFlopCounter )
+  SACADO_AD_PROMOTE_SPEC( FlopCounterPack, ScalarFlopCounter )
 
   //! Specialization of %ScalarType to ScalarFlopCounter types
   template <typename ScalarT>

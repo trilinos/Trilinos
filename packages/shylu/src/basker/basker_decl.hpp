@@ -13,13 +13,13 @@ namespace Basker{
     Basker();
     Basker(Int nnzL, Int nnzU);
     ~Basker();
-    int preorder(Int *perm);
+    int preorder(Int *row_perm, Int *col_perm);
     int factor(Int nrow, Int ncol , Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
     int returnL(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val);
     int returnU(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val);
     int returnP(Int **p);
     int solve(Entry *b, Entry *x);
-    int solveMultiple(Int nrhs , Entry **b, Entry **x);
+    int solveMultiple(Int nrhs, Entry **b, Entry **x);
     //int solve();
     
   private:
@@ -36,14 +36,19 @@ namespace Basker{
 		   Int *stack
 		   );
     void free_factor();
+    void free_perm_matrix();
     int low_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val,  Entry *x, Entry *b); 
     int up_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val, Entry *x, Entry *b); 
+    int permute_row(Int *p, basker_matrix<Int,Entry> *B);
+    int permute_column(Int *p, basker_matrix<Int, Entry> *B);
+    int sort_factors();
     basker_matrix<Int, Entry> *A;
     basker_matrix<Int, Entry> *L;
     basker_matrix<Int, Entry> *U;
     Int *in_perm;
     Int *pinv;
     bool been_fact;
+    bool perm_flag;
 
   };
 

@@ -55,35 +55,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to PCE types
-  template <typename S>
-  struct Promote< UQ::PCE<S>,
-                  UQ::PCE<S> > {
-    typedef UQ::PCE<S> type;
-  };
-  template <typename S>
-  struct Promote< UQ::PCE<S>,
-                  typename UQ::PCE<S>::value_type > {
-    typedef UQ::PCE<S> type;
-  };
-  template <typename S>
-  struct Promote< typename UQ::PCE<S>::value_type,
-                  UQ::PCE<S> > {
-    typedef UQ::PCE<S> type;
-  };
-  template <typename S>
-  struct Promote< UQ::PCE<S>,
-                  typename dummy< typename UQ::PCE<S>::value_type,
-                                  typename UQ::PCE<S>::scalar_type
-                                  >::type > {
-    typedef UQ::PCE<S> type;
-  };
-  template <typename S>
-  struct Promote< typename dummy< typename UQ::PCE<S>::value_type,
-                                  typename UQ::PCE<S>::scalar_type
-                                  >::type,
-                  UQ::PCE<S> > {
-    typedef UQ::PCE<S> type;
-  };
+  SACADO_AD_PROMOTE_SPEC( UQ, PCE )
 
   //! Specialization of %ScalarType to PCE types
   template <typename S>

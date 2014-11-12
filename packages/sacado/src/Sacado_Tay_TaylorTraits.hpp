@@ -42,7 +42,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to Taylor types
-  SACADO_AD_PROMOTE_SPEC( Tay::Taylor )
+  SACADO_AD_PROMOTE_SPEC( Tay, Taylor )
 
   //! Specialization of %ScalarType to Taylor types
   template <typename T>

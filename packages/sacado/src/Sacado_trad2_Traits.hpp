@@ -43,7 +43,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to ADvar types
-   SACADO_AD_PROMOTE_SPEC( Rad2::ADvar )
+  SACADO_RAD_PROMOTE_SPEC( Rad2 )
 
   //! Specialization of %ScalarType to ADvar types
   template <typename T>
