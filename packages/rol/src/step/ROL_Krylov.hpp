@@ -58,11 +58,11 @@ template<class Real>
 class Krylov {
 
   bool isInitialized_;
-  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> > r_;
   Teuchos::RCP<Vector<Real> > v_;
   Teuchos::RCP<Vector<Real> > p_;
-  Teuchos::RCP<Vector<Real> > Hp_;
-  Teuchos::RCP<Vector<Real> > MHp_;
+  Teuchos::RCP<Vector<Real> > Ap_;
+  Teuchos::RCP<Vector<Real> > MAp_;
 
   EKrylov ekv_;
 
@@ -90,10 +90,10 @@ public:
   void CG( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
            int &iter, int &flag ) {
     if ( !isInitialized_ ) {
-      g_  = b.clone();
+      r_  = b.clone();
       v_  = x.clone();
       p_  = x.clone(); 
-      Hp_ = b.clone();
+      Ap_ = b.clone();
       isInitialized_ = true;
     }
 
@@ -102,10 +102,10 @@ public:
     Real itol = 0.0;
 
     x.zero(); 
-    g_->set(b); 
+    r_->set(b); 
 
     itol = 0.0;
-    M.apply(*v_, *g_, itol);
+    M.apply(*v_, *r_, itol);
     p_->set(*v_); 
 
     iter = 0; 
@@ -115,15 +115,15 @@ public:
     Real beta  = 0.0; 
     Real alpha = 0.0; 
     Real tmp   = 0.0;
-    Real gv    = v_->dot(*g_); 
+    Real gv    = v_->dot(r_->dual()); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
       if ( this->useInexact_ ) {
         itol = rtol/(this->maxit_ * rnorm); 
       }
-      A.apply(*Hp_, *p_, itol);
+      A.apply(*Ap_, *p_, itol);
 
-      kappa = p_->dot(*Hp_);
+      kappa = p_->dot(Ap_->dual());
       if ( kappa <= 0.0 ) { 
         flag = 2;
         break;
@@ -132,16 +132,16 @@ public:
 
       x.axpy(alpha,*p_);
 
-      g_->axpy(-alpha,*Hp_);
-      rnorm = g_->norm();
+      r_->axpy(-alpha,*Ap_);
+      rnorm = r_->norm();
       if ( rnorm < rtol ) {
         break;
       }
 
       itol = 0.0;
-      M.apply(*v_, *g_, itol);
+      M.apply(*v_, *r_, itol);
       tmp  = gv;         
-      gv   = v_->dot(*g_); 
+      gv   = v_->dot(r_->dual()); 
       beta = gv/tmp;
  
       p_->scale(beta);
@@ -159,11 +159,11 @@ public:
   void CR( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
            int &iter, int &flag ) {
     if ( !isInitialized_ ) {
-      g_ = b.clone();
-      v_ = x.clone();
-      p_ = x.clone();
-      Hp_ = b.clone();
-      MHp_ = b.clone();
+      r_   = x.clone();
+      v_   = b.clone();
+      p_   = x.clone();
+      Ap_  = b.clone();
+      MAp_ = x.clone();
       isInitialized_ = true;
     }
 
@@ -175,10 +175,10 @@ public:
 
     // Apply preconditioner to residual
     itol = 0.0;
-    M.apply(*g_,b,itol);
+    M.apply(*r_,b,itol);
 
     // Initialize direction p
-    p_->set(*g_); 
+    p_->set(*r_); 
 
     // Get Hessian tolerance
     if ( this->useInexact_ ) {
@@ -186,11 +186,11 @@ public:
     }
 
     // Apply Hessian to residual
-    A.apply(*v_, *g_, itol);
+    A.apply(*v_, *r_, itol);
 
     // Apply Hessian to direction p
-    //A.apply(*Hp_, *p_, itol);
-    Hp_->set(*v_);
+    //A.apply(*Ap_, *p_, itol);
+    Ap_->set(*v_);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -199,12 +199,12 @@ public:
     Real beta  = 0.0; 
     Real alpha = 0.0; 
     Real tmp   = 0.0;
-    Real gHg   = g_->dot(*v_); 
+    Real gHg   = r_->dot(v_->dual()); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
       itol = 0.0;
-      M.apply(*MHp_, *Hp_, itol);
-      kappa = Hp_->dot(*MHp_);
+      M.apply(*MAp_, *Ap_, itol);
+      kappa = MAp_->dot(Ap_->dual());
       //if ( gHg <= 0.0 || kappa <= 0.0 ) { 
         //flag = 2;
         //break;
@@ -213,8 +213,8 @@ public:
 
       x.axpy(alpha,*p_);
 
-      g_->axpy(-alpha,*MHp_);
-      rnorm = g_->norm();
+      r_->axpy(-alpha,*MAp_);
+      rnorm = r_->norm();
       if ( rnorm < rtol ) {
         break;
       }
@@ -222,16 +222,16 @@ public:
       if ( this->useInexact_ ) {
         itol = rtol/(this->maxit_ * rnorm); 
       }
-      A.apply(*v_, *g_, itol);
+      A.apply(*v_, *r_, itol);
       tmp  = gHg;
-      gHg  = g_->dot(*v_);
+      gHg  = r_->dot(v_->dual());
       beta = gHg/tmp;
 
       p_->scale(beta);
-      p_->axpy(1.0,*g_);
+      p_->axpy(1.0,*r_);
 
-      Hp_->scale(beta);
-      Hp_->axpy(1.0,*v_); 
+      Ap_->scale(beta);
+      Ap_->axpy(1.0,*v_); 
     }
     if ( iter == this->maxit_ ) {
       flag = 1;
@@ -255,10 +255,10 @@ public:
   void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
            ProjectedObjective<Real> &pObj ) {
     if ( !isInitialized_ ) {
-      g_  = g.clone();
+      r_  = g.clone();
       v_  = x.clone();
       p_  = x.clone(); 
-      Hp_ = g.clone();
+      Ap_ = g.clone();
       isInitialized_ = true;
     }
 
@@ -267,10 +267,10 @@ public:
     Real itol = 0.0;
 
     s.zero(); 
-    g_->set(g); 
+    r_->set(g); 
 
     itol = 0.0;
-    pObj.reducedPrecond(*v_, *g_, x, g, x, itol);
+    pObj.reducedPrecond(*v_, *r_, x, g, x, itol);
     p_->set(*v_); 
 
     iter = 0; 
@@ -280,15 +280,15 @@ public:
     Real beta  = 0.0; 
     Real alpha = 0.0; 
     Real tmp   = 0.0;
-    Real gv    = v_->dot(*g_); 
+    Real gv    = v_->dot(r_->dual()); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      pObj.reducedHessVec(*Hp_, *p_, x, g, x, itol);
+      pObj.reducedHessVec(*Ap_, *p_, x, g, x, itol);
 
-      kappa = p_->dot(*Hp_);
+      kappa = p_->dot(Ap_->dual());
       if ( kappa <= 0.0 ) { 
         flag = 2;
         break;
@@ -297,16 +297,16 @@ public:
 
       s.axpy(alpha,*p_);
 
-      g_->axpy(-alpha,*Hp_);
-      gnorm = g_->norm();
+      r_->axpy(-alpha,*Ap_);
+      gnorm = r_->norm();
       if ( gnorm < gtol ) {
         break;
       }
 
       itol = 0.0;
-      pObj.reducedPrecond(*v_, *g_, x, g, x, itol);
+      pObj.reducedPrecond(*v_, *r_, x, g, x, itol);
       tmp  = gv;         
-      gv   = v_->dot(*g_); 
+      gv   = v_->dot(r_->dual()); 
       beta = gv/tmp;
  
       p_->scale(beta);
@@ -324,11 +324,11 @@ public:
   void CR( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
            ProjectedObjective<Real> &pObj ) {
     if ( !isInitialized_ ) {
-      g_ = g.clone();
+      r_ = g.clone();
       v_ = x.clone();
       p_ = x.clone();
-      Hp_ = g.clone();
-      MHp_ = g.clone();
+      Ap_ = g.clone();
+      MAp_ = x.clone();
       isInitialized_ = true;
     }
 
@@ -351,10 +351,10 @@ public:
     }
 
     // Apply Hessian to residual
-    pObj.reducedHessVec(*g_, *v_, x, g, x, itol);
+    pObj.reducedHessVec(*r_, *v_, x, g, x, itol);
 
     // Apply Hessian to direction p
-    pObj.reducedHessVec(*Hp_, *p_, x, g, x, itol);
+    pObj.reducedHessVec(*Ap_, *p_, x, g, x, itol);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -363,12 +363,12 @@ public:
     Real beta  = 0.0; 
     Real alpha = 0.0; 
     Real tmp   = 0.0;
-    Real vHv   = g_->dot(*v_); 
+    Real vHv   = v_->dot(r_->dual()); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
       itol = 0.0;
-      pObj.reducedPrecond(*MHp_, *Hp_, x, g, x, itol);
-      kappa = Hp_->dot(*MHp_);
+      pObj.reducedPrecond(*MAp_, *Ap_, x, g, x, itol);
+      kappa = MAp_->dot(Ap_->dual());
       //if ( vHv <= 0.0 || kappa <= 0.0 ) { 
       if ( kappa == 0.0 ) {
         flag = 2;
@@ -378,7 +378,7 @@ public:
 
       s.axpy(alpha,*p_);
 
-      v_->axpy(-alpha,*MHp_);
+      v_->axpy(-alpha,*MAp_);
       gnorm = v_->norm();
       if ( gnorm < gtol ) {
         break;
@@ -387,16 +387,16 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      pObj.reducedHessVec(*g_, *v_, x, g, x, itol);
+      pObj.reducedHessVec(*r_, *v_, x, g, x, itol);
       tmp  = vHv;
-      vHv  = g_->dot(*v_);
+      vHv  = v_->dot(r_->dual());
       beta = vHv/tmp;
 
       p_->scale(beta);
       p_->axpy(1.0,*v_);
 
-      Hp_->scale(beta);
-      Hp_->axpy(1.0,*g_); 
+      Ap_->scale(beta);
+      Ap_->axpy(1.0,*r_); 
     }
     if ( iter == this->maxit_ ) {
       flag = 1;

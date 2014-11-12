@@ -396,7 +396,7 @@ public:
     // Basis Vector
     p_->set(*v_); 
     p_->scale(-1.0);
-    Real pnorm2 = v_->dot(*g_);
+    Real pnorm2 = v_->dot(g_->dual());
 
     iter        = 0; 
     iflag       = 0;
@@ -405,15 +405,15 @@ public:
     Real sigma  = 0.0; 
     Real alpha  = 0.0; 
     Real tmp    = 0.0;
-    Real gv     = v_->dot(*g_);
+    Real gv     = v_->dot(g_->dual());
     Real sMp    = 0.0;
-    pRed_ = 0.0;
+    pRed_       = 0.0;
 
     for (iter = 0; iter < maxit_; iter++) {
       //pObj.hessVec(*Hp,*p,x,tol);
       pObj.reducedHessVec(*Hp_,*p_,x,grad,x,tol);
 
-      kappa = p_->dot(*Hp_);
+      kappa = p_->dot(Hp_->dual());
       if (kappa <= 0.0) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p_);
@@ -447,7 +447,7 @@ public:
       //pObj.precond(*v,*g,x,tol);
       pObj.reducedPrecond(*v_,*g_,x,grad,x,tol);
       tmp   = gv; 
-      gv    = v_->dot(*g_);
+      gv    = v_->dot(g_->dual());
       beta  = gv/tmp;    
 
       p_->scale(beta);
