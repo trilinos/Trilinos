@@ -105,6 +105,7 @@ namespace MueLu {
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
     Cycle_     = Hierarchy::GetDefaultCycle();
     blockSize_ = 1;
+    dofOffset_ = 0;
 
     if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
@@ -796,8 +797,10 @@ namespace MueLu {
     //   <ParameterList name="MueLu">
     //     <ParameterList name="Matrix">
     //   </ParameterList>
-    if (paramList.isSublist("Matrix"))
+    if (paramList.isSublist("Matrix")) {
       blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
+      dofOffset_ = paramList.sublist("Matrix").get<GlobalOrdinal>("DOF offset", 0); // undocumented parameter allowing to define a DOF offset of the global dofs of an operator (defaul = 0)
+    }
 
     // create new FactoryFactory object if necessary
     if (factFact_ == Teuchos::null)
@@ -1013,7 +1016,7 @@ namespace MueLu {
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
             << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
-      A.SetFixedBlockSize(blockSize_);
+      A.SetFixedBlockSize(blockSize_, dofOffset_);
 
     } catch (std::bad_cast& e) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
