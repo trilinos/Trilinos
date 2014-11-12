@@ -1323,10 +1323,11 @@ this file exists, then it defines extra CPack-related options that are
 specific to this TriBITS Repository.  This file must define the macro
 ``TRIBITS_REPOSITORY_DEFINE_PACKAGING()`` which is called by TriBITS.  This
 file is processed as the top project-level scope so any local variables set
-have project-wide effect.  This file is processed before the project's
-`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ file so any options
-defined in this can be overridden by the project.  This file typically just
-sets extra excludes to remove files from the tarball.  The file:
+have project-wide effect.  This file is processed after the project's
+`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ file so any project
+CPACK varaibles are defined for the repository-level options and commands are
+created.  This file typically just sets extra excludes to remove files from
+the tarball.  The file:
 
   `TribitsExampleProject`_/``cmake/CallbackDefineRepositoryPackaging.cmake``
 
@@ -2223,11 +2224,11 @@ through the call to `TRIBITS_PROJECT()`_.
 |       * ``ADD_SUBDIRECTORY(`` `<packageDir>/CMakeLists.txt`_ ``)``
 |       * For each ``<spkgDir>`` in all enabled subpackages for this package:
 |         * ``ADD_SUBDIRECTORY(`` `<packageDir>/<spkgDir>/CMakeLists.txt`_ ``)``
-|   15) For each ``<repoDir>`` in all defined TriBITS repositories:
+|   16) ``INCLUDE(`` `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ ``)``
+|       * Call ``TRIBITS_PROJECT_DEFINE_PACKAGING()``
+|   16) For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_ ``)``
 |       * Call ``TRIBITS_REPOSITORY_DEFINE_PACKAGING()``
-|   17) ``INCLUDE(`` `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ ``)``
-|       * Call ``TRIBITS_PROJECT_DEFINE_PACKAGING()``
 
 The TriBITS Framework obviously does a lot more that what is described above
 but the basic trace of major operations and ordering and the processing of
@@ -2345,8 +2346,8 @@ looks something like::
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/tests/CMakeLists.txt
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/CMakeLists.txt
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/tests/CMakeLists.txt
-  -- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
   -- File Trace: PROJECT    INCLUDE    [...]/cmake/CallbackDefineProjectPackaging.cmake
+  -- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 
 However, every file that TriBITS processes is not printed in this file trace
 if it should be obvious that the file is being processed.  For example, the

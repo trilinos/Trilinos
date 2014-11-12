@@ -197,6 +197,13 @@ ELSE()
 ENDIF()
 
 
+IF (EXISTS "${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject/.gitignore")
+  SET(REGEX_FOR_GITIGNORE "Only in .*/TribitsExampleProject: .gitignore")
+ELSE()
+  SET(REGEX_FOR_GITIGNORE)
+ENDIF()
+
+
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
@@ -389,7 +396,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
     MESSAGE "Make sure right directoires are excluced"
     PASS_REGULAR_EXPRESSION_ALL
       "Only in .*/TribitsExampleProject/cmake: ctest"
-      "Only in .*/TribitsExampleProject: .gitignore"
+      ${REGEX_FOR_GITIGNORE}
       "Only in .*/TribitsExampleProject/packages: mixed_lang"
       "Only in .*/TribitsExampleProject/packages: wrap_external"
 

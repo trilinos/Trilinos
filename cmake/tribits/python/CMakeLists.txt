@@ -56,6 +56,7 @@ IF (PYTHON_EXECUTABLE)
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/mockprogram_UnitTests.py -v
       PASS_REGULAR_EXPRESSION "OK"
+    XHOST travis-ci-server-linux
     )
 
   IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
@@ -92,6 +93,7 @@ IF (PYTHON_EXECUTABLE)
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/gitdist_UnitTests.py -v
       PASS_REGULAR_EXPRESSION "OK"
+    XHOST travis-ci-server-linux
     )
 
   TRIBITS_ADD_ADVANCED_TEST( extract_rst_cmake_doc_UnitTests
