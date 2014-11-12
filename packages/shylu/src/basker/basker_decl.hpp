@@ -19,7 +19,7 @@ namespace Basker{
     int returnU(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val);
     int returnP(Int **p);
     int solve(Entry *b, Entry *x);
-    int solveMultiple(Entry *b, Entry *x);
+    int solveMultiple(Int nrhs , Entry **b, Entry **x);
     //int solve();
     
   private:

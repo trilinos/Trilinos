@@ -490,6 +490,7 @@ namespace Basker{
 	(*row_idx)[i] = L->row_idx[i];
 	(*val)[i]     = L->val[i];
       }
+    return 0;
     
   }
 
@@ -513,6 +514,7 @@ namespace Basker{
 	(*row_idx)[i] = U->row_idx[i];
 	(*val)[i]     = U->val[i];
       }
+    return 0;
   }
 
   template <class Int, class Entry>
@@ -525,6 +527,7 @@ namespace Basker{
       {
 	(*p)[pinv[i]] = i;  //Matlab perm-style
       }
+    return 0;
   }
   
   template <class Int, class Entry>
@@ -542,7 +545,7 @@ namespace Basker{
     FREE(U->val);
     
   }
-  template <class Int, class Enty>
+  template <class Int, class Entry>
   int Basker<Int, Entry>::solveMultiple(Int nrhs, Entry **b, Entry **x)
   {
     //For nrhs call solve
