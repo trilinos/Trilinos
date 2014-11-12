@@ -21,7 +21,7 @@ nox: src[*.H] src-belos[*.H] src-epetra[*.H] src-lapack[*.H] src-loca/src[*.H] s
 pamgen:  rtcompiler[*.hh]
 rtop: src[*.hpp *.h] src/interfaces[*.hpp] src/support[*.hpp *.h] src/ops_lib[*.hpp] src/lapack[*.hpp]
 rythmos: src[*.h *.hpp]
-sacado: src[Sacado*.hpp Sacado*.h] src/mpl[Sacado*.hpp]
+sacado: src[Sacado*.hpp Sacado*.h] src[Kokkos*.hpp] src/mpl[Sacado*.hpp]
 stokhos: src[Stokhos_ConfigDefs.h] src[*.hpp] src/nox[*.hpp] src/sacado[*.hpp]
 shards: src[*.h *.hpp]
 stratimikos: src[*.hpp] adapters/amesos/src[*.hpp] adapters/aztecoo/src[*.hpp] adapters/belos/src[*.hpp]  adapters/ifpack/src[*.hpp] adapters/ml/src[*.hpp]
