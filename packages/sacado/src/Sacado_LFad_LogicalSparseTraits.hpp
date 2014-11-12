@@ -41,36 +41,12 @@ namespace Sacado {
 
 namespace Sacado {
 
+  namespace LFad {
+    template <typename T> class Expr;
+  }
+
   //! Specialization of %Promote to LogicalSparse types
-  template <typename T, typename L>
-  struct Promote< LFad::LogicalSparse<T,L>,
-                  LFad::LogicalSparse<T,L> > {
-    typedef LFad::LogicalSparse<T,L> type;
-  };
-  template <typename T, typename L>
-  struct Promote< LFad::LogicalSparse<T,L>,
-                  typename LFad::LogicalSparse<T,L>::value_type > {
-    typedef LFad::LogicalSparse<T,L> type;
-  };
-  template <typename T, typename L>
-  struct Promote< typename LFad::LogicalSparse<T,L>::value_type,
-                  LFad::LogicalSparse<T,L> > {
-    typedef LFad::LogicalSparse<T,L> type;
-  };
-  template <typename T, typename L>
-  struct Promote< LFad::LogicalSparse<T,L>,
-                  typename dummy< T,
-                                  typename LFad::LogicalSparse<T,L>::scalar_type
-                                  >::type > {
-    typedef LFad::LogicalSparse<T,L> type;
-  };
-  template <typename T, typename L>
-  struct Promote< typename dummy< T,
-                                  typename LFad::LogicalSparse<T,L>::scalar_type
-                                  >::type,
-                  LFad::LogicalSparse<T,L> > {
-    typedef LFad::LogicalSparse<T,L> type;
-  };
+  SACADO_AD_PROMOTE_SPEC2( LFad, LogicalSparse )
 
   //! Specialization of %ScalarType to LogicalSparse types
   template <typename ValT, typename LogT>

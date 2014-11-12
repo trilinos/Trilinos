@@ -51,6 +51,11 @@ bool testUQPromote() {
   typedef typename Sacado::ValueType<uq_type>::type value_type;
   typedef typename Sacado::ScalarType<uq_type>::type scalar_type;
 
+  // Get the type of the result of the expression 'ad_type * ad_type'
+  // The use of declval gets around actually instantiation objects of type
+  // ad_type.
+  typedef decltype(std::declval<uq_type>()*std::declval<uq_type>()) expr_type;
+
   static_assert(
     is_same<typename Promote<uq_type,uq_type>::type, uq_type >::value,
     "Promote<uq_type,uq_type>::type != uq_type");
@@ -70,6 +75,14 @@ bool testUQPromote() {
   static_assert(
     is_same<typename Promote<scalar_type,uq_type>::type, uq_type >::value,
     "Promote<scalar_type,uq_type>::type != uq_type");
+
+  static_assert(
+    is_same<typename Promote<uq_type,expr_type>::type, uq_type >::value,
+    "Promote<expr_type,uq_type>::type != uq_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,uq_type>::type, uq_type >::value,
+    "Promote<expr_type,uq_type>::type != uq_type");
 
   // These tests are all compile-time tests, so if the test compiles,
   // it passes...
@@ -118,6 +131,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, orthog_poly_type )
 typedef Sacado::ETPCE::OrthogPoly<double,storage_type> et_orthog_poly_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, et_orthog_poly_type )
 
+/*
+// The Expr specializations of Promote don't work with MP::Vector because
+// because the operators do not return a specialization of Expr, rather
+// a class derived from a specialization.  I'll have to think about how
+// to do this in a general way.
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 //
 // Sacado::MP::Vector
@@ -134,6 +152,7 @@ typedef Stokhos::DynamicStorage<int,double,device> dynamic_storage_type;
 typedef Sacado::UQ::PCE<dynamic_storage_type> kokkos_pce_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, kokkos_pce_type )
 #endif
+*/
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

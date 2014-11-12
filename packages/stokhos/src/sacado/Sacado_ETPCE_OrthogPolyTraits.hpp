@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -54,35 +54,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to OrthogPoly types
-  template <typename T, typename S>
-  struct Promote< ETPCE::OrthogPoly<T,S>,
-                  ETPCE::OrthogPoly<T,S> > {
-    typedef ETPCE::OrthogPoly<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< ETPCE::OrthogPoly<T,S>,
-                  typename ETPCE::OrthogPoly<T,S>::value_type > {
-    typedef ETPCE::OrthogPoly<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< typename ETPCE::OrthogPoly<T,S>::value_type,
-                  ETPCE::OrthogPoly<T,S> > {
-    typedef ETPCE::OrthogPoly<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< ETPCE::OrthogPoly<T,S>,
-                  typename dummy< T,
-                                  typename ETPCE::OrthogPoly<T,S>::scalar_type
-                                  >::type > {
-    typedef ETPCE::OrthogPoly<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< typename dummy< T,
-                                  typename ETPCE::OrthogPoly<T,S>::scalar_type
-                                  >::type,
-                  ETPCE::OrthogPoly<T,S> > {
-    typedef ETPCE::OrthogPoly<T,S> type;
-  };
+  SACADO_AD_PROMOTE_SPEC2( ETPCE, OrthogPoly )
 
   //! Specialization of %ScalarType to OrthogPoly types
   template <typename T, typename S>
@@ -112,7 +84,7 @@ namespace Sacado {
   template <typename T, typename S>
   struct Value< ETPCE::OrthogPoly<T,S> > {
     typedef typename ValueType< ETPCE::OrthogPoly<T,S> >::type value_type;
-    static const value_type& eval(const ETPCE::OrthogPoly<T,S>& x) { 
+    static const value_type& eval(const ETPCE::OrthogPoly<T,S>& x) {
       return x.val(); }
   };
 
@@ -121,23 +93,23 @@ namespace Sacado {
   struct ScalarValue< ETPCE::OrthogPoly<T,S> > {
     typedef typename ValueType< ETPCE::OrthogPoly<T,S> >::type value_type;
     typedef typename ScalarType< ETPCE::OrthogPoly<T,S> >::type scalar_type;
-    static const scalar_type& eval(const ETPCE::OrthogPoly<T,S>& x) { 
+    static const scalar_type& eval(const ETPCE::OrthogPoly<T,S>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to OrthogPoly types
   template <typename T, typename S>
   struct StringName< ETPCE::OrthogPoly<T,S> > {
-    static std::string eval() { 
-      return std::string("Sacado::ETPCE::OrthogPoly< ") + 
-	StringName<T>::eval() + " >"; }
+    static std::string eval() {
+      return std::string("Sacado::ETPCE::OrthogPoly< ") +
+        StringName<T>::eval() + " >"; }
   };
 
   //! Specialization of %IsEqual to OrthogPoly types
   template <typename T, typename S>
   struct IsEqual< ETPCE::OrthogPoly<T,S> > {
-    static bool eval(const ETPCE::OrthogPoly<T,S>& x, 
-		     const ETPCE::OrthogPoly<T,S>& y) {
+    static bool eval(const ETPCE::OrthogPoly<T,S>& x,
+                     const ETPCE::OrthogPoly<T,S>& y) {
       return x.isEqualTo(y);
     }
   };
@@ -161,17 +133,17 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename T, typename S>
-  struct PromotionTraits< Sacado::ETPCE::OrthogPoly<T,S>, 
-			  Sacado::ETPCE::OrthogPoly<T,S> > {
+  struct PromotionTraits< Sacado::ETPCE::OrthogPoly<T,S>,
+                          Sacado::ETPCE::OrthogPoly<T,S> > {
     typedef typename Sacado::Promote< Sacado::ETPCE::OrthogPoly<T,S>,
-				      Sacado::ETPCE::OrthogPoly<T,S> >::type
+                                      Sacado::ETPCE::OrthogPoly<T,S> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename T, typename S, typename R>
   struct PromotionTraits< Sacado::ETPCE::OrthogPoly<T,S>, R > {
-    typedef typename Sacado::Promote< Sacado::ETPCE::OrthogPoly<T,S>, R >::type 
+    typedef typename Sacado::Promote< Sacado::ETPCE::OrthogPoly<T,S>, R >::type
     promote;
   };
 
@@ -179,7 +151,7 @@ namespace Teuchos {
   template <typename L, typename T, typename S>
   struct PromotionTraits< L, Sacado::ETPCE::OrthogPoly<T,S> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::ETPCE::OrthogPoly<T,S> >::type 
+    typedef typename Sacado::Promote< L, Sacado::ETPCE::OrthogPoly<T,S> >::type
     promote;
   };
 
@@ -191,23 +163,23 @@ namespace Teuchos {
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename T, typename S>
   struct SerializationTraits<Ordinal, Sacado::ETPCE::OrthogPoly<T,S> > :
-    public Sacado::PCE::SerializationTraitsImp< Ordinal, 
-						Sacado::ETPCE::OrthogPoly<T,S> >
+    public Sacado::PCE::SerializationTraitsImp< Ordinal,
+                                                Sacado::ETPCE::OrthogPoly<T,S> >
   {};
 
   //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename T, typename S>
   struct ValueTypeSerializer<Ordinal, Sacado::ETPCE::OrthogPoly<T,S> > :
-    public Sacado::PCE::SerializerImp< Ordinal, 
-				       Sacado::ETPCE::OrthogPoly<T,S>,
-				       ValueTypeSerializer<Ordinal,T> > 
+    public Sacado::PCE::SerializerImp< Ordinal,
+                                       Sacado::ETPCE::OrthogPoly<T,S>,
+                                       ValueTypeSerializer<Ordinal,T> >
   {
     typedef Sacado::ETPCE::OrthogPoly<T,S> PCEType;
     typedef ValueTypeSerializer<Ordinal,T> ValueSerializer;
     typedef Sacado::PCE::SerializerImp< Ordinal,PCEType,ValueSerializer> Base;
     typedef typename Base::expansion_type expansion_type;
     ValueTypeSerializer(const Teuchos::RCP<expansion_type>& expansion,
-			const Teuchos::RCP<const ValueSerializer>& vs) :
+                        const Teuchos::RCP<const ValueSerializer>& vs) :
       Base(expansion,vs) {}
   };
 }

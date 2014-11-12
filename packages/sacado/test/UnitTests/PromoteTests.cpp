@@ -49,6 +49,11 @@ bool testADPromote() {
   typedef typename Sacado::ValueType<ad_type>::type value_type;
   typedef typename Sacado::ScalarType<ad_type>::type scalar_type;
 
+  // Get the type of the result of the expression 'ad_type * ad_type'
+  // The use of declval gets around actually instantiation objects of type
+  // ad_type.
+  typedef decltype(std::declval<ad_type>()*std::declval<ad_type>()) expr_type;
+
   static_assert(
     is_same<typename Promote<ad_type,ad_type>::type, ad_type >::value,
     "Promote<ad_type,ad_type>::type != ad_type");
@@ -68,6 +73,14 @@ bool testADPromote() {
   static_assert(
     is_same<typename Promote<scalar_type,ad_type>::type, ad_type >::value,
     "Promote<scalar_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<ad_type,expr_type>::type, ad_type >::value,
+    "Promote<expr_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,ad_type>::type, ad_type >::value,
+    "Promote<expr_type,ad_type>::type != ad_type");
 
   // These tests are all compile-time tests, so if the test compiles,
   // it passes...

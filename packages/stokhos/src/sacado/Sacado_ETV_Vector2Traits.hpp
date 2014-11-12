@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -54,35 +54,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to Vector2 types
-  template <typename T, typename S>
-  struct Promote< ETV::Vector2<T,S>,
-                  ETV::Vector2<T,S> > {
-    typedef ETV::Vector2<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< ETV::Vector2<T,S>,
-                  typename ETV::Vector2<T,S>::value_type > {
-    typedef ETV::Vector2<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< typename ETV::Vector2<T,S>::value_type,
-                  ETV::Vector2<T,S> > {
-    typedef ETV::Vector2<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< ETV::Vector2<T,S>,
-                  typename dummy< T,
-                                  typename ETV::Vector2<T,S>::scalar_type
-                                  >::type > {
-    typedef ETV::Vector2<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< typename dummy< T,
-                                  typename ETV::Vector2<T,S>::scalar_type
-                                  >::type,
-                  ETV::Vector2<T,S> > {
-    typedef ETV::Vector2<T,S> type;
-  };
+  SACADO_AD_PROMOTE_SPEC2( ETV, Vector2 )
 
   //! Specialization of %ScalarType to Vector2 types
   template <typename T, typename S>
@@ -112,7 +84,7 @@ namespace Sacado {
   template <typename T, typename S>
   struct Value< ETV::Vector2<T,S> > {
     typedef typename ValueType< ETV::Vector2<T,S> >::type value_type;
-    static const value_type& eval(const ETV::Vector2<T,S>& x) { 
+    static const value_type& eval(const ETV::Vector2<T,S>& x) {
       return x.val(); }
   };
 
@@ -121,23 +93,23 @@ namespace Sacado {
   struct ScalarValue< ETV::Vector2<T,S> > {
     typedef typename ValueType< ETV::Vector2<T,S> >::type value_type;
     typedef typename ScalarType< ETV::Vector2<T,S> >::type scalar_type;
-    static const scalar_type& eval(const ETV::Vector2<T,S>& x) { 
+    static const scalar_type& eval(const ETV::Vector2<T,S>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to Vector2 types
   template <typename T, typename S>
   struct StringName< ETV::Vector2<T,S> > {
-    static std::string eval() { 
-      return std::string("Sacado::ETV::Vector2< ") + 
-	StringName<T>::eval() + " >"; }
+    static std::string eval() {
+      return std::string("Sacado::ETV::Vector2< ") +
+        StringName<T>::eval() + " >"; }
   };
 
   //! Specialization of IsEqual to Vector2 types
   template <typename T, typename S>
   struct IsEqual< ETV::Vector2<T,S> > {
-    static bool eval(const ETV::Vector2<T,S>& x, 
-		     const ETV::Vector2<T,S>& y) {
+    static bool eval(const ETV::Vector2<T,S>& x,
+                     const ETV::Vector2<T,S>& y) {
       return x.isEqualTo(y);
     }
   };
@@ -155,17 +127,17 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename T, typename S>
-  struct PromotionTraits< Sacado::ETV::Vector2<T,S>, 
-			  Sacado::ETV::Vector2<T,S> > {
+  struct PromotionTraits< Sacado::ETV::Vector2<T,S>,
+                          Sacado::ETV::Vector2<T,S> > {
     typedef typename Sacado::Promote< Sacado::ETV::Vector2<T,S>,
-				      Sacado::ETV::Vector2<T,S> >::type
+                                      Sacado::ETV::Vector2<T,S> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename T, typename S, typename R>
   struct PromotionTraits< Sacado::ETV::Vector2<T,S>, R > {
-    typedef typename Sacado::Promote< Sacado::ETV::Vector2<T,S>, R >::type 
+    typedef typename Sacado::Promote< Sacado::ETV::Vector2<T,S>, R >::type
     promote;
   };
 
@@ -173,37 +145,37 @@ namespace Teuchos {
   template <typename L, typename T, typename S>
   struct PromotionTraits< L, Sacado::ETV::Vector2<T,S> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::ETV::Vector2<T,S> >::type 
+    typedef typename Sacado::Promote< L, Sacado::ETV::Vector2<T,S> >::type
     promote;
   };
 
   //! Specializtion of Teuchos::ScalarTraits
   template <typename T, typename S>
-  struct ScalarTraits< Sacado::ETV::Vector2<T,S> > : 
+  struct ScalarTraits< Sacado::ETV::Vector2<T,S> > :
     public Sacado::ETV::ScalarTraitsImp< Sacado::ETV::Vector2<T,S> > {};
 
 
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename T, typename S>
   struct SerializationTraits<Ordinal, Sacado::ETV::Vector2<T,S> > :
-    public Sacado::ETV::SerializationTraitsImp< Ordinal, 
-						Sacado::ETV::Vector2<T,S> > {};
+    public Sacado::ETV::SerializationTraitsImp< Ordinal,
+                                                Sacado::ETV::Vector2<T,S> > {};
 
   //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename T, typename S>
   struct ValueTypeSerializer<Ordinal, Sacado::ETV::Vector2<T,S> > :
     public Sacado::ETV::SerializerImp< Ordinal,
-				       Sacado::ETV::Vector2<T,S>,
-				       ValueTypeSerializer<Ordinal,T> >
+                                       Sacado::ETV::Vector2<T,S>,
+                                       ValueTypeSerializer<Ordinal,T> >
   {
     typedef Sacado::ETV::Vector2<T,S> VecType;
     typedef ValueTypeSerializer<Ordinal,T> ValueSerializer;
     typedef Sacado::ETV::SerializerImp< Ordinal,VecType,ValueSerializer> Base;
     ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
-			Ordinal sz = 0) :
+                        Ordinal sz = 0) :
       Base(vs, sz) {}
   };
-  
+
 }
 #endif // HAVE_SACADO_TEUCHOS
 

@@ -42,7 +42,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to CacheTaylor types
-  SACADO_AD_PROMOTE_SPEC( Tay::CacheTaylor )
+  SACADO_AD_PROMOTE_SPEC( Tay, CacheTaylor )
 
   //! Specialization of %ScalarType to DFad types
   template <typename T>

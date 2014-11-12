@@ -54,35 +54,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to Vector types
-  template <typename T, typename S>
-  struct Promote< ETV::Vector<T,S>,
-                  ETV::Vector<T,S> > {
-    typedef ETV::Vector<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< ETV::Vector<T,S>,
-                  typename ETV::Vector<T,S>::value_type > {
-    typedef ETV::Vector<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< typename ETV::Vector<T,S>::value_type,
-                  ETV::Vector<T,S> > {
-    typedef ETV::Vector<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< ETV::Vector<T,S>,
-                  typename dummy< T,
-                                  typename ETV::Vector<T,S>::scalar_type
-                                  >::type > {
-    typedef ETV::Vector<T,S> type;
-  };
-  template <typename T, typename S>
-  struct Promote< typename dummy< T,
-                                  typename ETV::Vector<T,S>::scalar_type
-                                  >::type,
-                  ETV::Vector<T,S> > {
-    typedef ETV::Vector<T,S> type;
-  };
+  SACADO_AD_PROMOTE_SPEC2( ETV, Vector )
 
   //! Specialization of %ScalarType to Vector types
   template <typename T, typename S>
