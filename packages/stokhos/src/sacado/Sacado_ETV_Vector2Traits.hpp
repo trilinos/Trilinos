@@ -53,36 +53,35 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to Taylor types
+  //! Specialization of %Promote to Vector2 types
   template <typename T, typename S>
-  class Promote< ETV::Vector2<T,S>, ETV::Vector2<T,S> > {
-  public:
-
+  struct Promote< ETV::Vector2<T,S>,
+                  ETV::Vector2<T,S> > {
     typedef ETV::Vector2<T,S> type;
   };
-
-  //! Specialization of %Promote to Vector2 types
-  template <typename L, typename R, typename S>
-  class Promote< ETV::Vector2<L,S>, R > {
-  public:
-
-    typedef typename ValueType< ETV::Vector2<L,S> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ETV::Vector2<value_type,S> type;
+  template <typename T, typename S>
+  struct Promote< ETV::Vector2<T,S>,
+                  typename ETV::Vector2<T,S>::value_type > {
+    typedef ETV::Vector2<T,S> type;
   };
-
-  //! Specialization of %Promote to Vector2 types
-  template <typename L, typename R, typename S>
-  class Promote< L, ETV::Vector2<R,S> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< ETV::Vector2<R,S> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ETV::Vector2<value_type,S> type;
+  template <typename T, typename S>
+  struct Promote< typename ETV::Vector2<T,S>::value_type,
+                  ETV::Vector2<T,S> > {
+    typedef ETV::Vector2<T,S> type;
+  };
+  template <typename T, typename S>
+  struct Promote< ETV::Vector2<T,S>,
+                  typename dummy< T,
+                                  typename ETV::Vector2<T,S>::scalar_type
+                                  >::type > {
+    typedef ETV::Vector2<T,S> type;
+  };
+  template <typename T, typename S>
+  struct Promote< typename dummy< T,
+                                  typename ETV::Vector2<T,S>::scalar_type
+                                  >::type,
+                  ETV::Vector2<T,S> > {
+    typedef ETV::Vector2<T,S> type;
   };
 
   //! Specialization of %ScalarType to Vector2 types

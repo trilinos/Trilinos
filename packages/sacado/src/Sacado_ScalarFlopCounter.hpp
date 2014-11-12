@@ -191,6 +191,12 @@ namespace Sacado {
     class ScalarFlopCounter : public Base< ScalarFlopCounter<T> > {
     public:
 
+      //! Typename of values
+      typedef typename RemoveConst<T>::type value_type;
+
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
       //! Turn ScalarFlopCounter into a meta-function class usable with mpl::apply
       template <typename U>
       struct apply {

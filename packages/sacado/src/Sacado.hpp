@@ -58,10 +58,10 @@
 #include "Sacado_ELRFad_DFadTraits.hpp"
 #include "Sacado_ELRFad_SFadTraits.hpp"
 #include "Sacado_ELRFad_SLFadTraits.hpp"
-// #include "Sacado_CacheFad_ExpressionTraits.hpp"
-// #include "Sacado_CacheFad_DFadTraits.hpp"
-// #include "Sacado_CacheFad_SFadTraits.hpp"
-// #include "Sacado_ELRCacheFad_SLFadTraits.hpp"
+#include "Sacado_CacheFad_ExpressionTraits.hpp"
+#include "Sacado_CacheFad_DFadTraits.hpp"
+#include "Sacado_CacheFad_SFadTraits.hpp"
+#include "Sacado_CacheFad_SLFadTraits.hpp"
 #include "Sacado_ELRCacheFad_ExpressionTraits.hpp"
 #include "Sacado_ELRCacheFad_DFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SFadTraits.hpp"
@@ -89,11 +89,9 @@
 #include "Sacado_ELRFad_SLFad.hpp"
 
 // Caching forward AD classes
-// Not including CacheFad by default since AIX has issues with it.
-// This class is not production anyway.
-//#include "Sacado_CacheFad_DFad.hpp"
-//#include "Sacado_CacheFad_SFad.hpp"
-//#include "Sacado_CacheFad_SLFad.hpp"
+#include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_CacheFad_SFad.hpp"
+#include "Sacado_CacheFad_SLFad.hpp"
 
 // Caching expression-level reverse mode forward AD classes
 #include "Sacado_ELRCacheFad_DFad.hpp"

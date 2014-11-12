@@ -54,40 +54,35 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to PCe types
+  //! Specialization of %Promote to PCE types
   template <typename S>
-  class Promote< UQ::PCE<S>, UQ::PCE<S> > {
-  public:
-
+  struct Promote< UQ::PCE<S>,
+                  UQ::PCE<S> > {
     typedef UQ::PCE<S> type;
   };
-
-  //! Specialization of %Promote to PCE types
-  template <typename S, typename R>
-  class Promote< UQ::PCE<S>, R > {
-  public:
-
-    typedef typename ValueType< UQ::PCE<S> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-    typedef typename S::ordinal_type ordinal_type;
-    typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
-
-    typedef UQ::PCE<storage_type> type;
+  template <typename S>
+  struct Promote< UQ::PCE<S>,
+                  typename UQ::PCE<S>::value_type > {
+    typedef UQ::PCE<S> type;
   };
-
-  //! Specialization of %Promote to OrthogPoly types
-  template <typename S, typename L>
-  class Promote< L, UQ::PCE<S> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< UQ::PCE<S> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-    typedef typename S::ordinal_type ordinal_type;
-    typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
-
-    typedef UQ::PCE<storage_type> type;
+  template <typename S>
+  struct Promote< typename UQ::PCE<S>::value_type,
+                  UQ::PCE<S> > {
+    typedef UQ::PCE<S> type;
+  };
+  template <typename S>
+  struct Promote< UQ::PCE<S>,
+                  typename dummy< typename UQ::PCE<S>::value_type,
+                                  typename UQ::PCE<S>::scalar_type
+                                  >::type > {
+    typedef UQ::PCE<S> type;
+  };
+  template <typename S>
+  struct Promote< typename dummy< typename UQ::PCE<S>::value_type,
+                                  typename UQ::PCE<S>::scalar_type
+                                  >::type,
+                  UQ::PCE<S> > {
+    typedef UQ::PCE<S> type;
   };
 
   //! Specialization of %ScalarType to PCE types

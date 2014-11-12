@@ -41,37 +41,8 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to SimpleTaylor types
-  template <typename T>
-  class Promote< Tay::Taylor<T>, Tay::Taylor<T> > {
-  public:
-
-    typedef Tay::Taylor<T> type;
-  };
-
-  //! Specialization of %Promote to SimpleTaylor types
-  template <typename L, typename R>
-  class Promote< Tay::Taylor<L>, R > {
-  public:
-
-    typedef typename ValueType< Tay::Taylor<L> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Tay::Taylor<value_type> type;
-  };
-
-  //! Specialization of %Promote to SimpleTaylor types
-  template <typename L, typename R>
-  class Promote< L, Tay::Taylor<R> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Tay::Taylor<R> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Tay::Taylor<value_type> type;
-  };
+  //! Specialization of %Promote to Taylor types
+  SACADO_AD_PROMOTE_SPEC( Tay::Taylor )
 
   //! Specialization of %ScalarType to Taylor types
   template <typename T>

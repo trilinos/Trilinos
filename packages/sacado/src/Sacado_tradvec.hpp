@@ -300,6 +300,7 @@ T F copy(Ai);
 ADvari {	// implementation of an ADvar
  public:
 	typedef Double value_type;
+        typedef typename ScalarType<value_type>::type scalar_type;
 	typedef IndepADvar<Double> IndepADVar;
 #ifdef RAD_AUTO_AD_Const
 	friend class IndepADvar<Double>;

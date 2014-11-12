@@ -60,40 +60,35 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to Taylor types
+  //! Specialization of %Promote to Vector types
   template <typename S>
-  class Promote< MP::Vector<S>, MP::Vector<S> > {
-  public:
-
+  struct Promote< MP::Vector<S>,
+                  MP::Vector<S> > {
     typedef MP::Vector<S> type;
   };
-
-  //! Specialization of %Promote to Vector types
-  template <typename R, typename S>
-  class Promote< MP::Vector<S>, R > {
-  public:
-
-    typedef typename ValueType< MP::Vector<S> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-    typedef typename S::ordinal_type ordinal_type;
-    typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
-
-    typedef MP::Vector<storage_type> type;
+  template <typename S>
+  struct Promote< MP::Vector<S>,
+                  typename MP::Vector<S>::value_type > {
+    typedef MP::Vector<S> type;
   };
-
-  //! Specialization of %Promote to Vector types
-  template <typename L, typename S>
-  class Promote< L, MP::Vector<S> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< MP::Vector<S> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-    typedef typename S::ordinal_type ordinal_type;
-    typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
-
-    typedef MP::Vector<storage_type> type;
+  template <typename S>
+  struct Promote< typename MP::Vector<S>::value_type,
+                  MP::Vector<S> > {
+    typedef MP::Vector<S> type;
+  };
+  template <typename S>
+  struct Promote< MP::Vector<S>,
+                  typename dummy< typename MP::Vector<S>::value_type,
+                                  typename MP::Vector<S>::scalar_type
+                                  >::type > {
+    typedef MP::Vector<S> type;
+  };
+  template <typename S>
+  struct Promote< typename dummy< typename MP::Vector<S>::value_type,
+                                  typename MP::Vector<S>::scalar_type
+                                  >::type,
+                  MP::Vector<S> > {
+    typedef MP::Vector<S> type;
   };
 
   //! Specialization of %ScalarType to Vector types

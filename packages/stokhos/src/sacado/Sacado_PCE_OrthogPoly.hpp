@@ -76,6 +76,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of ordinals
       typedef int ordinal_type;
 

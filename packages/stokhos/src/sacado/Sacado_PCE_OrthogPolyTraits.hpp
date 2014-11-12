@@ -55,34 +55,33 @@ namespace Sacado {
 
   //! Specialization of %Promote to OrthogPoly types
   template <typename T, typename S>
-  class Promote< PCE::OrthogPoly<T,S>, PCE::OrthogPoly<T,S> > {
-  public:
-
+  struct Promote< PCE::OrthogPoly<T,S>,
+                  PCE::OrthogPoly<T,S> > {
     typedef PCE::OrthogPoly<T,S> type;
   };
-
-  //! Specialization of %Promote to OrthogPoly types
-  template <typename L, typename S, typename R>
-  class Promote< PCE::OrthogPoly<L,S>, R > {
-  public:
-
-    typedef typename ValueType< PCE::OrthogPoly<L,S> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef PCE::OrthogPoly<value_type,S> type;
+  template <typename T, typename S>
+  struct Promote< PCE::OrthogPoly<T,S>,
+                  typename PCE::OrthogPoly<T,S>::value_type > {
+    typedef PCE::OrthogPoly<T,S> type;
   };
-
-  //! Specialization of %Promote to OrthogPoly types
-  template <typename L, typename S, typename R>
-  class Promote< L, PCE::OrthogPoly<R,S> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< PCE::OrthogPoly<R,S> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef PCE::OrthogPoly<value_type,S> type;
+  template <typename T, typename S>
+  struct Promote< typename PCE::OrthogPoly<T,S>::value_type,
+                  PCE::OrthogPoly<T,S> > {
+    typedef PCE::OrthogPoly<T,S> type;
+  };
+  template <typename T, typename S>
+  struct Promote< PCE::OrthogPoly<T,S>,
+                  typename dummy< T,
+                                  typename PCE::OrthogPoly<T,S>::scalar_type
+                                  >::type > {
+    typedef PCE::OrthogPoly<T,S> type;
+  };
+  template <typename T, typename S>
+  struct Promote< typename dummy< T,
+                                  typename PCE::OrthogPoly<T,S>::scalar_type
+                                  >::type,
+                  PCE::OrthogPoly<T,S> > {
+    typedef PCE::OrthogPoly<T,S> type;
   };
 
   //! Specialization of %ScalarType to OrthogPoly types

@@ -53,36 +53,35 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to Taylor types
+  //! Specialization of %Promote to OrthogPoly types
   template <typename T, typename S>
-  class Promote< ETPCE::OrthogPoly<T,S>, ETPCE::OrthogPoly<T,S> > {
-  public:
-
+  struct Promote< ETPCE::OrthogPoly<T,S>,
+                  ETPCE::OrthogPoly<T,S> > {
     typedef ETPCE::OrthogPoly<T,S> type;
   };
-
-  //! Specialization of %Promote to OrthogPoly types
-  template <typename L, typename R, typename S>
-  class Promote< ETPCE::OrthogPoly<L,S>, R > {
-  public:
-
-    typedef typename ValueType< ETPCE::OrthogPoly<L,S> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ETPCE::OrthogPoly<value_type,S> type;
+  template <typename T, typename S>
+  struct Promote< ETPCE::OrthogPoly<T,S>,
+                  typename ETPCE::OrthogPoly<T,S>::value_type > {
+    typedef ETPCE::OrthogPoly<T,S> type;
   };
-
-  //! Specialization of %Promote to OrthogPoly types
-  template <typename L, typename R, typename S>
-  class Promote< L, ETPCE::OrthogPoly<R,S> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< ETPCE::OrthogPoly<R,S> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ETPCE::OrthogPoly<value_type,S> type;
+  template <typename T, typename S>
+  struct Promote< typename ETPCE::OrthogPoly<T,S>::value_type,
+                  ETPCE::OrthogPoly<T,S> > {
+    typedef ETPCE::OrthogPoly<T,S> type;
+  };
+  template <typename T, typename S>
+  struct Promote< ETPCE::OrthogPoly<T,S>,
+                  typename dummy< T,
+                                  typename ETPCE::OrthogPoly<T,S>::scalar_type
+                                  >::type > {
+    typedef ETPCE::OrthogPoly<T,S> type;
+  };
+  template <typename T, typename S>
+  struct Promote< typename dummy< T,
+                                  typename ETPCE::OrthogPoly<T,S>::scalar_type
+                                  >::type,
+                  ETPCE::OrthogPoly<T,S> > {
+    typedef ETPCE::OrthogPoly<T,S> type;
   };
 
   //! Specialization of %ScalarType to OrthogPoly types
