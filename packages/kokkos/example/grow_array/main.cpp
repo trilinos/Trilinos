@@ -51,10 +51,6 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_CUDA )
-void grow_array_cuda( int length_array , int span_values );
-#endif
-
 int main( int argc , char ** argv )
 {
   int num_threads = 4 ;
@@ -101,7 +97,11 @@ int main( int argc , char ** argv )
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "Kokkos::Cuda" << std::endl ;
-    grow_array_cuda( length_array , span_values );
+    Kokkos::HostSpace::execution_space::initialize(1);
+    Kokkos::Cuda::initialize();
+    Example::GrowArrayFunctor< Kokkos::Cuda >( length_array , span_values );
+    Kokkos::Cuda::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
 

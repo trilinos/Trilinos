@@ -234,6 +234,7 @@ public:
   KOKKOS_INLINE_FUNCTION void team_barrier() const {}
 
   template< class JoinOp >
+  KOKKOS_INLINE_FUNCTION
   typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
                                          , const JoinOp & ) const
     { return value ; }

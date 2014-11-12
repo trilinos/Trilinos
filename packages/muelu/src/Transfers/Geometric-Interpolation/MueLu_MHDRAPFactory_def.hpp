@@ -104,7 +104,7 @@ namespace MueLu {
       //
 
       //DEBUG
-      //Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+      //Teuchos::FancyOStream fout(*GetOStream(Runtime1));
       //coarseLevel.print(fout,Teuchos::VERB_HIGH);
 
 

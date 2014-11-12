@@ -38,8 +38,8 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsMatrixView A(AA,    2, 6, 
-                    /**/   3, 8);
+    CrsMatrixView A(&AA,    2, 6, 
+                    /**/    3, 8);
     A.showMeDetail(cout);
   }
 

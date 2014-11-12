@@ -135,7 +135,12 @@ public:
 
   static void verify_set_dependence( task_root_type * , int );
 
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   static void assign( task_root_type ** const , task_root_type * const );
+#else
+  KOKKOS_INLINE_FUNCTION static void assign( task_root_type ** const , task_root_type * const ) {}
+#endif
+
 
   static void wait( task_root_type * );
 
@@ -226,19 +231,23 @@ public:
 
   ResultType  m_result ;
 
-  inline static
+  KOKKOS_INLINE_FUNCTION static
   TaskMember *
   verify_type( TaskMember< Kokkos::Qthread > * t )
     {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       if ( t != 0 && t->m_typeid != typeid(ResultType) ) {
         throw std::runtime_error( std::string("Kokkos::Future bad cast for result type"));
       }
       return static_cast< TaskMember *>( t );
+#else
+      return (TaskMember*) 0 ;
+#endif
     }
 
   typedef const ResultType & get_result_type ;
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   get_result_type get() const { return m_result ; }
 };
 
@@ -306,7 +315,7 @@ protected:
             , const typename member_root_type::function_type  arg_apply
             , const FunctorType &  arg_functor
             )
-    : member_root_type( arg_destroy , arg_apply )
+    : member_root_type( arg_destroy , arg_apply , typeid(void) )
     , FunctorType( arg_functor )
     {}
 
@@ -475,7 +484,7 @@ private:
     static
     void apply( task_root_type * t )
       {
-        range_policy const & r  = * static_cast< member_type * >( static_cast< task_base_type * >( t ) ).m_policy ;
+        range_policy const & r  = * static_cast< member_type * >( static_cast< task_base_type * >( t ) )->m_policy ;
         FunctorType        & f  = * static_cast< FunctorType * >( static_cast< task_base_type * >( t ) );
         FunctorType  const & cf = f ;
 

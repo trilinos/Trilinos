@@ -612,7 +612,7 @@ int main(int argc, char *argv[]) {
     // Define step.
     ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
     // Define status test.
-    RealT gtol  = 1e-14;  // norm of gradient tolerance
+    RealT gtol  = 1e-12;  // norm of gradient tolerance
     RealT stol  = 1e-16;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    

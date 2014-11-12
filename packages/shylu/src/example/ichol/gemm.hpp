@@ -41,6 +41,8 @@ namespace Example {
           _Y(Y) 
       { }
 
+      string Label() const { return "Gemm"; }
+
       typedef int value_type;      
       void apply(value_type &r_val) {
         r_val = Gemm::invoke(_alpha, _A, _X, _beta, _Y);

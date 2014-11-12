@@ -7,6 +7,9 @@ basker.o: basker.cpp basker.hpp basker_decl.hpp basker_def.hpp
 basker_driver: basker_driver.cpp basker.hpp basker_decl.hpp basker_def.hpp
 	$(CC)  -c basker_driver.cpp
 matlab: baskermex.cpp basker.cpp
-	mex -v -largeArrayDims baskermex.cpp basker.cpp
+	mex -v -largeArrayDims basker.cpp baskermex.cpp 
+matlab_complex: baskermex_complex.cpp basker.cpp
+	mex -v -largeArrayDims basker.cpp baskermex_complex.cpp
+
 
 

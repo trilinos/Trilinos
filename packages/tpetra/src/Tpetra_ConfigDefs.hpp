@@ -312,4 +312,25 @@ namespace Tpetra {
 #define TPETRA_USE_KOKKOS_DISTOBJECT 0
 #endif
 
+
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#  include <Kokkos_complex.hpp>
+
+// Specializations of Teuchos::SerializationTraits for
+// Kokkos::complex<{float,double}>.
+
+namespace Teuchos {
+  template<typename Ordinal>
+  class SerializationTraits<Ordinal, ::Kokkos::complex<float> >
+    : public DirectSerializationTraits<Ordinal, ::Kokkos::complex<float> >
+  {};
+
+  template<typename Ordinal>
+  class SerializationTraits<Ordinal, ::Kokkos::complex<double> >
+    : public DirectSerializationTraits<Ordinal, ::Kokkos::complex<double> >
+  {};
+} // namespace Teuchos
+
+#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
 #endif // TPETRA_CONFIGDEFS_HPP

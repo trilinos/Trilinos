@@ -152,7 +152,11 @@ public:
 
   static void verify_set_dependence( task_root_type * , int );
 
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   static void assign( task_root_type ** const , task_root_type * );
+#else
+  KOKKOS_INLINE_FUNCTION static void assign( task_root_type ** const , task_root_type * ) {}
+#endif
 
   void wait( task_root_type * );
 
@@ -169,6 +173,7 @@ public:
     { return 0 != task ? Kokkos::TaskState(*((volatile const int *)( & task->m_state ))) : Kokkos::TASK_STATE_NULL ; }
 
   template< class A1 , class A2 , class A3 , class A4 >
+  KOKKOS_INLINE_FUNCTION
   void add_dependence( const Future<A1,A2> & f
                      , const Future<A3,A4> & dep
                      )
@@ -180,6 +185,7 @@ public:
     }
 
   template< class A1 , class A2 >
+  KOKKOS_INLINE_FUNCTION
   void set_dependence( task_root_type * t
                      , const Future<A1,A2> * const dep
                      , typename Impl::enable_if
@@ -233,19 +239,23 @@ public:
 
   ResultType  m_result ;
 
-  inline static
+  KOKKOS_INLINE_FUNCTION static
   TaskMember *
   verify_type( TaskMember< Kokkos::Serial > * t )
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return (TaskMember*) 0 ; }
+#else
     {
       if ( t != 0 && t->m_typeid != typeid(ResultType) ) {
         throw std::runtime_error( std::string("Kokkos::Future bad cast for result type"));
       }
       return static_cast< TaskMember *>( t );
     }
+#endif
 
   typedef const ResultType & get_result_type ;
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   get_result_type get() const { return m_result ; }
 };
 

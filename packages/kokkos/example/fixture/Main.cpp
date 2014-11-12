@@ -249,6 +249,7 @@ int main()
     Kokkos::Example::test_fixture< Kokkos::HostSpace::execution_space >();
     Kokkos::HostSpace::execution_space::finalize();
   }
+
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;

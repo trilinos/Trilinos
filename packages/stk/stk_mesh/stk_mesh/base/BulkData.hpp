@@ -67,7 +67,6 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
-#include "stk_mesh/base/BulkDataParallel.hpp" // for BulkDataParallel
 
 namespace sierra { namespace Fmwk { class MeshBulkData; } }
 namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
@@ -983,7 +982,7 @@ protected: //data
   std::vector<uint16_t> m_closure_count;
 
 private: // data
-  BulkDataParallel m_parallel;
+  Parallel m_parallel;
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;

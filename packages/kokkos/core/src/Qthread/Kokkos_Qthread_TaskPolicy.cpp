@@ -115,6 +115,8 @@ void Mgr::memory_deallocate( void * ptr )
   // unlock
 }
 
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+
 void Mgr::assign( Task ** const lhs , Task * const rhs )
 {
   if ( *lhs ) {
@@ -149,6 +151,8 @@ void Mgr::assign( Task ** const lhs , Task * const rhs )
 
   *lhs = rhs ;
 }
+
+#endif
 
 void Mgr::verify_set_dependence( Task * t , int n )
 {

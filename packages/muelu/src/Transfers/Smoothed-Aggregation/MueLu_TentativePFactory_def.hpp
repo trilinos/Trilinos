@@ -537,19 +537,19 @@ namespace MueLu {
             if (nsVal != zero) bIsZeroNSColumn = false;
           }
           catch(...) {
-            std::cout << "length of fine level nsp: " << fineNullspace->getGlobalLength() << std::endl;
-            std::cout << "length of fine level nsp w overlap: " << fineNullspaceWithOverlap->getGlobalLength() << std::endl;
-            std::cout << "(local?) aggId=" << agg << std::endl;
-            std::cout << "aggSize=" << myAggSize << std::endl;
-            std::cout << "agg DOF=" << k << std::endl;
-            std::cout << "NS vector j=" << j << std::endl;
-            std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
-            std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[aggStart[agg]+k] << std::endl;
-            std::cout << "id aggToRowMap[agg][k]=" << aggToRowMap[aggStart[agg]+k] << " is global element in nonUniqueMap = " <<
+            GetOStream(Runtime1,-1) << "length of fine level nsp: " << fineNullspace->getGlobalLength() << std::endl;
+            GetOStream(Runtime1,-1) << "length of fine level nsp w overlap: " << fineNullspaceWithOverlap->getGlobalLength() << std::endl;
+            GetOStream(Runtime1,-1) << "(local?) aggId=" << agg << std::endl;
+            GetOStream(Runtime1,-1) << "aggSize=" << myAggSize << std::endl;
+            GetOStream(Runtime1,-1) << "agg DOF=" << k << std::endl;
+            GetOStream(Runtime1,-1) << "NS vector j=" << j << std::endl;
+            GetOStream(Runtime1,-1) << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
+            GetOStream(Runtime1,-1) << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[aggStart[agg]+k] << std::endl;
+            GetOStream(Runtime1,-1) << "id aggToRowMap[agg][k]=" << aggToRowMap[aggStart[agg]+k] << " is global element in nonUniqueMap = " <<
                 nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
-            std::cout << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
-            std::cout << "fineNS...=" << fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ] << std::endl;
-            std::cerr << "caught an error!" << std::endl;
+            GetOStream(Runtime1,-1) << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
+            GetOStream(Runtime1,-1) << "fineNS...=" << fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ] << std::endl;
+            GetOStream(Errors,-1) << "caught an error!" << std::endl;
           }
         } //for (LO k=0 ...
         TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column. Error.");
@@ -590,7 +590,7 @@ namespace MueLu {
                }
              }
              catch(...) {
-               std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
+               GetOStream(Errors,-1) << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
              }
            }
          }
@@ -669,7 +669,7 @@ namespace MueLu {
               }
             }
             catch(...) {
-              std::cout << "caught error in colPtr/valPtr insert, current index="<<nnz<<std::endl;
+              GetOStream(Errors,-1) << "caught error in colPtr/valPtr insert, current index="<<nnz<<std::endl;
             }
           } //for (size_t k=0; k<NSDim; ++k)
 
@@ -677,9 +677,9 @@ namespace MueLu {
               Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
           }
           catch(...) {
-            std::cout << "pid " << A->getRowMap()->getComm()->getRank()
-                      << "caught error during Ptent row insertion, global row "
-                      << globalRow << std::endl;
+            GetOStream(Errors,-1) << "pid " << A->getRowMap()->getComm()->getRank()
+                << "caught error during Ptent row insertion, global row "
+                << globalRow << std::endl;
           }
         }
       } //for (GO j=0; j<myAggSize; ++j)

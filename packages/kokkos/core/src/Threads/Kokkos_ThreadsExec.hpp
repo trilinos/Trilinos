@@ -452,6 +452,9 @@ public:
 
   template< typename Type >
   KOKKOS_INLINE_FUNCTION Type team_reduce( const Type & value ) const
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return Type(); }
+#else
     {
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(Type) < ThreadsExec::REDUCE_TEAM_BASE , Type , void >::type type ;
@@ -473,11 +476,15 @@ public:
 
       return accum ;
     }
+#endif
 
   template< class JoinOp >
-  inline typename JoinOp::value_type
+  KOKKOS_INLINE_FUNCTION typename JoinOp::value_type
     team_reduce( const typename JoinOp::value_type & value
                , const JoinOp & op ) const
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return typename JoinOp::value_type(); }
+#else
     {
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(typename JoinOp::value_type) < ThreadsExec::REDUCE_TEAM_BASE
@@ -514,6 +521,7 @@ public:
       // Value was changed by the team base
       return *((type volatile const *) local_value);
     }
+#endif
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -526,6 +534,9 @@ public:
    */
   template< typename ArgType >
   KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return ArgType(); }
+#else
     {
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(ArgType) < ThreadsExec::REDUCE_TEAM_BASE , ArgType , void >::type type ;
@@ -568,6 +579,7 @@ public:
 
       return *work_value ;
     }
+#endif
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
@@ -748,7 +760,8 @@ public:
     }
 
   template< class JoinOp >
-  inline typename JoinOp::value_type
+  KOKKOS_INLINE_FUNCTION
+  typename JoinOp::value_type
     team_reduce( const typename JoinOp::value_type & value
                , const JoinOp & op ) const
     {

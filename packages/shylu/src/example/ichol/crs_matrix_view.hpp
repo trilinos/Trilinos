@@ -111,16 +111,20 @@ namespace Example {
         _n(b.NumCols())
     { } 
 
-    CrsMatrixView(CrsMatBaseType &b,
+    CrsMatrixView(CrsMatBaseType *b,
                   const ordinal_type offm, const ordinal_type m,
                   const ordinal_type offn, const ordinal_type n) 
-      : _base(&b),
+      : _base(b),
         _offm(offm),
         _offn(offn),
         _m(m),
         _n(n) 
     { } 
 
+    CrsMatrixView transpose() const {
+      return CrsMatrixView(_base, _offn, _n, _offm, _m);
+    }
+    
     ostream& showMe(ostream &os) const {
       const int w = 4;
       if (_base != NULL) 

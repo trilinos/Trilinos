@@ -482,9 +482,12 @@ WARN_LOGFILE           =
 INPUT                  = \
 ../src/vector \
 ../src/function/ROL_Objective.hpp \
+../src/function/ROL_BoundConstraint.hpp \
 ../src/function/ROL_EqualityConstraint.hpp \
-../src/function/ROL_InequalityConstraint.hpp \
-../src/function/ROL_Constraints.hpp \
+../src/function/ROL_LinearOperator.hpp \
+../src/function/ROL_Objective_SimOpt.hpp \
+../src/function/ROL_EqualityConstraint_SimOpt.hpp \
+../src/function/ROL_Reduced_Objective_SimOpt.hpp \
 ../src/function/ \
 ../src/algorithm \
 ../src/status \
@@ -660,7 +663,7 @@ VERBATIM_HEADERS       = YES
 # of all compounds will be generated. Enable this if the project 
 # contains a lot of classes, structs, unions or interfaces.
 
-ALPHABETICAL_INDEX     = NO
+ALPHABETICAL_INDEX     = YES
 
 # If the alphabetical index is enabled (see ALPHABETICAL_INDEX) then 
 # the COLS_IN_ALPHA_INDEX tag can be used to specify the number of columns 
@@ -1317,4 +1320,3 @@ MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
 # used. If set to NO the values of all tags below this one will be ignored.
 
 SEARCHENGINE           = NO
-

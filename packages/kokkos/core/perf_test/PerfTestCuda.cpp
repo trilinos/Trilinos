@@ -41,12 +41,23 @@
 //@HEADER
 */
 
+#include <iostream>
+#include <iomanip>
 #include <gtest/gtest.h>
+
 #include <Kokkos_Core.hpp>
 
-namespace Test {
+#if defined( KOKKOS_HAVE_CUDA )
 
-extern void test_device_cuda_init();
+#include <impl/Kokkos_Timer.hpp>
+
+#include <PerfTestHexGrad.hpp>
+#include <PerfTestBlasKernels.hpp>
+#include <PerfTestGramSchmidt.hpp>
+#include <PerfTestDriver.hpp>
+
+
+namespace Test {
 
 class cuda : public ::testing::Test {
   protected:
@@ -60,16 +71,17 @@ class cuda : public ::testing::Test {
     }
 };
 
-extern void test_cuda_hexgrad(int exp_beg, int exp_end);
-extern void test_cuda_gramschmidt(int exp_beg, int exp_end);
-
-TEST_F( cuda, hexgrad ) {
-  EXPECT_NO_THROW(test_cuda_hexgrad( 10, 20 ));
+TEST_F( cuda, hexgrad )
+{
+  EXPECT_NO_THROW( run_test_hexgrad< Kokkos::Cuda >( 10 , 20, "Kokkos::Cuda" ) );
 }
 
-TEST_F( cuda, gramschmidt ) {
-  EXPECT_NO_THROW(test_cuda_gramschmidt( 10, 20 ));
+TEST_F( cuda, gramschmidt )
+{
+  EXPECT_NO_THROW( run_test_gramschmidt< Kokkos::Cuda >( 10 , 20, "Kokkos::Cuda" ) );
 }
 
 } // namespace Test
+
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 

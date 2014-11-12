@@ -2,7 +2,7 @@
 #define BASKER_DEF_HPP
 
 #include "basker_decl.hpp"
-//#include "basker_scalartraits.hpp"
+#include "basker_scalartraits.hpp"
 #include "basker.hpp"
 
 
@@ -97,7 +97,7 @@ namespace Basker{
       {
 	j = stack[head] ;
 #ifdef BASKER_DEBUG
-	std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
+	//std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
 #endif
 	t = pinv [j] ;
 	if (color[j] == 0)
@@ -130,7 +130,6 @@ namespace Basker{
 	  }
 	if (done)
 	  {
-	    // std::cout << "done called " << std::endl;
 	    pattern[--*top] = j ;
 	    color[j] = 2 ;
 	    if(head == 0)
@@ -256,11 +255,11 @@ namespace Basker{
 	
 	for(i = 0; i < nrow; i++)
 	  {
-	    ASSERT(X[i] == 0);
+	    ASSERT(X[i] == (Entry)0);
 	  }
 	for(i = 0; i < ncol; i++)
 	  {
-	    ASSERT(color[i] ==0); 
+	    ASSERT(color[i] == 0); 
 	  }
 #endif
 	/* Reachability for every nonzero in Ak */
@@ -313,12 +312,13 @@ namespace Basker{
 	    t = pinv[j];
 	    value = X[j];
 	    /*note may want to change this to traits*/
-	    absv = (value < 0.0 ? -value : value);
-	    
+	    //absv = (value < 0.0 ? -value : value);
+	    absv = BASKER_ScalarTraits<Entry>::approxABS(value);
+
 	    if(t == ncol)
 	      {
 		lcnt++;
-		if( absv > maxv)
+		if( BASKER_ScalarTraits<Entry>::gt(absv , maxv))
 		  {
 		    maxv = absv;
 		    pivot = value;
@@ -328,7 +328,7 @@ namespace Basker{
 	  }
 	ucnt = nrow - top -lcnt + 1;
 	
-	if(maxindex == ncol || pivot ==0)
+	if(maxindex == ncol || pivot == ((Entry)0))
 	  {
 	    cout << "Matrix is singular at index: " << maxindex << " pivot: " << pivot << endl;
 	    return 1;
@@ -341,7 +341,6 @@ namespace Basker{
 	    cout << "Permuting pivot: " << k << " for row: " << maxindex << endl;
 	  }
 #endif	
-
 
 	if(lnnz + lcnt >= L->nnz)
 	  {
@@ -399,7 +398,8 @@ namespace Basker{
 	    t = pinv[j];
 
 	    /* check for numerical cancellations */
-	    if(X[j] != 0)
+	    
+	    if(X[j] != ((Entry)0))
 	      {
 		
 		if(t != ncol)
@@ -423,7 +423,8 @@ namespace Basker{
 		      }
 		    
 		    L->row_idx[lnnz]  = j;
-		    L->val[lnnz] = X[j]/pivot;
+		    //L->val[lnnz] = X[j]/pivot;
+		    L->val[lnnz] = BASKER_ScalarTraits<Entry>::divide(X[j],pivot);
 		    lnnz++;
 		    
 		  }
@@ -473,6 +474,9 @@ namespace Basker{
 	    L->row_idx[k] = pinv[L->row_idx[k]];
 	  }
       }
+    //Max sure correct location of min in L and max in U for CSC format//
+    //Speeds up tri-solve//
+    sort_factors();  
 
 #ifdef BASKER_DEBUG
     cout << "After Permuting" << endl;
@@ -577,32 +581,38 @@ namespace Basker{
   {
     
     Int i;
-    /*permute x to new ordering*/
+    int result = 0;
     for(i = 0 ; i < A->ncol; i++) 
       {
-
-		
-	x[i] = b[pinv[i]];
-	b[pinv[i]] = 0;
+	
+	Int k = pinv[i];
+	x[k] = b[i];
+	b[i] = 0;
+	
       }
-    //ASSERT(L->nrow == L->ncol);
-    low_tri_solve_csc(L->nrow, L->col_ptr, L->row_idx, L->val, b, x); 
-    cout << " back solve " << endl;
-    up_tri_solve_csc(U->nrow, U->col_ptr, U->row_idx, U->val, x, b);
-    return 0;
+    
+    result = low_tri_solve_csc(L->nrow, L->col_ptr, L->row_idx, L->val, b, x); 
+    if(result == 0)
+      {
+	result = up_tri_solve_csc(U->nrow, U->col_ptr, U->row_idx, U->val, x, b);
+      }
+
+    return result;
   }
   
   template < class Int, class Entry>
   int Basker<Int, Entry>::low_tri_solve_csc( Int n, Int *col_ptr, Int *row_idx, Entry* val,  Entry *x, Entry *b)
   {
     Int i, j;
-        /*for each column*/
+    /*for each column*/
     for(i = 0; i < n ; i++)
       {
-	ASSERT(val[col_ptr[i]] != 0);
-	
-	x[i] = b[i]/val[col_ptr[i]]; //diag
-	
+#ifdef BASKER_DEBUG
+	ASSERT(val[col_ptr[i]] != (Entry)0);
+#endif
+		
+	x[i] = BASKER_ScalarTraits<Entry>::divide(b[i], val[col_ptr[i]]); 
+
 	for(j = col_ptr[i]+1; j < (col_ptr[i+1]); j++) //update all rows
 	  {
 	    b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[i]);
@@ -616,19 +626,23 @@ namespace Basker{
   int Basker<Int, Entry>::up_tri_solve_csc( Int n, Int *col_ptr, Int *row_idx, Entry *val,  Entry *x, Entry *b)
   {
     Int i, j;
-        /*for each column*/
-    for(i = n; i > 0 ; i--)
+    /*for each column*/
+    for(i = n; i > 1 ; i--)
       {
 	int ii = i-1;
-	ASSERT(val[col_ptr[i]-1] != 0);
-			
-	x[ii] = b[ii]/val[col_ptr[i]-1]; //diag
-		
+#ifdef BASKER_DEBUG
+	ASSERT(val[col_ptr[i]-1] != (Entry)0);
+#endif			
+	//x[ii] = b[ii]/val[col_ptr[i]-1]; //diag
+	x[ii] = BASKER_ScalarTraits<Entry>::divide(b[ii],val[col_ptr[i]-1]);
+
 	for(j = (col_ptr[i]-2); j >= (col_ptr[ii]); j--)
-	  {    
+	  {
 	    b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[ii]);
 	  }
       }
+    //x[0] = b[0]/val[col_ptr[1]-1];
+    x[0] = BASKER_ScalarTraits<Entry>::divide(b[0],val[col_ptr[1]-1]); 
     return 0;
   }
 
@@ -665,7 +679,7 @@ namespace Basker{
     /*p(i) contains the destination of row i in the permuted matrix*/
     Int i,j, ii, jj;
     
-    /*Determin column pointer of output matrix*/
+    /*Determine column pointer of output matrix*/
     for(j=0; j < B->ncol; j++)
       {
 	i = p[j];
@@ -700,9 +714,64 @@ namespace Basker{
     for(k=0; k < A->nnz; k++)
       {
 	B->row_idx[k] = p[A->row_idx[k]];
-      }
-    /*May want to sort values and index later*/
+      }   
   }
+
+  template <class Int, class Entry>
+  int Basker <Int, Entry>::sort_factors()
+  {
+    
+    /*Sort CSC of L - just make sure min_index is in lowest position*/
+    Int i, j;
+    Int p;
+    Int val;
+    for(i = 0 ; i < L->ncol; i++)
+      {
+	p = L->col_ptr[i];
+	val = L->row_idx[p];
+
+	for(j = L->col_ptr[i]+1; j < (L->col_ptr[i+1]); j++)
+	  {
+	    if(L->row_idx[j] < val)
+	      {
+		p = j;
+		val = L->row_idx[p];
+	      }
+	  }
+	Int temp_index = L->row_idx[L->col_ptr[i]];
+	Entry temp_entry = L->val[L->col_ptr[i]];
+	L->row_idx[L->col_ptr[i]] = val;
+	L->val[L->col_ptr[i]] = L->val[p];
+	L->row_idx[p] = temp_index;
+	L->val[p] = temp_entry;
+      }//end for all columns
+
+
+    /* Sort CSC U --- just make sure max is in right location*/
+     for(i = 0 ; i < U->ncol; i++)
+      {
+	p = U->col_ptr[i+1]-1;
+	val = U->row_idx[p];
+
+	for(j = U->col_ptr[i]; j < (U->col_ptr[i+1]-1); j++)
+	  {
+	    if(U->row_idx[j] > val)
+	      {		
+		p = j;
+		val = U->row_idx[p];
+	      }
+	  }
+	Int temp_index = U->row_idx[U->col_ptr[i+1]-1];
+	Entry temp_entry = U->val[U->col_ptr[i+1]-1];
+	U->row_idx[U->col_ptr[i+1]-1] = val;
+	U->val[U->col_ptr[i+1]-1] = U->val[p];
+	U->row_idx[p] = temp_index;
+	U->val[p] = temp_entry;
+      }//end for all columns
+
+    return 0;
+  }
+
 
 }//end namespace
 #endif  

@@ -36,10 +36,10 @@ int main()
 
     Kokkos::OpenMP::initialize( use_numa_count * use_cores_per_numa );
 
-    std::cout << "feint< Threads , NotUsingAtomic >" << std::endl ;
+    std::cout << "feint< OpenMP , NotUsingAtomic >" << std::endl ;
     Kokkos::Example::feint< Kokkos::OpenMP , false >();
 
-    std::cout << "feint< Threads , Usingtomic >" << std::endl ;
+    std::cout << "feint< OpenMP , Usingtomic >" << std::endl ;
     Kokkos::Example::feint< Kokkos::OpenMP , true  >();
 
     Kokkos::OpenMP::finalize();

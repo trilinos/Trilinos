@@ -1761,7 +1761,7 @@ struct VecDotFunctor {
 
   KOKKOS_INLINE_FUNCTION void
   init (value_type& update) const {
-    update = Kokkos::Details::ArithTraits<typename IPT::dot_type>::zero ();
+    update = Details::ArithTraits<value_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -1810,7 +1810,7 @@ struct VecNorm2SquaredFunctor {
 
   KOKKOS_INLINE_FUNCTION void
   init (value_type& update) const {
-    update = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+    update = Details::ArithTraits<value_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -1857,7 +1857,7 @@ struct VecNorm1Functor {
 
   KOKKOS_INLINE_FUNCTION void
   init (value_type& update) const {
-    update = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+    update = Details::ArithTraits<value_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -1916,7 +1916,7 @@ struct VecNormInfFunctor {
     // Zero is a good default value for magnitudes (which are
     // nonnegative by definition).  That way, MPI processes with
     // zero rows won't affect the global maximum.
-    update = Kokkos::Details::ArithTraits<typename IPT::mag_type>::zero ();
+    update = Details::ArithTraits<value_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -2811,9 +2811,9 @@ struct V_DotFunctor
   }
 
   KOKKOS_INLINE_FUNCTION
-  void init( volatile value_type &update) const
+  void init (volatile value_type& update) const
   {
-    update = 0;
+    update = Details::ArithTraits<value_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -2839,34 +2839,35 @@ V_Dot( const XVector & x, const YVector & y, int n = -1)
 template<class WeightVector, class XVector>
 struct V_DotWeighted_Functor
 {
-  typedef typename XVector::device_type        device_type;
-  typedef typename XVector::size_type            size_type;
-  typedef typename XVector::non_const_value_type          xvalue_type;
-  typedef typename WeightVector::non_const_value_type     wvalue_type;
+  typedef typename XVector::device_type device_type;
+  typedef typename XVector::size_type size_type;
+  typedef typename XVector::non_const_value_type xvalue_type;
+  typedef typename WeightVector::non_const_value_type wvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> XIPT;
   typedef Details::InnerProductSpaceTraits<wvalue_type> WIPT;
-  typedef typename XIPT::dot_type               value_type;
+  typedef typename XIPT::dot_type value_type;
 
-  typename WeightVector::const_type m_w ;
-  typename XVector::const_type m_x ;
+  typename WeightVector::const_type m_w;
+  typename XVector::const_type m_x;
 
-  V_DotWeighted_Functor(WeightVector w, XVector x):m_w(w),m_x(x) {}
-  //--------------------------------------------------------------------------
+  V_DotWeighted_Functor (WeightVector w, XVector x) :
+    m_w (w), m_x (x)
+  {}
+
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i, value_type& sum ) const
-  {
-    sum += XIPT::dot( m_x(i), m_x(i) )/ WIPT::dot( m_w(i), m_w(i) );
+  void operator() (const size_type i, value_type& sum) const {
+    sum += XIPT::dot (m_x(i), m_x(i)) / WIPT::dot (m_w(i), m_w(i));
   }
 
-
-  KOKKOS_INLINE_FUNCTION void init( value_type & update) const
-  {
-      update = 0;
+  KOKKOS_INLINE_FUNCTION void init (value_type& update) const {
+    update = Details::ArithTraits<value_type>::zero ();
   }
-  KOKKOS_INLINE_FUNCTION void join( volatile value_type & update ,
-                                    const volatile value_type & source ) const
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update,
+        const volatile value_type& source) const
   {
-      update += source;
+    update += source;
   }
 };
 
@@ -2912,7 +2913,7 @@ struct V_Sum_Functor
   KOKKOS_INLINE_FUNCTION
   void init( value_type& update) const
   {
-      update = 0;
+    update = Details::ArithTraits<value_type>::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -2959,9 +2960,9 @@ struct V_Norm1_Functor
   {
     sum += Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i));
   }
-  KOKKOS_INLINE_FUNCTION void init( value_type& update) const
+  KOKKOS_INLINE_FUNCTION void init (value_type& update) const
   {
-    update = 0;
+    update = Details::ArithTraits<value_type>::zero ();
   }
   KOKKOS_INLINE_FUNCTION void join( volatile value_type&  update ,
                                     const volatile value_type&  source ) const
@@ -3006,9 +3007,9 @@ struct V_NormInf_Functor
     sum = MAX(sum,Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i)));
   }
 
-  KOKKOS_INLINE_FUNCTION void init( value_type& update) const
+  KOKKOS_INLINE_FUNCTION void init (value_type& update) const
   {
-    update = 0;
+    update = Details::ArithTraits<value_type>::zero ();
   }
   KOKKOS_INLINE_FUNCTION void join( volatile value_type&  update ,
                                     const volatile value_type&  source ) const

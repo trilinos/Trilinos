@@ -103,15 +103,20 @@ namespace { // anonymous
                                3.5, 11.0,
                                4.0, 12.0,
                                4.5, 13.0};
-      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-      View<const size_t*, HostSpace, MemoryUnmanaged> ptrIn (ptrRaw, numRows+1);
-      View<const int*, HostSpace, MemoryUnmanaged> indIn (indRaw, nnz);
-      View<const double*, HostSpace, MemoryUnmanaged> valIn (valRaw, nnz);
+
+      typedef View<size_t*,MemorySpace> ptr_type ;
+      typedef View<int*,   MemorySpace> ind_type ;
+      typedef View<double*,MemorySpace> val_type ;
 
       // Create the output Views.
-      ptr = View<size_t*, MemorySpace> ("ptr", numRows + 1);
-      ind = View<int*, MemorySpace> ("ind", nnz);
-      val = View<double*, MemorySpace> ("val", nnz);
+      ptr = ptr_type("ptr", numRows + 1);
+      ind = ind_type("ind", nnz);
+      val = val_type("val", nnz);
+
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
+      typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
+      typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
 
       Kokkos::deep_copy (ptr, ptrIn);
       Kokkos::deep_copy (ind, indIn);
@@ -151,12 +156,7 @@ namespace { // anonymous
   void
   testCrsMatrix ()
   {
-    // Initialize the MemorySpace's default execution space.  Default
-    // arguments suffice, since this isn't a performance test.
-    typedef typename MemorySpace::execution_space execution_space;
-    if (! execution_space::is_initialized ()) {
-      execution_space::initialize ();
-    }
+    Kokkos::initialize();
 
     typedef Kokkos::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
     crs_matrix_type A = makeCrsMatrix<MemorySpace> ();
@@ -165,7 +165,7 @@ namespace { // anonymous
     // compile CrsMatrix, which is the whole point of this test.
     printf ("A is %d by %d\n", A.numRows (), A.numCols ());
 
-    execution_space::finalize ();
+    Kokkos::finalize ();
   }
 
 } // namespace (anonymous)
