@@ -4554,10 +4554,12 @@ static int8_t is_wr_complete(
 {
     int8_t rc=FALSE;
 
+    nthread_lock(&ib_wr->lock);
     if ((ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE) ||
         (ib_wr->state==NNTI_IB_WR_STATE_WAIT_COMPLETE)) {
         rc=TRUE;
     }
+    nthread_unlock(&ib_wr->lock);
 
     log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
@@ -6392,7 +6394,9 @@ NNTI_result_t progress(int timeout)
                 ib_work_request *ib_wr=decode_work_request(&wc);
                 trios_stop_timer("progress - decode_work_request", call_time);
                 trios_start_timer(call_time);
+                nthread_lock(&ib_wr->lock);
                 process_event(ib_wr, &wc);
+                nthread_unlock(&ib_wr->lock);
                 trios_stop_timer("progress - process_event", call_time);
 
                 made_progress=true;
