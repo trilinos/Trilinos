@@ -52,6 +52,7 @@
 #define ROL_SIMPLEEQCONSTRAINED_HPP
 
 #include "ROL_Objective.hpp"
+#include "ROL_StdVector.hpp"
 #include "ROL_EqualityConstraint.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
@@ -317,15 +318,15 @@ namespace ZOO {
   /** \brief Objective function:
              f(x) = exp(x1*x2*x3*x4*x5) + 0.5*(x1^3+x2^3+1)^2
    */
-  template<class Real>
+  template< class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real> >
   class Objective_SimpleEqConstrained : public Objective<Real> {
 
   public:
     Objective_SimpleEqConstrained() {}
 
     Real value( const Vector<Real> &x, Real &tol ) {
-      OptStdVector<Real> & ex =
-        Teuchos::dyn_cast<OptStdVector<Real> >(const_cast <Vector<Real> &>(x));
+      XPrim & ex =
+        Teuchos::dyn_cast<XPrim>(const_cast <Vector<Real> &>(x));
       Teuchos::RCP<const std::vector<Real> > xp = ex.getVector();
 
       int n = xp->size();
@@ -345,9 +346,9 @@ namespace ZOO {
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > gp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(g)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(g)).getVector());
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective gradient): "
@@ -374,11 +375,11 @@ namespace ZOO {
 
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(hv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(hv)).getVector());
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
@@ -445,7 +446,7 @@ namespace ZOO {
              c2(x) = x2*x3-5*x4*x5
              c3(x) = x1^3 + x2^3 + 1
    */
-  template<class Real>
+  template<class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real>, class CPrim=StdVector<Real>, class CDual=StdVector<Real> >
   class EqualityConstraint_SimpleEqConstrained : public EqualityConstraint<Real> {
 
   public:
@@ -453,9 +454,9 @@ namespace ZOO {
 
     void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > cp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ConStdVector<Real> >(c)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<CPrim>(c)).getVector());
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint value): "
@@ -478,11 +479,11 @@ namespace ZOO {
   
     void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > jvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ConStdVector<Real> >(jv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<CPrim>(jv)).getVector());
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
@@ -515,11 +516,11 @@ namespace ZOO {
 
     void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<ConDualStdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<CDual>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > ajvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(ajv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(ajv)).getVector());
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
@@ -553,13 +554,13 @@ namespace ZOO {
 
     void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<ConDualStdVector<Real> >(const_cast<Vector<Real> &>(u))).getVector();
+        (Teuchos::dyn_cast<CDual>(const_cast<Vector<Real> &>(u))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > ahuvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(ahuv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(ahuv)).getVector());
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
@@ -599,15 +600,15 @@ namespace ZOO {
 
     /*std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, const Vector<Real> &b2, const Vector<Real> &x, Real &tol) {
       Teuchos::RCP<std::vector<Real> > v1p =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(v1)).getVector());    
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(v1)).getVector());    
       Teuchos::RCP<std::vector<Real> > v2p =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ConDualStdVector<Real> >(v2)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<CDual>(v2)).getVector());
       Teuchos::RCP<const std::vector<Real> > b1p =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(b1))).getVector();
+        (Teuchos::dyn_cast<XDual>(const_cast<Vector<Real> &>(b1))).getVector();
       Teuchos::RCP<const std::vector<Real> > b2p =
-        (Teuchos::dyn_cast<ConStdVector<Real> >(const_cast<Vector<Real> &>(b2))).getVector();
+        (Teuchos::dyn_cast<CPrim>(const_cast<Vector<Real> &>(b2))).getVector();
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<OptStdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
 
       Real x1 = (*xp)[0];
       Real x2 = (*xp)[1];
@@ -658,24 +659,24 @@ namespace ZOO {
   };
 
 
-  template<class Real>
+  template<class Real, class XPrim, class XDual, class CPrim, class CDual>
   void getSimpleEqConstrained( Teuchos::RCP<Objective<Real> > &obj,
                                Teuchos::RCP<EqualityConstraint<Real> > &constr,
                                Vector<Real> &x0,
                                Vector<Real> &sol ) {
     // Cast initial guess and solution vectors.
     Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(x0)).getVector());
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(x0)).getVector());
     Teuchos::RCP<std::vector<Real> > solp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<OptStdVector<Real> >(sol)).getVector());
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(sol)).getVector());
     int n = 5;
     // Resize vectors.
     x0p->resize(n);
     solp->resize(n);
     // Instantiate objective function.
-    obj = Teuchos::rcp( new Objective_SimpleEqConstrained<Real> );
+    obj = Teuchos::rcp( new Objective_SimpleEqConstrained<Real, XPrim, XDual> );
     // Instantiate constraints.
-    constr = Teuchos::rcp( new EqualityConstraint_SimpleEqConstrained<Real> );
+    constr = Teuchos::rcp( new EqualityConstraint_SimpleEqConstrained<Real, XPrim, XDual, CPrim, CDual> );
     // later we will bundle equality constraints into constraints ...
     //std::vector<Teuchos::RCP<EqualityConstraint<Real> > > eqc( 1, Teuchos::rcp( new EqualityConstraint_SimpleEqConstrained<Real> ) );
     //constr = Teuchos::rcp( new Constraints<Real>(eqc) );
