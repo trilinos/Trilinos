@@ -2731,13 +2731,14 @@ NNTI_result_t NNTI_ib_cancel (
     ib_wr=IB_WORK_REQUEST(wr);
     assert(ib_wr);
 
-    /* TODO: does this need a lock? */
+    nthread_lock(&ib_wr->lock);
     if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
         ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
     } else {
         log_warn(nnti_debug_level, "wr=%p is not in progress (current state is %d).  Cannot cancel.", wr, ib_wr->state);
         rc=NNTI_EINVAL;
     }
+    nthread_unlock(&ib_wr->lock);
 
     log_debug(nnti_debug_level, "exit (wr=%p)", wr);
 
@@ -2762,13 +2763,14 @@ NNTI_result_t NNTI_ib_cancelall (
         ib_wr=IB_WORK_REQUEST(wr_list[i]);
         assert(ib_wr);
 
-        /* TODO: does this need a lock? */
+        nthread_lock(&ib_wr->lock);
         if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
             ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
         } else {
             log_warn(nnti_debug_level, "wr_list[%d]=%p is not in progress (current state is %d).  Cannot cancel.", i, wr_list[i], ib_wr->state);
             rc=NNTI_EINVAL;
         }
+        nthread_unlock(&ib_wr->lock);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -4540,9 +4542,11 @@ static int8_t is_wr_canceling(
 {
     int8_t rc=FALSE;
 
+    nthread_lock(&ib_wr->lock);
     if (ib_wr->state == NNTI_IB_WR_STATE_CANCELING) {
         rc=TRUE;
     }
+    nthread_unlock(&ib_wr->lock);
 
     log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
