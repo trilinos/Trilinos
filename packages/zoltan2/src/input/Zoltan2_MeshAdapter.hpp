@@ -318,9 +318,8 @@ public:
 	}
 
 	for (int j = offsets[localRow]; j < NumAdjs; ++j) {
-	  int Col = adjacencyIds[j];
 	  //globalCol for Tpetra Graph
-	  global_size_t globalColT = as<global_size_t> (Col);
+	  global_size_t globalColT = as<global_size_t> (adjacencyIds[j]);
 
 	  //Update Tpetra adjs Graph Transpose
 	  adjsGraphTranspose->insertGlobalIndices (globalColT, globalRowAV);
