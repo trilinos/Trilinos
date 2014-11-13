@@ -103,14 +103,18 @@ void * host_allocate_not_thread_safe(
 
     ptr_alloc = malloc( scalar_size * count_alloc );
 
-    ptr = static_cast<unsigned char *>(ptr_alloc) + 
-          ( MEMORY_ALIGNMENT - reinterpret_cast<ptrdiff_t>(ptr_alloc) % MEMORY_ALIGNMENT );
+    { // Round up to guarantee proper alignment
+      const size_t rem = reinterpret_cast<ptrdiff_t>(ptr_alloc) % MEMORY_ALIGNMENT ;
+
+      ptr = static_cast<unsigned char *>(ptr_alloc) + ( rem ? MEMORY_ALIGNEMENT - rem : 0 );
+    }
 
 #endif
 
     if ( ptr_alloc && ptr_alloc <= ptr &&
          0 == ( reinterpret_cast<ptrdiff_t>(ptr) % MEMORY_ALIGNMENT ) ) {
-      Impl::host_space_singleton().insert( label , ptr_alloc , scalar_size , scalar_count );
+      // Insert allocated pointer and allocation count
+      Impl::host_space_singleton().insert( label , ptr_alloc , scalar_size , count_alloc );
     }
     else {
       std::ostringstream msg ;
