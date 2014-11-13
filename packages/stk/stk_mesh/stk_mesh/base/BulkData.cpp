@@ -2299,7 +2299,7 @@ void BulkData::internal_declare_relation( Entity e_from ,
   // Deduce and set new part memberships:
   ordinal_scratch.clear();
 
-  induced_part_membership(*this, e_from, empty, entity_rank(e_to), ordinal_scratch );
+  induced_part_membership(*this, mesh_meta_data().get_parts(), e_from, empty, entity_rank(e_to), ordinal_scratch );
 
   PartVector emptyParts;
   part_scratch.clear();
@@ -2381,6 +2381,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   const EntityRank e_to_entity_rank = entity_rank(e_to);
   const EntityRank e_from_entity_rank = entity_rank(e_from);
+  const PartVector& all_parts = mesh_meta_data().get_parts();
 
   //------------------------------
   // When removing a relationship may need to
@@ -2425,7 +2426,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
                          << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
           if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
           {
-            induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank, keep,
+            induced_part_membership(*this, all_parts, rel_entities[j], empty, e_to_entity_rank, keep,
                                     false /*Do not look at supersets*/);
           }
         }
@@ -2442,7 +2443,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
       {
         if ( rel_entities[j] == e_to && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) )
         {
-          induced_part_membership(*this, e_from, keep, e_to_entity_rank, del,
+          induced_part_membership(*this, all_parts, e_from, keep, e_to_entity_rank, del,
                                   false /*Do not look at supersets*/);
           break; // at most 1 relation can match our specification
         }
@@ -6267,6 +6268,7 @@ void BulkData::internal_propagate_part_changes(
 
   const EntityRank erank = entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+  const PartVector& all_parts = mesh_meta_data().get_parts();
 
   OrdinalVector to_del , to_add , empty ;
   PartVector addParts, delParts, emptyParts;
@@ -6291,7 +6293,7 @@ void BulkData::internal_propagate_part_changes(
 
         // Induce part membership from this relationship to
         // pick up any additions.
-        induced_part_membership(*this, entity, empty, irank, to_add );
+        induced_part_membership(*this, all_parts, entity, empty, irank, to_add );
 
         if ( ! removed.empty() ) {
           // Something was removed from the 'from' entity,
@@ -6321,7 +6323,7 @@ void BulkData::internal_propagate_part_changes(
               if (entity != back_rel_entities[k])  // Already did this entity
               {
                 // Relation from to_rel->entity() to e_to
-                induced_part_membership(*this, back_rel_entities[k], empty, e_to_rank, to_add );
+                induced_part_membership(*this, all_parts, back_rel_entities[k], empty, e_to_rank, to_add );
               }
             }
           }
