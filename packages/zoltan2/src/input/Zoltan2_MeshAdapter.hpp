@@ -304,21 +304,20 @@ public:
       // Construct Tpetra::CrsGraph objects.
       adjsGraphTranspose = rcp (new sparse_graph_type (MapG, 0));
 
-      for (int i = 0; i < LocalNumIDs; ++i) {
+      for (int localRow = 0; localRow < LocalNumIDs; ++localRow) {
 
-	int Row = Ids[i];
-	int globalRow = as<int> (Row);
+	int globalRow = as<int> (Ids[localRow]);
 	//create ArrayView globalRow object for Tpetra
 	ArrayView<int> globalRowAV = Teuchos::arrayView (&globalRow, 1);
 
 	int NumAdjs;
-	if (i + 1 < LocalNumIDs) {
-	  NumAdjs = offsets[i+1];
+	if (localRow + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[localRow+1];
 	} else {
 	  NumAdjs = LocalNumAdjs;
 	}
 
-	for (int j = offsets[i]; j < NumAdjs; ++j) {
+	for (int j = offsets[localRow]; j < NumAdjs; ++j) {
 	  int Col = adjacencyIds[j];
 	  //globalCol for Tpetra Graph
 	  global_size_t globalColT = as<global_size_t> (Col);
