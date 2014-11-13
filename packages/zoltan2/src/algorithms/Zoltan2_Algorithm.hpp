@@ -59,6 +59,7 @@ class Algorithm;
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
 #define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
   { \
@@ -116,10 +117,21 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
 
+  //! \brief  for partitioning methods, return bounding boxes of the 
+  //          computed parts
+  //          Not all partitioning algorithms will support
+  //          this method.
+  //
+  virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
+  getPartBoxesView() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
+
   //! \brief pointAssign method: Available only for some partitioning algorithms
   //          when a point lies on a part boundary, the lowest part
   //          number on that boundary is returned.
-  //          Note that not all partitioning algorithms will support
+  //          Not all partitioning algorithms will support
   //          this method.
   //
   //   \param dim : the number of dimensions specified for the point in space

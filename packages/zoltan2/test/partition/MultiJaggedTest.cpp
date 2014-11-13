@@ -208,6 +208,21 @@ int run_pointAssign_tests(
       }
     }
 
+    {
+      const vector<Zoltan2::coordinateModelPartBox<zscalar_t, 
+                                                   typename Adapter::part_t> >
+            pBoxes = problem->getSolution().getPartBoxesView();
+      for (size_t i = 0; i < pBoxes.size(); i++) {
+        zscalar_t *lmin = pBoxes[i].getlmins(); 
+        zscalar_t *lmax = pBoxes[i].getlmaxs();;
+        std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId() 
+                  << " (" << lmin[0] << "," << lmin[1] << ","
+                  << (coordDim > 2 ? lmin[2] : 0) << ") x ("
+                  << " (" << lmax[0] << "," << lmax[1] << ","
+                  << (coordDim > 2 ? lmax[2] : 0) << ")" << std::endl;
+      }
+    }
+
     // test the origin
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = 0.;

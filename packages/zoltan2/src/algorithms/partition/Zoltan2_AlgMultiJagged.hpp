@@ -6130,6 +6130,16 @@ public:
      */
     void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
+    mj_partBoxVector_t &getPartBoxesView() const
+    {
+      RCP<mj_partBoxVector_t> pboxes;
+      try {
+        pboxes = this->mj_partitioner.get_part_boxes();
+      }
+      Z2_FORWARD_EXCEPTIONS;
+      return *pboxes;
+    }
+
     mj_part_t pointAssign(int dim, mj_scalar_t *point) const;
 
     /*! \brief returns communication graph resulting from MJ partitioning.

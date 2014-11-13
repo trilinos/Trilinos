@@ -399,10 +399,10 @@ public:
 
   /*! \brief returns the part box boundary list.
    */
-  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-  getPartBoxes()
+  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > &
+  getPartBoxesView() const
   {
-    return this->partBoxes;
+    return this->algorithm_->getPartBoxesView();
   }
 
   //!  \brief Return the part overlapping a given point in space; 

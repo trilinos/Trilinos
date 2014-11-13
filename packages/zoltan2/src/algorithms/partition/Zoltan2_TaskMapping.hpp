@@ -1318,10 +1318,10 @@ protected:
 		file += toString<int>(comm_->getRank()) + exten;
 		std::ofstream ff(file.c_str());
 		//ff.seekg (0, ff.end);
-		RCP < vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxes();
+		vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
 
 		for (part_t i = 0; i < this->ntasks;++i){
-			(*outPartBoxes)[i].writeGnuPlot(ff, mm);
+			outPartBoxes[i].writeGnuPlot(ff, mm);
 		}
 		if (coordDim == 2){
 			ff << "plot \"2d.txt\"" << std::endl;
