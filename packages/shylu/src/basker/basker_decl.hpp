@@ -19,6 +19,7 @@ namespace Basker{
     int returnU(Int *dim, Int *nnz, Int **col_ptr, Int **row_idx, Entry **val);
     int returnP(Int **p);
     int solve(Entry *b, Entry *x);
+    int solveMultiple(Int nrhs, Entry **b, Entry **x);
     //int solve();
     
   private:
@@ -40,6 +41,7 @@ namespace Basker{
     int up_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val, Entry *x, Entry *b); 
     int permute_row(Int *p, basker_matrix<Int,Entry> *B);
     int permute_column(Int *p, basker_matrix<Int, Entry> *B);
+    int sort_factors();
     basker_matrix<Int, Entry> *A;
     basker_matrix<Int, Entry> *L;
     basker_matrix<Int, Entry> *U;

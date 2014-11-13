@@ -81,6 +81,9 @@ namespace Sacado {
       //! Typename of values
       typedef typename RemoveConst<T>::type value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
       /*!
        * @name Initialization methods
        */

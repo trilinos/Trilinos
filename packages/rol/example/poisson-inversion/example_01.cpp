@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 128; // Set problem dimension.
-    ROL::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
+    ROL::ZOO::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
 
     Teuchos::ParameterList parlist;
     // Basic algorithm.

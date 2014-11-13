@@ -5,16 +5,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 
 SET(SOURCES_TEST Main.cpp TestFixture.cpp BoxElemPart.cpp )
 
-IF( Kokkos_ENABLE_Cuda )
-
-  # pick up subpackage include path
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA TestFixture.cu )
-
-  LIST( APPEND SOURCES_TEST ${OBJECTS_CUDA} )
-
-ENDIF()
-
 # Automatically picks up 'kokkosexample_fixture'
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TestFixture

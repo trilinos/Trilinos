@@ -50,6 +50,7 @@
 #define SACADO_TRAITS_HPP
 
 #include "Sacado_ConfigDefs.h"
+#include "Sacado_dummy_arg.hpp"
 #include <string>
 
 #ifdef HAVE_SACADO_COMPLEX
@@ -261,6 +262,304 @@ namespace Sacado {
   template <typename T>
   struct RemoveConst< const T > {
     typedef T type;
+  };
+
+  // Macro for building proper Promote specialization for any AD type
+#define SACADO_AD_PROMOTE_SPEC(NS, AD)                                  \
+  template <typename T>                                                 \
+  struct Promote< NS :: AD <T>,                                         \
+                  NS :: AD <T> > {                                      \
+    typedef NS :: AD <T> type;                                          \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: AD <T>,                                         \
+                  typename NS :: AD <T>::value_type > {                 \
+    typedef NS :: AD <T> type;                                          \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename NS :: AD <T>::value_type,                    \
+                  NS :: AD <T> > {                                      \
+    typedef NS :: AD <T> type;                                          \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: AD <T>,                                         \
+                  typename dummy< typename NS :: AD <T>::value_type,    \
+                                  typename NS :: AD <T>::scalar_type    \
+                                  >::type > {                           \
+    typedef NS :: AD <T> type;                                          \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename dummy< typename NS :: AD <T>::value_type,    \
+                                  typename NS :: AD <T>::scalar_type    \
+                                  >::type,                              \
+                  NS :: AD <T> > {                                      \
+    typedef NS :: AD <T> type;                                          \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename> class Expr;                                     \
+  }                                                                     \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: AD <T>,                                         \
+                  NS :: Expr <U> > {                                    \
+    typedef NS :: AD <T> type;                                          \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: Expr <U>,                                       \
+                  NS :: AD <T> > {                                      \
+    typedef NS :: AD <T> type;                                          \
+  };
+
+  // Macro for building proper Promote specialization for any AD type with
+  // 2 template parameters
+#define SACADO_AD_PROMOTE_SPEC2(NS, AD)                                 \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: AD <T,U>,                                       \
+                  NS :: AD <T,U> > {                                    \
+    typedef NS :: AD <T,U> type;                                        \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: AD <T,U>,                                       \
+                  typename NS :: AD <T,U>::value_type > {               \
+    typedef NS :: AD <T,U> type;                                        \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< typename NS :: AD <T,U>::value_type,                  \
+                  NS :: AD <T,U> > {                                    \
+    typedef NS :: AD <T,U> type;                                        \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: AD <T,U>,                                       \
+                  typename dummy< typename NS :: AD <T,U>::value_type,  \
+                                  typename NS :: AD <T,U>::scalar_type  \
+                                  >::type > {                           \
+    typedef NS :: AD <T,U> type;                                        \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< typename dummy< typename NS :: AD <T,U>::value_type,  \
+                                  typename NS :: AD <T,U>::scalar_type  \
+                                  >::type,                              \
+                  NS :: AD <T,U> > {                                    \
+    typedef NS :: AD <T,U> type;                                        \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename> class Expr;                                     \
+  }                                                                     \
+  template <typename T, typename U, typename V>                         \
+  struct Promote< NS :: AD <T,U>,                                       \
+                  NS :: Expr <V> > {                                    \
+    typedef NS :: AD <T,U> type;                                        \
+  };                                                                    \
+  template <typename T, typename U, typename V>                         \
+  struct Promote< NS :: Expr <V>,                                       \
+                  NS :: AD <T,U> > {                                    \
+    typedef NS :: AD <T,U> type;                                        \
+  };
+
+  // Macro for building proper Promote specialization for any Fad type
+#define SACADO_FAD_PROMOTE_SPEC(NS, FAD)                                \
+  template <typename T>                                                 \
+  struct Promote< NS :: FAD <T>,                                        \
+                  NS :: FAD <T> > {                                     \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: FAD <T>,                                        \
+                  typename NS :: FAD <T>::value_type > {                \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename NS :: FAD <T>::value_type,                   \
+                  NS :: FAD <T> > {                                     \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: FAD <T>,                                        \
+                  typename dummy< typename NS :: FAD <T>::value_type,   \
+                                  typename NS :: FAD <T>::scalar_type   \
+                                  >::type > {                           \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename dummy< typename NS :: FAD <T>::value_type,   \
+                                  typename NS :: FAD <T>::scalar_type   \
+                                  >::type,                              \
+                  NS :: FAD <T> > {                                     \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename> class Expr;                                     \
+  }                                                                     \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: FAD <T>,                                        \
+                  NS :: Expr <U> > {                                    \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: Expr <U>,                                       \
+                  NS :: FAD <T> > {                                     \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename,unsigned,unsigned> class ViewFad;                \
+  }                                                                     \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< NS :: FAD <T>,                                        \
+                  NS :: ViewFad <T,l,s> > {                             \
+    typedef NS :: FAD <T> type;                                         \
+  };                                                                    \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< NS :: ViewFad <T,l,s>,                                \
+                  NS :: FAD <T> > {                                     \
+    typedef NS :: FAD <T> type;                                         \
+  };
+
+// Macro for building proper Promote specialization for any SFad type
+#define SACADO_SFAD_PROMOTE_SPEC(NS, FAD)                                \
+  template <typename T, int N>                                          \
+  struct Promote< NS :: FAD <T,N>,                                      \
+                  NS :: FAD <T,N> > {                                   \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  template <typename T, int N>                                          \
+  struct Promote< NS :: FAD <T,N>,                                      \
+                  typename NS :: FAD <T,N>::value_type > {              \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  template <typename T, int N>                                          \
+  struct Promote< typename NS :: FAD <T,N>::value_type,                 \
+                  NS :: FAD <T,N> > {                                   \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  template <typename T, int N>                                          \
+  struct Promote< NS :: FAD <T,N>,                                      \
+                  typename dummy< typename NS :: FAD <T,N>::value_type, \
+                                  typename NS :: FAD <T,N>::scalar_type \
+                                  >::type > {                           \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  template <typename T, int N>                                          \
+  struct Promote< typename dummy< typename NS :: FAD <T,N>::value_type, \
+                                  typename NS :: FAD <T,N>::scalar_type \
+                                  >::type,                              \
+                  NS :: FAD <T,N> > {                                   \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename> class Expr;                                     \
+  }                                                                     \
+  template <typename T, int N, typename U>                              \
+  struct Promote< NS :: FAD <T,N>,                                      \
+                  NS :: Expr <U> > {                                    \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  template <typename T, int N, typename U>                              \
+  struct Promote< NS :: Expr <U>,                                       \
+                  NS :: FAD <T,N> > {                                   \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename,unsigned,unsigned> class ViewFad;                \
+  }                                                                     \
+  template <typename T, int N, unsigned l, unsigned s>                  \
+  struct Promote< NS :: FAD <T,N>,                                      \
+                  NS :: ViewFad <T,l,s> > {                             \
+    typedef NS :: FAD <T,N> type;                                       \
+  };                                                                    \
+  template <typename T, int N, unsigned l, unsigned s>                  \
+  struct Promote< NS :: ViewFad <T,l,s>,                                \
+                  NS :: FAD <T,N> > {                                   \
+    typedef NS :: FAD <T,N> type;                                       \
+  };
+
+// Macro for building proper Promote specialization for any ViewFad type
+#define SACADO_VFAD_PROMOTE_SPEC(NS)                                    \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< NS :: ViewFad <T,l,s>,                                \
+                  NS :: ViewFad <T,l,s> > {                             \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };                                                                    \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< NS :: ViewFad <T,l,s>,                                \
+                  typename NS :: ViewFad <T,l,s>::value_type > {        \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };                                                                    \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< typename NS :: ViewFad <T,l,s>::value_type,           \
+                  NS :: ViewFad <T,l,s> > {                             \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };                                                                    \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< NS :: ViewFad <T,l,s>,                                \
+                  typename dummy< typename NS :: ViewFad <T,l,s>::value_type, \
+                                  typename NS :: ViewFad <T,l,s>::scalar_type \
+                                  >::type > {                           \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };                                                                    \
+  template <typename T, unsigned l, unsigned s>                         \
+  struct Promote< typename dummy< typename NS :: ViewFad <T,l,s>::value_type, \
+                                  typename NS :: ViewFad <T,l,s>::scalar_type \
+                                  >::type,                              \
+                  NS :: ViewFad <T,l,s> > {                             \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };                                                                    \
+  namespace NS {                                                        \
+    template <typename> class Expr;                                     \
+  }                                                                     \
+  template <typename T, unsigned l, unsigned s, typename U>             \
+  struct Promote< NS :: ViewFad <T,l,s>,                                \
+                  NS :: Expr <U> > {                                    \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };                                                                    \
+  template <typename T, unsigned l, unsigned s, typename U>             \
+  struct Promote< NS :: Expr <U>,                                       \
+                  NS :: ViewFad <T,l,s> > {                             \
+    typedef NS :: ViewFad <T,l,s> type;                                 \
+  };
+
+   // Macro for building proper Promote specialization for any RAD type
+#define SACADO_RAD_PROMOTE_SPEC(NS)                                     \
+  namespace NS {                                                        \
+    template <typename> class ADvar;                                    \
+    template <typename> class ADvari;                                   \
+  }                                                                     \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  typename NS :: ADvar <T>::value_type > {              \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename NS :: ADvar <T>::value_type,                 \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  typename dummy< typename NS :: ADvar <T>::value_type, \
+                                  typename NS :: ADvar <T>::scalar_type \
+                                  >::type > {                           \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename dummy< typename NS :: ADvar <T>::value_type, \
+                                  typename NS :: ADvar <T>::scalar_type \
+                                  >::type,                              \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
   };
 
 } // namespace Sacado

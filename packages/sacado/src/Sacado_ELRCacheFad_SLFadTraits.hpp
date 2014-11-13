@@ -43,33 +43,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to SLFad types
-  template <typename ValueT, int Num>
-  struct Promote< ELRCacheFad::SLFad<ValueT,Num>,
-                  ELRCacheFad::SLFad<ValueT,Num> > {
-    typedef ELRCacheFad::SLFad<ValueT,Num> type;
-  };
-
-  //! Specialization of %Promote to SLFad types
-  template <typename ValueT, int Num, typename R>
-  struct Promote< ELRCacheFad::SLFad<ValueT,Num>, R > {
-    typedef typename ValueType< ELRCacheFad::SLFad<ValueT,Num> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ELRCacheFad::SLFad<value_type,Num> type;
-  };
-
-  //! Specialization of %Promote to SLFad types
-  template <typename L, typename ValueT, int Num>
-  struct Promote< L, ELRCacheFad::SLFad<ValueT, Num> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< ELRCacheFad::SLFad<ValueT,Num> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ELRCacheFad::SLFad<value_type,Num> type;
-  };
+  SACADO_SFAD_PROMOTE_SPEC( ELRCacheFad, SLFad )
 
   //! Specialization of %ScalarType to SLFad types
   template <typename ValueT, int Num>

@@ -10,20 +10,6 @@ FILE(GLOB SOURCES *.cpp)
 
 LIST( APPEND SOURCES ../fixture/BoxElemPart.cpp)
 
-IF( Kokkos_ENABLE_Cuda )
-
-  # add MPI include dir to nvcc
-  IF( TPL_ENABLE_MPI )
-    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA feint_cuda.cu )
-
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
-
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE(
   feint
   SOURCES ${SOURCES}

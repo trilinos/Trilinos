@@ -81,31 +81,31 @@ public:
     state_->iter    = 0;
   }
 
-  Teuchos::RCP<SecantState<Real> >& get_state() { return this->state_; }
+  Teuchos::RCP<SecantState<Real> >& get_state() { return state_; }
 
   // Update Secant Approximation
   virtual void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s, 
                        const Real snorm, const int iter ) {
-    this->state_->iter = iter;
+    state_->iter = iter;
     Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
     gradDiff->axpy(-1.0,gp);
 
-    Real sy = s.dot(*gradDiff);
+    Real sy = s.dot(gradDiff->dual());
     if (sy > ROL_EPSILON*snorm*snorm) {
-      if (this->state_->current < this->state_->storage-1) {
-        this->state_->current++;                                      // Increment Storage
+      if (state_->current < state_->storage-1) {
+        state_->current++;                                // Increment Storage
       }
       else {
-        this->state_->iterDiff.erase(this->state_->iterDiff.begin()); // Remove first element of s list 
-        this->state_->gradDiff.erase(this->state_->gradDiff.begin()); // Remove first element of y list
-        this->state_->product.erase(this->state_->product.begin());   // Remove first element of rho list
+        state_->iterDiff.erase(state_->iterDiff.begin()); // Remove first element of s list 
+        state_->gradDiff.erase(state_->gradDiff.begin()); // Remove first element of y list
+        state_->product.erase(state_->product.begin());   // Remove first element of rho list
       }
-      this->state_->iterDiff.push_back(s.clone()); 
-      this->state_->iterDiff[this->state_->current]->set(s);          // s=x_{k+1}-x_k
-      this->state_->gradDiff.push_back(s.clone()); 
-      this->state_->gradDiff[this->state_->current]->set(*gradDiff);  // y=g_{k+1}-g_k
-      this->state_->product.push_back(sy);                            // ys=1/rho  
+      state_->iterDiff.push_back(s.clone()); 
+      state_->iterDiff[state_->current]->set(s);          // s=x_{k+1}-x_k
+      state_->gradDiff.push_back(grad.clone()); 
+      state_->gradDiff[state_->current]->set(*gradDiff);  // y=g_{k+1}-g_k
+      state_->product.push_back(sy);                      // ys=1/rho  
     }
   }
 
@@ -114,10 +114,10 @@ public:
 
   // Apply Initial Secant Approximate Inverse Hessian
   virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
-    Hv.set(v);
-    if (this->state_->iter != 0 && this->state_->current != -1) {
-      Real yy = this->state_->gradDiff[this->state_->current]->dot(*(this->state_->gradDiff[this->state_->current]));
-      Hv.scale(this->state_->product[this->state_->current]/yy);
+    Hv.set(v.dual());
+    if (state_->iter != 0 && state_->current != -1) {
+      Real yy = state_->gradDiff[state_->current]->dot(*(state_->gradDiff[state_->current]));
+      Hv.scale(state_->product[state_->current]/yy);
     }
   }
 
@@ -126,10 +126,10 @@ public:
 
   // Apply Initial Secant Approximate Hessian 
   virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
-    Bv.set(v);
-    if (this->state_->iter != 0 && this->state_->current != -1) {
-      Real yy = this->state_->gradDiff[this->state_->current]->dot(*(this->state_->gradDiff[this->state_->current]));
-      Bv.scale(yy/this->state_->product[this->state_->current]);
+    Bv.set(v.dual());
+    if (state_->iter != 0 && state_->current != -1) {
+      Real yy = state_->gradDiff[state_->current]->dot(*(state_->gradDiff[state_->current]));
+      Bv.scale(yy/state_->product[state_->current]);
     }
   }
 
@@ -141,15 +141,15 @@ public:
   
     // Print BHv -> Should be v
     vec->set(s);
-    this->applyH(*Hvec,*vec,x);
-    this->applyB(*Bvec,*Hvec,x);
+    applyH(*Hvec,*vec,x);
+    applyB(*Bvec,*Hvec,x);
     vec->axpy(-1.0,*Bvec);
     std::cout << " ||BHv-v|| = " << vec->norm() << "\n";
   
     // Print HBv -> Should be v
     vec->set(s);
-    this->applyB(*Bvec,*vec,x);
-    this->applyH(*Hvec,*Bvec,x);
+    applyB(*Bvec,*vec,x);
+    applyH(*Hvec,*Bvec,x);
     vec->axpy(-1.0,*Hvec);
     std::cout << " ||HBv-v|| = " << vec->norm() << "\n";
   }

@@ -327,7 +327,12 @@ namespace Details {
 template<class T>
 class ArithTraits {
 public:
-  //! The type T itself.
+  /// \brief A type that acts like T and works with Kokkos.
+  ///
+  /// This is usually just an alias for T.  However, some types T do
+  /// not work well with Kokkos.  In that case, we use a mostly
+  /// equivalent type here.  For example, ArithTraits<std::complex<R>
+  /// >::val_type is Kokkos::complex<R>.
   typedef T val_type;
   /// \brief The type of the magnitude (absolute value) of T.
   ///
@@ -687,7 +692,7 @@ public:
 template<class RealFloatType>
 class ArithTraits<std::complex<RealFloatType> > {
 public:
-  typedef std::complex<RealFloatType> val_type;
+  typedef ::Kokkos::complex<RealFloatType> val_type;
   typedef RealFloatType mag_type;
 
   static const bool is_specialized = true;
@@ -696,46 +701,46 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static bool isInf (const val_type& x) {
+  static bool isInf (const std::complex<RealFloatType>& x) {
 #if defined(__CUDACC__) || defined(_CRAYC)
     return isinf (real (x)) || isinf (imag (x));
 #else
     return std::isinf (real (x)) || std::isinf (imag (x));
 #endif // __CUDACC__
   }
-  static bool isNan (const val_type& x) {
+  static bool isNan (const std::complex<RealFloatType>& x) {
 #if defined(__CUDACC__) || defined(_CRAYC)
     return isnan (real (x)) || isnan (imag (x));
 #else
     return std::isnan (real (x)) || std::isnan (imag (x));
 #endif // __CUDACC__
   }
-  static mag_type abs (const val_type& x) {
+  static mag_type abs (const std::complex<RealFloatType>& x) {
     return std::abs (x);
   }
-  static val_type zero () {
-    return val_type (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
+  static std::complex<RealFloatType> zero () {
+    return std::complex<RealFloatType> (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
   }
-  static val_type one () {
-    return val_type (ArithTraits<mag_type>::one (), ArithTraits<mag_type>::zero ());
+  static std::complex<RealFloatType> one () {
+    return std::complex<RealFloatType> (ArithTraits<mag_type>::one (), ArithTraits<mag_type>::zero ());
   }
-  static val_type min () {
-    return val_type (ArithTraits<mag_type>::min (), ArithTraits<mag_type>::zero ());
+  static std::complex<RealFloatType> min () {
+    return std::complex<RealFloatType> (ArithTraits<mag_type>::min (), ArithTraits<mag_type>::zero ());
   }
-  static val_type max () {
-    return val_type (ArithTraits<mag_type>::max (), ArithTraits<mag_type>::zero ());
+  static std::complex<RealFloatType> max () {
+    return std::complex<RealFloatType> (ArithTraits<mag_type>::max (), ArithTraits<mag_type>::zero ());
   }
-  static mag_type real (const val_type& x) {
+  static mag_type real (const std::complex<RealFloatType>& x) {
     return std::real (x);
   }
-  static mag_type imag (const val_type& x) {
+  static mag_type imag (const std::complex<RealFloatType>& x) {
     return std::imag (x);
   }
-  static val_type conj (const val_type& x) {
+  static std::complex<RealFloatType> conj (const std::complex<RealFloatType>& x) {
     return std::conj (x);
   }
-  static val_type
-  pow (const val_type& x, const val_type& y) {
+  static std::complex<RealFloatType>
+  pow (const std::complex<RealFloatType>& x, const std::complex<RealFloatType>& y) {
     // Fix for some weird gcc 4.2.1 inaccuracy.
     if (y == one ()) {
       return x;
@@ -745,18 +750,18 @@ public:
       return std::pow (x, y);
     }
   }
-  static val_type sqrt (const val_type& x) {
+  static std::complex<RealFloatType> sqrt (const std::complex<RealFloatType>& x) {
     return std::sqrt (x);
   }
-  static val_type log (const val_type& x) {
+  static std::complex<RealFloatType> log (const std::complex<RealFloatType>& x) {
     return std::log (x);
   }
-  static val_type log10 (const val_type& x) {
+  static std::complex<RealFloatType> log10 (const std::complex<RealFloatType>& x) {
     return std::log10 (x);
   }
-  static val_type nan () {
+  static std::complex<RealFloatType> nan () {
     const mag_type mag_nan = ArithTraits<mag_type>::nan ();
-    return val_type (mag_nan, mag_nan);
+    return std::complex<RealFloatType> (mag_nan, mag_nan);
   }
   static mag_type epsilon () {
     return ArithTraits<mag_type>::epsilon ();
@@ -771,19 +776,19 @@ public:
   static const bool isOrdinal = false;
   static const bool isComparable = false;
   static const bool hasMachineParameters = true;
-  static bool isnaninf (const val_type& x) {
+  static bool isnaninf (const std::complex<RealFloatType>& x) {
     return isNan (x) || isInf (x);
   }
-  static mag_type magnitude (const val_type& x) {
+  static mag_type magnitude (const std::complex<RealFloatType>& x) {
     return abs (x);
   }
-  static val_type conjugate (const val_type& x) {
+  static std::complex<RealFloatType> conjugate (const std::complex<RealFloatType>& x) {
     return conj (x);
   }
   static std::string name () {
     return std::string ("std::complex<") + ArithTraits<mag_type>::name () + ">";
   }
-  static val_type squareroot (const val_type& x) {
+  static std::complex<RealFloatType> squareroot (const std::complex<RealFloatType>& x) {
     return sqrt (x);
   }
   static mag_type eps () {

@@ -197,7 +197,7 @@ private:
 
 public:
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   const execution_space::scratch_memory_space & team_shmem() const
     { return m_team_shared ; }
 
@@ -206,18 +206,25 @@ public:
   KOKKOS_INLINE_FUNCTION int team_rank() const { return m_team_rank ; }
   KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
 
-  inline void team_barrier() const
+  KOKKOS_INLINE_FUNCTION void team_barrier() const
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    {}
+#else
     {
       if ( 1 < m_team_size ) {
         team_fan_in();
         team_fan_out();
       }
     }
+#endif
 
   template< class JoinOp >
-  inline typename JoinOp::value_type
+  KOKKOS_INLINE_FUNCTION typename JoinOp::value_type
     team_reduce( const typename JoinOp::value_type & value
                , const JoinOp & op ) const
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return typename JoinOp::value_type(); }
+#else
     {
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(typename JoinOp::value_type) < TEAM_REDUCE_SIZE
@@ -254,6 +261,7 @@ public:
 
       return *((type volatile const *)local_value);
     }
+#endif
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -265,7 +273,10 @@ public:
    *  non-deterministic.
    */
   template< typename ArgType >
-  inline ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
+  KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return ArgType(); }
+#else
     {
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(ArgType) < TEAM_REDUCE_SIZE , ArgType , void >::type type ;
@@ -308,6 +319,7 @@ public:
 
       return *work_value ;
     }
+#endif
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
@@ -315,7 +327,7 @@ public:
    *    reduction_total = dev.team_scan( value ) + value ;
    */
   template< typename Type >
-  inline Type team_scan( const Type & value ) const
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
     { return this-> template team_scan<Type>( value , 0 ); }
 
 #ifdef KOKKOS_HAVE_CXX11

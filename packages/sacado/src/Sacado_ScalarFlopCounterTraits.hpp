@@ -61,33 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to ScalarFlopCounter types
-  template <typename ScalarT>
-  struct Promote< FlopCounterPack::ScalarFlopCounter<ScalarT>,
-                  FlopCounterPack::ScalarFlopCounter<ScalarT> > {
-    typedef FlopCounterPack::ScalarFlopCounter<ScalarT> type;
-  };
-
-  //! Specialization of %Promote to ScalarFlopCounter types
-  template <typename ScalarT, typename R>
-  struct Promote< FlopCounterPack::ScalarFlopCounter<ScalarT>, R > {
-    typedef typename ValueType< FlopCounterPack::ScalarFlopCounter<ScalarT> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef FlopCounterPack::ScalarFlopCounter<value_type> type;
-  };
-
-  //! Specialization of %Promote to ScalarFlopCounter types
-  template <typename L, typename ScalarT>
-  struct Promote< L, FlopCounterPack::ScalarFlopCounter<ScalarT> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< FlopCounterPack::ScalarFlopCounter<ScalarT> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef FlopCounterPack::ScalarFlopCounter<value_type> type;
-  };
+  SACADO_AD_PROMOTE_SPEC( FlopCounterPack, ScalarFlopCounter )
 
   //! Specialization of %ScalarType to ScalarFlopCounter types
   template <typename ScalarT>

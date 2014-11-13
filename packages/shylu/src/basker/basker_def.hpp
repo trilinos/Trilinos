@@ -575,10 +575,33 @@ namespace Basker{
     FREE(A->row_idx);
     FREE(A->val);
   }
+
+  template <class Int, class Entry>
+  int Basker<Int, Entry>::solveMultiple(Int nrhs, Entry **b, Entry **x)
+  {
+    Int i;
+    for(i = 0; i < nrhs; i++)
+      {
+	int result = solve(b[i], x[i]);
+	if(result != 0)
+	  {
+	    cout << "Error in Solving \n";
+	    return result;
+	  }
+      }
+    return 0;
+
+  }
+
   
   template <class Int, class Entry>
   int Basker<Int, Entry>::solve(Entry *b, Entry *x)
   {
+
+    if(!been_fact)
+      {
+	return -1;
+      }
     
     Int i;
     int result = 0;
@@ -714,7 +737,8 @@ namespace Basker{
     for(k=0; k < A->nnz; k++)
       {
 	B->row_idx[k] = p[A->row_idx[k]];
-      }   
+      }
+    return 0;
   }
 
   template <class Int, class Entry>

@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -43,34 +41,12 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to LogicalSparse types
-  template <typename ValT, typename LogT>
-  struct Promote< LFad::LogicalSparse<ValT,LogT>, 
-		  LFad::LogicalSparse<ValT,LogT> > {
-    typedef LFad::LogicalSparse<ValT,LogT> type;
-  };
+  namespace LFad {
+    template <typename T> class Expr;
+  }
 
   //! Specialization of %Promote to LogicalSparse types
-  template <typename ValT, typename LogT, typename R>
-  struct Promote< LFad::LogicalSparse<ValT,LogT>, R > {
-    typedef typename ValueType< LFad::LogicalSparse<ValT,LogT> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef LFad::LogicalSparse<value_type,LogT> type;
-  };
-
-  //! Specialization of %Promote to LogicalSparse types
-  template <typename L, typename ValT, typename LogT>
-  struct Promote< L, LFad::LogicalSparse<ValT, LogT> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< LFad::LogicalSparse<ValT,LogT> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef LFad::LogicalSparse<value_type,LogT> type;
-  };
+  SACADO_AD_PROMOTE_SPEC2( LFad, LogicalSparse )
 
   //! Specialization of %ScalarType to LogicalSparse types
   template <typename ValT, typename LogT>
@@ -100,7 +76,7 @@ namespace Sacado {
   template <typename ValT, typename LogT>
   struct Value< LFad::LogicalSparse<ValT,LogT> > {
     typedef typename ValueType< LFad::LogicalSparse<ValT,LogT> >::type value_type;
-    static const value_type& eval(const LFad::LogicalSparse<ValT,LogT>& x) { 
+    static const value_type& eval(const LFad::LogicalSparse<ValT,LogT>& x) {
       return x.val(); }
   };
 
@@ -109,24 +85,24 @@ namespace Sacado {
   struct ScalarValue< LFad::LogicalSparse<ValT,LogT> > {
     typedef typename ValueType< LFad::LogicalSparse<ValT,LogT> >::type value_type;
     typedef typename ScalarType< LFad::LogicalSparse<ValT,LogT> >::type scalar_type;
-    static const scalar_type& eval(const LFad::LogicalSparse<ValT,LogT>& x) { 
+    static const scalar_type& eval(const LFad::LogicalSparse<ValT,LogT>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to DFad types
   template <typename ValT, typename LogT>
   struct StringName< LFad::LogicalSparse<ValT,LogT> > {
-    static std::string eval() { 
-      return std::string("Sacado::LFad::LoginalSparse< ") + 
-	StringName<ValT>::eval() + ", " + 
-	StringName<LogT>::eval() + " >"; }
+    static std::string eval() {
+      return std::string("Sacado::LFad::LoginalSparse< ") +
+        StringName<ValT>::eval() + ", " +
+        StringName<LogT>::eval() + " >"; }
   };
 
   //! Specialization of %IsEqual to DFad types
   template <typename ValT, typename LogT>
   struct IsEqual< LFad::LogicalSparse<ValT,LogT> > {
-    static bool eval(const LFad::LogicalSparse<ValT,LogT>& x, 
-		     const LFad::LogicalSparse<ValT,LogT>& y) {
+    static bool eval(const LFad::LogicalSparse<ValT,LogT>& x,
+                     const LFad::LogicalSparse<ValT,LogT>& y) {
       return x.isEqualTo(y);
     }
   };
@@ -150,17 +126,17 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValT, typename LogT>
-  struct PromotionTraits< Sacado::LFad::LogicalSparse<ValT,LogT>, 
-			  Sacado::LFad::LogicalSparse<ValT,LogT> > {
+  struct PromotionTraits< Sacado::LFad::LogicalSparse<ValT,LogT>,
+                          Sacado::LFad::LogicalSparse<ValT,LogT> > {
     typedef typename Sacado::Promote< Sacado::LFad::LogicalSparse<ValT,LogT>,
-				      Sacado::LFad::LogicalSparse<ValT,LogT> >::type
+                                      Sacado::LFad::LogicalSparse<ValT,LogT> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValT, typename LogT, typename R>
   struct PromotionTraits< Sacado::LFad::LogicalSparse<ValT,LogT>, R > {
-    typedef typename Sacado::Promote< Sacado::LFad::LogicalSparse<ValT,LogT>, R >::type 
+    typedef typename Sacado::Promote< Sacado::LFad::LogicalSparse<ValT,LogT>, R >::type
     promote;
   };
 
@@ -168,7 +144,7 @@ namespace Teuchos {
   template <typename L, typename ValT, typename LogT>
   struct PromotionTraits< L, Sacado::LFad::LogicalSparse<ValT,LogT> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::LFad::LogicalSparse<ValT,LogT> >::type 
+    typedef typename Sacado::Promote< L, Sacado::LFad::LogicalSparse<ValT,LogT> >::type
     promote;
   };
 
@@ -186,8 +162,8 @@ namespace Teuchos {
   // //! Specialization of %Teuchos::SerializationTraits
   // template <typename Ordinal, typename ValT, typename LogT>
   // struct SerializationTraits<Ordinal, Sacado::LFad::LogicalSparse<ValT,LogT> > :
-  //   public Sacado::Fad::SerializationTraitsImp< Ordinal, 
-  // 						Sacado::LFad::LogicalSparse<ValT,LogT> > 
+  //   public Sacado::Fad::SerializationTraitsImp< Ordinal,
+  //                                            Sacado::LFad::LogicalSparse<ValT,LogT> >
   // {};
 }
 #endif // HAVE_SACADO_TEUCHOS

@@ -194,6 +194,9 @@ public:
     lvec_ = l.clone();
     cvec_ = c.clone();
 
+    Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > gl  = gvec_->clone();
+
     algo_state.nfval = 0;
     algo_state.ncval = 0;
     algo_state.ngrad = 0;
@@ -212,9 +215,7 @@ public:
 
     // Compute gradient of Lagrangian at new multiplier guess.
     computeLagrangeMultiplier(l, x, g, con);
-    Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
-    Teuchos::RCP<Vector<Real> > gl = gvec_->clone();
     gl->set(g); gl->plus(*ajl);
     algo_state.ngrad++;
     algo_state.gnorm = gl->norm();
@@ -508,18 +509,17 @@ public:
     std::vector<Real> augiters;
 
     /* Compute Cauchy step nCP. */
-    Teuchos::RCP<Vector<Real> > nCP     = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > nCPtemp = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > nN      = xvec_->clone(); // ??? primal or dual
+    Teuchos::RCP<Vector<Real> > nCP     = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > nCPdual = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > nN      = xvec_->clone();
     Teuchos::RCP<Vector<Real> > ctemp   = cvec_->clone();
-    Teuchos::RCP<Vector<Real> > c0      = lvec_->clone();
-    c0->set(c);
-    // change con.applyAdjointJacobian(*nCP, c, x, zerotol);
-    con.applyAdjointJacobian(*nCP, *c0, x, zerotol);
+    Teuchos::RCP<Vector<Real> > dualc0  = lvec_->clone();
+    dualc0->set(c.dual());
+    con.applyAdjointJacobian(*nCPdual, *dualc0, x, zerotol);
+    nCP->set(nCPdual->dual());
     con.applyJacobian(*ctemp, *nCP, x, zerotol);
 
-    //Real normsquare_ctemp = ctemp->dot(*ctemp);
-    Real normsquare_ctemp = std::pow(ctemp->norm(), 2);
+    Real normsquare_ctemp = ctemp->dot(*ctemp);
     if (normsquare_ctemp != zero) {
       nCP->scale( -(nCP->dot(*nCP))/normsquare_ctemp );
     }
@@ -546,13 +546,13 @@ public:
     Real tol = qntol_*ctemp->norm();
     // Form right-hand side.
     ctemp->scale(-one);
-    nCPtemp->set(*nCP);
-    nCPtemp->scale(-one);
+    nCPdual->set(nCP->dual());
+    nCPdual->scale(-one);
     // Declare left-hand side of augmented system.
     Teuchos::RCP<Vector<Real> > dn = xvec_->clone();
     Teuchos::RCP<Vector<Real> > y  = lvec_->clone();
     // Solve augmented system.
-    augiters = con.solveAugmentedSystem(*dn, *y, *nCPtemp, *ctemp, x, tol);
+    augiters = con.solveAugmentedSystem(*dn, *y, *nCPdual, *ctemp, x, tol);
     totalCallLS_++;
     totalIterLS_ = totalIterLS_ + augiters.size();
     printInfoLS(augiters);

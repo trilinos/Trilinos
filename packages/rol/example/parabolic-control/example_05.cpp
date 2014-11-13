@@ -127,7 +127,7 @@ private:
     o.resize(nx_-1,dx_/6.0 - dt_*eps1_/dx_);
     // Contribution from nonlinearity
     Real phi1 = 0.0, phi2 = 0.0, f = 0.0, x = 0.0, w = 0.0;
-    for (int i=0; i<nx_; i++) {
+    for (unsigned i=0; i<nx_; i++) {
       if (i<nx_-1) {
         for (int j=0; j<4; j++) {
           x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i+1);
@@ -914,8 +914,8 @@ int main(int argc, char *argv[]) {
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
     con.checkApplyJacobian(x,y,c,true);
-    //con.checkApplyAdjointJacobian(x,yu,c,true);
-    con.checkApplyAdjointHessian(x,yu,y,true);
+    //con.checkApplyAdjointJacobian(x,yu,c,x,true);
+    con.checkApplyAdjointHessian(x,yu,y,x,true);
     robj.checkGradient(xz,yz,true);
     robj.checkHessVec(xz,yz,true);
     // Initialize constraints -- these are set to -infinity and infinity.
