@@ -170,7 +170,7 @@ public:
                                                          const bool printToScreen = true,
                                                          const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
 
-    return checkGradient(x, x, d, printToScreen, numSteps);
+    return checkGradient(x, x, d, printToScreen, std::cout, numSteps);
 
   }
 
@@ -191,8 +191,9 @@ public:
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
                                                          const Vector<Real> &g,
                                                          const Vector<Real> &d,
-                                                         const bool printToScreen = true,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS );
 
   /** \brief Finite-difference Hessian-applied-to-vector check.
 
@@ -212,7 +213,7 @@ public:
                                                         const bool printToScreen = true,
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
 
-    return checkHessVec(x, x, v, printToScreen, numSteps);
+    return checkHessVec(x, x, v, printToScreen, std::cout, numSteps);
 
   }
 
@@ -233,7 +234,8 @@ public:
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
                                                         const Vector<Real> &hv,
                                                         const Vector<Real> &v,
-                                                        const bool printToScreen = true,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Hessian symmetry check.
@@ -276,7 +278,8 @@ public:
                                           const Vector<Real> &hv,
                                           const Vector<Real> &v,
                                           const Vector<Real> &w,
-                                          const bool printToScreen = true ) ;
+                                          const bool printToStream = true,
+                                          std::ostream & outStream = std::cout );
   
   // struct StepState (scalars, vectors) map?
 

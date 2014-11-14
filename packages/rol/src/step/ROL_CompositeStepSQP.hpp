@@ -235,7 +235,7 @@ public:
     Teuchos::RCP<Vector<Real> > tCP = xvec_->clone();
     Teuchos::RCP<Vector<Real> > g   = gvec_->clone();
     Teuchos::RCP<Vector<Real> > gf  = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > Wg  = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > Wg  = xvec_->clone();
     Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
 
     Real f_new = 0.0;
@@ -596,7 +596,7 @@ public:
 
              @param[out]      t     is the solution of the tangential subproblem; an optimization-space vector
              @param[out]      tCP   is the Cauchy point for the tangential subproblem; an optimization-space vector
-             @param[out]      Wg    is the projected gradient of the Lagrangian; a dual optimization-space vector
+             @param[out]      Wg    is the dual of the projected gradient of the Lagrangian; an optimization-space vector
              @param[in]       x     is the current iterate; an optimization-space vector
              @param[in]       g     is the gradient of the Lagrangian; a dual optimization-space vector
              @param[in]       n     is the quasi-normal step; an optimization-space vector
@@ -626,18 +626,20 @@ public:
     t.zero();
     tCP.zero();
     Teuchos::RCP<Vector<Real> > r     = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > pdesc = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > tprev = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > Wr    = gvec_->clone();
-    Teuchos::RCP<Vector<Real> > vtemp = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > pdesc = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > tprev = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > Wr    = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > Hp    = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > xtemp = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > gtemp = gvec_->clone();
     Teuchos::RCP<Vector<Real> > ltemp = lvec_->clone();
     Teuchos::RCP<Vector<Real> > czero = cvec_->clone();
     czero->zero();
     r->set(g);
-    obj.hessVec(*vtemp, n, x, zerotol);
-    r->plus(*vtemp);
-    con.applyAdjointHessian(*vtemp, l, n, x, zerotol);
-    r->plus(*vtemp);
+    obj.hessVec(*gtemp, n, x, zerotol);
+    r->plus(*gtemp);
+    con.applyAdjointHessian(*gtemp, l, n, x, zerotol);
+    r->plus(*gtemp);
     Real normg  = r->norm();
     Real normWg = zero;
     Real pHp    = zero;
@@ -648,10 +650,10 @@ public:
     Real normt  = zero;
     std::vector<Real> normWr(maxiterCG_+1, zero);
 
-    std::vector<Teuchos::RCP<Vector<Real > > >  p;   // stores search directions
-    std::vector<Teuchos::RCP<Vector<Real > > >  Hp;  // stores hessvec's applied to p's
-    std::vector<Teuchos::RCP<Vector<Real > > >  rs;  // stores residuals
-    std::vector<Teuchos::RCP<Vector<Real > > >  Wrs; // stores projected residuals
+    std::vector<Teuchos::RCP<Vector<Real > > >  p;    // stores search directions
+    std::vector<Teuchos::RCP<Vector<Real > > >  Hps;  // stores duals of hessvec's applied to p's
+    std::vector<Teuchos::RCP<Vector<Real > > >  rs;   // stores duals of residuals
+    std::vector<Teuchos::RCP<Vector<Real > > >  Wrs;  // stores duals of projected residuals
 
     Real rptol = 1e-12;
 
@@ -693,7 +695,7 @@ public:
         Wg.set(*Wr);
         normWg = Wg.norm();
         if (orthocheck) {
-          Wrs.push_back(Wr->clone());
+          Wrs.push_back(xvec_->clone());
           (Wrs[iterCG_-1])->set(*Wr);
         }
         // Check if done (small initial projected residual).
@@ -708,10 +710,12 @@ public:
           return;
         }
         // Set first residual to projected gradient.
-        r->set(Wg);
+        // change r->set(Wg);
+        r->set(Wg.dual());
         if (orthocheck) {
-          rs.push_back(r->clone());
-          (rs[0])->set(*r);
+          rs.push_back(xvec_->clone());
+          // change (rs[0])->set(*r);
+          (rs[0])->set(r->dual());
         }
       }
       else {
@@ -723,7 +727,7 @@ public:
         printInfoLS(augiters);
 
         if (orthocheck) {
-          Wrs.push_back(Wr->clone());
+          Wrs.push_back(xvec_->clone());
           (Wrs[iterCG_-1])->set(*Wr);
         }
       }
@@ -793,23 +797,30 @@ public:
       }
 
       // Full orthogonalization.
-      p.push_back(Wr->clone());
+      p.push_back(xvec_->clone());
       (p[iterCG_-1])->set(*Wr);
       (p[iterCG_-1])->scale(-one);
       for (int j=1; j<iterCG_; j++) {
-        Real scal = (p[iterCG_-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
-        Teuchos::RCP<Vector<Real> > pj = (p[j-1])->clone();
+        Real scal = (p[iterCG_-1])->dot(*(Hps[j-1])) / (p[j-1])->dot(*(Hps[j-1]));
+        Teuchos::RCP<Vector<Real> > pj = xvec_->clone();
         pj->set(*p[j-1]);
         pj->scale(-scal);
         (p[iterCG_-1])->plus(*pj);
       }
 
-      Hp.push_back(gvec_->clone()); // ??? primal or dual
-      obj.hessVec(*(Hp[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
-      con.applyAdjointHessian(*vtemp, l, *(p[iterCG_-1]), x, zerotol);
-      (Hp[iterCG_-1])->plus(*vtemp);
-      pHp = (p[iterCG_-1])->dot(*(Hp[iterCG_-1]));
-      rp  = (p[iterCG_-1])->dot(*r);
+      // change Hps.push_back(gvec_->clone());
+      Hps.push_back(xvec_->clone());
+      // change obj.hessVec(*(Hps[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
+      obj.hessVec(*Hp, *(p[iterCG_-1]), x, zerotol);
+      con.applyAdjointHessian(*gtemp, l, *(p[iterCG_-1]), x, zerotol);
+      // change (Hps[iterCG_-1])->plus(*gtemp);
+      Hp->plus(*gtemp);
+      // "Preconditioning" step.
+      (Hps[iterCG_-1])->set(Hp->dual());
+      
+      pHp = (p[iterCG_-1])->dot(*(Hps[iterCG_-1]));
+      // change rp  = (p[iterCG_-1])->dot(*r);
+      rp  = (p[iterCG_-1])->dot(*(rs[iterCG_-1]));
 
       normp = (p[iterCG_-1])->norm();
       normr = r->norm();
@@ -826,9 +837,9 @@ public:
         Real c = t.dot(t) - delta*delta;
         // Positive root of a*theta^2 + 2*b*theta + c = 0.
         Real theta = (-b + std::sqrt(b*b - a*c)) / a;
-        vtemp->set(*(p[iterCG_-1]));
-        vtemp->scale(theta);
-        t.plus(*vtemp);
+        xtemp->set(*(p[iterCG_-1]));
+        xtemp->scale(theta);
+        t.plus(*xtemp);
         // Store as tangential Cauchy point if terminating in first iteration.
         if (iterCG_ == 1) {
           tCP.set(t);
@@ -856,9 +867,9 @@ public:
 
       // Iterate update.
       tprev->set(t);
-      vtemp->set(*(p[iterCG_-1]));
-      vtemp->scale(alpha);
-      t.plus(*vtemp);
+      xtemp->set(*(p[iterCG_-1]));
+      xtemp->scale(alpha);
+      t.plus(*xtemp);
 
       // Trust-region stopping condition.
       normt = t.norm();
@@ -872,10 +883,10 @@ public:
         Real c = tprev->dot(*tprev) - delta*delta;
         // Positive root of a*theta^2 + 2*b*theta + c = 0.
         Real theta = (-b + std::sqrt(b*b - a*c)) / a;
-        vtemp->set(*(p[iterCG_-1]));
-        vtemp->scale(theta);
+        xtemp->set(*(p[iterCG_-1]));
+        xtemp->scale(theta);
         t.set(*tprev);
-        t.plus(*vtemp);
+        t.plus(*xtemp);
         // Store as tangential Cauchy point if terminating in first iteration.
         if (iterCG_ == 1) {
           tCP.set(t);
@@ -890,12 +901,15 @@ public:
       }
 
       // Residual update.
-      vtemp->set(*(Hp[iterCG_-1]));
-      vtemp->scale(alpha);
-      r->plus(*vtemp);
+      xtemp->set(*(Hps[iterCG_-1]));
+      xtemp->scale(alpha);
+      // change r->plus(*gtemp);
+      r->plus(xtemp->dual());
       if (orthocheck) {
-        rs.push_back(r->clone());
-        (rs[iterCG_])->set(*r);
+        // change rs.push_back(gvec_->clone());
+        rs.push_back(xvec_->clone());
+        // change (rs[iterCG_])->set(*r);
+        (rs[iterCG_])->set(r->dual());
       }
 
       iterCG_++;
@@ -964,6 +978,7 @@ public:
     Teuchos::RCP<Vector<Real> > gfJl    = gvec_->clone();
     Teuchos::RCP<Vector<Real> > Jnc     = cvec_->clone();
     Teuchos::RCP<Vector<Real> > t_orig  = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > t_dual  = gvec_->clone();
     Teuchos::RCP<Vector<Real> > Jt_orig = cvec_->clone();
     Teuchos::RCP<Vector<Real> > t_m_tCP = xvec_->clone();
     Teuchos::RCP<Vector<Real> > ltemp   = lvec_->clone();
@@ -982,10 +997,8 @@ public:
     con.applyAdjointJacobian(*Jl, l, x, zerotol);
     con.applyJacobian(*Jnc, n, x, zerotol);
     Jnc->plus(c);
-    // change Jnc_normsquared = Jnc->dot(*Jnc);
-    Jnc_normsquared = std::pow(Jnc->norm(), 2);
-    // change c_normsquared = c.dot(c);
-    c_normsquared = std::pow(c.norm(), 2);
+    Jnc_normsquared = Jnc->dot(*Jnc);
+    c_normsquared = c.dot(c);
 
     for (int ct=0; ct<ct_max; ct++) {
 
@@ -1023,7 +1036,9 @@ public:
         }
         // Solve augmented system.
         Real tol = tangtol;
-        augiters = con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);
+        // change augiters = con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);
+        t_dual->set(t_orig->dual());
+        augiters = con.solveAugmentedSystem(t, *ltemp, *t_dual, *czero, x, tol);
         totalCallLS_++;
         totalIterLS_ = totalIterLS_ + augiters.size();
         printInfoLS(augiters);
@@ -1058,12 +1073,16 @@ public:
         part_pred = - Wg.dot(*t_orig);
         gfJl->set(gf);
         gfJl->plus(*Jl);
-        part_pred -= gfJl->dot(n);
-        part_pred -= half*Hn->dot(n);
-        part_pred -= half*Hto->dot(*t_orig);
+        // change part_pred -= gfJl->dot(n);
+        part_pred -= n.dot(gfJl->dual());
+        // change part_pred -= half*Hn->dot(n);
+        part_pred -= half*n.dot(Hn->dual());
+        // change part_pred -= half*Hto->dot(*t_orig);
+        part_pred -= half*t_orig->dot(Hto->dual());
         ltemp->set(l_new);
         ltemp->axpy(-one, l);
-        part_pred -= Jnc->dot(*ltemp);
+        // change part_pred -= Jnc->dot(*ltemp);
+        part_pred -= Jnc->dot(ltemp->dual());
 
         if ( part_pred < -half*penalty_*(c_normsquared-Jnc_normsquared) ) {
           penalty_ = ( -two * part_pred / (c_normsquared-Jnc_normsquared) ) + beta;
@@ -1073,9 +1092,10 @@ public:
 
         // Computation of rpred.
         // change rpred = - ltemp->dot(*rt) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
-        Teuchos::RCP<Vector<Real> > lrt   = lvec_->clone();
-        lrt->set(*rt);
-        rpred = - ltemp->dot(*rt) - penalty_ * std::pow(rt->norm(), 2) - two * penalty_ * lrt->dot(*Jnc);
+        rpred = - rt->dot(ltemp->dual()) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+        // change Teuchos::RCP<Vector<Real> > lrt   = lvec_->clone();
+        //lrt->set(*rt);
+        //rpred = - ltemp->dot(*rt) - penalty_ * std::pow(rt->norm(), 2) - two * penalty_ * lrt->dot(*Jnc);
         flag = 1;
 
       } // while (std::abs(rpred)/pred > rpred_over_pred)
@@ -1149,7 +1169,8 @@ public:
       fdiff = 1e-14;
     }
     // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
-    ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(std::pow(c.norm(),2) - std::pow(c_new.norm(),2));
+    // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(std::pow(c.norm(),2) - std::pow(c_new.norm(),2));
+    ared = fdiff  + (c.dot(l.dual()) - c_new.dot(l_new.dual())) + penalty_*(c.dot(c) - c_new.dot(c_new));
 
     // Store actual and predicted reduction.
     ared_ = ared;

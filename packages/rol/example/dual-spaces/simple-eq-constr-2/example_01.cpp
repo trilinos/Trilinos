@@ -56,7 +56,7 @@
 
 typedef double RealT;
 
-/*** Declare three vector spaces. ***/
+/*** Declare four vector spaces. ***/
 
 // Forward declarations:
 
@@ -405,7 +405,7 @@ int dimension() const {return std_vec_->size();}
 
 }; // class ConDualStdVector
 
-/*** End of declaration of three vector spaces. ***/
+/*** End of declaration of four vector spaces. ***/
 
 
 int main(int argc, char *argv[]) {
