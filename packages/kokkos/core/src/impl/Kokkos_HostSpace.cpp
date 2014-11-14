@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -88,7 +88,7 @@ void * host_allocate_not_thread_safe(
 #if defined( __INTEL_COMPILER ) && !defined ( KOKKOS_HAVE_CUDA )
 
     ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , MEMORY_ALIGNMENT );
-   
+
 #elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
       ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
 
@@ -106,7 +106,7 @@ void * host_allocate_not_thread_safe(
     { // Round up to guarantee proper alignment
       const size_t rem = reinterpret_cast<ptrdiff_t>(ptr_alloc) % MEMORY_ALIGNMENT ;
 
-      ptr = static_cast<unsigned char *>(ptr_alloc) + ( rem ? MEMORY_ALIGNEMENT - rem : 0 );
+      ptr = static_cast<unsigned char *>(ptr_alloc) + ( rem ? MEMORY_ALIGNMENT - rem : 0 );
     }
 
 #endif
