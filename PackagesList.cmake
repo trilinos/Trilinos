@@ -156,6 +156,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   CTrilinos             packages/CTrilinos                SS # Switched to SS to speed up checkin testing
   ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               SS
+  Domi                  packages/domi                     EX
   WebTrilinos           packages/WebTrilinos              EX # Should be SS
   Didasko               packages/didasko                  SS
   NewPackage            packages/new_package              EX # Should be SS
