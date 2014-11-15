@@ -114,17 +114,17 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   std::ios::fmtflags f( std::cout.flags() );
 
+  // Evaluate objective value at x.
+  this->update(x);
+  Real fval_at_x = this->value(x,tol);
+
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > g = x.clone();
-  this->update(x);
   this->gradient(*g, x, tol);
   Real dtg = d.dot(*g);
 
   // Temporary vectors.
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
-
-  // Evaluate objective value at x.
-  Real fval_at_x = this->value(x,tol);
 
   Real fval_at_xnew = 0;
   for (int i=0; i<numSteps; i++) {

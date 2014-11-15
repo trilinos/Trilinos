@@ -48,6 +48,13 @@
     \brief Provides interface for and implements line searches.
 */
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "ROL_Types.hpp"
+#include "ROL_Vector.hpp"
+#include "ROL_Objective.hpp"
+#include "ROL_BoundConstraint.hpp"
+
 namespace ROL { 
 
 template<class Real>

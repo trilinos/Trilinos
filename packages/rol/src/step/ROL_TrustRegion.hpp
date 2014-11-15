@@ -253,6 +253,7 @@ public:
       pgnorm *= xupdate_->norm();
       // Sufficient decrease?
       decr = ( aRed >= 0.1*eta0_*pgnorm );
+      flagTR = (!decr ? 4 : flagTR);
     }
     
     // Accept or Reject Step and Update Trust Region

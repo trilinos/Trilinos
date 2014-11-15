@@ -365,6 +365,9 @@ public:
       Teuchos::RCP<Vector<Real> > xcp = x.clone();
       xcp->set(x);
       xcp->plus(*cp);
+      if ( con.isActivated() ) {
+        con.project(*xcp);
+      }
       obj.update(*xcp);
       Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
       algo_state.nfval++;

@@ -773,13 +773,14 @@ public:
     diff->set(v);
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
+    Real vnorm = v.norm();
     if ( printToScreen ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of inverse Jacobian_1: \n  ||v-inv(J)Jv|| = " 
            << dnorm << "\n";
-      hist << "  ||v||          = " << v.norm() << "\n";
-      hist << "  Relative Error = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
+      hist << "  ||v||          = " << vnorm << "\n";
+      hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
       std::cout << hist.str();
     }
     return dnorm;
@@ -799,13 +800,14 @@ public:
     diff->set(v);
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
+    Real vnorm = v.norm();
     if ( printToScreen ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
            << dnorm << "\n";
-      hist << "  ||v||                   = " << v.norm() << "\n";
-      hist << "  Relative Error          = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
+      hist << "  ||v||                   = " << vnorm << "\n";
+      hist << "  Relative Error          = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
       std::cout << hist.str();
     }
     return dnorm;
