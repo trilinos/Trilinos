@@ -1304,6 +1304,8 @@ protected:
 	}
 
 
+// KDD Need to provide access to algorithm for getPartBoxes
+#ifdef gnuPlot
 	void writeGnuPlot(
 			const Teuchos::Comm<int> *comm_,
 			const Zoltan2::PartitioningSolution<Adapter> *soln_,
@@ -1316,10 +1318,10 @@ protected:
 		file += toString<int>(comm_->getRank()) + exten;
 		std::ofstream ff(file.c_str());
 		//ff.seekg (0, ff.end);
-		RCP < vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxes();
+		vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
 
 		for (part_t i = 0; i < this->ntasks;++i){
-			(*outPartBoxes)[i].writeGnuPlot(ff, mm);
+			outPartBoxes[i].writeGnuPlot(ff, mm);
 		}
 		if (coordDim == 2){
 			ff << "plot \"2d.txt\"" << std::endl;
@@ -1360,6 +1362,7 @@ protected:
 		ff << "replot\n pause -1" << std::endl;
 		ff.close();
 	}
+#endif // gnuPlot
 
 public:
 
@@ -1460,11 +1463,8 @@ public:
 
 
 		envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Graph");
-		((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getCommunicationGraph(
-				comm_,
-				task_communication_xadj,
-				task_communication_adj
-		);
+		soln_->getCommunicationGraph(task_communication_xadj,
+					     task_communication_adj);
 
 		envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
 	#ifdef gnuPlot

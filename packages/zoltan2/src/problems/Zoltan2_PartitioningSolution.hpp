@@ -50,9 +50,15 @@
 #ifndef _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 #define _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 
+namespace Zoltan2 {
+template <typename Adapter>
+class PartitioningSolution;
+}
+
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_GreedyMWM.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 #include <cmath>
 #include <algorithm>
@@ -64,51 +70,8 @@
 #include <windows.h>
 #endif
 
-namespace Teuchos{
-
-/*! \brief Zoltan2_BoxBoundaries is a reduction operation
- * to all reduce the all box boundaries.
-*/
-
-template <typename Ordinal, typename T>
-class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
-{
-private:
-    Ordinal size;
-    T _EPSILON;
-
-public:
-    /*! \brief Default Constructor
-     */
-    Zoltan2_BoxBoundaries ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Constructor
-     *   \param nsum  the count of how many sums will be computed at the
-     *             start of the list.
-     *   \param nmin  following the sums, this many minimums will be computed.
-     *   \param nmax  following the minimums, this many maximums will be computed.
-     */
-    Zoltan2_BoxBoundaries (Ordinal s_):
-        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
-     */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
-    {
-        for (Ordinal i=0; i < count; i++){
-            if (Z2_ABS(inBuffer[i]) >  _EPSILON){
-                inoutBuffer[i] = inBuffer[i];
-            }
-        }
-    }
-};
-} // namespace Teuchos
-
 
 namespace Zoltan2 {
-
-
-
 
 /*! \brief A PartitioningSolution is a solution to a partitioning problem.
 
@@ -149,6 +112,7 @@ public:
  *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param nUserWeights  the number of weights supplied by the
  *         application for each object.
+ *    \param algorithm  Algorithm, if any, used to compute the solution.
  *
  *   It is possible that part sizes were supplied on other processes,
  *   so this constructor does do a check to see if part sizes need
@@ -158,7 +122,8 @@ public:
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
-    int nUserWeights);
+    int nUserWeights, 
+    const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
 /*! \brief Constructor when part sizes are supplied.
  *
@@ -176,6 +141,7 @@ public:
  *    \param reqPartSizes  reqPartSizes[i] is the list
  *          of part sizes for weight i corresponding to parts in
  *          reqPartIds[i]
+ *    \param algorithm  Algorithm, if any, used to compute the solution.
  *
  *   If <tt>reqPartIds[i].size()</tt> and <tt>reqPartSizes[i].size()</tt>
  *           are zero for
@@ -193,7 +159,8 @@ public:
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
+    const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
@@ -430,116 +397,73 @@ public:
   }
 
 
-  /*! \brief set the Part Box boundaries as a result of geometric partitioning.
-   */
-  void setPartBoxes(
-    RCP<std::vector<
-             Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > outPartBoxes)
-  {
-    this->partBoxes = outPartBoxes;
-  }
-
   /*! \brief returns the part box boundary list.
    */
-  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-  getPartBoxes()
+  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > &
+  getPartBoxesView() const
   {
-    return this->partBoxes;
+    return this->algorithm_->getPartBoxesView();
   }
+
+  //!  \brief Return the part overlapping a given point in space; 
+  //          when a point lies on a part boundary, the lowest part
+  //          number on that boundary is returned.
+  //          Note that not all partitioning algorithms will support
+  //          this method.
+  //
+  //   \param dim : the number of dimensions specified for the point in space
+  //   \param point : the coordinates of the point in space; array of size dim
+  //   \return the part number of a part overlapping the given point
+  part_t pointAssign(int dim, scalar_t *point) const
+  {
+    part_t p;
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      p = this->algorithm_->pointAssign(dim, point); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+    return p;
+  }
+
+  //!  \brief Return an array of all parts overlapping a given box in space.
+  //   This method allocates memory for the return argument, but does not
+  //   control that memory.  The user is responsible for freeing the 
+  //   memory.
+  //
+  //   \param dim : (in) the number of dimensions specified for the box
+  //   \param lower : (in) the coordinates of the lower corner of the box; 
+  //                   array of size dim
+  //   \param upper : (in) the coordinates of the upper corner of the box; 
+  //                   array of size dim
+  //   \param nPartsFound : (out) the number of parts overlapping the box
+  //   \param partsFound :  (out) array of parts overlapping the box
+  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
+                 size_t &nPartsFound, part_t **partsFound) 
+  {
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+  }
+
 
   /*! \brief returns communication graph resulting from geometric partitioning.
    */
-  void getCommunicationGraph(
-          const Teuchos::Comm<int> *comm,
-          ArrayRCP <part_t> &comXAdj,
-          ArrayRCP <part_t> &comAdj) 
+  void getCommunicationGraph(ArrayRCP <part_t> &comXAdj,
+                             ArrayRCP <part_t> &comAdj) const
   {
-    if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
 
-      part_t ntasks =  this->getActualGlobalNumberOfParts();
-      if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-        ntasks = this->getTargetGlobalNumberOfParts();
-      }
-      RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-      pBoxes = this->getGlobalBoxBoundaries(comm);
-      int dim = (*pBoxes)[0].getDim();
-      GridHash<scalar_t, part_t> grid(pBoxes, ntasks, dim);
-      grid.getAdjArrays(comXAdj_, comAdj_);
+      this->algorithm_->getCommunicationGraph(this, comXAdj, comAdj);
     }
-    comAdj = comAdj_;
-    comXAdj = comXAdj_;
-  }
-
-  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-  getGlobalBoxBoundaries(const Teuchos::Comm<int> *comm) {
-    part_t ntasks =  this->getActualGlobalNumberOfParts();
-    if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-      ntasks = this->getTargetGlobalNumberOfParts();
-    }
-
-    RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-    pBoxes = this->getPartBoxes();
-
-    int dim = (*pBoxes)[0].getDim();
-    scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
-
-    memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-    scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
-    memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-    scalar_t *localPartMins = localPartBoundaries;
-    scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
-
-    scalar_t *globalPartMins = globalPartBoundaries;
-    scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
-
-    part_t boxCount = pBoxes->size();
-    for (part_t i = 0; i < boxCount; ++i){
-      part_t pId = (*pBoxes)[i].getpId();
-      //cout << "me:" << comm->getRank() << " has:" << pId << endl;
-
-      scalar_t *lmins = (*pBoxes)[i].getlmins();
-      scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
-
-      for (int j = 0; j < dim; ++j){
-        localPartMins[dim * pId + j] = lmins[j];
-        localPartMaxs[dim * pId + j] = lmaxs[j];
-        /*
-        cout << "me:" << comm->getRank()  <<
-                " dim * pId + j:"<< dim * pId + j <<
-                " localMin:" << localPartMins[dim * pId + j] <<
-                " localMax:" << localPartMaxs[dim * pId + j] << endl;
-        */
-      }
-    }
-
-    Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
-
-    reduceAll<int, scalar_t>(*comm, reductionOp,
-              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries);
-    RCP<std::vector<coordinateModelPartBox<scalar_t, part_t> > > 
-    pB(new std::vector <coordinateModelPartBox <scalar_t, part_t> > (), true);
-    for (part_t i = 0; i < ntasks; ++i){
-      Zoltan2::coordinateModelPartBox <scalar_t, part_t> tpb(i, dim,
-                                                 globalPartMins + dim * i,
-                                                 globalPartMaxs + dim * i);
-
-      /*
-      for (int j = 0; j < dim; ++j){
-          cout << "me:" << comm->getRank()  <<
-                  " dim * pId + j:"<< dim * i + j <<
-                  " globalMin:" << globalPartMins[dim * i + j] <<
-                  " globalMax:" << globalPartMaxs[dim * i + j] << endl;
-      }
-      */
-      pB->push_back(tpb);
-    }
-    delete []localPartBoundaries;
-    delete []globalPartBoundaries;
-    //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > tmpRCPBox(pB, true);
-    this->partBoxes = pB;
-    return this->partBoxes;
+    Z2_FORWARD_EXCEPTIONS
   }
 
   /*! \brief Create an import list from the export list.
@@ -649,8 +573,6 @@ private:
 
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
-  ArrayRCP <part_t> comXAdj_; //communication graph xadj
-  ArrayRCP <part_t> comAdj_; //communication graph adj.
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
@@ -745,6 +667,11 @@ private:
   // unless onePartPerProc_.
 
   ArrayRCP<int> procs_;       // process rank assigned to gids_[i]
+
+  ////////////////////////////////////////////////////////////////
+  // Algorithm used to compute the solution; 
+  // needed for post-processing with pointAssign or getCommunicationGraph
+  const RCP<Algorithm<Adapter> > algorithm_;  // 
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -755,16 +682,17 @@ template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights)
+    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
+    const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm), idMap_(idMap),
-      partBoxes(),comXAdj_(), comAdj_(),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
-      procs_()
+      procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY??  WHY NOT ZERO?
 
@@ -789,16 +717,17 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
+    const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm), idMap_(idMap),
-      partBoxes(),comXAdj_(), comAdj_(),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
-      procs_()
+      procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY?? WHY NOT ZERO?
 

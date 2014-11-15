@@ -79,18 +79,18 @@ void verify_mesh_is_empty(const stk::mesh::BulkData& mesh)
   }
 }
 
-void create_coord_field(stk::mesh::MetaData& meta)
-{
-  stk::mesh::Field<double,stk::mesh::Cartesian>& coord_field = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
-  stk::mesh::put_field(coord_field, meta.universal_part(), 3);
-  meta.set_coordinate_field(&coord_field);
-}
-
-void create_hex_part(stk::mesh::MetaData& meta)
-{
-  meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
-  meta.commit();
-}
+//void create_coord_field(stk::mesh::MetaData& meta)
+//{
+//  stk::mesh::Field<double,stk::mesh::Cartesian>& coord_field = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+//  stk::mesh::put_field(coord_field, meta.universal_part(), 3);
+//  meta.set_coordinate_field(&coord_field);
+//}
+//
+//void create_hex_part(stk::mesh::MetaData& meta)
+//{
+//  meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
+//  meta.commit();
+//}
 
 void create_1_hex_element(stk::mesh::BulkData& mesh)
 {

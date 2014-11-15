@@ -999,8 +999,8 @@ int main(int argc, char *argv[]) {
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
     con.checkApplyJacobian(x,y,c,true);
-    con.checkApplyAdjointJacobian(x,yu,c,true);
-    con.checkApplyAdjointHessian(x,yu,y,true);
+    con.checkApplyAdjointJacobian(x,yu,c,x,true);
+    con.checkApplyAdjointHessian(x,yu,y,x,true);
     // Check Jacobians and adjoint Jacobians.
     con.checkJacobian_1(c,yu,u,z,true);
     con.checkJacobian_2(c,yz,u,z,true);

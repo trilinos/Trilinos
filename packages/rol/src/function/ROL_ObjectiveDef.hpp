@@ -66,8 +66,8 @@ void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &to
   Real deriv = 0.0;
   Real h     = 0.0;
   for (int i = 0; i < g.dimension(); i++) {
-    h     = x.dot(*g.basis(i))*tol;
-    deriv = this->dirDeriv(x,*g.basis(i),h);
+    h     = x.dot(*x.basis(i))*tol;
+    deriv = this->dirDeriv(x,*x.basis(i),h);
     g.axpy(deriv,*g.basis(i));
   }
 }
@@ -81,7 +81,7 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
   //Real h = 2.0/(v.norm()*v.norm())*tol;
 
   // Compute Gradient at x
-  Teuchos::RCP<Vector<Real> > g = x.clone();
+  Teuchos::RCP<Vector<Real> > g = hv.clone();
   this->gradient(*g,x,gtol);
 
   // Compute New Step x + h*v
@@ -101,8 +101,10 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
 
 template <class Real>
 std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
+                                                                const Vector<Real> &g,
                                                                 const Vector<Real> &d,
-                                                                const bool printToScreen,
+                                                                const bool printToStream,
+                                                                std::ostream & outStream,
                                                                 const int numSteps ) {
   Real tol = std::sqrt(ROL_EPSILON);
 
@@ -112,16 +114,23 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
-  std::ios::fmtflags f( std::cout.flags() );
+  std::ios::fmtflags f( outStream.flags() );
 
   // Evaluate objective value at x.
   this->update(x);
   Real fval_at_x = this->value(x,tol);
 
   // Compute gradient at x.
+<<<<<<< HEAD
   Teuchos::RCP<Vector<Real> > g = x.clone();
   this->gradient(*g, x, tol);
   Real dtg = d.dot(*g);
+=======
+  Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+  this->update(x);
+  this->gradient(*gtmp, x, tol);
+  Real dtg = d.dot(gtmp->dual());
+>>>>>>> 4f476135172dafdf05cd08b6c77057f235195efb
 
   // Temporary vectors.
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -140,16 +149,16 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     gCheck[i][2] = (fval_at_xnew - fval_at_x) / eta;
     gCheck[i][3] = std::abs(gCheck[i][2] - gCheck[i][1]);
 
-    if (printToScreen) {
+    if (printToStream) {
       if (i==0) {
-      std::cout << std::right
+      outStream << std::right
                 << std::setw(20) << "Step size"
                 << std::setw(20) << "grad'*dir"
                 << std::setw(20) << "FD approx"
                 << std::setw(20) << "abs error"
                 << "\n";
       }
-      std::cout << std::scientific << std::setprecision(11) << std::right
+      outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << gCheck[i][0]
                 << std::setw(20) << gCheck[i][1]
                 << std::setw(20) << gCheck[i][2]
@@ -161,15 +170,17 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     eta = eta*eta_factor;
   }
 
-  std::cout.flags( f );
+  outStream.flags( f );
 
   return gCheck;
 } // checkGradient
 
 template <class Real>
 std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real> &x,
+                                                               const Vector<Real> &hv,
                                                                const Vector<Real> &v,
-                                                               const bool printToScreen,
+                                                               const bool printToStream,
+                                                               std::ostream & outStream,
                                                                const int numSteps ) {
   Real tol = std::sqrt(ROL_EPSILON);
 
@@ -179,20 +190,20 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
-  std::ios::fmtflags f( std::cout.flags() );
+  std::ios::fmtflags f( outStream.flags() );
 
   // Compute gradient at x.
-  Teuchos::RCP<Vector<Real> > g = x.clone();
+  Teuchos::RCP<Vector<Real> > g = hv.clone();
   this->update(x);
   this->gradient(*g, x, tol);
 
   // Compute (Hessian at x) times (vector v).
-  Teuchos::RCP<Vector<Real> > Hv = x.clone();
+  Teuchos::RCP<Vector<Real> > Hv = hv.clone();
   this->hessVec(*Hv, v, x, tol);
   Real normHv = Hv->norm();
 
   // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > gnew = x.clone();
+  Teuchos::RCP<Vector<Real> > gnew = hv.clone();
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
@@ -211,16 +222,16 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
     gnew->axpy(-1.0, *Hv);
     hvCheck[i][3] = gnew->norm();
 
-    if (printToScreen) {
+    if (printToStream) {
       if (i==0) {
-      std::cout << std::right
+      outStream << std::right
                 << std::setw(20) << "Step size"
                 << std::setw(20) << "norm(Hess*vec)"
                 << std::setw(20) << "norm(FD approx)"
                 << std::setw(20) << "norm(abs error)"
                 << "\n";
       }
-      std::cout << std::scientific << std::setprecision(11) << std::right
+      outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << hvCheck[i][0]
                 << std::setw(20) << hvCheck[i][1]
                 << std::setw(20) << hvCheck[i][2]
@@ -232,7 +243,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
     eta = eta*eta_factor;
   }
 
-  std::cout.flags( f );
+  outStream.flags( f );
 
   return hvCheck;
 } // checkHessVec
@@ -240,19 +251,21 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
 
 template<class Real>
 std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
+                                                 const Vector<Real> &hv,
                                                  const Vector<Real> &v,
                                                  const Vector<Real> &w,
-                                                 const bool printToScreen ) {
+                                                 const bool printToStream,
+                                                 std::ostream & outStream ) {
 
   Real tol = std::sqrt(ROL_EPSILON);
   
   // Compute (Hessian at x) times (vector v).
-  Teuchos::RCP<Vector<Real> > h = x.clone();
+  Teuchos::RCP<Vector<Real> > h = hv.clone();
   this->hessVec(*h, v, x, tol);
-  Real wHv = w.dot(*h);
+  Real wHv = w.dot(h->dual());
 
   this->hessVec(*h, w, x, tol);
-  Real vHw = v.dot(*h);
+  Real vHw = v.dot(h->dual());
 
   std::vector<Real> hsymCheck(3, 0);
 
@@ -260,22 +273,22 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   hsymCheck[1] = vHw;
   hsymCheck[2] = std::abs(vHw-wHv);
 
-  std::ios::fmtflags f( std::cout.flags() );
+  std::ios::fmtflags f( outStream.flags() );
 
-  if (printToScreen) {
-    std::cout << std::right
+  if (printToStream) {
+    outStream << std::right
               << std::setw(20) << "<w, H(x)v>"
               << std::setw(20) << "<v, H(x)w>"
               << std::setw(20) << "abs error"
               << "\n";
-    std::cout << std::scientific << std::setprecision(11) << std::right
+    outStream << std::scientific << std::setprecision(11) << std::right
               << std::setw(20) << hsymCheck[0]
               << std::setw(20) << hsymCheck[1]
               << std::setw(20) << hsymCheck[2]
               << "\n";
   }
 
-  std::cout.flags( f );
+  outStream.flags( f );
 
   return hsymCheck;
 
