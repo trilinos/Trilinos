@@ -1,4 +1,4 @@
-/* @HEADER
+// @HEADER
 //
 // ***********************************************************************
 //
@@ -40,71 +40,59 @@
 // ***********************************************************************
 //
 // @HEADER
+
+/**
+   \file   Amesos2_Baker_FunctionMap.hpp
+   \author Joshua Dennis Booth <jdbooth@sandia.gov>
+           Siva Rajamanickam <srajama@sandia.gov>
+
+   \brief  Provides a mechanism to map function calls to the correct Solver
+           function based on the scalar type of Matrices and MultiVectors
 */
 
-/******************
- * Package macros *
- ******************/
+#ifndef AMESOS2_BASKER_FUNCTIONMAP_HPP
+#define AMESOS2_BASKER_FUNCTIONMAP_HPP
 
-#define AMESOS2_VERSION "${AMESOS2_VERSION}"
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+#endif
 
-#define AMESOS2_RELEASE_DATE "${AMESOS2_RELEASE_DATE}"
+#include "Amesos2_FunctionMap.hpp"
+#include "Amesos2_Basker_TypeMap.hpp"
 
-/******************
- * Config Options *
- ******************/
 
-/* define if new form of std::count is supported */
-#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
+/*
+namespace KLU2 {
+#include "klu2_defaults.hpp"
+#include "klu2_analyze.hpp"
+#include "klu2_factor.hpp"
+#include "klu2_solve.hpp"
+#include "klu2_free_symbolic.hpp"
+#include "klu2_free_numeric.hpp"
+} // end namespace KLU2
+*/
 
-/* Define if want to build amesos2-debug */
-#cmakedefine HAVE_AMESOS2_DEBUG
+#include "basker_decl.hpp"
+#include "basker_def.hpp"
 
-/* Define if you want debug-mode to be verbose (print stuff) */
-#cmakedefine HAVE_AMESOS2_VERBOSE_DEBUG
 
-/* Define if you want performance timer support */
-#cmakedefine HAVE_AMESOS2_TIMERS
+namespace Amesos2 {
 
-/* Define if want want to build amesos2-explicit_instantiation */
-#cmakedefine HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+  /* ==================== Specializations ====================
+   *
+   * \cond Basker_function_specializations
+   */
 
-/* Define if we have MPI */
-#cmakedefine HAVE_AMESOS2_MPI
+  /**
+   * \brief Pass function calls to Basker based on data type.
+  
+   */
+  // TODO : Do we need the specializations for Basker ??
 
-/* Define if we want EpetraExt support for tests and examples */
-#cmakedefine HAVE_AMESOS2_EPETRAEXT
 
-/* Define if we want Epetra matrix and multivector support */
-#cmakedefine HAVE_AMESOS2_EPETRA
+  /* \endcond Basker_function_specializations */
 
-/****************************
- * Solver Interface Defines *
- ****************************/
 
-/* Define if you want to build amesos2-klu2 */
-#cmakedefine HAVE_AMESOS2_KLU2
+} // end namespace Amesos2
 
-/* Define if you want to build amesos2-superlu */
-#cmakedefine HAVE_AMESOS2_SUPERLU
-
-/* Define if you want to build amesos2-superlumt */
-#cmakedefine HAVE_AMESOS2_SUPERLUMT
-
-/* Define if you want to build amesos2-superludist */
-#cmakedefine HAVE_AMESOS2_SUPERLUDIST
-
-/* Define if you want to build amesos2-pardisomkl */
-#cmakedefine HAVE_AMESOS2_PARDISO_MKL
-
-/* Define if you want to build amesos2-lapack */
-#cmakedefine HAVE_AMESOS2_LAPACK
-
-/* Define if you want to build amesos2-cholmod */
-#cmakedefine HAVE_AMESOS2_CHOLMOD
-
-/* Define if you want to enable experimental features */
-#cmakedefine HAVE_AMESOS2_EXPERIMENTAL
-
-/*Define if you want to use amesos-Basker*/
-#cmakedefine HAVE_AMESOS2_BASKER
+#endif  // AMESOS2_BASKER_FUNCTIONMAP_HPP

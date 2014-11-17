@@ -1,8 +1,8 @@
-/* @HEADER
+// @HEADER
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package
+//           Amesos2: Templated Direct Sparse Solver Package 
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,71 +40,41 @@
 // ***********************************************************************
 //
 // @HEADER
-*/
 
-/******************
- * Package macros *
- ******************/
 
-#define AMESOS2_VERSION "${AMESOS2_VERSION}"
+/**
+ * \file   Amesos2_KLU2_TypeMap.cpp
+ * \author Joshua Dennis Booth <jdbooth@sandia.gov>
+           Siva Rajamanickam <srajaman@sandia.gov>
+ * 
+ * \brief  Definitions for Basker TypeMap.
+ */
 
-#define AMESOS2_RELEASE_DATE "${AMESOS2_RELEASE_DATE}"
+#include "Amesos2_Basker_TypeMap.hpp"
 
-/******************
- * Config Options *
- ******************/
+namespace Amesos2 {
+  
 
-/* define if new form of std::count is supported */
-#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
+#ifdef HAVE_TEUCHOS_COMPLEX
+  //SLU::Dtype_t TypeMap<KLU2,std::complex<float> >::dtype = SLU::SLU_C;
 
-/* Define if want to build amesos2-debug */
-#cmakedefine HAVE_AMESOS2_DEBUG
+  //SLU::Dtype_t TypeMap<KLU2,std::complex<double> >::dtype = SLU::SLU_Z;
 
-/* Define if you want debug-mode to be verbose (print stuff) */
-#cmakedefine HAVE_AMESOS2_VERBOSE_DEBUG
+  //SLU::Dtype_t TypeMap<KLU2,SLU::C::complex>::dtype = SLU::SLU_C;
 
-/* Define if you want performance timer support */
-#cmakedefine HAVE_AMESOS2_TIMERS
+  //SLU::Dtype_t TypeMap<KLU2,SLU::Z::doublecomplex>::dtype = SLU::SLU_Z;
+#endif
+  
+}
 
-/* Define if want want to build amesos2-explicit_instantiation */
-#cmakedefine HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#ifdef HAVE_TEUCHOS_COMPLEX
+//namespace std {
+  //ostream& operator<<(ostream& out, const SLU::Z::doublecomplex z){
+    //return (out << "(" << z.r << "," << z.i << ")");
+  //}
 
-/* Define if we have MPI */
-#cmakedefine HAVE_AMESOS2_MPI
-
-/* Define if we want EpetraExt support for tests and examples */
-#cmakedefine HAVE_AMESOS2_EPETRAEXT
-
-/* Define if we want Epetra matrix and multivector support */
-#cmakedefine HAVE_AMESOS2_EPETRA
-
-/****************************
- * Solver Interface Defines *
- ****************************/
-
-/* Define if you want to build amesos2-klu2 */
-#cmakedefine HAVE_AMESOS2_KLU2
-
-/* Define if you want to build amesos2-superlu */
-#cmakedefine HAVE_AMESOS2_SUPERLU
-
-/* Define if you want to build amesos2-superlumt */
-#cmakedefine HAVE_AMESOS2_SUPERLUMT
-
-/* Define if you want to build amesos2-superludist */
-#cmakedefine HAVE_AMESOS2_SUPERLUDIST
-
-/* Define if you want to build amesos2-pardisomkl */
-#cmakedefine HAVE_AMESOS2_PARDISO_MKL
-
-/* Define if you want to build amesos2-lapack */
-#cmakedefine HAVE_AMESOS2_LAPACK
-
-/* Define if you want to build amesos2-cholmod */
-#cmakedefine HAVE_AMESOS2_CHOLMOD
-
-/* Define if you want to enable experimental features */
-#cmakedefine HAVE_AMESOS2_EXPERIMENTAL
-
-/*Define if you want to use amesos-Basker*/
-#cmakedefine HAVE_AMESOS2_BASKER
+  //ostream& operator<<(ostream& out, const SLU::C::complex c){
+    //return (out << "(" << c.r << "," << c.i << ")");
+  //}
+//}
+#endif
