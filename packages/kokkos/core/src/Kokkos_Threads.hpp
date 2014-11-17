@@ -169,9 +169,9 @@ public:
    *  then some threads will idle.
    */
 
-   static int thread_pool_size( int depth = 0 );
+  static int thread_pool_size( int depth = 0 );
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-   static int thread_pool_rank();
+  static int thread_pool_rank();
 #else
   KOKKOS_INLINE_FUNCTION static int thread_pool_rank() { return 0 ; }
 #endif

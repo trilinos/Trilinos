@@ -58,11 +58,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
+# mfh 13 Nov 2014: We have to define a helper variable
+# Tpetra_ENABLE_TSQR_DEFAULT here, because if the original variable
+# doesn't exist, CMake will replace it with "" and then think that we
+# are calling TRIBITS_ADD_OPTION_AND_DEFINE with the wrong number of
+# arguments.
+IF (${PROJECT_NAME}_ENABLE_KokkosTSQR)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT OFF)
+ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_TPETRA_TSQR
-  "Whether to build Tpetra with TSQR support.  This is enabled by default if the KokkosTSQR subpackage is enabled.  You may turn off TSQR support if you like, but leaving it enabled is fine."
-  ${${PROJECT_NAME}_ENABLE_KokkosTSQR}
+  "Whether to build Tpetra with TSQR support.  This is enabled by default if the KokkosTSQR subpackage is enabled.  You may turn off TSQR support if you like, but leaving it enabled is fine.  Please note that Epetra's TSQR adapter lives in the Tpetra package, for various historical reasons.  Therefore, in order to use TSQR with Epetra, you must enable Tpetra as well."
+  ${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT}
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(

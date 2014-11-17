@@ -194,6 +194,22 @@ public:
     this->plus(x);
   }
 
+
+  /** \brief Return dual representation of \f$\mathtt{*this}\f$, for example,
+             the result of applying a Riesz map, or change of basis, or
+             change of memory layout.
+
+             @return         A const reference to dual representation.
+
+             By default, returns the current object.
+             Please overload if you need a dual representation.
+
+             ---
+  */
+  virtual const Vector & dual() const {
+    return *this;
+  }
+
 }; // class Vector
 
 } // namespace ROL

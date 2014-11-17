@@ -106,16 +106,16 @@ int main(int argc, char *argv[]) {
     bool plot           = parlist->get("Generate Plot Data",false);
     RealT noise         = parlist->get("Measurement Noise",0.0);
 
-    Teuchos::RCP< ROL::Objective_DiodeCircuit<RealT> > obj;
+    Teuchos::RCP< ROL::ZOO::Objective_DiodeCircuit<RealT> > obj;
             
     if(datatype){
       // Get objective with data from file
       std::ifstream input_file("diode_forTimur.cir.dat");
-      obj = Teuchos::rcp( new ROL::Objective_DiodeCircuit<RealT> (V_th,input_file,use_lambertw,noise,use_adjoint,use_hessvec) );
+      obj = Teuchos::rcp( new ROL::ZOO::Objective_DiodeCircuit<RealT> (V_th,input_file,use_lambertw,noise,use_adjoint,use_hessvec) );
     }
     else{
       // Generate data and get objective
-      obj = Teuchos::rcp( new ROL::Objective_DiodeCircuit<RealT> (V_th,lo_Vsrc,up_Vsrc,step_Vsrc,true_Is,true_Rs,use_lambertw,noise,use_adjoint,use_hessvec) );
+      obj = Teuchos::rcp( new ROL::ZOO::Objective_DiodeCircuit<RealT> (V_th,lo_Vsrc,up_Vsrc,step_Vsrc,true_Is,true_Rs,use_lambertw,noise,use_adjoint,use_hessvec) );
     }
 
     
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
      *outStream << std::scientific << "Scaling: " << scale << "\n";
 
     /// Define constraints on Is and Rs
-    ROL::BoundConstraint_DiodeCircuit<RealT> con(scale,lo_Is,up_Is,lo_Rs,up_Rs);
+    ROL::ZOO::BoundConstraint_DiodeCircuit<RealT> con(scale,lo_Is,up_Is,lo_Rs,up_Rs);
 
     /*--------------------------------------------------------------------------------------------
     // Gradient and Hessian check

@@ -54,10 +54,10 @@
 /* Define if want to build teuchos-complex */
 #define HAVE_TEUCHOS_COMPLEX
 
-/* Define if want to build with TSQR support (depends on
-   Anasazi_ENABLE_TSQR CMake configuration variable, to which the
-   CMake files refer as Anasazi_ENABLE_TSQR) */
-#define HAVE_ANASAZI_TSQR
+/* Define if building with TSQR enabled.  The TSQR implementation
+   lives in the TSQR subpackage of Kokkos, and the Epetra and Tpetra
+   adapters both live in Tpetra. */
+/* #undef HAVE_ANASAZI_TSQR */
 
 #define ANASAZI_TEUCHOS_TIME_MONITOR
 

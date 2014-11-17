@@ -122,3 +122,14 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
 ENDIF()
 
 
+####   BASKER Tests ####
+IF (${PACKAGE_NAME}_ENABLE_Basker)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Basker_UnitTests
+    SOURCES
+      Basker_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()

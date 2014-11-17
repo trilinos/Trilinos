@@ -155,13 +155,13 @@ public:
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
 
   /** \brief  The parallel machine */
-  ParallelMachine parallel() const { return m_parallel_machine ; }
+  ParallelMachine parallel() const { return m_parallel.parallel() ; }
 
   /** \brief  Size of the parallel machine */
-  int parallel_size()   const { return m_parallel_size ; }
+  int parallel_size()   const { return m_parallel.parallel_size() ; }
 
   /** \brief  Rank of the parallel machine's local processor */
-  int parallel_rank()   const { return m_parallel_rank ; }
+  int parallel_rank()   const { return m_parallel.parallel_rank() ; }
 
   const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
 
@@ -333,8 +333,6 @@ public:
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
    *
-   *  A parallel-local operation.
-   *
    *  If the locally owned entity is shared or ghosted then
    *  the change will be propagated to the sharing or ghosting
    *  processes by modification_end.
@@ -343,6 +341,25 @@ public:
       const PartVector & add_parts ,
       const PartVector & remove_parts = PartVector(),
       bool always_propagate_internal_changes=true);
+
+  /** \brief Change part-membership of the specified entities by adding
+   * and/or removing parts for each entity.
+   *
+   * Each entity in the vector must be locally-owned.
+   *
+   * A parallel-synchronous operation, containing its own calls to
+   * modification_begin and modification_end. The mesh must not already
+   * be in the "ok-to-modify" state when this method is called.
+   *
+   * The supplied arguments are different on each processor (and may be
+   * empty on some processors) but all processors must call this method
+   * before it will complete since it includes communication to propagate
+   * the part membership of any entities that are on processor boundaries.
+   */
+  void batch_change_entity_parts( const stk::mesh::EntityVector& entities,
+                            const std::vector<PartVector>& add_parts,
+                            const std::vector<PartVector>& remove_parts,
+                            bool always_propagate_internal_changes=true );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -763,6 +780,7 @@ protected: //functions
                                                 bool always_propagate_internal_changes=true );
 
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_change_parts();
 
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
@@ -820,6 +838,7 @@ protected: //functions
           EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
+  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
 private: //functions
 
@@ -901,7 +920,6 @@ private: //functions
 
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
-  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
@@ -975,9 +993,6 @@ protected: //data
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  ParallelMachine m_parallel_machine;
-  int m_parallel_size;
-  int m_parallel_rank;
   size_t m_sync_count;
   BulkDataSyncState m_sync_state;
   std::vector<int> m_mark_entity;
@@ -985,6 +1000,7 @@ protected: //data
   std::vector<uint16_t> m_closure_count;
 
 private: // data
+  Parallel m_parallel;
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;

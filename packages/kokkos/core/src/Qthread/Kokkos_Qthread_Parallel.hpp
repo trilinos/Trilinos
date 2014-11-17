@@ -224,14 +224,12 @@ private:
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    typename Policy::member_type team_index( exec , self.m_team );
+    typename Policy::member_type member( exec , self.m_team );
 
-    while ( team_index ) {
-      // Reset shared memory offset to beginning of reduction range.
-      exec.shared_reset();
-      self.ParallelFor::template driver< typename Policy::work_tag >( team_index );
-      team_index.team_barrier();
-      team_index.next_team();
+    while ( member ) {
+      self.ParallelFor::template driver< typename Policy::work_tag >( member );
+      member.team_barrier();
+      member.next_team();
     }
 
     exec.exec_all_barrier();
@@ -278,14 +276,12 @@ private:
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    typename Policy::member_type team_index( exec , self.m_team );
+    typename Policy::member_type member( exec , self.m_team );
 
-    while ( team_index ) {
-      // Reset shared memory offset to beginning of reduction range.
-      exec.shared_reset();
-      self.ParallelFor::template driver< typename Policy::work_tag >( team_index );
-      team_index.team_barrier();
-      team_index.next_team();
+    while ( member ) {
+      self.ParallelFor::template driver< typename Policy::work_tag >( member );
+      member.team_barrier();
+      member.next_team();
     }
 
     exec.exec_all_barrier();
@@ -341,14 +337,12 @@ private:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    typename Policy::member_type team_index( exec , self.m_team );
+    typename Policy::member_type member( exec , self.m_team );
 
-    while ( team_index ) {
-      // Reset shared memory offset to beginning of reduction range.
-      exec.shared_reset();
-      self.ParallelReduce::template driver< typename Policy::work_tag >( team_index , update );
-      team_index.team_barrier();
-      team_index.next_team();
+    while ( member ) {
+      self.ParallelReduce::template driver< typename Policy::work_tag >( member , update );
+      member.team_barrier();
+      member.next_team();
     }
 
     exec.exec_all_reduce( self.m_func );

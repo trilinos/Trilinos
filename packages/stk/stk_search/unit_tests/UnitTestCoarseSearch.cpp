@@ -143,7 +143,7 @@ void testCoarseSearchForAlgorithm_IntsForIdents(stk::search::SearchMethod algori
   // what if identifier is NOT unique
 
   StkBox box;
-  int id;
+  int id = 0;
 
   box = StkBox( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
   id = IdentForTest(proc_id * 4, proc_id);

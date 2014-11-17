@@ -43,7 +43,7 @@
 #ifndef KOKKOS_COMPLEX_HPP
 #define KOKKOS_COMPLEX_HPP
 
-#include <Kokkos_Core.hpp>
+#include <Kokkos_Atomic.hpp>
 #include <complex>
 #include <iostream>
 
@@ -85,6 +85,15 @@ public:
     re_ (std::real (src)), im_ (std::imag (src))
   {}
 
+  /// \brief Conversion operator to std::complex.
+  ///
+  /// This operator cannot be called in a CUDA device function,
+  /// because std::complex's methods and nonmember functions are not
+  /// marked as CUDA device functions.
+  operator std::complex<RealType> () const {
+    return std::complex<RealType> (re_, im_);
+  }
+
   /// \brief Constructor that takes just the real part, and sets the
   ///   imaginary part to zero.
   template<class InputRealType>
@@ -102,6 +111,15 @@ public:
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator= (const complex<InputRealType>& src) {
+    re_ = src.re_;
+    im_ = src.im_;
+    return *this;
+  }
+
+  //! Assignment operator.
+  template<class InputRealType>
+  KOKKOS_INLINE_FUNCTION
+  complex<RealType>& operator= (const complex<InputRealType>& src) volatile {
     re_ = src.re_;
     im_ = src.im_;
     return *this;
@@ -170,6 +188,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator += (const volatile RealType& src) volatile {
     re_ += src;
+  }
+
+  KOKKOS_INLINE_FUNCTION void atomic_add (const complex<RealType>& x) volatile {
+    // We can do the atomic update of a complex number componentwise,
+    // since the components don't interact in an add operation.  This
+    // does NOT work for dd_real!
+    ::Kokkos::atomic_add (&re_, x.real ());
+    ::Kokkos::atomic_add (&im_, x.imag ());
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -409,6 +435,13 @@ std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
   os >> x_std;
   x = x_std; // only assigns on success of above
   return os;
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_add (volatile ::Kokkos::complex<double>* const dest,
+            const ::Kokkos::complex<double> src)
+{
+  dest->atomic_add (src);
 }
 
 } // namespace Kokkos

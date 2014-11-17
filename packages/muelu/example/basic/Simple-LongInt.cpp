@@ -124,7 +124,8 @@ int main(int argc, char *argv[]) {
 
   // Multigrid Hierarchy
   Hierarchy H(A);
-  H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetDefaultVerbLevel(MueLu::Medium);
+
 
   // Multigrid setup phase (using default parameters)
   H.Setup();

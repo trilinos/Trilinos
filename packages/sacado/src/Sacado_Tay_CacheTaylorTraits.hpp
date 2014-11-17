@@ -42,36 +42,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to CacheTaylor types
-  template <typename T>
-  class Promote< Tay::CacheTaylor<T>, Tay::CacheTaylor<T> > {
-  public:
-
-    typedef Tay::CacheTaylor<T> type;
-  };
-
-  //! Specialization of %Promote to CacheTaylor types
-  template <typename L, typename R>
-  class Promote< Tay::CacheTaylor<L>, R > {
-  public:
-
-    typedef typename ValueType< Tay::CacheTaylor<L> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Tay::CacheTaylor<value_type> type;
-  };
-
-  //! Specialization of %Promote to CacheTaylor types
-  template <typename L, typename R>
-  class Promote< L, Tay::CacheTaylor<R> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Tay::CacheTaylor<R> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Tay::CacheTaylor<value_type> type;
-  };
+  SACADO_AD_PROMOTE_SPEC( Tay, CacheTaylor )
 
   //! Specialization of %ScalarType to DFad types
   template <typename T>

@@ -104,3 +104,6 @@
 
 /* Define if intrinsics are enabled */
 #cmakedefine HAVE_STOKHOS_INTRINSICS
+
+/* Define if C++11 is enabled */
+#cmakedefine HAVE_STOKHOS_CXX11

@@ -225,6 +225,7 @@ void induced_part_membership( const Part & part ,
 //  accurate if it is owned by the local process.
 
 void induced_part_membership(const BulkData& mesh,
+                             const PartVector& all_parts,
                              const Entity entity_from ,
                              const OrdinalVector       & omit ,
                                    EntityRank            entity_rank_to ,
@@ -240,7 +241,6 @@ void induced_part_membership(const BulkData& mesh,
   // Only induce parts for normal (not back) relations. Can only trust
   // 'entity_from' to be accurate if it is owned by the local process.
   if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
-    const PartVector & all_parts   = mesh.mesh_meta_data().get_parts();
 
     const std::pair<const unsigned *, const unsigned *>
       bucket_superset_ordinals = bucket_from.superset_part_ordinals();
@@ -277,6 +277,7 @@ void induced_part_membership(const BulkData& mesh,
 
   const EntityRank e_rank = mesh.entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  const PartVector& all_parts = mesh.mesh_meta_data().get_parts();
 
   EntityVector temp_entities;
   Entity const* rels = NULL;
@@ -294,7 +295,7 @@ void induced_part_membership(const BulkData& mesh,
 
     for (int j = 0; j < num_rels; ++j)
     {
-      induced_part_membership(mesh, rels[j], omit, e_rank, induced_parts, include_supersets);
+      induced_part_membership(mesh, all_parts, rels[j], omit, e_rank, induced_parts, include_supersets);
     }
   }
 }

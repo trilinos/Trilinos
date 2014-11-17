@@ -57,6 +57,7 @@
 #include "ROL_Objective.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief Rosenbrock's function.
    */
@@ -173,6 +174,7 @@ namespace ROL {
     }
   }
 
+}// End ZOO Namespace
 }// End ROL Namespace
 
 #endif

@@ -1099,7 +1099,8 @@ namespace panzer_stk_classic {
                             const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                             const panzer::BCStrategyFactory & bc_factory,
                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
-                            bool is_transient,bool is_explicit) const
+                            bool is_transient,bool is_explicit,
+                            const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list) const
   {
     typedef panzer::ModelEvaluator<ScalarT> PanzerME;
 
@@ -1144,7 +1145,12 @@ namespace panzer_stk_classic {
       std::string prefix = "Cloned_";
 
       std::vector<panzer::BC> bcs;
-      panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+      if(bc_list==Teuchos::null) {
+        panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+      }
+      else { 
+        panzer::buildBCs(bcs, *bc_list);
+      }
       
       fmb = buildFieldManagerBuilder(Teuchos::rcp_const_cast<panzer::WorksetContainer>(m_response_library->getWorksetContainer()),
                                      physicsBlocks,

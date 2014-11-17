@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
-<meta name="date" content="2014-10-28" />
+<meta name="date" content="2014-11-11" />
 <style type="text/css">
 
 /*
@@ -315,9 +315,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-10-28</td></tr>
+<td>2014-11-11</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-10-28</td></tr>
+<td>TriBITS Development at 2014-11-11</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1726,9 +1726,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS  .    PT
   )
 
-# Must create subdir for binary dir for the TriBITS package
-SET(TriBITS_SPECIFIED_BINARY_DIR tribits)
-
 </pre>
 <p>(see <a class="reference internal" href="#tribits-package-tribits-repository-tribits-project">TriBITS Package == TriBITS Repository == TriBITS Project</a>).</p>
 <p>It is perfectly legal for a TriBITS repository to define no packages at all
@@ -1922,10 +1919,11 @@ this file exists, then it defines extra CPack-related options that are
 specific to this TriBITS Repository.  This file must define the macro
 <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_PACKAGING()</tt> which is called by TriBITS.  This
 file is processed as the top project-level scope so any local variables set
-have project-wide effect.  This file is processed before the project's
-<a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> file so any options
-defined in this can be overridden by the project.  This file typically just
-sets extra excludes to remove files from the tarball.  The file:</p>
+have project-wide effect.  This file is processed after the project's
+<a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> file so any project
+CPACK varaibles are defined for the repository-level options and commands are
+created.  This file typically just sets extra excludes to remove files from
+the tarball.  The file:</p>
 <blockquote>
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">cmake/CallbackDefineRepositoryPackaging.cmake</tt></blockquote>
 <p>provides a good example which is:</p>
@@ -2849,14 +2847,14 @@ through the call to <a class="reference internal" href="#id2">TRIBITS_PROJECT()<
 <div class="line">* <tt class="docutils literal">ADD_SUBDIRECTORY(</tt> <a class="reference internal" href="#packagedir-spkgdir-cmakelists-txt">&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</a> <tt class="docutils literal">)</tt></div>
 </div>
 </div>
-<div class="line">15) For each <tt class="docutils literal">&lt;repoDir&gt;</tt> in all defined TriBITS repositories:</div>
+<div class="line">16) <tt class="docutils literal">INCLUDE(</tt> <a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> <tt class="docutils literal">)</tt></div>
+<div class="line-block">
+<div class="line">* Call <tt class="docutils literal">TRIBITS_PROJECT_DEFINE_PACKAGING()</tt></div>
+</div>
+<div class="line">16) For each <tt class="docutils literal">&lt;repoDir&gt;</tt> in all defined TriBITS repositories:</div>
 <div class="line-block">
 <div class="line">* <tt class="docutils literal">INCLUDE(</tt> <a class="reference internal" href="#repodir-cmake-callbackdefinerepositorypackaging-cmake">&lt;repoDir&gt;/cmake/CallbackDefineRepositoryPackaging.cmake</a> <tt class="docutils literal">)</tt></div>
 <div class="line">* Call <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_PACKAGING()</tt></div>
-</div>
-<div class="line">17) <tt class="docutils literal">INCLUDE(</tt> <a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> <tt class="docutils literal">)</tt></div>
-<div class="line-block">
-<div class="line">* Call <tt class="docutils literal">TRIBITS_PROJECT_DEFINE_PACKAGING()</tt></div>
 </div>
 </div>
 </div>
@@ -2985,8 +2983,8 @@ $ cmake \
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/tests/CMakeLists.txt
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/CMakeLists.txt
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/tests/CMakeLists.txt
--- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 -- File Trace: PROJECT    INCLUDE    [...]/cmake/CallbackDefineProjectPackaging.cmake
+-- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 </pre>
 <p>However, every file that TriBITS processes is not printed in this file trace
 if it should be obvious that the file is being processed.  For example, the
@@ -3002,9 +3000,10 @@ processed and exactly when it is processed.</p>
 <p>Certain simplifications are allowed when defining TriBITS projects,
 repositories and packages.  The known allowed simplifications are described
 below.</p>
-<p><strong>TriBITS Repository == TriBITS Project</strong>: It is allowed for a TriBITS Project
-and a TriBITS Repository to be the same source directory and in fact this is
-the default for every TriBITS project (unless the <a class="reference internal" href="#projectdir-cmake-nativerepositorieslist-cmake">&lt;projectDir&gt;/cmake/NativeRepositoriesList.cmake</a> is defined).  In this case,
+<p><strong>TriBITS Repository Dir == TriBITS Project Dir</strong>: It is allowed for a TriBITS
+Project and a TriBITS Repository to be the same source directory and in fact
+this is the default for every TriBITS project (unless the
+<a class="reference internal" href="#projectdir-cmake-nativerepositorieslist-cmake">&lt;projectDir&gt;/cmake/NativeRepositoriesList.cmake</a> is defined).  In this case,
 the repository name <a class="reference internal" href="#repository-name">REPOSITORY_NAME</a> and the project name <a class="reference internal" href="#project-name">PROJECT_NAME</a>
 are the same as well.  This is quite common and is in fact the default that
 every TriBITS Project is also a TriBITS repository (and therefore must contain
@@ -3014,13 +3013,13 @@ is the case, for example, with the <a class="reference internal" href="#trilinos
 Project's and the Repository's <tt class="docutils literal">Version.cmake</tt> and <tt class="docutils literal">Copyright.txt</tt> files
 are also one and the same, as they should be (see <a class="reference internal" href="#project-and-repository-versioning-and-release-mode">Project and Repository
 Versioning and Release Mode</a>).</p>
-<p><strong>TriBITS Package == TriBITS Repository</strong>: It is also allowed for a TriBITS
-Repository to have only one package and to have that package be the base
-repository directory.  The TriBITS Repository and the single TriBITS Package
-would typically have the same name in this case (but that is actually not
-required but it is confusing if they are not the same).  For example, in the
-TriBITS test project <a class="reference internal" href="#mocktrilinos">MockTrilinos</a>, the repository and package
-<tt class="docutils literal">extraRepoOnePackage</tt> are one in the same.  In this case, the file
+<p><strong>TriBITS Package Dir == TriBITS Repository Dir</strong>: It is also allowed for a
+TriBITS Repository to have only one package and to have that package be the
+base repository directory.  The TriBITS Repository and the single TriBITS
+Package would typically have the same name in this case (but that is actually
+not required but it is confusing if they are not the same).  For example, in
+the TriBITS test project <a class="reference internal" href="#mocktrilinos">MockTrilinos</a>, the repository and package
+<tt class="docutils literal">extraRepoOnePackage</tt> are the same directory.  In this case, the file
 <tt class="docutils literal">extraRepoOnePackage/PackagesList.cmake</tt> looks like:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
@@ -3029,57 +3028,41 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 
 </pre>
 <p>(Note the dot <tt class="docutils literal">'.'</tt> for the package directory.)</p>
-<p>This is show the real TriBITS repository and package <a class="reference external" href="https://github.com/CNERG/DataTransferKit">DataTransferKit</a> is set
-up (at least that is the way it was when this document was first written).</p>
+<p>This is also how the real TriBITS repository and package <a class="reference external" href="https://github.com/CNERG/DataTransferKit">DataTransferKit</a> is
+set up (at least that is the way it was when this document was first written).</p>
 <p>However, to maximize flexibility, it is recommended that a TriBITS package and
 its TriBITS repository <strong>not</strong> share the same directory or the same name.
 This allows a TriBITS repository to define more packages later.</p>
-<p id="tribits-package-tribits-repository-tribits-project"><strong>TriBITS Package == TriBITS Repository == TriBITS Project</strong>: In the extreme,
-it is possible to collapse a single TriBITS package, repository, and project
-into the same base source directory.  However, in this case, the TriBITS
-Project name and the TriBITS Package name cannot be the same and some
-modifications and tricks are needed to allow this to work.  One example of
-this is the <tt class="docutils literal">TriBITSProj</tt> project and <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>
-themselves, which are both rooted in the base <tt class="docutils literal">TriBITS</tt> source directory of
-the stand-alone TriBITS repository.  There are a few restrictions and
-modifications needed to get this to work:</p>
+<p id="tribits-package-tribits-repository-tribits-project"><strong>TriBITS Package Dir == TriBITS Repository Dir == TriBITS Project Dir</strong>: In
+the extreme, it is possible to collapse a single TriBITS package, repository,
+and project into the same base source directory.  They can also share the same
+name for the package, repository and package.  One example of this is the
+<tt class="docutils literal">TriBITS</tt> project and <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a> themselves, which are both
+rooted in the base <tt class="docutils literal">TriBITS/</tt> source directory of the stand-alone TriBITS
+repository.  There are a few restrictions and modifications needed to get this
+to work:</p>
 <ul class="simple">
-<li>The Project and Package names cannot be the same.  In the case of the
-TriBITS project, the project name is <tt class="docutils literal">TriBITSProj</tt> (as defined in
-<tt class="docutils literal">TriBITS/ProjectName.cmake</tt>) and the package name is <tt class="docutils literal">TriBITS</tt> (as
-defined in <tt class="docutils literal">TriBITS/PackagesList.cmake</tt>).</li>
 <li>The base <tt class="docutils literal">CMakeLists.txt</tt> file must be modified to allow it to be
 processed both as the base project <tt class="docutils literal">CMakeLists.txt</tt> file and as the
 package's base <tt class="docutils literal">CMakeLists.txt</tt> file.  In the case of
 <tt class="docutils literal">TriBITS/CMakeLists.txt</tt>, a big if statement is used.</li>
-<li>An extra subdirectory must be created for TriBITS package's binary
-directory.  Because of directory-level targets like <tt class="docutils literal">${PROJECT_NAME}_libs</tt>
-and <tt class="docutils literal">${PACKAGE_NAME}_libs</tt>, a subdirectory for the package's binary
-directory must be created.  This is simply done by overriding the binary
-directory name <tt class="docutils literal">${PACKAGE_NAME}_SPECIFIED_BINARY_DIR</tt>.  In the case of
-TriBITS, this is set to <tt class="docutils literal">tribits</tt> in the <tt class="docutils literal">TriBITS/PackagesList.cmake</tt>
-file.</li>
 </ul>
-<p>Other than those modifications, a TriBITS project, repository, and package can
-all be rooted in the same source directory.  However, as one can see above, to
-do so is a little messy and is not recommended.  It was only done this way
-with the base TriBITS directory <tt class="docutils literal">TriBITS</tt> in order to maintain backward
-compatibility for the usage of TriBITS in existing TriBITS projects.</p>
-<p>However, one possible use case for collapsing a project, repository, and
-package into a single base source directory would be to support the
-stand-alone build of a TriBITS package as its own entity that uses an
-independent installation of the TriBITS.  If a given TriBITS package has no
+<!-- ToDo: Create a new macro called TRIBITS_PROJECT_AND_PACKAGE() that will -->
+<!-- automatically take care of the details of a TriBITS package also being a -->
+<!-- TriBITS project. -->
+<p>Other than that simple modification to the top-level <tt class="docutils literal">CMakeLists.txt</tt> file,
+a TriBITS project, repository, and package can all be rooted in the same
+source directory.</p>
+<p>The primary use case for collapsing a project, repository, and package into a
+single base source directory would be to support the stand-alone build of a
+TriBITS package as its own entity that uses an independent installation of the
+TriBITS (or a minimal snapshotof TriBITS).  If a given TriBITS package has no
 required <a class="reference internal" href="#upstream">upstream</a> TriBITS package dependencies and minimal TPL dependencies
 (or only uses <a class="reference internal" href="#standard-tribits-tpls">Standard TriBITS TPLs</a> already defined in the
 <tt class="docutils literal">tribits/tpls/</tt> directory), then creating a stand-alone project build of a
-loan TriBITS package requires fairly little extra overhead or duplication.
+single TriBITS package requires fairly little extra overhead or duplication.
 However, as mentioned above, one cannot use the same name for the package and
 the project.</p>
-<!-- NOTE: We could modify the TriBITS system to allow having the project and -->
-<!-- package names be the same if we disable one of the sets of XXX_libs and -->
-<!-- other targets created by TriBITS.  We could also provide a standard wrapper -->
-<!-- CMakeLists.txt file to make it easy for packages to support stand-alone -->
-<!-- builds.  However, that is an effort for later. -->
 </div>
 <div class="section" id="standard-tribits-tpls">
 <h2><a class="toc-backref" href="#id30">3.4&nbsp;&nbsp;&nbsp;Standard TriBITS TPLs</a></h2>
@@ -3152,7 +3135,7 @@ in this document.  Also mentioned is the <a class="reference internal" href="#tr
 be a useful example of the usage of TriBITS (see disclaimers in the section
 <a class="reference internal" href="#trilinos">Trilinos</a>).  The last example mentioned is <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>
 itself which allows the TriBITS system to be tested and installed from any
-TriBITS project that lists it, including the <tt class="docutils literal">TriBITSProj</tt> project itself
+TriBITS project that lists it, including the <tt class="docutils literal">TriBITS</tt> project itself
 (see <a class="reference internal" href="#coexisting-projects-repositories-and-packages">Coexisting Projects, Repositories, and Packages</a>).</p>
 <p>The directory <tt class="docutils literal">tribits/doc/examples/</tt> contains some other example TriBITS
 projects and repositories as well that are referred to in this and other
@@ -5358,9 +5341,9 @@ test-related classifications:</p>
 </tr>
 </tbody>
 </table>
-<!-- ToDo: I need to set up automated testing for TriBITSProj to use as the -->
-<!-- example for all of these types of testing.  There is no better example that -->
-<!-- one that actually works.  It would also be nice t have a snapshot repo of -->
+<!-- ToDo: I need to set up automated testing for TriBITS to use as the example -->
+<!-- for all of these types of testing.  There is no better example that one -->
+<!-- that actually works.  It would also be nice t have a snapshot repo of -->
 <!-- TribitsExampleProject that also had this testing enabled for it but I am -->
 <!-- not sure that really makes sense. -->
 </div>
@@ -12208,41 +12191,69 @@ Options:
 the usage of <tt class="docutils literal">gitdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
 Development Workflow</a>.</p>
 <pre class="literal-block">
-Usage: gitdist [gitdist options] [OPTIONS]
+Usage: gitdist [gitdist arguments] [git arguments]
+       gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over extra repos
+Run git recursively over extra repos and some extra tools for multi-repository
+git projects.
 
-Instead of typing
+Instead of typing:
 
-   $ git [OPTIONS]
+  $ git [git arguments]
 
 type:
 
-  $ gitdist [gitdist options] [OPTIONS]
+  $ gitdist [gitdist options] [git arguments]
 
-This will distribute git options across all git repos listed, including the
+This will distribute git commands across all git repos listed, including the
 base git repo.  The options in [gitdist options] are prefixed with '--dist-'
-and are are pulled out before running git on the underlying executable.  See
---help to see the gitdist options.
+and are are pulled out off before passing the remaining arguments in [git
+arguments] to all the git repos.  See --help to see the [gitdist options].
 
-If --dist-extra-repos=&quot;&quot;, then the list of extra repos will be read from the
-file .gitdist.  The format of this file is to have one repo name per line as
-in:
+For example, consider the following git repos with other git repos cloned
+under it:
 
-   Repo1
-   Repo2
-   Repo3
-   ...
+  BaseRepo/
+    .git/
+    ExtraRepo1/
+      .git/
+    ExtraRep2/
+      .git/
 
-NOTE: If any extra repository does not exist, then it will be ignored and no
-output will be produced.  Therefore, be careful to manually verify that the
-script recognizes the repositories that you list.  The best way to do that is
-to type 'gitdist status'.
+The gitdist command is run in the base git repo 'BaseRepo' and the git
+commands are run on it as well as the git repos 'ExtraRepo1' and 'ExtraRepo2'.
 
-NOTE: This script has no dependencies other than standard linux packagse so it
-can be copied and moved anywhere and used.
+The set of repos processed is determined by the argument --dist-extra-repos or
+the files .gitdist or .gitdist.default.  If --dist-extra-repos=&quot;&quot;, then the
+list of extra repos will be read from the file '.gitdist' in the current
+working directory.  If the file '.gitdist' does not exist, then the list of
+extra repos will be read from the file '.gitdist.default in' the current
+working directory.  The format of this files '.gitdist' and '.gitdist.default'
+is to have one repo directory/name per line as in:
+
+  ExtraRepo1
+  ExtraRepo2
+  ...
+
+where each repo is the relative path to the repo under the base git repo
+(e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
+to the base git repo so that gitdist is ready to use right away.
+
+If an extra repository does not exist, then it will be ignored.  Therefore, be
+careful to manually verify that the script recognizes the repositories that
+you list.  The best way to do that is to type 'gitdist status'.
+
+This script has no dependencies other than standard python 2.4 packages so it
+can be copied to anywhere and used.
 
 TIPS:
+
+ - To see the status of all repos in a compact way, use the speical
+   'dist-repo-status' command (see below).
+
+ - To process only changed repos w.r.t. their tracking branch, run
+   'gitdist --dist-mod-only [git arguments]'.  For example, to see
+   the status of only changed repos use 'gitdist --dist-mod-only status'.
 
  - Use 'gitdist --no-pager &lt;command&gt; ...' to get the full output from
    all extra repos in one contiguous stream which can then be piped
@@ -12258,8 +12269,37 @@ TIPS:
 
  - To exclude processing either the base git repo and/or other git repos
    listed in .gitdist, pass in --dist-not-base-repo and/or
-   --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
-   what git repos the given command is run on.
+   --dist-not-extra-repos=RepoX,RepoZ,...  This provides complete control over
+   what git repos the given git command is run.
+
+SUMMARY OF REPO STATUS:
+
+This script supports the special command 'dist-repo-status' which prints a
+nice table showing the current status of all the repos.  For example, for the
+repos shown above:
+
+  $ gitdist dist-repo-status
+
+prints a table like:
+
+  ----------------------------------------------------------------
+  | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
+  |----|-----------------|--------|-----------------|---|----|---|
+  |  0 | BaseRepo (Base) | dummy  |                 |   |  0 | 0 |
+  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 | 0 |
+  |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
+  ----------------------------------------------------------------
+
+If the option --dist-legend is passed in, it will print the legend:
+
+Legend:
+* ID: Repository ID, zero based (order git commands are run)
+* Repo Dir: Relative to base repo (base repo shown first with '(Base)')
+* Branch: current branch (or detached HEAD)
+* Tracking Branch: Tracking branch (or empty if no tracking branch)
+* C: number local commits w.r.t. tracking branch (empty if zero)
+* M: number of tracked modified (uncommitted) files (empty if zero)
+* ?: number of untracked, non-ignored files (empty if zero)
 
 REPO VERSION FILES:
 
@@ -12271,7 +12311,7 @@ a compatible set of versions of the repos.
 The format of these repo version files is a follows:
 
 -----------------------------------------------------
-*** Base Git Repo: SomeBaseRepo
+*** Base Git Repo: BaseRepo
 e102e27 [Mon Sep 23 11:34:59 2013 -0400] &lt;author1&#64;someurl.com&gt;
 First summary message
 *** Git Repo: ExtraRepo1
@@ -12287,12 +12327,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
+  $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
+  $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using two lines per repo in the output file.
@@ -12329,8 +12369,17 @@ super-set of those processed by this script or an error will occur and the
 script will stop.
 
 Note that this Python script only depends on the Python 2.4+ standard modules
-'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
-compatible version of 'git' at the very minimum as well of course.
+'sys', 'os', 'subprocess', and 're'. Also, it requires some compatible version
+of 'git' at the very minimum as well of course.
+
+COMPARISONS TO GIT SUBMODULE:
+
+The purpose and functioning of gitdist has a lot in common with the build-in
+git submodule command.  While git submodule is well suited for pulling in
+externally developed git repos, git submodules are not well suited for
+managing the co-development of multiple git repos.  A more detailed discussion
+of different approaches to managing the development and integration of
+multiple git repos, see the TriBITS Developers Guide.
 
 
 Options:
@@ -12360,6 +12409,21 @@ Options:
   --dist-debug          If set, then debugging info is printed.
   --dist-no-opt         If set, then no git commands will be run but instead
                         will just be printed.
+  --dist-mod-only       If set, then the listed git command will be only be
+                        run and output for the repo will only be produced if
+                        the command 'git diff --name-only ^&lt;tracking-branch&gt;'
+                        returns non-empty output where &lt;tracking-branch&gt; is
+                        returned from 'rev-parse --abbrev-ref --symbolic-full-
+                        name &#64;{u}'.  In order words, if a git repo is
+                        unchanged w.r.t. its tracking branch, then the git
+                        command is skipped for that repo.  If a repo does not
+                        have a tracking branch, then the repo will be skipped
+                        as well.  Therefore, be careful to first run with
+                        dist-local-stat to see the status of each local repo
+                        to know which repos don't have tracking branches.
+  --dist-legend         If set, then a legend will be printed below the repo
+                        summary table for the special dist-repo-status
+                        command.  Only applicable with dist-repo-status.
 
 </pre>
 </div>

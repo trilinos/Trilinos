@@ -67,24 +67,24 @@ public:
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
     Real bv = 0.0, av = 0.0, bs = 0.0, as = 0.0;
     for (int i = 0; i <= state->current; i++) {
-      b[i] = v.clone();
+      b[i] = Hv.clone();
       b[i]->set(*(state->iterDiff[i]));
       b[i]->scale(1.0/sqrt(state->product[i]));
-      bv = b[i]->dot(v);
+      bv = b[i]->dot(v.dual());
       Hv.axpy(bv,*b[i]);
 
-      a[i] = v.clone();
+      a[i] = Hv.clone();
       applyH0(*a[i],*(state->gradDiff[i]),x);
 
       for (int j = 0; j < i; j++) {
-        bs = b[j]->dot(*(state->gradDiff[i]));
+        bs = b[j]->dot((state->gradDiff[i])->dual());
         a[i]->axpy(bs,*b[j]);
-        as = a[j]->dot(*(state->gradDiff[i]));
+        as = a[j]->dot((state->gradDiff[i])->dual());
         a[i]->axpy(-as,*a[j]);
       }
-      as = a[i]->dot(*(state->gradDiff[i]));
+      as = a[i]->dot((state->gradDiff[i])->dual());
       a[i]->scale(1.0/sqrt(as));
-      av = a[i]->dot(v);
+      av = a[i]->dot(v.dual());
       Hv.axpy(-av,*a[i]);
     }
   }
@@ -94,7 +94,7 @@ public:
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    Hv.set(v);
+    Hv.set(v.dual());
     if (state->iter != 0 && state->current != -1) {
       Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
       Hv.scale(state->product[state->current]/ss);
@@ -107,12 +107,12 @@ public:
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    Bv.set(v);
+    Bv.set(v.dual());
     std::vector<Real> alpha(state->current+1,0.0);
     for (int i = state->current; i>=0; i--) {
       alpha[i]  = state->gradDiff[i]->dot(Bv);
       alpha[i] /= state->product[i];
-      Bv.axpy(-alpha[i],*(state->iterDiff[i]));
+      Bv.axpy(-alpha[i],(state->iterDiff[i])->dual());
     }
 
     // Apply initial inverse Hessian approximation to v   
@@ -122,7 +122,7 @@ public:
 
     Real beta = 0.0;
     for (int i = 0; i <= state->current; i++) {
-      beta  = state->iterDiff[i]->dot(Bv);
+      beta  = state->iterDiff[i]->dot(Bv.dual());
       beta /= state->product[i];
       Bv.axpy((alpha[i]-beta),*(state->gradDiff[i]));
     }
@@ -133,7 +133,7 @@ public:
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    Bv.set(v);
+    Bv.set(v.dual());
     if (state->iter != 0 && state->current != -1) {
       Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
       Bv.scale(ss/state->product[state->current]);

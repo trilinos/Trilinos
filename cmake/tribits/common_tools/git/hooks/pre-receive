@@ -1,21 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 #
-# The "pre-receive" script is run before receive-pack has accepted a pack
-# and the repository has been updated.  It is passed arguments in through
-# stdin in the form
-#  <oldrev> <newrev> <refname>
+# The "pre-receive" script.  It is passed arguments in through stdin in the form:
+#
+#    <oldrev> <newrev> <refname>
+#
 # For example:
+#
 #  aa453216d1b3e49e7f6f98441fa56946ddcd6a20 68f7abf4e6f922807889f52bc043ecd31b79f814 refs/heads/master
-#
-# If the hook exits with non-zero status, none of the refs will be updated. If 
-# the hook exits with zero, updating of individual refs can still be prevented 
-# by the update hook.
-#
 
-while read oldrev newrev refname; do
-    # We invoke the different pre-receive hooks separately
-    # for each ref that is updated. This keeps things simple and
-    # reliable and none of the scripts need all the refs at once.
-    #$(dirname $0)/pre-receive-check-jque $oldrev $newrev $refname || exit 1
-    $(dirname $0)/pre-receive-check-policy $oldrev $newrev $refname || exit 1
+pushdate=$(date -u "+%Y-%m-%d_%H:%M:%S-UTC")
+while read oldrev newrev refname
+do
+  ./hooks/pre-receive-block-large-files $oldrev $newrev $refname || exit 1
 done

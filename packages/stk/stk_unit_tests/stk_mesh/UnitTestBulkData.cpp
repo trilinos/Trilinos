@@ -3490,6 +3490,82 @@ TEST(BulkData, verify_closure_count_is_correct)
 
 }
 
+TEST(BulkData, change_entity_owner_no_aura_check)
+{
+//   id/owner_proc
+//
+//   1/0---4/0---5/0      1/0---4/1---5/1
+//    |     |     |        |     |     |
+//    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
+//    |     |     |        |     |     |
+//   2/0---3/0---6/0      2/0---3/0---6/1
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta( spatial_dimension );
+  BulkDataTester bulk( meta, pm);
+
+  std::vector<stk::mesh::Entity> elems;
+  CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
+
+  stk::mesh::EntityProcVec entity_procs;
+  if (p_rank == 0) {
+    entity_procs.push_back(stk::mesh::EntityProc(elems[1], 1));
+    entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 4), 1));
+    entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 5), 1));
+    entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 6), 1));
+  }
+  bulk.change_entity_owner(entity_procs, false); //regenerate_aura, don't do it
+
+  CEOUtils::checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(bulk);
+}
+
+TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
+{
+  //   id/owner_proc
+  //
+  //   1/0---4/0---5/1        1/1---4/0---5/0
+  //    |     |     |          |     |     |
+  //    | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
+  //    |     |     |          |     |     |
+  //   2/0---3/0---6/1        2/1---3/0---6/0
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta( spatial_dimension );
+  BulkDataTester mesh( meta, pm);
+
+  CEOUtils::fillMeshfor2Elem2ProcFlipAndTest_no_ghost(mesh, meta);
+
+  stk::mesh::EntityProcVec entity_procs_flip;
+  if (p_rank == 0) {
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::ELEM_RANK, 1), 1));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 1), 1));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 2), 1));
+  } else {
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::ELEM_RANK, 2), 0));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 5), 0));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 6), 0));
+  }
+  mesh.change_entity_owner(entity_procs_flip, false); //also want to make sure and not generate an aura here
+
+  CEOUtils::checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(mesh);
+}
+
 //==============================================================================
 //These 8 tests thoroughly test change_entity_owner() and consequently:
 //in_receive_ghost()

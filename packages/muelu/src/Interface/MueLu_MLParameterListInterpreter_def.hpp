@@ -155,14 +155,17 @@ namespace MueLu {
     // Move smoothers/aggregation/coarse parameters to sublists
     //
 
+    //std::cout << std::endl << "Paramter list before CreateSublists" << std::endl;
+    //std::cout << paramList << std::endl;
+
     // ML allows to have level-specific smoothers/aggregation/coarse parameters at the top level of the list or/and defined in sublists:
     // See also: ML Guide section 6.4.1, MueLu::CreateSublists, ML_CreateSublists
     ParameterList paramListWithSubList;
     MueLu::CreateSublists(paramList, paramListWithSubList);
     paramList = paramListWithSubList; // swap
 
-    // std::cout << std::endl << "Parameter list after CreateSublists" << std::endl;
-    // std::cout << paramListWithSubList << std::endl;
+    //std::cout << std::endl << "Parameter list after CreateSublists" << std::endl;
+    //std::cout << paramListWithSubList << std::endl;
 
     //
     // Validate parameter list
@@ -361,14 +364,14 @@ namespace MueLu {
     // Coarse Smoother
     //
     ParameterList& coarseList = paramList.sublist("coarse: list");
-    //    coarseList.get("smoother: type", "Amesos-KLU"); // set default
+    // check whether coarse solver is set properly. If not, set default coarse solver.
+    if(!coarseList.isParameter("smoother: type"))
+      coarseList.set("smoother: type", "Amesos-KLU"); // set default coarse solver according to ML 5.0 guide
     RCP<SmootherFactory> coarseFact = GetSmootherFactory(coarseList, Teuchos::null);
 
     // Smoothers Top Level Parameters
 
     RCP<ParameterList> topLevelSmootherParam = ExtractSetOfParameters(paramList, "smoother");
-    // std::cout << std::endl << "Top level smoother parameters:" << std::endl;
-    // std::cout << *topLevelSmootherParam << std::endl;
 
     //
 
@@ -551,8 +554,6 @@ namespace MueLu {
 
     } else if (type.length() > strlen("Amesos") && type.substr(0, strlen("Amesos")) == "Amesos") {  /* catch Amesos-* */
       std::string solverType = type.substr(strlen("Amesos")+1);  /* ("Amesos-KLU" -> "KLU") */
-
-      std::cout << "solverType=" << solverType << std::endl;
 
       // Validator: following upper/lower case is what is allowed by ML
       bool valid = false;

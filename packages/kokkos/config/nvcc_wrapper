@@ -86,12 +86,14 @@ do
     xlinker_args="$xlinker_args -Xlinker ${1:4:${#1}}"
     ;;
   #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
-  *.o)
+  *.a|*.so|*.o)
     object_files="$object_files $1"
+    object_files_xlinker="$object_files_xlinker -Xlinker $1"
     ;;
   #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
-  *.a|*.so|*.so.*)
+  *.so.*)
     object_files_xlinker="$object_files_xlinker -Xlinker $1"
+    object_files="$object_files -Xlinker $1"
     ;;
   #All other args are sent to the host compiler
   *)
@@ -139,9 +141,9 @@ if [ $replace_pragma_ident -eq 1 ]; then
 fi
 
 if [ "$cpp_files" ]; then
-  command="$command $object_files $object_files_xlinker -x cu $cpp_files"
+  command="$command $object_files_xlinker -x cu $cpp_files"
 else
-  command="$command $object_files $object_files_xlinker"
+  command="$command $object_files"
 fi
 
 #Print command for dryrun

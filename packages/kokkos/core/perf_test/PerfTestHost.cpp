@@ -45,15 +45,15 @@
 
 #include <Kokkos_Core.hpp>
 
-#if defined( KOKKOS_HAVE_PTHREAD )
-
-typedef Kokkos::Threads TestHostDevice ;
-const char TestHostDeviceName[] = "Kokkos::Threads" ;
-
-#elif defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_HAVE_OPENMP )
 
 typedef Kokkos::OpenMP TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::OpenMP" ;
+
+#elif defined( KOKKOS_HAVE_PTHREAD )
+
+typedef Kokkos::Threads TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Threads" ;
 
 #elif defined( KOKKOS_HAVE_SERIAL )
 

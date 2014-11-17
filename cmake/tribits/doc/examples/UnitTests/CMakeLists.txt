@@ -197,6 +197,13 @@ ELSE()
 ENDIF()
 
 
+IF (EXISTS "${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject/.gitignore")
+  SET(REGEX_FOR_GITIGNORE "Only in .*/TribitsExampleProject: .gitignore")
+ELSE()
+  SET(REGEX_FOR_GITIGNORE)
+ENDIF()
+
+
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
@@ -389,7 +396,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
     MESSAGE "Make sure right directoires are excluced"
     PASS_REGULAR_EXPRESSION_ALL
       "Only in .*/TribitsExampleProject/cmake: ctest"
-      "Only in .*/TribitsExampleProject: .gitignore"
+      ${REGEX_FOR_GITIGNORE}
       "Only in .*/TribitsExampleProject/packages: mixed_lang"
       "Only in .*/TribitsExampleProject/packages: wrap_external"
 
@@ -1468,4 +1475,29 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ExternalPkg
   )
 
 
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_DisableWithSubpackagesB_EnableWithSubpackagesB
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
 
+  TEST_0
+    MESSAGE "Just do dependency analysis to test enabling of parent package"
+     " with eanbled subpackages even if is disabled"
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_Fortran=OFF
+      -DTribitsExProj_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING=ON
+      -DTribitsExProj_ENABLE_WithSubpackagesA=OFF
+      -DTribitsExProj_ENABLE_WithSubpackagesB=ON
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Explicitly enabled SE packages on input .by user.:  WithSubpackagesB 1"
+      "-- Setting TribitsExProj_ENABLE_WrapExternal=OFF because WrapExternal has a required library dependence on disabled package WithSubpackagesA"
+      "Enabling all parent packages that have at least one subpackage enabled [.][.][.]"
+      "-- Setting TribitsExProj_ENABLE_WithSubpackages=ON because TribitsExProj_ENABLE_WithSubpackagesB=ON"
+      "Final set of enabled packages:  SimpleCxx WithSubpackages 2"
+      "Final set of enabled SE packages:  SimpleCxx WithSubpackagesB WithSubpackages 3"
+
+  )
+# NOTE: The above test is the *only* test that we have that checks that a
+# parent package is re-enabled if any of its subpackages are enabled!

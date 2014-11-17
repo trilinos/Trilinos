@@ -213,7 +213,7 @@ public:
   /** Construct for undefined communication.
    *  No buffers are allocated.
    */
-  CommAll();
+  CommAll(bool propagate_local_error_flags=true);
 
   /** Allocate send and receive buffers based upon input sizes.
    *  If recv_size == NULL then the receive size
@@ -252,7 +252,7 @@ public:
    *  3) Send buffers are identically packed; however, this
    *     packing copies data into the send buffers.
    */
-  explicit CommAll( ParallelMachine );
+  explicit CommAll( ParallelMachine, bool propagate_local_error_flags=true );
 
   /** Allocate asymmetric communication based upon
    *  sizing from the surrogate send buffer packing.
@@ -294,6 +294,7 @@ private:
                          bool local_flag );
 
   ParallelMachine m_comm ;
+  bool            m_propagate_local_error_flags;
   int             m_size ;
   int             m_rank ;
   unsigned        m_bound ;

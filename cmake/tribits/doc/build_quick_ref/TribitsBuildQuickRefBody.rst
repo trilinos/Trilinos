@@ -149,22 +149,25 @@ b) Create a CMake file fragment and point to it [Recommended].
      
   where MyConfigureOptions.cmake might look like::
 
-    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "" FORCE)
-    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "" FORCE)
-    SET(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "")
+    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "")
+    SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
     ...
 
   Using a configuration fragment file allows for better reuse of configure
   options across different configure scripts and better version control of
-  configure options.
+  configure options.  Also, when this file changes, CMake will automatically
+  trigger a reconfgure during a make (because it knows about the file and will
+  check its time stamp).
 
   NOTE: You can actually pass in a list of configuration fragment files
   which will be read in the order they are given.
 
-  NOTE: If you do not use 'FORCE' shown above, then the option can be
-  overridden on the cmake command line with -D options.  Also, if you don't
-  use 'FORCE' then the option will not be set if it is already set in the
-  case (e.g. by another configuration fragment file prior in the list).
+  NOTE: You can use the ``FORCE`` option in the ``SET()`` shown above and that
+  will override any value of the options that might already be set.  However,
+  that will not allow the user to override the options on the CMake
+  comamndline using ``-D<VAR>=<value>`` so it is generally desired to use
+  ``FORCE``.
 
 c) Using ccmake to configure
 

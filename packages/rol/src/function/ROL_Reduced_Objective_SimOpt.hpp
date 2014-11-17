@@ -183,8 +183,10 @@ public:
     this->is_state_computed_ = false;
     this->is_adjoint_computed_ = false;
     // Solve state equation
-    Real tol = std::sqrt(ROL_EPSILON);
-    this->solve_state_equation(x,tol,flag,iter);
+    if ( storage_ ) {
+      Real tol = std::sqrt(ROL_EPSILON);
+      this->solve_state_equation(x,tol,flag,iter);
+    }
   }
 
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the objective function 

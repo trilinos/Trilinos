@@ -2155,7 +2155,11 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
 
         TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
           "${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt")
-        ADD_SUBDIRECTORY(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
+        IF (NOT ${TRIBITS_PACKAGE}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
+          ADD_SUBDIRECTORY(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
+	ELSE()
+          INCLUDE("${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt")
+        ENDIF()
 
         LIST(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${TRIBITS_PACKAGE}_libs)
         LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
@@ -2272,8 +2276,10 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
         APPEND_SET(ENABLED_PACKAGE_LIBS_TARGETS last_lib)
       ENDIF()
       #PRINT_VAR(ENABLED_PACKAGE_LIBS_TARGETS)
-      ADD_CUSTOM_TARGET(${PROJECT_NAME}_libs)
-      ADD_DEPENDENCIES(${PROJECT_NAME}_libs ${ENABLED_PACKAGE_LIBS_TARGETS})
+      IF (NOT TARGET ${PROJECT_NAME}_libs)
+        ADD_CUSTOM_TARGET(${PROJECT_NAME}_libs)
+        ADD_DEPENDENCIES(${PROJECT_NAME}_libs ${ENABLED_PACKAGE_LIBS_TARGETS})
+      ENDIF()
       ADD_CUSTOM_TARGET(libs)
       ADD_DEPENDENCIES(libs ${ENABLED_PACKAGE_LIBS_TARGETS})
     ENDIF()
@@ -2301,19 +2307,11 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_START_SECONDS)
   ENDIF()
 
-  # K.1) Run packaging callback functions for repos and the project
+  # K.1) Run callback function for the base project.
 
-  # K.1.a) Loop through the Repositories and run their callback functions.
-  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
-    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
-    ENDIF()
-    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
-  ENDFOREACH()
-
-  # K.1.b) Run callback function for the base project.
   TRIBITS_PROJECT_DEFINE_PACKAGING_RUNNER()
+  # The above must define the basic project settings for CPACK that are
+  # specific to the project and should not be provided by the user.
 
   # K.2) Removing any packages or SE packages not enabled from the tarball
 
@@ -2369,12 +2367,11 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
 
   ENDFOREACH()
 
-  # Add excludes for git VC files/dirs
+  # Add excludes for VC files/dirs
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}
     /[.]git/
     [.]gitignore$
-    [.]egdist$
     )
 
   # Print the set of excluded files
@@ -2426,7 +2423,16 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     "The types of soruce generators to use for CPACK_SOURCE_GENERATOR.")
   SET(CPACK_SOURCE_GENERATOR ${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR})
 
-  # K.6) Include <Project>RepoVersion.txt if generated
+  # K.6) Loop through the Repositories and run their callback functions.
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
+    ENDIF()
+    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
+  ENDFOREACH()
+
+  # K.7) Include <Project>RepoVersion.txt if generated
   SET(PROJECT_REPO_VERSION_FILE
      "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}")
   IF (EXISTS "${PROJECT_REPO_VERSION_FILE}")
@@ -2436,7 +2442,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     ENDFOREACH()
   ENDIF()
 
-  # K.7) Finally process with CPack
+  # K.8) Finally process with CPack
   INCLUDE(CPack)
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)

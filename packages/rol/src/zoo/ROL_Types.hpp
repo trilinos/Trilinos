@@ -509,6 +509,7 @@ namespace ROL {
       \arg    GOLDENSECTION   describe
       \arg    CUBICINTERP     describe
       \arg    BRENTS          describe
+      \arg    USERDEFINED     describe
    */
   enum ELineSearch{
     LINESEARCH_ITERATIONSCALING = 0,
@@ -517,6 +518,7 @@ namespace ROL {
     LINESEARCH_GOLDENSECTION,
     LINESEARCH_CUBICINTERP,
     LINESEARCH_BRENTS,
+    LINESEARCH_USERDEFINED,
     LINESEARCH_LAST
   };
 
@@ -529,6 +531,7 @@ namespace ROL {
       case LINESEARCH_GOLDENSECTION:    retString = "Golden Section";      break;
       case LINESEARCH_CUBICINTERP:      retString = "Cubic Interpolation"; break;
       case LINESEARCH_BRENTS:           retString = "Brents";              break;
+      case LINESEARCH_USERDEFINED:      retString = "User Defined";        break;
       case LINESEARCH_LAST:             retString = "Last Type (Dummy)";   break;
       default:                          retString = "INVALID ELineSearch";
     }
@@ -546,7 +549,8 @@ namespace ROL {
             (ls == LINESEARCH_BISECTION)        ||
             (ls == LINESEARCH_GOLDENSECTION)    ||
             (ls == LINESEARCH_CUBICINTERP)      ||
-            (ls == LINESEARCH_BRENTS)
+            (ls == LINESEARCH_BRENTS)           ||
+            (ls == LINESEARCH_USERDEFINED)
           );
   }
 
