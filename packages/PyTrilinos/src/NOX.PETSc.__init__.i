@@ -133,13 +133,6 @@ using namespace NOX::Petsc;
 // Trilinos interface import
 %import "Teuchos.i"
 
-// Support for Teuchos::RCPs
-
-// *** Don't erase !!! ***
-// Include typemaps for converting raw types to NOX.Abstract types
-//%include "NOX.Abstract_typemaps.i"
-// ***
-
 // Allow import from the parent directory
 %pythoncode
 %{
