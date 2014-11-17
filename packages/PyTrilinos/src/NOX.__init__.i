@@ -128,6 +128,10 @@ __version__ = version().split()[2]
 // NOX namespace imports
 %pythoncode
 %{
+
+# Import sys module
+import sys
+
 # Abstract, Solver, and StatusTest namespaces
 __all__ = ['Abstract', 'Solver', 'StatusTest']
 import Abstract
@@ -143,6 +147,8 @@ import StatusTest
 # Epetra namespace
 __all__.append('Epetra')
 from . import Epetra
+sys.modules["PyTrilinos.NOX.Epetra.___init__"] = sys.modules["___init__"]
+del sys.modules["___init__"]
 %}
 #endif
 
@@ -154,5 +160,7 @@ from . import Epetra
 # PETSc namespace
 __all__.append('PETSc')
 from . import PETSc
+sys.modules["PyTrilinos.NOX.PETSc.___init__"] = sys.modules["___init__"]
+del sys.modules["___init__"]
 %}
 #endif
