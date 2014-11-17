@@ -104,3 +104,6 @@
 
 /* Define if intrinsics are enabled */
 #define HAVE_STOKHOS_INTRINSICS
+
+/* Define if C++11 is enabled */
+/* #undef HAVE_STOKHOS_CXX11 */

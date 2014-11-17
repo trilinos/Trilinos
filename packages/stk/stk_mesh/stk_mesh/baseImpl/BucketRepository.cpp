@@ -372,7 +372,7 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
   const unsigned bucket_id = bucket_vec.size();
   try {
     new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map, bucket_id);
-  } catch(std::runtime_error & e) {
+  } catch(std::exception & e) {
     bucket_allocator().deallocate(new_bucket,1);
     throw;
   }

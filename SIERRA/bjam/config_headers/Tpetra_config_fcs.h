@@ -9,7 +9,7 @@
 /* Define if want to build teuchos-debug */
 /* #undef HAVE_TPETRA_DEBUG */
 
-/* #undef HAVE_TPETRA_ENABLE_SS_TESTING */
+#define HAVE_TPETRA_ENABLE_SS_TESTING
 
 /* Define if want to build tpetra with OpenMP */
 /* #undef HAVE_TPETRA_OPENMP */
@@ -40,8 +40,23 @@
 /* Define if want to build tpetra-print_abuse_warnings */
 /* #undef HAVE_TPETRA_PRINT_ABUSE_WARNINGS */
 
-/* Define when building Tpetra with TSQR support */
-#define HAVE_TPETRA_TSQR
+/* Define when building Tpetra with the KokkosTSQR subpackage enabled.
+   The HAVE_TPETRA_TSQR macro tells you whether it is safe to use TSQR
+   in Tpetra (and downstream packages).  TSQR is enabled by default in
+   Tpetra if KokkosTSQR is enabled, but users may turn off TSQR by
+   setting Tpetra_ENABLE_TSQR to OFF. */
+/* #undef HAVE_TPETRA_KOKKOSTSQR */
+
+/* Define when building Tpetra with TSQR enabled.  TSQR is enabled by
+   default in Tpetra if the KokkosTSQR subpackage is enabled.  Users
+   may turn off TSQR even if KokkosTSQR is enabled, by setting
+   Tpetra_ENABLE_TSQR to OFF. */
+/* #undef HAVE_TPETRA_TSQR */
+
+/* Define when the variable-block-size classes VbrMatrix, BlockMap,
+   BlockCrsGraph, and BlockMultiVector (in the Tpetra namespace) are
+   enabled. */
+#define HAVE_TPETRA_CLASSIC_VBR
 
 /* Define when enabling the Murmur hash function in Tpetra */
 /* #undef TPETRA_USE_MURMUR_HASH */
@@ -83,10 +98,10 @@
 #define HAVE_TPETRA_INST_INT_LONG
 /* #undef HAVE_TPETRA_INST_INT_LONG_LONG */
 
-/* #undef HAVE_TPETRA_INST_FLOAT */
+#define HAVE_TPETRA_INST_FLOAT
 #define HAVE_TPETRA_INST_DOUBLE
-/* #undef HAVE_TPETRA_INST_COMPLEX_FLOAT */
-/* #undef HAVE_TPETRA_INST_COMPLEX_DOUBLE */
+#define HAVE_TPETRA_INST_COMPLEX_FLOAT
+#define HAVE_TPETRA_INST_COMPLEX_DOUBLE
 /* #undef HAVE_TPETRA_INST_DD_REAL */
 /* #undef HAVE_TPETRA_INST_QD_REAL */
 
