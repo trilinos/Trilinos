@@ -311,6 +311,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
 #if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
+#elif defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_KLU2)
+  coarsestSmooProto_ = rcp( new DirectSolver("Klu",coarsestSmooList_) );
+#elif defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLUDIST)
+  coarsestSmooProto_ = rcp( new DirectSolver("Superludist",coarsestSmooList_) );
 #else
   coarsestSmooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
 #endif

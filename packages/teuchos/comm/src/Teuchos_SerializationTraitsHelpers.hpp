@@ -54,37 +54,35 @@ namespace Teuchos {
  * SerializationTraits to use a general serialization object.  This is to
  * allow for more general types of serialization, e.g., when other data needs
  * to be used.
+ *
+ * \note (mfh 16 Nov 2014) I honestly have no idea what the above
+ *   comment means.  My guess is that serializers should have little
+ *   if any state, so there is probably no benefit to keeping around a
+ *   static DefaultSerializerType object for every type T for which we
+ *   might want to send and receive data.  Furthermore, the
+ *   deallocation of static objects requires careful management, in
+ *   particular if they depend on MPI in any way.  (I recommend using
+ *   the "MPI_Finalize hook for MPI_COMM_SELF" idiom, as discussed in
+ *   the MPI standard.)  Thus, I've chosen to remove the static
+ *   objects, and just return new instances each time.
  */
 template <typename Ordinal, typename T>
 class DefaultSerializer {
 public:
-
   //! Typename of default serializer
   typedef SerializationTraits<Ordinal,T> DefaultSerializerType;
 
-  //! Return the default serializer
-  static DefaultSerializerType& getDefaultSerializer() {
-    if (defaultSerializer_ == Teuchos::null)
-      defaultSerializer_ = Teuchos::rcp(new DefaultSerializerType);
-    return *defaultSerializer_;
+  //! Return an instance of the default serializer.
+  static DefaultSerializerType getDefaultSerializer() {
+    DefaultSerializerType s;
+    return s;
   }
 
-  //! Return RCP to the default serializer
+  //! Return an RCP of an instance of the default serializer
   static Teuchos::RCP<DefaultSerializerType> getDefaultSerializerRCP() {
-    if (defaultSerializer_ == Teuchos::null)
-      defaultSerializer_ = Teuchos::rcp(new DefaultSerializerType);
-    return defaultSerializer_;
+    return Teuchos::rcp (new DefaultSerializerType ());
   }
-
-private:
-
-  //! RCP to the default serializer
-  static Teuchos::RCP<DefaultSerializerType> defaultSerializer_;
 };
-
-template <typename Ordinal, typename T>
-Teuchos::RCP<typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
-DefaultSerializer<Ordinal,T>::defaultSerializer_ = Teuchos::null;
 
 /** \brief Encapsulate how an array of non-const objects with value sematics
  * is serialized into a <tt>char[]</tt> array.
@@ -94,7 +92,7 @@ DefaultSerializer<Ordinal,T>::defaultSerializer_ = Teuchos::null;
  * for direct and indirect serialization.
  */
 template <typename Ordinal, typename T, typename Serializer,
-	  bool direct = Serializer::supportsDirectSerialization>
+          bool direct = Serializer::supportsDirectSerialization>
 class ValueTypeSerializationBufferImp {};
 
 /** \brief Encapsulate how an array of const objects with value sematics is
@@ -105,7 +103,7 @@ class ValueTypeSerializationBufferImp {};
  * for direct and indirect serialization.
  */
 template <typename Ordinal, typename T, typename Serializer,
-	  bool direct = Serializer::supportsDirectSerialization>
+          bool direct = Serializer::supportsDirectSerialization>
 class ConstValueTypeSerializationBufferImp {};
 
 /** \brief Encapsulate how an array of non-const serialized objects with value
@@ -117,7 +115,7 @@ class ConstValueTypeSerializationBufferImp {};
  * for direct and indirect serialization.
  */
 template <typename Ordinal, typename T, typename Serializer,
-	  bool direct = Serializer::supportsDirectSerialization>
+          bool direct = Serializer::supportsDirectSerialization>
 class ValueTypeDeserializationBufferImp {};
 
 /** \brief Encapsulate how an array of non-const serialized objects with value
@@ -129,7 +127,7 @@ class ValueTypeDeserializationBufferImp {};
  * for direct and indirect serialization.
  */
 template <typename Ordinal, typename T, typename Serializer,
-	  bool direct = Serializer::supportsDirectSerialization>
+          bool direct = Serializer::supportsDirectSerialization>
 class ConstValueTypeDeserializationBufferImp {};
 
 /** \brief Encapsulate how an array of non-const objects with value sematics
@@ -413,7 +411,7 @@ private:
  * is serialized into a <tt>char[]</tt> array.
  */
 template <typename Ordinal, typename T,
-	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
+          typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
 class ValueTypeSerializationBuffer :
     public ValueTypeSerializationBufferImp<Ordinal,T,Serializer> {
 public:
@@ -429,7 +427,7 @@ public:
  * serialized into a <tt>const char[]</tt> array.
  */
 template <typename Ordinal, typename T,
-	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
+          typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
 class ConstValueTypeSerializationBuffer :
     public ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer> {
 public:
@@ -446,7 +444,7 @@ public:
  * <tt>T[]</tt> array and then serialized back again.
  */
 template <typename Ordinal, typename T,
-	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
+          typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
 class ValueTypeDeserializationBuffer :
     public ValueTypeDeserializationBufferImp<Ordinal,T,Serializer> {
 public:
@@ -463,7 +461,7 @@ public:
  * <tt>T[]</tt> array and then serialized back again.
  */
 template <typename Ordinal, typename T,
-	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
+          typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
 class ConstValueTypeDeserializationBuffer :
     public ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer> {
 public:
