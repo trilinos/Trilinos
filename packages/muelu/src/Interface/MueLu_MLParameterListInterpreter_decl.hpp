@@ -62,6 +62,7 @@
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
