@@ -180,10 +180,10 @@ IF(NOX_ENABLE_LOCA)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
 
-# IF(PyTrilinos_ENABLE_Domi)
-#   APPEND_SET(PyTrilinos_PACKAGES Domi)
-#   APPEND_SET(PyTrilinos_MODULES  Domi)
-# ENDIF(PyTrilinos_ENABLE_Domi)
+IF(PyTrilinos_ENABLE_Domi)
+  APPEND_SET(PyTrilinos_PACKAGES Domi)
+  APPEND_SET(PyTrilinos_MODULES  Domi)
+ENDIF(PyTrilinos_ENABLE_Domi)
 
 # Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
