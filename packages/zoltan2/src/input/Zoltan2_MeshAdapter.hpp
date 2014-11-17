@@ -328,6 +328,19 @@ public:
 
       //Fill-complete adjs Graph Transpose.
       adjsGraphTranspose->fillComplete ();
+
+      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	int NumAdjs;
+	if (localElement + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[localElement+1];
+	} else {
+	  NumAdjs = LocalNumAdjs;
+	}
+
+	for (int Adjs = offsets[localElement]; Adjs < NumAdjs; ++Adjs) {
+	  //global_size_t globalNode = adjacencyIds[Adjs];
+	}
+      }
     }
   }
 
