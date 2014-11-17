@@ -5,6 +5,7 @@
 #include "basker_decl.hpp"
 #include "basker_def.hpp"
 
+/*
 #ifdef MATLAB_MEX_FILE
 #include "matrix.h"
 #include "mex.h"
@@ -24,7 +25,7 @@
 #define FREE(ptr)         free(ptr) 
 
 #endif
-
+*/
 
 #endif
 

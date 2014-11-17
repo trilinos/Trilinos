@@ -8,12 +8,12 @@ template <class T>
 struct BASKER_ScalarTraits
 {
   typedef T magnitudeType;
-  static inline double reciprocal(double c ){}
-  static inline double divide(double a, double b){}
-  static inline double divideConjugate(double a, double b){}
-  static inline magnitudeType approxABS(double a){}
-  static inline magnitudeType abs(double a){}
-  static inline bool gt (double a, double b){}
+  static inline double reciprocal(double c ){return 0;}
+  static inline double divide(double a, double b){return 0;}
+  static inline double divideConjugate(double a, double b){return 0;}
+  static inline magnitudeType approxABS(double a){return 0;}
+  static inline magnitudeType abs(double a){return 0;}
+  static inline bool gt (double a, double b){return 0;}
 };
 
 //double
