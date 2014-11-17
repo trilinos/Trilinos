@@ -142,10 +142,10 @@ namespace Amesos2 {
 
 template <class, class> class Basker;
 
-/* Specialize the Amesos2::TypeMap struct for KLU2 types
- * TODO: Mostly dummy assignments as KLU2 is templated. Remove if possible.
+/* Specialize the Amesos2::TypeMap struct for Basker types
+ * TODO: Mostly dummy assignments as Basker is templated. Remove if possible.
  *
- * \cond KLU2_type_specializations
+ * \cond Basker_type_specializations
  */
 
 template <>

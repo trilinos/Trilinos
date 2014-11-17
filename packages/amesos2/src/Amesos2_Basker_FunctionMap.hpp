@@ -61,17 +61,6 @@
 #include "Amesos2_Basker_TypeMap.hpp"
 
 
-/*
-namespace KLU2 {
-#include "klu2_defaults.hpp"
-#include "klu2_analyze.hpp"
-#include "klu2_factor.hpp"
-#include "klu2_solve.hpp"
-#include "klu2_free_symbolic.hpp"
-#include "klu2_free_numeric.hpp"
-} // end namespace KLU2
-*/
-
 #include "basker_decl.hpp"
 #include "basker_def.hpp"
 
