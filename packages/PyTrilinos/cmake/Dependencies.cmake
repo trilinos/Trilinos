@@ -47,6 +47,7 @@ SET(LIB_OPTIONAL_DEP_PACKAGES
   Triutils
   Tpetra
   EpetraExt
+  Domi
   Isorropia
   AztecOO
   Galeri

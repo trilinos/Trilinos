@@ -77,12 +77,12 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-IF (Domi_ENABLE_PyTrilinos)
-  INCLUDE_DIRECTORIES(PYTHON_INCLUDE_PATH)
-  INCLUDE_DIRECTORIES(NumPy_INCLUDE_DIR)
-ENDIF (Domi_ENABLE_PyTrilinos)
+# IF (Domi_ENABLE_PyTrilinos)
+#   INCLUDE_DIRECTORIES(PYTHON_INCLUDE_PATH)
+#   INCLUDE_DIRECTORIES(NumPy_INCLUDE_DIR)
+# ENDIF (Domi_ENABLE_PyTrilinos)
 
-ADD_SUBDIRECTORY(PyTrilinos)
+# ADD_SUBDIRECTORY(PyTrilinos)
 
 #
 # Define the header and source files (and directories)
@@ -125,60 +125,60 @@ TRIBITS_ADD_LIBRARY(
 
 #
 # Python interface
-IF (Domi_ENABLE_PyTrilinos)
+# IF (Domi_ENABLE_PyTrilinos)
 
-  SET(CMAKE_SWIG_FLAGS "")
-  GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
-    ${CMAKE_CURRENT_BINARY_DIR}/../../../packages/PyTrilinos/doc/Doxygen ABSOLUTE
-    )
-  LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
-  LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
+#   SET(CMAKE_SWIG_FLAGS "")
+#   GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
+#     ${CMAKE_CURRENT_BINARY_DIR}/../../../packages/PyTrilinos/doc/Doxygen ABSOLUTE
+#     )
+#   LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
+#   LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
 
-  SET_SOURCE_FILES_PROPERTIES(
-    Domi.i
-    PROPERTIES CPLUSPLUS ON
-    )
+#   SET_SOURCE_FILES_PROPERTIES(
+#     Domi.i
+#     PROPERTIES CPLUSPLUS ON
+#     )
 
-  SWIG_MODULE_GET_OUTDIR_AND_MODULE(Domi.i OUTDIR MODULE)
+#   SWIG_MODULE_GET_OUTDIR_AND_MODULE(Domi.i OUTDIR MODULE)
 
-  #
-  # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
-  # to the pytrilinos library and PyTrilinos extension modules
-  SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
-  IF(APPLE)
-    IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
-       (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-      SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
-    ENDIF()
-  ENDIF(APPLE)
+#   #
+#   # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
+#   # to the pytrilinos library and PyTrilinos extension modules
+#   SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
+#   IF(APPLE)
+#     IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
+#        (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+#       SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
+#     ENDIF()
+#   ENDIF(APPLE)
 
-  # Note that I use a module name PyDomi here because the Mac OS can't
-  # handle domi.dir and Domi.dir being different directories
-  SWIG_ADD_MODULE(PyDomi
-    python
-    Domi.i
-    ${OUTDIR}
-    ${MODULE}
-    )
+#   # Note that I use a module name PyDomi here because the Mac OS can't
+#   # handle domi.dir and Domi.dir being different directories
+#   SWIG_ADD_MODULE(PyDomi
+#     python
+#     Domi.i
+#     ${OUTDIR}
+#     ${MODULE}
+#     )
 
-  SET_TARGET_PROPERTIES(PyDomi
-    PROPERTIES
-    LINK_FLAGS ${EXTRA_LINK_ARGS}
-    NO_SONAME  1
-    )
+#   SET_TARGET_PROPERTIES(PyDomi
+#     PROPERTIES
+#     LINK_FLAGS ${EXTRA_LINK_ARGS}
+#     NO_SONAME  1
+#     )
 
-  TRIBITS_ADD_LIBRARY(
-    PyDomiLib
-    HEADERS PyTrilinos_Domi_Util.hpp
-    SOURCES PyTrilinos_Domi_Util.cpp
-    )
+#   TRIBITS_ADD_LIBRARY(
+#     PyDomiLib
+#     HEADERS PyTrilinos_Domi_Util.hpp
+#     SOURCES PyTrilinos_Domi_Util.cpp
+#     )
 
-  SET_TARGET_PROPERTIES(PyDomiLib
-    PROPERTIES
-    LINK_FLAGS ${EXTRA_LINK_ARGS}
-    )
+#   SET_TARGET_PROPERTIES(PyDomiLib
+#     PROPERTIES
+#     LINK_FLAGS ${EXTRA_LINK_ARGS}
+#     )
 
-  SWIG_LINK_LIBRARIES(PyDomi pytrilinos domi PyDomiLib)
+#   SWIG_LINK_LIBRARIES(PyDomi pytrilinos domi PyDomiLib)
 
-  LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")
-ENDIF (Domi_ENABLE_PyTrilinos)
+#   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")
+# ENDIF (Domi_ENABLE_PyTrilinos)
