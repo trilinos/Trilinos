@@ -92,6 +92,12 @@ BucketRepository::~BucketRepository()
     }
     m_partitions.clear();
     m_buckets.clear();
+
+    const FieldVector& fields = m_mesh.mesh_meta_data().get_fields();
+    for(size_t i=0; i<fields.size(); ++i) {
+      fields[i]->get_meta_data_for_field().clear();
+    }
+
   } catch(...) {}
 }
 
@@ -159,9 +165,14 @@ Partition *BucketRepository::get_or_create_partition(
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");
 
-  // Somehow, this can happen.
-  ThrowRequireMsg( !m_buckets.empty(),
-                   "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
+  if (m_buckets.empty()) {
+    size_t entity_rank_count = m_mesh.mesh_meta_data().entity_rank_count();
+    ThrowRequireMsg( entity_rank_count > 0,
+                   "MetaData doesn't have any entity-ranks! Did you forget to initialize MetaData before creating BulkData?");
+    m_buckets.resize(entity_rank_count);
+    m_partitions.resize(entity_rank_count);
+    m_need_sync_from_partitions.resize(entity_rank_count, false);
+  }
 
   std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
 

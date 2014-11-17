@@ -182,59 +182,6 @@ public:
 
   void solve(bool updateInputData=true );
  
-  //!  \brief Return the part overlapping a given point in space; 
-  //          when a point lies on a part boundary, the lowest part
-  //          number on that boundary is returned.
-  //          Note that not all partitioning algorithms will support
-  //          this method.
-  //
-  //   \param dim : the number of dimensions specified for the point in space
-  //   \param point : the coordinates of the point in space; array of size dim
-  //   \return the part number of a part overlapping the given point
-  //
-  //   TODO:  This method might be more appropriate in a partitioning solution
-  //   TODO:  But then the solution would need to know about the algorithm.
-  //   TODO:  Consider moving the algorithm to the partitioning solution.
-  part_t pointAssign(int dim, scalar_t *point) 
-  {
-    part_t p;
-    try {
-      if (this->algorithm_ == Teuchos::null)
-        throw std::logic_error("no partitioning algorithm has been run yet");
-
-      p = this->algorithm_->pointAssign(dim, point); 
-    }
-    Z2_FORWARD_EXCEPTIONS
-    return p;
-  }
-
-  //!  \brief Return an array of all parts overlapping a given box in space.
-  //   This method allocates memory for the return argument, but does not
-  //   control that memory.  The user is responsible for freeing the 
-  //   memory.
-  //
-  //   \param dim : (in) the number of dimensions specified for the box
-  //   \param lower : (in) the coordinates of the lower corner of the box; 
-  //                   array of size dim
-  //   \param upper : (in) the coordinates of the upper corner of the box; 
-  //                   array of size dim
-  //   \param nPartsFound : (out) the number of parts overlapping the box
-  //   \param partsFound :  (out) array of parts overlapping the box
-  //   TODO:  This method might be more appropriate in a partitioning solution
-  //   TODO:  But then the solution would need to know about the algorithm.
-  //   TODO:  Consider moving the algorithm to the partitioning solution.
-  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
-                 size_t &nPartsFound, part_t **partsFound) 
-  {
-    try {
-      if (this->algorithm_ == Teuchos::null)
-        throw std::logic_error("no partitioning algorithm has been run yet");
-
-      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
-    }
-    Z2_FORWARD_EXCEPTIONS
-  }
-
   //!  \brief Get the solution to the problem.
   //
   //   \return  a reference to the solution to the most recent solve().
@@ -571,77 +518,63 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   RCP<const IdentifierMap<user_t> > idMap = 
     this->baseModel_->getIdentifierMap();
 
-  PartitioningSolution<Adapter> *soln = NULL;
+  // Create the algorithm
+  try {
+    if (algName_ == std::string("scotch")) {
+      this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
+                                            problemComm_,
+                                            this->graphModel_));
+    }
+    else if (algName_ == std::string("parmetis")) {
+      this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
+                                            problemComm_,
+                                            this->graphModel_));
+    }
+    else if (algName_ == std::string("block")) {
+      this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
+                                         problemComm_, this->identifierModel_));
+    }
+    else if (algName_ == std::string("rcb")) {
+      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
+                                                 this->coordinateModel_));
+    }
+    else if (algName_ == std::string("multijagged")) {
+      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
+                                              problemComm_,
+                                              this->coordinateModel_));
+    }
+    else if (algName_ == std::string("wolf")) {
+      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+                                        problemComm_,this->graphModel_,
+                                        this->coordinateModel_));
+    }
+    else {
+      throw std::logic_error("partitioning algorithm not supported");
+    }
+  }
+  Z2_FORWARD_EXCEPTIONS;
 
+  // Create the solution
   this->env_->timerStart(MACRO_TIMERS, "create solution");
+  PartitioningSolution<Adapter> *soln = NULL;
 
   try{
     soln = new PartitioningSolution<Adapter>( 
       this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
       partIds_.view(0, numberOfCriteria_), 
-      partSizes_.view(0, numberOfCriteria_));
+      partSizes_.view(0, numberOfCriteria_), this->algorithm_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   solution_ = rcp(soln);
 
   this->env_->timerStop(MACRO_TIMERS, "create solution");
-
   this->env_->memory("After creating Solution");
 
   // Call the algorithm
 
   try {
-    if (algName_ == std::string("scotch")) {
-
-      this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
-                                            problemComm_,
-                                            this->graphModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("parmetis")) {
-
-      this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
-                                            problemComm_,
-                                            this->graphModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("block")) {
-
-      this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
-                                         problemComm_, this->identifierModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("rcb")) {
-
-      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
-                                                 this->coordinateModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("multijagged")) {
-
-      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
-                                              problemComm_,
-                                              this->coordinateModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("wolf")) {
-
-      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
-                                        problemComm_,this->graphModel_,
-                                        this->coordinateModel_));
-
-      // need to add coordModel, make sure this is built
-      this->algorithm_->partition(solution_);
-    }
-    else {
-      throw std::logic_error("partitioning algorithm not supported");
-    }
+    this->algorithm_->partition(solution_);
   }
   Z2_FORWARD_EXCEPTIONS;
 

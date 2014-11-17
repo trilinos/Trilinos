@@ -1463,7 +1463,7 @@ namespace Tpetra {
         const size_t LDA = lclNumRows;
 
         // Get a host deep copy of X's data.
-        ArrayRCP<ScalarType> data1 (LDA * numCols);
+        ArrayRCP<typename src_mv_type::scalar_type> data1 (LDA * numCols);
         X.get1dCopy (data1 (), LDA);
 
         // Create the destination MultiVector.  This might do another

@@ -629,7 +629,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize full objective function.
-    int nx      = 256;  // Set spatial discretization.
+    int nx      = 128;  // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT nu = 1e-2; // Viscosity parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
@@ -637,39 +637,48 @@ int main(int argc, char *argv[]) {
     EqualityConstraint_BurgersControl<RealT> con(nx,nu);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
+    Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     for (int i=0; i<nx+2; i++) {
       (*z_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
       (*yz_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
     ROL::StdVector<RealT> z(z_rcp);
+    ROL::StdVector<RealT> gz(gz_rcp);
     ROL::StdVector<RealT> yz(yz_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(&z,false);
+    Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&z,false);
     Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
 
     Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+    Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     for (int i=0; i<nx; i++) {
       (*u_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
       (*yu_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
     ROL::StdVector<RealT> u(u_rcp);
+    ROL::StdVector<RealT> gu(gu_rcp);
     ROL::StdVector<RealT> yu(yu_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > up  = Teuchos::rcp(&u,false);
+    Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(&u,false);
     Teuchos::RCP<ROL::Vector<RealT> > yup = Teuchos::rcp(&yu,false);
 
-    Teuchos::RCP<std::vector<RealT> > jv_rcp  = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    ROL::StdVector<RealT> jv(jv_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > jvp = Teuchos::rcp(&jv,false);
+    Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+    Teuchos::RCP<std::vector<RealT> > l_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+    ROL::StdVector<RealT> c(c_rcp);
+    ROL::StdVector<RealT> l(l_rcp);
 
     ROL::Vector_SimOpt<RealT> x(up,zp);
+    ROL::Vector_SimOpt<RealT> g(gup,gzp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
+
     // Check derivatives.
-    /*obj.checkGradient(x,y,true);
+    obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
-    con.checkApplyJacobian(x,y,jv,true);
-    con.checkApplyAdjointJacobian(x,yu,true);
-    con.checkApplyAdjointHessian(x,yu,y,true);*/
+    con.checkApplyJacobian(x,y,c,true);
+    con.checkApplyAdjointJacobian(x,yu,c,x,true);
+    con.checkApplyAdjointHessian(x,yu,y,x,true);
 
     // Optimization 
     std::string filename = "input.xml";
@@ -692,8 +701,9 @@ int main(int argc, char *argv[]) {
     //u_rcp->assign(u_rcp->size(),z.norm()/u_rcp->size());
     //u_rcp->assign(u_rcp->size(),1.0);
     //u.zero();
-    jv.zero();
-    std::vector<std::string> output = algo.run(x, jv, obj, con, true);
+    c.zero();
+    l.zero();
+    std::vector<std::string> output = algo.run(x, g, l, c, obj, con, true);
     //for ( unsigned i = 0; i < output.size(); i++ ) {
     //  std::cout << output[i];
     //}

@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
       (*z_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
-    //ROL::Objective_Rosenbrock<RealT> obj;
-    ROL::Objective_PoissonInversion<RealT> obj(dim,1.e-6);
-    //ROL::Objective_SumOfSquares<RealT> obj;
-    //ROL::Objective_LeastSquares<RealT> obj;
+    //ROL::ZOO::Objective_Rosenbrock<RealT> obj;
+    ROL::ZOO::Objective_PoissonInversion<RealT> obj(dim,1.e-6);
+    //ROL::ZOO::Objective_SumOfSquares<RealT> obj;
+    //ROL::ZOO::Objective_LeastSquares<RealT> obj;
 
     std::vector<std::vector<RealT> > gCheck = obj.checkGradient(x, y);
 

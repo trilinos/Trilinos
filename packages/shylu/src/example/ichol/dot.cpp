@@ -40,8 +40,8 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsRowView a = CrsMatrixView(AA, /**/ 2, 6, /**/ 3, 8).extractRow(2);
-    CrsRowView b = CrsMatrixView(AA, /**/ 3, 7, /**/ 3, 8).extractRow(2);
+    CrsRowView a = CrsMatrixView(&AA, /**/ 2, 6, /**/ 3, 8).extractRow(2);
+    CrsRowView b = CrsMatrixView(&AA, /**/ 3, 7, /**/ 3, 8).extractRow(2);
     
     cout << " a = " << endl << a << endl;
     cout << " b = " << endl << b << endl;

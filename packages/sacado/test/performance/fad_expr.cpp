@@ -29,15 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Kokkos_Macros.hpp"
-
-#ifdef KOKKOS_INLINE_FUNCTION
-#undef KOKKOS_INLINE_FUNCTION
-#define KOKKOS_INLINE_FUNCTION inline
-#endif
-
-#include "Sacado_Random.hpp"
 #include "Sacado.hpp"
+#include "Sacado_Random.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 
 #include "Fad/fad.h"

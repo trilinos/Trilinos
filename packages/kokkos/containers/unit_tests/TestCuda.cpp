@@ -42,16 +42,29 @@
 */
 
 #include <iostream>
+#include <iomanip>
+#include <stdint.h>
 
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
-#include <stdint.h>
 
-#include <iomanip>
+#include <Kokkos_Bitset.hpp>
+#include <Kokkos_UnorderedMap.hpp>
+#include <Kokkos_Vector.hpp>
+
+#include <TestBitset.hpp>
+#include <TestUnorderedMap.hpp>
+#include <TestVector.hpp>
+#include <TestDualView.hpp>
+#include <TestSegmentedView.hpp>
+
+//----------------------------------------------------------------------------
+
+
+#ifdef KOKKOS_HAVE_CUDA
 
 namespace Test {
-#ifdef KOKKOS_HAVE_CUDA
 
 class cuda : public ::testing::Test {
 protected:
@@ -68,23 +81,53 @@ protected:
   }
 };
 
-extern void cuda_test_insert_close(  uint32_t num_nodes
-                                   , uint32_t num_inserts
-                                   , uint32_t num_duplicates
-                                  );
+void cuda_test_insert_close(  uint32_t num_nodes
+                            , uint32_t num_inserts
+                            , uint32_t num_duplicates
+                           )
+{
+  test_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, true);
+}
 
-extern void cuda_test_insert_far(  uint32_t num_nodes
-                                   , uint32_t num_inserts
-                                   , uint32_t num_duplicates
-                                  );
+void cuda_test_insert_far(  uint32_t num_nodes
+                          , uint32_t num_inserts
+                          , uint32_t num_duplicates
+                         )
+{
+  test_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, false);
+}
 
-extern void cuda_test_failed_insert(  uint32_t num_nodes );
-extern void cuda_test_deep_copy(  uint32_t num_nodes );
-extern void cuda_test_vector_combinations(unsigned int size);
-extern void cuda_test_dualview_combinations(unsigned int size);
-extern void cuda_test_segmented_view(unsigned int size);
+void cuda_test_failed_insert(  uint32_t num_nodes )
+{
+  test_failed_insert< Kokkos::Cuda >( num_nodes );
+}
 
-extern void cuda_test_bitset();
+void cuda_test_deep_copy(  uint32_t num_nodes )
+{
+  test_deep_copy< Kokkos::Cuda >( num_nodes );
+}
+
+void cuda_test_vector_combinations(unsigned int size)
+{
+  test_vector_combinations<int,Kokkos::Cuda>(size);
+}
+
+void cuda_test_dualview_combinations(unsigned int size)
+{
+  test_dualview_combinations<int,Kokkos::Cuda>(size);
+}
+
+void cuda_test_segmented_view(unsigned int size)
+{
+  test_segmented_view<double,Kokkos::Cuda>(size);
+}
+
+void cuda_test_bitset()
+{
+  test_bitset<Kokkos::Cuda>();
+}
+
+
 
 /*TEST_F( cuda, bitset )
 {
@@ -149,5 +192,7 @@ CUDA_SEGMENTEDVIEW_TEST( 200 )
 #undef CUDA_VECTOR_COMBINE_TEST
 #undef CUDA_DUALVIEW_COMBINE_TEST
 #undef CUDA_SEGMENTEDVIEW_TEST
-#endif
 }
+
+#endif  /* #ifdef KOKKOS_HAVE_CUDA */
+

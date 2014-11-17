@@ -58,6 +58,7 @@ void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsi
 
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes);
 
+bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm);
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
 void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );

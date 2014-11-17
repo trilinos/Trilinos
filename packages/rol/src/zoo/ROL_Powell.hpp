@@ -57,6 +57,7 @@
 #include "ROL_Objective.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief Powell's badly scaled function.
    */
@@ -186,6 +187,7 @@ namespace ROL {
     (*xp)[1] = 9.106;
   }
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif

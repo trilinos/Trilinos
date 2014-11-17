@@ -17,29 +17,30 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int 
   ICholLeftByBlocks<Uplo::Lower>
-  ::genScalarTask(typename CrsTaskViewType::policy_type &policy,                                   
-                  const CrsTaskViewType A) {                                                       
-    typedef typename CrsTaskViewType::value_type        value_type;                                         
-    typedef typename CrsTaskViewType::future_type       future_type;                                        
-    typedef typename CrsTaskViewType::task_factory_type task_factory_type;                                  
+  ::genScalarTask(typename CrsTaskViewType::policy_type &policy,
+                  const CrsTaskViewType A) {
+    typedef typename CrsTaskViewType::value_type        value_type;
+    typedef typename CrsTaskViewType::future_type       future_type;
+    typedef typename CrsTaskViewType::task_factory_type task_factory_type;
     
-    // extract the block matrix                                                                             
-    value_type &aa = A.extractRow(0).Value(0);                                                              
-                                                                                                              
-    // construct a task                                                                                     
-    future_type f = task_factory_type::create(policy,                                                       
-                                              IChol<Uplo::Lower,Algo::LeftUnblocked>::TaskFunctor<value_type>(aa));
-                                                                                                              
-    // manage dependence                                                                                    
-    task_factory_type::addDependence(policy, f, aa.Future());                                               
-    aa.setFuture(f);                                                                                        
-                                                                                                              
-    // spawn a task                                                                                         
-    task_factory_type::spawn(policy, f);                                                                    
-                                                                                                              
-    return 0;                                                                                               
-  }
+    // extract the block matrix
+    value_type &aa = A.extractRow(0).Value(0);
 
+    // construct a task
+    future_type f = task_factory_type
+      ::create(policy,
+               IChol<Uplo::Lower,Algo::LeftUnblocked>
+               ::TaskFunctor<value_type>(aa));
+    
+    // manage dependence
+    task_factory_type::addDependence(policy, aa.Future(), f);
+    aa.setFuture(f);
+
+    // spawn a task
+    task_factory_type::spawn(policy, f);
+
+    return 0;
+  }
 
   template<>
   template<typename CrsTaskViewType>
@@ -76,15 +77,16 @@ namespace Example {
             value_type &aa = a.Value(idx_a);
             value_type &xx = x.Value(j);
 
-            future_type f = task_factory_type::create(policy, 
-                                                      Gemm<Trans::NoTranspose,Trans::Transpose>
-                                                      ::TaskFunctor<double,value_type>(-1.0, aa, xx, 1.0, yy));
+            future_type f = task_factory_type
+              ::create(policy, 
+                       Gemm<Trans::NoTranspose,Trans::Transpose>
+                       ::TaskFunctor<double,value_type>(-1.0, aa, xx, 1.0, yy));
             
             // gemm dependence
-            task_factory_type::addDependence(policy, f, aa.Future());              
+            task_factory_type::addDependence(policy, aa.Future(), f);              
             
             // self
-            task_factory_type::addDependence(policy, f, yy.Future());
+            task_factory_type::addDependence(policy, yy.Future(), f);
             
             // place task signature on y
             yy.setFuture(f);
@@ -123,17 +125,18 @@ namespace Example {
       if (idx_b >= 0) {
         value_type &bb = b.Value(idx_b);
 
-        future_type f = task_factory_type::create(policy, 
-                                                  Trsm<Side::Right,Uplo::Lower,Trans::Transpose>
-                                                  ::TaskFunctor<double,value_type>(Diag::NonUnit, 1.0, aa, bb));
-
+        future_type f = task_factory_type
+          ::create(policy, 
+                   Trsm<Side::Right,Uplo::Lower,Trans::Transpose>
+                   ::TaskFunctor<double,value_type>(Diag::NonUnit, 1.0, aa, bb));
+        
         // trsm dependence
-        task_factory_type::addDependence(policy, f, aa.Future());
+        task_factory_type::addDependence(policy, aa.Future(), f);
 
         // self
-        task_factory_type::addDependence(policy, f, bb.Future());
+        task_factory_type::addDependence(policy, bb.Future(), f);
 
-        // place task signature on b                                                                      
+        // place task signature on b
         bb.setFuture(f);
 
         // spawn a task

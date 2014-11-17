@@ -66,6 +66,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.81">Zoltan Release v3.81 in Trilinos v11.12</a><br>
   <a href="#Release3.8">Zoltan Release v3.8 in Trilinos v11</a><br>
   <a href="#Release3.7">Zoltan Release v3.7 in Trilinos v11</a><br>
   <a href="#Release3.6">Zoltan Release v3.6</a><br>
@@ -85,6 +86,21 @@ releases of Zoltan:
   <a href="#Release1.5">Zoltan Release v1.5</a> <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.81">Zoltan Release v3.81 in Trilinos v11.12; November 2014</a></h2>
+<ul>
+<li>  Several improvements were made to Zoltan's interface to ParMETIS v4,
+METIS v5, and Scotch v6. 
+<li>  New statistics were added to the RCB and RIB algorithms' output.
+<li>  Checks for MPI_VERSION 1 or 2 were added where appropriate to handle
+MPI interface changes.
+<li>  For non-MPI builds of Zoltan, a bug in the serial MPI stubs siMPI was 
+fixed; the bug occurred when many MPI_Datatypes were defined by the 
+algorithm (e.g., in deep recursion level of multilevel partitioning methods).
+<li>  Several minor bugs were fixed.
+<li>  No Zoltan interfaces were changed; Zoltan 3.81 is fully 
+backward-compatible with Zoltan 3.8.
+</ul> 
 <hr>
 <h2><a name="Release3.8">Zoltan Release Notes v3.8: October 2013</a></h2>
 <ul>

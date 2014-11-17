@@ -175,7 +175,7 @@ namespace MueLu {
 
     "<ParameterList name=\"MueLu\">"
     
-            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           
@@ -189,7 +189,7 @@ namespace MueLu {
 
     "<ParameterList name=\"MueLu\">"
     
-            "<Parameter name=\"number of equations\" type=\"int\" value=\"6\"/>"
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           

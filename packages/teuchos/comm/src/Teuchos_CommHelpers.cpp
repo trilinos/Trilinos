@@ -98,11 +98,13 @@ public:
   static MPI_Datatype getType (const T&);
 };
 
-#ifdef TEUCHOS_HAVE_COMPLEX
+// amb See note in .hpp file.
+#if 0
+#ifdef HAVE_TEUCHOS_COMPLEX
 template<>
 class MpiTypeTraits<std::complex<double> > {
 public:
-  static MPI_Datatype getType (const T&) {
+  static MPI_Datatype getType (const std::complex<double>&) {
     return MPI_C_DOUBLE_COMPLEX;
   }
 };
@@ -110,11 +112,12 @@ public:
 template<>
 class MpiTypeTraits<std::complex<float> > {
 public:
-  static MPI_Datatype getType (const T&) {
+  static MPI_Datatype getType (const std::complex<float>&) {
     return MPI_C_FLOAT_COMPLEX;
   }
 };
-#endif // TEUCHOS_HAVE_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX
+#endif // if 0
 
 template<>
 class MpiTypeTraits<double> {
@@ -132,7 +135,7 @@ public:
   }
 };
 
-#ifdef TEUCHOS_HAVE_LONG_LONG_INT
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 class MpiTypeTraits<long long> {
 public:
@@ -148,7 +151,7 @@ public:
     return MPI_UNSIGNED_LONG_LONG;
   }
 };
-#endif // TEUCHOS_HAVE_LONG_LONG_INT
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 template<>
 class MpiTypeTraits<long> {
@@ -901,7 +904,9 @@ toString (const EReductionType reductType)
 // specializations (as found in this file) must _not_ use the macro.
 // That's why we don't use that macro here.
 
-#ifdef TEUCHOS_HAVE_COMPLEX
+// amb See note in .hpp file.
+#if 0
+#ifdef HAVE_TEUCHOS_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
 void
@@ -1037,7 +1042,8 @@ isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
 {
   return isendImpl<std::complex<float> > (sendBuffer, destRank, tag, comm);
 }
-#endif // TEUCHOS_HAVE_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX
+#endif // if 0
 
 
 // Specialization for Ordinal=int and Packet=double.
@@ -1177,7 +1183,7 @@ isend (const ArrayRCP<const float>& sendBuffer,
 }
 
 
-#ifdef TEUCHOS_HAVE_LONG_LONG_INT
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 void
@@ -1364,7 +1370,7 @@ isend (const ArrayRCP<const unsigned long long>& sendBuffer,
   return isendImpl<unsigned long long> (sendBuffer, destRank, tag, comm);
 }
 
-#endif // TEUCHOS_HAVE_LONG_LONG_INT
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 // Specialization for Ordinal=int and Packet=long.

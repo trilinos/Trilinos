@@ -51,8 +51,10 @@
 #include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_ExecPolicy.hpp>
-#include <impl/Kokkos_Traits.hpp>
+
 #include <impl/Kokkos_Tags.hpp>
+#include <impl/Kokkos_Traits.hpp>
+/* #include <impl/Kokkos_ReductionAdapter.hpp> */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

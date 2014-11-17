@@ -79,14 +79,14 @@ namespace ROL {
   void getTestObjectives( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x, 
                           const ETestObjectives test ) {
     switch (test) {
-      case TESTOBJECTIVES_ROSENBROCK:          getRosenbrock(obj,x0,x);       break;
-      case TESTOBJECTIVES_FREUDENSTEINANDROTH: getFreudensteinRoth(obj,x0,x); break;
-      case TESTOBJECTIVES_BEALE:               getBeale(obj,x0,x);            break;
-      case TESTOBJECTIVES_POWELL:              getPowell(obj,x0,x);           break;
-      case TESTOBJECTIVES_SUMOFSQUARES:        getSumOfSquares(obj,x0,x);     break;
-      case TESTOBJECTIVES_LEASTSQUARES:        getLeastSquares(obj,x0,x);     break; 
-      case TESTOBJECTIVES_POISSONCONTROL:      getPoissonControl(obj,x0,x);   break;
-      case TESTOBJECTIVES_POISSONINVERSION:    getPoissonInversion(obj,x0,x); break;
+      case TESTOBJECTIVES_ROSENBROCK:          ZOO::getRosenbrock(obj,x0,x);       break;
+      case TESTOBJECTIVES_FREUDENSTEINANDROTH: ZOO::getFreudensteinRoth(obj,x0,x); break;
+      case TESTOBJECTIVES_BEALE:               ZOO::getBeale(obj,x0,x);            break;
+      case TESTOBJECTIVES_POWELL:              ZOO::getPowell(obj,x0,x);           break;
+      case TESTOBJECTIVES_SUMOFSQUARES:        ZOO::getSumOfSquares(obj,x0,x);     break;
+      case TESTOBJECTIVES_LEASTSQUARES:        ZOO::getLeastSquares(obj,x0,x);     break; 
+      case TESTOBJECTIVES_POISSONCONTROL:      ZOO::getPoissonControl(obj,x0,x);   break;
+      case TESTOBJECTIVES_POISSONINVERSION:    ZOO::getPoissonInversion(obj,x0,x); break;
       case TESTOBJECTIVES_LAST:                break;
     }
   }
@@ -96,15 +96,15 @@ namespace ROL {
                           Vector<Real> &x0, Vector<Real> &x, 
                           const ETestOptProblem test ) {
     switch (test) {
-      case TESTOPTPROBLEM_HS1:  getHS1(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS2:  getHS2(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS3:  getHS3(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS4:  getHS4(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS5:  getHS5(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS25: getHS25(obj,con,x0,x); break;
-      case TESTOPTPROBLEM_HS38: getHS38(obj,con,x0,x); break;
-      case TESTOPTPROBLEM_HS45: getHS45(obj,con,x0,x); break;
-      case TESTOPTPROBLEM_BVP:  getBVP(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS1:  ZOO::getHS1(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS2:  ZOO::getHS2(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS3:  ZOO::getHS3(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS4:  ZOO::getHS4(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS5:  ZOO::getHS5(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS25: ZOO::getHS25(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_HS38: ZOO::getHS38(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_HS45: ZOO::getHS45(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_BVP:  ZOO::getBVP(obj,con,x0,x);  break;
       case TESTOPTPROBLEM_LAST: break;
     }
   }

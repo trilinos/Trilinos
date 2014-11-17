@@ -72,14 +72,23 @@ MACRO(TRIBITS_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS)
     PREPEND_CMNDLINE_ARGS(GENERAL_BUILD_FLAGS "${DEBUG_SYMBOLS_FLAGS}")
   ENDIF()
 
+  IF (${PROJECT_NAME}_COMMON_STRONG_COMPILE_WARNING_FLAGS)
+    SET(COMMON_STRONG_COMPILE_WARNING_FLAGS
+       ${${PROJECT_NAME}_COMMON_STRONG_COMPILE_WARNING_FLAGS})
+  ELSE()
+    MULTILINE_SET(COMMON_STRONG_COMPILE_WARNING_FLAGS
+      " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
+      " -Wall" # Enable a bunch of default warnings
+      " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+      )
+   ENDIF()
+
   IF (${PROJECT_NAME}_C_STRONG_COMPILE_WARNING_FLAGS)
     SET(C_STRONG_COMPILE_WARNING_FLAGS ${${PROJECT_NAME}_C_STRONG_COMPILE_WARNING_FLAGS})
   ELSE()
     MULTILINE_SET(C_STRONG_COMPILE_WARNING_FLAGS
-      "-ansi" # Check for C89 or C++98 standard code
-      " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
-      " -Wall" # Enable a bunch of default warnings
-      " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+      ${COMMON_STRONG_COMPILE_WARNING_FLAGS}
+      " -std=c99" # Check for C99
       )
   ENDIF()
 
@@ -87,7 +96,8 @@ MACRO(TRIBITS_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS)
     SET(CXX_STRONG_COMPILE_WARNING_FLAGS ${${PROJECT_NAME}_CXX_STRONG_COMPILE_WARNING_FLAGS})
   ELSE()
     MULTILINE_SET(CXX_STRONG_COMPILE_WARNING_FLAGS
-      ${C_STRONG_COMPILE_WARNING_FLAGS}
+      ${COMMON_STRONG_COMPILE_WARNING_FLAGS}
+      " -std=c++98" # C++98 standard code
       " -Wwrite-strings" # Checks for non-const char * copy of string constants
       )
   ENDIF()

@@ -80,8 +80,8 @@ enum MeshEntityType {
     \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
-    See IdentifierTraits to understand why the user's global ID type (\c zgid_t)
-    may differ from that used by Zoltan2 (\c gno_t).
+    See IdentifierTraits to understand why the user's global ID type
+    (\c zgid_t) may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
 
@@ -118,8 +118,9 @@ public:
   typedef User userCoord_t;
   typedef int LO;
   typedef int GO;
-  /*typedef Tpetra:DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::CrsGraph<LO GO Node> sparse_graph_type;*/
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<LO, GO, Node>      map_type;
+  typedef Tpetra::CrsGraph<LO, GO, Node> sparse_graph_type;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -247,42 +248,99 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      /*int LocalNumIDs = getLocalNumIDs();
-	int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);*/
-      zgid_t const *Ids=NULL;
-      getIDsView(Ids);
+      return false;
+
+      using Tpetra::DefaultPlatform;
+      using Tpetra::global_size_t;
+      using Teuchos::Array;
+      using Teuchos::as;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      // Get the default communicator and Kokkos Node instance
+      RCP<const Comm<int> > comm =
+	DefaultPlatform::getDefaultPlatform ().getComm ();
+      RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+
+      // Get element-node connectivity
+
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-      return false;
+      //
+      // Get global element ids
+      //
 
-      /*RCP<sparse_graph_type> adjsGraph;
-      adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+      zgid_t const *Ids=NULL;
+      getIDsView(Ids);
 
+      /***********************************************************************/
+      /*********************** BUILD MAPS FOR TRANSPOSE **********************/
+      /***********************************************************************/
+
+      Array<GO> GIDs;
+      RCP<const map_type> MapG;
+
+      // count owned elements
+      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+
+      // Build a list of the global ids...
+      GIDs.resize (LocalNumIDs);
       for (int i = 0; i < LocalNumIDs; ++i) {
-	int Row = Ids[i];
-	global_size_t globalRowT = as<global_size_t> (Row);
-	int NumAdj;
+	GIDs[i] = as<int> (Ids[i]);
+      }
 
-	if (i + 1 < LocalNumIDs) {
-	  NumAdjs = offsets[i+1];
+      //Generate Map for elements.
+      MapG = rcp (new map_type (-1, GIDs (), 0, comm, node));
+
+      /***********************************************************************/
+      /********************** BUILD GRAPH FOR TRANSPOSE **********************/
+      /***********************************************************************/
+
+      RCP<sparse_graph_type> adjsGraphTranspose;
+
+      // Construct Tpetra::CrsGraph objects.
+      adjsGraphTranspose = rcp (new sparse_graph_type (MapG, 0));
+
+      for (int localRow = 0; localRow < LocalNumIDs; ++localRow) {
+
+	int globalRow = as<int> (Ids[localRow]);
+	//create ArrayView globalRow object for Tpetra
+	ArrayView<int> globalRowAV = Teuchos::arrayView (&globalRow, 1);
+
+	int NumAdjs;
+	if (localRow + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[localRow+1];
 	} else {
 	  NumAdjs = LocalNumAdjs;
 	}
 
-	for (int j = offsets[i]; j < NumAdjs; ++j) {
-	  int Col = adjacencyIds[j];
-	  int globalCol = as<int> (Col);
-	  //create ArrayView globalCol object for Tpetra
-	  ArrayView<int> globalColAV = arrayView (&globalCol, 1);
-	  //Update Tpetra overlap Graph
-	  adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
+	for (int j = offsets[localRow]; j < NumAdjs; ++j) {
+	  //globalCol for Tpetra Graph
+	  global_size_t globalColT = as<global_size_t> (adjacencyIds[j]);
+
+	  //Update Tpetra adjs Graph Transpose
+	  adjsGraphTranspose->insertGlobalIndices (globalColT, globalRowAV);
+	}// *** col loop ***
+      }// *** row loop ***
+
+      //Fill-complete adjs Graph Transpose.
+      adjsGraphTranspose->fillComplete ();
+
+      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	int NumAdjs;
+	if (localElement + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[localElement+1];
+	} else {
+	  NumAdjs = LocalNumAdjs;
+	}
+
+	for (int Adjs = offsets[localElement]; Adjs < NumAdjs; ++Adjs) {
+	  //global_size_t globalNode = adjacencyIds[Adjs];
 	}
       }
-
-      adjsGraph->fillComplete ();*/
-      return true;
     }
   }
 
@@ -311,8 +369,8 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-// TODO:  Later may allow user to not implement second adjacencies and, if we want them,
-// TODO:  we compute A^T A, where A is matrix of first adjacencies.
+// TODO:  Later may allow user to not implement second adjacencies and,
+// TODO:  if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,

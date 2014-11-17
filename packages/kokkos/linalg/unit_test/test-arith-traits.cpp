@@ -41,14 +41,8 @@
 
 #include <iostream>
 
-#include "Kokkos_ArithTraitsTest.hpp"
 #include "Kokkos_Core.hpp"
-
-#ifdef KOKKOS_HAVE_CUDA
-// We annoyingly have to build the CUDA tests in a separate .cu file,
-// but we can still invoke them from this .cpp file.
-extern bool runAllArithTraitsCudaTests (std::ostream& out, const bool verbose);
-#endif // KOKKOS_HAVE_CUDA
+#include "Kokkos_ArithTraitsTest.hpp"
 
 int
 main (int argc, char* argv[])
@@ -134,7 +128,15 @@ main (int argc, char* argv[])
   }
 
   if (cudaWorked) {
-    success = success && runAllArithTraitsCudaTests (cout, verbose);
+    success = success && runAllArithTraitsDeviceTests<Kokkos::Cuda> (cout, verbose);
+
+    if (success) {
+      if (verbose) {
+        cout << endl << "Kokkos::Cuda host and device: TEST PASSED" << endl;
+      }
+    } else {
+      cout << endl << "Kokkos::Cuda host and device: TEST FAILED" << endl;
+    }
 
     try {
       Kokkos::Cuda::finalize (); // Close down the Kokkos device

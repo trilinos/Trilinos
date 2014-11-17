@@ -67,6 +67,9 @@ private:
 
   Teuchos::RCP<NonlinearCGState<Real> > state_; // Nonlinear-CG State
 
+  Teuchos::RCP<Vector<Real> > y_;
+  Teuchos::RCP<Vector<Real> > yd_;
+
 public:
 
   virtual ~NonlinearCG() {}
@@ -91,18 +94,27 @@ public:
 
   // Run one step of nonlinear CG.
   virtual void run( Vector<Real> &s , const Vector<Real> &g, const Vector<Real> &x, Objective<Real> &obj ) {
+    // Initialize vector storage
+    if ( state_->iter == 0 ) {
+      if ( state_->nlcg_type != NONLINEARCG_FLETCHER_REEVES && 
+           state_->nlcg_type != NONLINEARCG_FLETCHER_CONJDESC ) {
+        y_ = g.clone();
+      }
+      if ( state_->nlcg_type == NONLINEARCG_HAGAR_ZHANG ) {
+        yd_ = g.clone();
+      }
+    }
 
-    s.set(g);
+    s.set(g.dual());
 
     if ((state_->iter % state_->restart) != 0) {
       Real beta = 0.0;
       switch(state_->nlcg_type) {
 
         case NONLINEARCG_HESTENES_STIEFEL: {
-          Teuchos::RCP<Vector<Real> > y = g.clone();
-          y->set(g);
-          y->axpy(-1.0, *(state_->grad[0]));
-          beta =  - g.dot(*y) / y->dot(*(state_->pstep[0]));
+          y_->set(g);
+          y_->axpy(-1.0, *(state_->grad[0]));
+          beta =  - g.dot(*y_) / (state_->pstep[0]->dot(y_->dual()));
           beta = std::max(beta, 0.0);
           break;
           }
@@ -113,55 +125,49 @@ public:
           }
 
         case NONLINEARCG_DANIEL: {
-          Teuchos::RCP<Vector<Real> > y = s.clone();
           Real htol = 0.0;
-          obj.hessVec( *y, *(state_->pstep[0]), x, htol );
-          beta = - g.dot(*y) / y->dot(*(state_->pstep[0]));
+          obj.hessVec( *y_, *(state_->pstep[0]), x, htol );
+          beta = - g.dot(*y_) / (state_->pstep[0])->dot(y_->dual());
           beta = std::max(beta, 0.0);
           break;
           }
 
         case NONLINEARCG_POLAK_RIBIERE: {
-          Teuchos::RCP<Vector<Real> > y = g.clone();
-          y->set(g);
-          y->axpy(-1.0, *(state_->grad[0]));
-          beta = g.dot(*y) / (state_->grad[0])->dot(*(state_->grad[0]));
+          y_->set(g);
+          y_->axpy(-1.0, *(state_->grad[0]));
+          beta = g.dot(*y_) / (state_->grad[0])->dot(*(state_->grad[0]));
           beta = std::max(beta, 0.0);
           break;
           }
 
         case NONLINEARCG_FLETCHER_CONJDESC: {
-          beta =  g.dot(g) / (state_->grad[0])->dot(*(state_->pstep[0]));
+          beta =  g.dot(g) / (state_->pstep[0])->dot((state_->grad[0])->dual());
           break;
           }
 
         case NONLINEARCG_LIU_STOREY: {
-          Teuchos::RCP<Vector<Real> > y = g.clone();
-          y->set(g);
-          y->axpy(-1.0, *(state_->grad[0]));
-          beta =  g.dot(*y) / (state_->grad[0])->dot(*(state_->pstep[0]));
+          y_->set(g);
+          y_->axpy(-1.0, *(state_->grad[0]));
+          beta =  g.dot(*y_) / (state_->pstep[0])->dot((state_->grad[0])->dual());
           //beta = std::max(beta, 0.0); // Is this needed?  May need research.
           break;
           }
 
         case NONLINEARCG_DAI_YUAN: {
-          Teuchos::RCP<Vector<Real> > y = g.clone();
-          y->set(g);
-          y->axpy(-1.0, *(state_->grad[0]));
-          beta =  - g.dot(g) / y->dot(*(state_->pstep[0]));
+          y_->set(g);
+          y_->axpy(-1.0, *(state_->grad[0]));
+          beta =  - g.dot(g) / (state_->pstep[0])->dot(y_->dual());
           break;
           }
 
         case NONLINEARCG_HAGAR_ZHANG: {
           Real eta_0 = 1e-2; 
-          Teuchos::RCP<Vector<Real> > y = g.clone();
-          Teuchos::RCP<Vector<Real> > yd = g.clone();
-          y->set(g);
-          y->axpy(-1.0, *(state_->grad[0]));
-          yd->set(*y);
-          Real mult = 2.0 * ( y->dot(*y) / y->dot(*(state_->pstep[0])) );
-          yd->axpy(-mult, *(state_->pstep[0]));
-          beta = - yd->dot(g) / y->dot(*(state_->pstep[0]));
+          y_->set(g);
+          y_->axpy(-1.0, *(state_->grad[0]));
+          yd_->set(*y_);
+          Real mult = 2.0 * ( y_->dot(*y_) / (state_->pstep[0])->dot(y_->dual()) );
+          yd_->axpy(-mult, (state_->pstep[0])->dual());
+          beta = - yd_->dot(g) / (state_->pstep[0])->dot(y_->dual());
           Real eta = -1.0 / ((state_->pstep[0])->norm()*std::min(eta_0,(state_->grad[0])->norm()));
           beta = std::max(beta, eta);
           break;

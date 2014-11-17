@@ -193,23 +193,6 @@ int Qthread::team_recommended()
 int Qthread::team_max()
 { return Impl::s_number_workers_per_shepherd ; }
 
-void * Qthread::get_shmem( const int size ) const
-{
-  enum { WORD_MASK = sizeof(int) - 1 }; // Round to word size
-
-  // Root worker for the shepherd
-
-  const int offset = m_exec.m_shared_iter ;
-
-  m_exec.m_shared_iter += ( size + WORD_MASK ) & ~WORD_MASK ;
-
-  if ( Impl::s_worker_shared_end < m_exec.m_shared_iter ) {
-    Kokkos::Impl::throw_runtime_exception( std::string("QthreadExec::get_shmem FAILED : exceeded shared memory size" ) );
-  }
-
-  return ((unsigned char *) (**m_exec.m_shepherd_base).m_scratch_alloc ) + offset ;
-}
-
 int Qthread::shepherd_size() const { return Impl::s_number_shepherds ; }
 int Qthread::shepherd_worker_size() const { return Impl::s_number_workers_per_shepherd ; }
 
@@ -286,7 +269,6 @@ QthreadExec::QthreadExec()
   m_shepherd_base        = s_exec + s_number_workers_per_shepherd * ( ( s_number_shepherds - ( shepherd_rank + 1 ) ) );
   m_scratch_alloc        = ( (unsigned char *) this ) + s_base_size ;
   m_reduce_end           = s_worker_reduce_end ;
-  m_shared_iter          = s_worker_shared_begin ;
   m_shepherd_rank        = shepherd_rank ;
   m_shepherd_size        = s_number_shepherds ;
   m_shepherd_worker_rank = shepherd_worker_rank ;
@@ -304,8 +286,14 @@ void QthreadExec::clear_workers()
   }
 }
 
-void QthreadExec::shared_reset()
-{ m_shared_iter = s_worker_shared_begin ; }
+void QthreadExec::shared_reset( Qthread::scratch_memory_space & space )
+{
+  new( & space )
+    Qthread::scratch_memory_space(
+      ((unsigned char *) (**m_shepherd_base).m_scratch_alloc ) + s_worker_shared_begin ,
+      s_worker_shared_end - s_worker_shared_begin
+    );
+}
 
 void QthreadExec::resize_worker_scratch( const int reduce_size , const int shared_size )
 {

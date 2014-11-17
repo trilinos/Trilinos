@@ -97,6 +97,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of ordinals
       typedef int ordinal_type;
 
@@ -373,6 +376,7 @@ namespace Sacado {
 
       //! Typename of values
       typedef typename OrthogPolyImpl<T,Storage>::value_type value_type;
+      typedef typename OrthogPolyImpl<T,Storage>::scalar_type scalar_type;
       typedef typename OrthogPolyImpl<T,Storage>::approx_type approx_type;
       typedef typename OrthogPolyImpl<T,Storage>::storage_type storage_type;
       typedef typename OrthogPolyImpl<T,Storage>::const_reference const_reference;
@@ -461,6 +465,9 @@ namespace Sacado {
 
       //! Typename of values
       typedef typename OrthogPolyImpl<T,Storage>::value_type value_type;
+
+      //! Typename of scalars
+      typedef typename OrthogPolyImpl<T,Storage>::scalar_type scalar_type;
 
       //! Typename of ordinals
       typedef typename OrthogPolyImpl<T,Storage>::ordinal_type ordinal_type;

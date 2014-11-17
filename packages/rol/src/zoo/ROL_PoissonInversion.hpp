@@ -60,6 +60,7 @@
 #include "Teuchos_LAPACK.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief Poisson material inversion.
    */
@@ -579,6 +580,7 @@ namespace ROL {
     }
   }
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif

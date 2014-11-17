@@ -39,8 +39,8 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsMatrixView A(AA,    2, 6, 
-                    /**/   3, 8);
+    CrsMatrixView A(&AA,    2, 6, 
+                    /**/    3, 8);
   
     CrsRowView row = A.extractRow(2);
     cout << row << endl;

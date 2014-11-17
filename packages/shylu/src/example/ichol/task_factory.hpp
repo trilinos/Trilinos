@@ -39,15 +39,9 @@ namespace Example {
       policy.spawn(obj);
     }
     
-    // template<typename TaskFunctorType>
-    // static 
-    // future_type spawn(const policy_type &policy, 
-    //                   const TaskFunctorType &func) {
-    //   return policy.spawn(func); 
-    // }
-    
     static
-    void addDependence(policy_type &policy, const future_type &obj, const future_type &dep) {
+    void addDependence(policy_type &policy, const future_type &dep,
+                       future_type &obj) {
       policy.add_dependence(obj, dep);
     }
 

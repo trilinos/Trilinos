@@ -258,6 +258,7 @@ SET(HEADERS ${HEADERS}
   Sacado.hpp
   Sacado_Kokkos.hpp
   Kokkos_View_Fad.hpp
+  Kokkos_AnalyzeSacadoShape.hpp
   Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp
   Sacado_cmath.hpp

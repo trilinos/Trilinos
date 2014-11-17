@@ -38,6 +38,8 @@ namespace Example {
           _A(A),
           _B(B) 
       { } 
+
+      string Label() const { return "Trsm"; }
       
       typedef int value_type;
       void apply(value_type &r_val) {

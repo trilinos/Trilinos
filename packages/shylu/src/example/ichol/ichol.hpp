@@ -31,6 +31,8 @@ namespace Example {
       TaskFunctor(const CrsMatViewType A)
         : _A(A)
         { } 
+
+      string Label() const { return "IChol"; }
       
       typedef int value_type;
       void apply(value_type &r_val) {

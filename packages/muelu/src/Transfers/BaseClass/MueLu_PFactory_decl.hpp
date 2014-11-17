@@ -72,11 +72,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    PFactory() :  restrictionMode_(false)
-    {
-      //Teuchos::OSTab tab(this->out_);
-      //MueLu_cout(Teuchos::VERB_HIGH) << "PFactory: Instantiating a new factory" << std::endl;
-    }
+    PFactory() :  restrictionMode_(false) { }
 
     //! Destructor.
     virtual ~PFactory() {}

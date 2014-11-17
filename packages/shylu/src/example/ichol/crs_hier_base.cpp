@@ -11,12 +11,13 @@
 #include "crs_row_view.hpp"
 
 #include "crs_matrix_helper.hpp"
+#include "graph_helper_scotch.hpp" 
 
 using namespace std;
 
 typedef double value_type;
 typedef int    ordinal_type;
-typedef size_t size_type;
+typedef int    size_type;
 
 //typedef Kokkos::Qthread space_type;
 typedef Kokkos::Serial space_type;
@@ -26,6 +27,8 @@ typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 typedef Example::CrsMatrixBase<CrsMatrixView,ordinal_type,size_type,space_type> CrsHierBase;
 typedef Example::CrsMatrixHelper CrsMatrixHelper;
+
+typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;    
 
 typedef Example::Uplo Uplo;
 
@@ -40,8 +43,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  // create a base matrix and import a sparse matrix from matrix market
-  CrsMatrixBase A("A");
+  CrsMatrixBase AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -49,18 +51,26 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  A.importMatrixMarket(in);
+  AA.importMatrixMarket(in);
 
-  // copy and create for lower triangular 
-  CrsMatrixBase L("L");
-  L.copy(Uplo::Lower, A);
-  cout << L << endl;
+  GraphHelper S(AA);
+  S.computeOrdering();
+  cout << S << endl;
 
-  // test hierarchical matrix
-  CrsHierBase H("H");
+  CrsMatrixBase PA("Permuted AA");
+  PA.copy(S.PermVector(), S.InvPermVector(), AA);
 
-  CrsMatrixHelper::flat2hier(L, H);
-  cout << H << endl;
+  CrsMatrixBase LL("LL");
+  LL.copy(Uplo::Lower, PA);
+  cout << LL << endl;
+
+  CrsHierBase HH("HH");
+
+  CrsMatrixHelper::flat2hier(LL, HH, 
+                             S.NumBlocks(), 
+                             S.RangeVector(),
+                             S.TreeVector());
+  cout << HH << endl;
 
   Kokkos::finalize();
 

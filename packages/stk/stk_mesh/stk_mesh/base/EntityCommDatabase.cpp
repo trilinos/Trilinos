@@ -276,23 +276,11 @@ int EntityCommDatabase::owner_rank( const EntityKey & key ) const
   return m_last_lookup->second.owner_rank;
 }
 
-
 PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key ) const
 {
   if (!cached_find(key)) return PairIterEntityComm();
 
-  const EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
-
-  EntityCommInfoVector::const_iterator i = comm_map.begin();
-  EntityCommInfoVector::const_iterator e = comm_map.end();
-
-  // EntityCommInfo(1,0) is the smallest entry in the table that is not shared,
-  // and we want everything before this, i.e. the shared stuff.
-  e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
-                                               0 ) ); // proc
-
-  // Contains everything up the first aura comm (IE, only contains shared comms)
-  return PairIterEntityComm( i , e );
+  return shared_comm_info_range(m_last_lookup->second.comm_map);
 }
 
 

@@ -150,18 +150,18 @@ public:
                                     Real &tol);
 
 
-  /** \brief Apply the adjoint of the constraint Hessian at \f$x\f$,
-             \f$c''(x)^* \in L(L(\mathcal{C}^*, \mathcal{X}^*), \mathcal{X}^*)\f$,
-             to vector \f$v\f$ in direction \f$u\f$.
+  /** \brief Apply the adjoint of the constraint Hessian at \f$x\f$
+             to vector \f$v\f$ in direction \f$u\f$,
+             according to \f$ v \mapsto c''(x)(v,\cdot)^*u \f$.
 
              @param[out]      ahuv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b u; a dual optimization-space vector
              @param[in]       u    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
+             @param[in]       v    is an optimization-space vector
              @param[in]       x    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahuv} = c''(x)^*(u,v) \f$, where
-             \f$u \in \mathcal{C}^*\f$, \f$v \in \mathcal{X}^*\f$, and \f$\mathsf{ahuv} \in \mathcal{X}^*\f$. \n\n
+             On return, \f$ \mathsf{ahuv} = c''(x)(v,\cdot)^*u \f$, where
+             \f$u \in \mathcal{C}^*\f$, \f$v \in \mathcal{X}\f$, and \f$\mathsf{ahuv} \in \mathcal{X}^*\f$. \n\n
              The default implementation is a finite-difference approximation based on the adjoint Jacobian.
 
              ---
@@ -219,21 +219,21 @@ public:
                                                  Real &tol);
 
 
-  /** \brief Apply a constraint preconditioner at \f$x\f$, \f$P(x) \in L(\mathcal{C}, \mathcal{C})\f$,
-             to vector \f$v\f$.  In general, this preconditioner satisfies the following relationship:
+  /** \brief Apply a constraint preconditioner at \f$x\f$, \f$P(x) \in L(\mathcal{C}, \mathcal{C}^*)\f$,
+             to vector \f$v\f$.  Ideally, this preconditioner satisfies the following relationship:
              \f[
-               c'(x) c'(x)^* P(x) v \approx v \,.
+               \left[c'(x) \circ R \circ c'(x)^* \circ P(x)\right] v = v \,,
              \f]
-             It is used by the #solveAugmentedSystem method.
+             where R is the appropriate Riesz map in \f$L(\mathcal{X}^*, \mathcal{X})\f$.  It is used by the #solveAugmentedSystem method.
 
-             @param[out]      pv  is the result of applying the constraint preconditioner to @b v at @b x; a constraint-space vector
+             @param[out]      pv  is the result of applying the constraint preconditioner to @b v at @b x; a dual constraint-space vector
              @param[in]       v   is a constraint-space vector
              @param[in]       x   is the preconditioner argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations
 
              On return, \f$\mathsf{pv} = P(x)v\f$, where
-             \f$v \in \mathcal{C}\f$, \f$\mathsf{pv} \in \mathcal{C}\f$. \n\n
-             The default implementation is the identity operator.
+             \f$v \in \mathcal{C}\f$, \f$\mathsf{pv} \in \mathcal{C}^*\f$. \n\n
+             The default implementation is the Riesz map in \f$L(\mathcal{C}, \mathcal{C}^*)\f$.
 
              ---
   */
@@ -241,7 +241,7 @@ public:
                                    const Vector<Real> &v,
                                    const Vector<Real> &x,
                                    Real &tol) {
-    pv.set(v);
+    pv.set(v.dual());
   }
 
 
@@ -271,6 +271,9 @@ public:
   bool isActivated(void) { return this->activated_;  }
 
   /** \brief Finite-difference check for the constraint Jacobian application.
+
+      Details here.
+
   */
   virtual std::vector<std::vector<Real> > checkApplyJacobian( const Vector<Real> &x,
                                                               const Vector<Real> &v,
@@ -279,17 +282,26 @@ public:
                                                               const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Jacobian.
+
+      Details here.
+
   */
   virtual std::vector<std::vector<Real> > checkApplyAdjointJacobian(const Vector<Real> &x,
                                                                     const Vector<Real> &v,
+                                                                    const Vector<Real> &c,
+                                                                    const Vector<Real> &ajv,
                                                                     const bool printToScreen = true,
                                                                     const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Hessian.
+
+      Details here.
+
   */
   virtual std::vector<std::vector<Real> > checkApplyAdjointHessian(const Vector<Real> &x,
                                                                    const Vector<Real> &u,
                                                                    const Vector<Real> &v,
+                                                                   const Vector<Real> &hv,
                                                                    const bool printToScreen = true,
                                                                    const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 

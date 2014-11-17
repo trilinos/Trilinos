@@ -406,20 +406,28 @@ struct SharedTeamFunctor {
     const shared_int_array_type shared_A( ind.team_shmem() , SHARED_COUNT );
     const shared_int_array_type shared_B( ind.team_shmem() , SHARED_COUNT );
 
-    for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
-      shared_A[i] = i + ind.league_rank();
-      shared_B[i] = 2 * i + ind.league_rank();
+    if ((shared_A.ptr_on_device () == NULL && SHARED_COUNT > 0) ||
+        (shared_B.ptr_on_device () == NULL && SHARED_COUNT > 0)) {
+      printf ("Failed to allocate shared memory of size %lu\n",
+              static_cast<unsigned long> (SHARED_COUNT));
+      ++update; // failure to allocate is an error
     }
+    else {
+      for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
+        shared_A[i] = i + ind.league_rank();
+        shared_B[i] = 2 * i + ind.league_rank();
+      }
 
-    ind.team_barrier();
+      ind.team_barrier();
 
-    if ( ind.team_rank() + 1 == ind.team_size() ) {
-      for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
-        if ( shared_A[i] != i + ind.league_rank() ) {
-          ++update ;
-        }
-        if ( shared_B[i] != 2 * i + ind.league_rank() ) {
-          ++update ;
+      if ( ind.team_rank() + 1 == ind.team_size() ) {
+        for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
+          if ( shared_A[i] != i + ind.league_rank() ) {
+            ++update ;
+          }
+          if ( shared_B[i] != 2 * i + ind.league_rank() ) {
+            ++update ;
+          }
         }
       }
     }
