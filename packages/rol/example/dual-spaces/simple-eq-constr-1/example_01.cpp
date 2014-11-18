@@ -416,12 +416,12 @@ int main(int argc, char *argv[]) {
       (*vc_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*vl_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
-    obj->checkGradient(xtest, g, d, true, *outStream);          *outStream << "\n";
-    obj->checkHessVec(xtest, g, v, true, *outStream);           *outStream << "\n";
-    obj->checkHessSym(xtest, g, d, v, true, *outStream);        *outStream << "\n";
-    constr->checkApplyJacobian(xtest, v, vc, true);             *outStream << "\n";
-    constr->checkApplyAdjointJacobian(xtest, vl, vc, g, true);  *outStream << "\n";
-    constr->checkApplyAdjointHessian(xtest, vl, d, g, true);    *outStream << "\n";
+    obj->checkGradient(xtest, g, d, true, *outStream);                      *outStream << "\n";
+    obj->checkHessVec(xtest, g, v, true, *outStream);                       *outStream << "\n";
+    obj->checkHessSym(xtest, g, d, v, true, *outStream);                    *outStream << "\n";
+    constr->checkApplyJacobian(xtest, v, vc, true, *outStream);             *outStream << "\n";
+    constr->checkApplyAdjointJacobian(xtest, vl, vc, g, true, *outStream);  *outStream << "\n";
+    constr->checkApplyAdjointHessian(xtest, vl, d, g, true, *outStream);    *outStream << "\n";
 
     Teuchos::RCP<std::vector<RealT> > v1_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > v2_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
