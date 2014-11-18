@@ -1,4 +1,3 @@
-
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -302,7 +301,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_deleted_entities(),
     m_deleted_entities_current_modification_cycle(),
     m_ghost_reuse_map(),
-    m_meta_data_verified( false ),
     m_mesh_finalized(false),
     m_modification_begin_description("UNSET"),
     m_num_fields(-1), // meta data not necessarily committed yet
@@ -892,14 +890,14 @@ bool BulkData::modification_begin(const std::string description)
   m_modification_begin_description = description;
 
 
-  if ( ! m_meta_data_verified ) {
+  if (m_sync_count == 0) {
     require_metadata_committed();
 
     if (parallel_size() > 1) {
       verify_parallel_consistency( m_mesh_meta_data , parallel() );
     }
 
-    m_meta_data_verified = true ;
+    ++m_sync_count;
   }
   else {
     ++m_sync_count ;

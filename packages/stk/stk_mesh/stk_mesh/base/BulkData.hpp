@@ -1022,7 +1022,6 @@ private: // data
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
-  bool m_meta_data_verified;
   bool m_mesh_finalized;
   std::string m_modification_begin_description;
   int m_num_fields;
