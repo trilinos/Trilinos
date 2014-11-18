@@ -691,11 +691,9 @@ void BulkData::gather_and_print_mesh_partitioning() const
     }
 
     if (phase == 0) { //allocation phase
-      BABBLE_STK_PARALLEL_COMM(world, "          gather_and_print_mesh_partitioning calling allocate_buffers");
       comm_all.allocate_buffers( parallel_size() / 4 );
     }
     else { // communication phase
-      BABBLE_STK_PARALLEL_COMM(world, "          gather_and_pring_mesh_partitioning calling allocate_buffers");
       comm_all.communicate();
     }
   }
@@ -3250,7 +3248,6 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       }
     }
 
-    BABBLE_STK_PARALLEL_COMM(p_comm, "          change_entity_owner calling allocate_buffers");
     comm.allocate_buffers( p_size / 4 );
 
     for ( std::set<EntityProc,EntityLess>::iterator
@@ -3261,7 +3258,6 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       pack_field_values(*this, buffer , entity );
     }
 
-    BABBLE_STK_PARALLEL_COMM(p_comm, "          change_entity_owner calling communicate");
     comm.communicate();
 
     for ( int p = 0 ; p < p_size ; ++p ) {
@@ -3756,8 +3752,6 @@ void BulkData::internal_change_ghosting(
 {
   Trace_("stk::mesh::BulkData::internal_change_ghosting");
 
-  BABBLE_STK_PARALLEL_COMM(parallel(), "      entered internal_change_ghosting");
-
   INCREMENT_MODIFICATION_COUNTER(INTERNAL, CHANGE_GHOSTING);
 
   //------------------------------------
@@ -3931,11 +3925,9 @@ void comm_recv_to_send(
       all.send_buffer( owner ).pack<EntityKey>( key );
     }
     if (phase == 0) { //allocation phase
-      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_recv_to_send calling allocate_buffers");
       all.allocate_buffers( parallel_size / 2 , false /* Not symmetric */ );
     }
     else { //communication phase
-      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_recv_to_send calling communicate");
       all.communicate();
     }
   }
@@ -3976,7 +3968,6 @@ void comm_sync_send_recv(
     }
   }
 
-  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_sync_send_recv calling allocate_buffers");
   all.allocate_buffers( parallel_size / 2 , false /* Not symmetric */ );
 
   // Loop thru all entities in entitiesToGhostOntoOtherProcessors, send the entity key to the sharing/ghosting proc
@@ -4013,7 +4004,6 @@ void comm_sync_send_recv(
     }
   }
 
-  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_sync_send_recv calling communicate");
   all.communicate();
 
   // Loop thru all the buffers, and insert ghosting request for entity e to other proc
@@ -4103,7 +4093,6 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
 void BulkData::internal_regenerate_aura()
 {
   Trace_("stk::mesh::BulkData::internal_regenerate_shared_aura");
-  BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_regenerate_shared_aura");
 
   require_ok_to_modify();
 
@@ -4248,7 +4237,6 @@ void communicate_entity_modification( const BulkData & mesh ,
                                       const bool shared ,
                                       std::vector<EntityParallelState > & data )
 {
-  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "      entered communicate_entity_modification");
   bool propagate_local_error_flags = false;
   CommAll comm( mesh.parallel(), propagate_local_error_flags );
   const int p_size = comm.parallel_size();
@@ -4257,7 +4245,6 @@ void communicate_entity_modification( const BulkData & mesh ,
   const bool local_mod = pack_entity_modification( mesh , shared , comm );
 
   // Allocation of send and receive buffers:
-  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          communicate_entity_modification calling allocate_buffers")
   const bool global_mod = comm.allocate_buffers( comm.parallel_size() / 2 , false , local_mod );
 
   if ( global_mod )
@@ -4267,7 +4254,6 @@ void communicate_entity_modification( const BulkData & mesh ,
     // Packing send buffers:
     pack_entity_modification( mesh , shared , comm );
 
-    BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          communicate_entity_modification calling communicate")
     comm.communicate();
 
     for ( int procNumber = 0 ; procNumber < p_size ; ++procNumber ) {
@@ -4291,7 +4277,6 @@ void communicate_entity_modification( const BulkData & mesh ,
 
   std::sort( data.begin() , data.end() );
 
-  // BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "     exiting communicate_entity_modification");
 }
 
 }
@@ -4352,7 +4337,6 @@ void BulkData::internal_update_distributed_index(
         std::vector<Entity> & shared_new )
 {
     Trace_("stk::mesh::BulkData::internal_update_distributed_index");
-    BABBLE_STK_PARALLEL_COMM(parallel(), "      entered internal_update_distributed_index");
 
     // Scoop up a list of all nodes that have had their sharing information
     // provided directly by the end-user.  These need special handling so
@@ -4539,7 +4523,6 @@ void BulkData::internal_update_parts_for_shared_entity(stk::mesh::Entity entity,
 void BulkData::internal_resolve_shared_modify_delete()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_shared_modify_delete");
-  BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_resolve_shared_modify_delete");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -4634,7 +4617,6 @@ void BulkData::internal_resolve_shared_modify_delete()
 void BulkData::internal_resolve_ghosted_modify_delete()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_ghosted_modify_delete");
-  BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_resolve_ghosted_modify_delete");
 
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
@@ -4737,7 +4719,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
   std::vector< int > ghosting_change_flags_global( ghosting_count , 0 );
 
-  BABBLE_STK_PARALLEL_COMM(parallel(), "      internal_resolve_ghosted_modify_delete calling all_reduce_sum");
   all_reduce_sum( parallel() ,
                   & ghosting_change_flags[0] ,
                   & ghosting_change_flags_global[0] ,
@@ -4767,11 +4748,9 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
         }
 
         if (phase == 0) { //allocation phase
-            BABBLE_STK_PARALLEL_COMM(parallel(), "      calling allocate_buffers from internal_resolve_parallel_create");
             comm_all.allocate_buffers( parallel_size() / 2 );
         }
         else { // communication phase
-            BABBLE_STK_PARALLEL_COMM(parallel(), "      calling communicate from internal_resolve_parallel_create");
             comm_all.communicate();
         }
     }
@@ -4907,7 +4886,6 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
 void BulkData::internal_resolve_parallel_create()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
-  BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_resolve_parallel_create");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
   std::vector<Entity> shared_modified ;
@@ -5829,7 +5807,6 @@ void pack_part_memberships( BulkData& meshbulk, CommAll & comm ,
 void BulkData::internal_resolve_shared_membership()
 {
     Trace_("stk::mesh::BulkData::internal_resolve_shared_membership");
-    BABBLE_STK_PARALLEL_COMM(parallel(), "  entered internal_resolve_shared_membership");
 
     ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -5868,12 +5845,10 @@ void BulkData::internal_resolve_shared_membership()
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
-        BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling allocate_buffers");
         comm.allocate_buffers(p_size / 4);
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
-        BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling communicate");
         comm.communicate();
 
         OrdinalVector empty, induced_parts, current_parts, remove_parts;
@@ -5958,12 +5933,10 @@ void BulkData::internal_resolve_shared_membership()
 
         pack_part_memberships(*this, comm, send_list);
 
-        BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling allocate_buffers");
         comm.allocate_buffers(p_size / 4);
 
         pack_part_memberships(*this, comm, send_list);
 
-        BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling communicate");
         comm.communicate();
 
         for(int p = 0; p < p_size; ++p)

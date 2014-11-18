@@ -91,7 +91,6 @@ bool all_to_all_dense( ParallelMachine p_comm ,
       recv_displs[i] = static_cast<ucharp>(recv_buf.buffer()) - pr ;
     }
 
-    BABBLE_STK_PARALLEL_COMM(p_comm, "                      calling MPI_Alltoallv from all_to_all_dense");
     result = MPI_Alltoallv( ps , send_counts , send_displs , MPI_BYTE ,
                             pr , recv_counts , recv_displs , MPI_BYTE ,
                             p_comm );
@@ -159,7 +158,6 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
 
     // This sync is necessary to ensure the IRecvs happen before the Rsends. It
     // is an error to call Rsend before the corresponding Irecv.
-    BABBLE_STK_PARALLEL_COMM(p_comm, "                      calling MPI_Allreduce from all_to_all_sparce");
     result = MPI_Allreduce( & local_error , & global_error ,
                             1 , MPI_INT , MPI_SUM , p_comm );
 
@@ -193,7 +191,6 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
         MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
         MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
 
-        BABBLE_STK_PARALLEL_COMM(p_comm, "                      calling MPI_Waitall from all_to_all_sparce");
         result = MPI_Waitall( num_recv , p_request , p_status );
       }
 
@@ -534,8 +531,6 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 			        const bool local_flag )
 {
 
-  BABBLE_STK_PARALLEL_COMM(comm, "              entered CommAll::allocate_buffers");
-
   static const char method[] = "stk::CommAll::allocate_buffers" ;
   const unsigned uzero = 0 ;
 
@@ -579,7 +574,6 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
         unsigned * const r = (tmp_recv.empty() ? NULL : & tmp_recv[0]) ;
 
-        BABBLE_STK_PARALLEL_COMM(comm, "                  calling comm_sizes from allocate_buffers");
         comm_sizes( m_comm , m_bound , m_max , send , r );
       }
 
@@ -634,7 +628,6 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
       }
 
       if (m_size > 1) {
-        BABBLE_STK_PARALLEL_COMM(comm, "                  calling all_reduce_sum from allocate_buffers");
         all_reduce_sum( m_comm , local_result , global_result , Length );
       }
       else {
@@ -657,7 +650,6 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
         throw std::runtime_error( msg.str() );
       }
 
-      // BABBLE_STK_PARALLEL_COMM(comm, "         exiting CommAll::allocate_buffers");
       return global_flag ;
   }
 
@@ -703,7 +695,6 @@ bool CommAll::allocate_symmetric_buffers( ParallelMachine comm ,
 
 void CommAll::communicate()
 {
-  BABBLE_STK_PARALLEL_COMM(m_comm, "              entered CommAll::communicate");
 
   for ( int i = 0 ; i < m_size ; ++i ) {
     // Verify the send buffers have been filled, reset the buffer pointers
@@ -725,11 +716,9 @@ void CommAll::communicate()
     bool ok = false;
     std::ostringstream msg;
     if ( m_bound < m_max ) {
-      BABBLE_STK_PARALLEL_COMM(m_comm, "                  calling all_to_all_dense from communicate");
       ok = all_to_all_dense( m_comm , m_send , m_recv , msg );
     }
     else {
-      BABBLE_STK_PARALLEL_COMM(m_comm, "                  calling all_to_all_sparce from communicate");
       ok = all_to_all_sparse( m_comm , m_send , m_recv , msg );
     }
 
@@ -813,7 +802,6 @@ void CommBroadcast::communicate()
     const int count = m_buffer.capacity();
     void * const buf = m_buffer.buffer();
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "                      calling MPI_Bcast from communicate");
     const int result = MPI_Bcast( buf, count, MPI_BYTE, m_root_rank, m_comm);
 
     if ( MPI_SUCCESS != result ) {
@@ -887,7 +875,6 @@ CommGather::CommGather( ParallelMachine comm ,
       m_recv_displ = m_recv_count + m_size ;
     }
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "                      calling MPI_Gather from CommGather");
     MPI_Gather( & send_size ,    1 , MPI_INT ,
                   m_recv_count , 1 , MPI_INT ,
                   m_root_rank , m_comm );
@@ -918,7 +905,6 @@ void CommGather::communicate()
     void * const send_buf = m_send.buffer();
     void * const recv_buf = m_rank == m_root_rank ? m_recv->buffer() : NULL ;
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "                      calling MPI_Gatherv from commmunicate");
     MPI_Gatherv( send_buf , send_count , MPI_BYTE ,
                  recv_buf , m_recv_count , m_recv_displ , MPI_BYTE ,
                  m_root_rank , m_comm );
@@ -957,7 +943,6 @@ bool comm_dense_sizes( ParallelMachine comm ,
     unsigned * const ps = (send_buf.empty() ? NULL : & send_buf[0]) ;
     unsigned * const pr = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Alltoall from comm_dens_sizes");
     const int result =
        MPI_Alltoall( ps , 2 , MPI_UNSIGNED , pr , 2 , MPI_UNSIGNED , comm );
 
@@ -1056,7 +1041,6 @@ bool comm_sizes( ParallelMachine comm ,
     send_buf[p_size]   = max_msg ;
     send_buf[p_size+1] = local_flag ;
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from comm_sizes");
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(size_t));
     result = MPI_Allreduce(p_send,p_recv,p_size,MPI_LONG_LONG,MPI_SUM,comm);
 
@@ -1066,7 +1050,6 @@ bool comm_sizes( ParallelMachine comm ,
       throw std::runtime_error( msg.str() );
     }
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from comm_sizes");
     result = MPI_Allreduce(p_send+p_size,p_recv+p_size,2,MPI_LONG_LONG,MPI_MAX,comm);
 
     if ( result != MPI_SUCCESS ) {
@@ -1091,7 +1074,6 @@ bool comm_sizes( ParallelMachine comm ,
   if ( false /*num_msg_bound < max_msg && p_size < 1024*/ ) {
     // Dense, pay for an all-to-all
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Alltoall from comm_sizes");
     result =
       MPI_Alltoall( const_cast<unsigned*>(send_size) , 1 , MPI_LONG_LONG ,
                      recv_size , 1 , MPI_UNSIGNED , comm );
@@ -1147,7 +1129,6 @@ bool comm_sizes( ParallelMachine comm ,
     {
       MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
       MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
-      BABBLE_STK_PARALLEL_COMM(comm, "                     calling MPI_Waitall from comm_sizes");
       result = MPI_Waitall( num_recv , p_request , p_status );
     }
     if ( MPI_SUCCESS != result ) {
@@ -1181,7 +1162,6 @@ bool comm_sizes( ParallelMachine comm ,
     }
   }
 
-  // BABBLE_STK_PARALLEL_COMM(comm, "                 exiting comm_sizes");
 
   return global_flag ;
 }

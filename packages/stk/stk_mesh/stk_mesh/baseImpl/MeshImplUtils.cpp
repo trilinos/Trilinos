@@ -434,11 +434,9 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
       }
     }
     if (phase == 0) { // allocation phase
-      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          generate_parallel_change calling allocate_buffers");
       comm.allocate_buffers( p_size / 4 , 0 );
     }
     else { // communication phase
-      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          generate_parallel_change calling communicate");
       comm.communicate();
     }
   }
@@ -1300,12 +1298,10 @@ bool comm_mesh_verify_parallel_consistency(
 
     pack_owned_verify( all , M );
 
-    BABBLE_STK_PARALLEL_COMM(M.parallel(), "          comm_mesh_verify_parallel_consistency calling allocate_buffers");
     all.allocate_buffers( all.parallel_size() / 4 );
 
     pack_owned_verify( all , M );
 
-    BABBLE_STK_PARALLEL_COMM(M.parallel(), "          comm_mesh_verify_parallel_consistency calling communicate");
     all.communicate();
 
     result = unpack_not_owned_verify( all , M , error_log );
