@@ -1,3 +1,4 @@
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -2493,58 +2494,6 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
 //ParallelVerify
 //----------------------------------------------------------------------
 
-namespace {
-
-//#define DEBUG_PRINT_COMM_LIST
-//#define DEBUG_PRINT_COMM_LIST_UNPACK
-
-#ifdef DEBUG_PRINT_COMM_LIST
-
-// Very, very handy for debugging parallel resolution...
-static int s_step = 0;
-
-void par_verify_print_comm_list( const BulkData & mesh , bool doit, const std::string message )
-{
-  ++s_step;
-  if ( doit ) {
-    std::ostringstream file ;
-    file << "comm-list." << s_step << "." << mesh.parallel_rank() << ".dat";
-    std::ofstream fout(file.str().c_str());
-    std::ostringstream msg ;
-    msg << message;
-    msg << std::endl ;
-
-    for ( EntityCommListInfoVector::const_iterator
-          i =  mesh.comm_list().begin() ;
-          i != mesh.comm_list().end() ; ++i ) {
-
-      Entity entity = i->entity;
-      msg << "S< " << s_step << " > P" << mesh.parallel_rank() << ": " ;
-
-      print_entity_key( msg , MetaData::get(mesh) , i->key );
-
-      msg << " owner(" << i->owner << ")" ;
-
-      if ( !mesh.is_valid(entity) ) { msg << " del" ; }
-      else if ( Modified == mesh.state(entity) ) { msg << " mod" ; }
-      else { msg << "    " ; }
-
-      for ( PairIterEntityComm ec = mesh.entity_comm_map(i->key); ! ec.empty() ; ++ec ) {
-        msg << " (" << ec->ghost_id << "," << ec->proc << ")" ;
-      }
-      msg << std::endl ;
-    }
-
-    fout << msg.str();
-  }
-}
-
-#endif
-
-}
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
                                     bool regenerate_aura,
@@ -4795,48 +4744,6 @@ bool BulkData::modification_end_for_entity_creation( EntityRank entity_rank, mod
 
   return return_value;
 }
-
-#if 0
-
-namespace {
-
-// Very, very handy for debugging parallel resolution...
-
-void print_comm_list( const BulkData & mesh , bool doit )
-{
-  if ( doit ) {
-    std::ostringstream msg ;
-
-    msg << std::endl ;
-
-    for ( EntityCommListInfoVector::const_iterator
-          i =  mesh.comm_list().begin() ;
-          i != mesh.comm_list().end() ; ++i ) {
-
-      Entity entity = i->entity;
-      msg << "P" << mesh.parallel_rank() << ": " ;
-
-      print_entity_key( msg , MetaData::get(mesh) , i->key );
-
-      msg << " owner(" << i->owner << ")" ;
-
-      if ( !entity.is_valid() ) { msg << " del" ; }
-      else if ( Modified == entity.state() ) { msg << " mod" ; }
-      else { msg << "    " ; }
-
-      for ( PairIterEntityComm ec = mesh.comm_list(i->key); ! ec.empty() ; ++ec ) {
-        msg << " (" << ec->ghost_id << "," << ec->proc << ")" ;
-      }
-      msg << std::endl ;
-    }
-
-    std::cout << msg.str();
-  }
-}
-
-}
-
-#endif
 
 void BulkData::update_comm_list_based_on_changes_in_comm_map()
 // Resolution of shared and ghost modifications can empty
