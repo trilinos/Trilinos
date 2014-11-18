@@ -2299,7 +2299,7 @@ void BulkData::internal_declare_relation( Entity e_from ,
   // Deduce and set new part memberships:
   ordinal_scratch.clear();
 
-  induced_part_membership(*this, e_from, empty, entity_rank(e_to), ordinal_scratch );
+  induced_part_membership(*this, mesh_meta_data().get_parts(), e_from, empty, entity_rank(e_to), ordinal_scratch );
 
   PartVector emptyParts;
   part_scratch.clear();
@@ -2381,6 +2381,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   const EntityRank e_to_entity_rank = entity_rank(e_to);
   const EntityRank e_from_entity_rank = entity_rank(e_from);
+  const PartVector& all_parts = mesh_meta_data().get_parts();
 
   //------------------------------
   // When removing a relationship may need to
@@ -2425,7 +2426,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
                          << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
           if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
           {
-            induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank, keep,
+            induced_part_membership(*this, all_parts, rel_entities[j], empty, e_to_entity_rank, keep,
                                     false /*Do not look at supersets*/);
           }
         }
@@ -2442,7 +2443,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
       {
         if ( rel_entities[j] == e_to && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) )
         {
-          induced_part_membership(*this, e_from, keep, e_to_entity_rank, del,
+          induced_part_membership(*this, all_parts, e_from, keep, e_to_entity_rank, del,
                                   false /*Do not look at supersets*/);
           break; // at most 1 relation can match our specification
         }
@@ -3685,7 +3686,8 @@ void comm_recv_to_send(
 {
   const int parallel_size = mesh.parallel_size();
 
-  CommAll all( mesh.parallel() );
+  bool propagate_local_error_flags = false;
+  CommAll all( mesh.parallel(), propagate_local_error_flags );
 
   // For all entity keys in new recv, send the entity key to the owning proc
   for ( int phase = 0; phase < 2; ++phase) {
@@ -3698,7 +3700,7 @@ void comm_recv_to_send(
     }
     if (phase == 0) { //allocation phase
       BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_recv_to_send calling allocate_buffers");
-      all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+      all.allocate_buffers( parallel_size / 2 , false /* Not symmetric */ );
     }
     else { //communication phase
       BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_recv_to_send calling communicate");
@@ -3728,7 +3730,8 @@ void comm_sync_send_recv(
   const int parallel_rank = mesh.parallel_rank();
   const int parallel_size = mesh.parallel_size();
 
-  CommAll all( mesh.parallel() );
+  bool propagate_local_error_flags = false;
+  CommAll all( mesh.parallel(), propagate_local_error_flags );
 
   // Communication sizing:
 
@@ -3742,7 +3745,7 @@ void comm_sync_send_recv(
   }
 
   BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_sync_send_recv calling allocate_buffers");
-  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+  all.allocate_buffers( parallel_size / 2 , false /* Not symmetric */ );
 
   // Loop thru all entities in entitiesToGhostOntoOtherProcessors, send the entity key to the sharing/ghosting proc
   // Also, if the owner of the entity is NOT me, also send the entity key to the owing proc
@@ -3917,7 +3920,6 @@ void BulkData::internal_regenerate_aura()
   // Add new aura, remove all of the old aura.
   // The change_ghosting figures out what to actually delete and add.
   internal_change_ghosting( aura_ghosting() , send , std::vector<EntityKey>(), true /*full regen*/ );
-
 }
 
 
@@ -4014,7 +4016,8 @@ void communicate_entity_modification( const BulkData & mesh ,
                                       std::vector<EntityParallelState > & data )
 {
   BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "      entered communicate_entity_modification");
-  CommAll comm( mesh.parallel() );
+  bool propagate_local_error_flags = false;
+  CommAll comm( mesh.parallel(), propagate_local_error_flags );
   const int p_size = comm.parallel_size();
 
   // Sizing send buffers:
@@ -4022,7 +4025,7 @@ void communicate_entity_modification( const BulkData & mesh ,
 
   // Allocation of send and receive buffers:
   BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          communicate_entity_modification calling allocate_buffers")
-  const bool global_mod = comm.allocate_buffers( comm.parallel_size() / 4 , false , local_mod );
+  const bool global_mod = comm.allocate_buffers( comm.parallel_size() / 2 , false , local_mod );
 
   if ( global_mod )
   {
@@ -4090,32 +4093,25 @@ void BulkData::fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::
 {
   size_t num_created_or_modified = 0;
 
-  for ( impl::EntityRepository::const_iterator
-        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
-  {
-    Entity entity = i->second ;
-
-    if ( state(entity) != Unchanged &&  is_entity_marked(entity)==BulkData::NOT_MARKED &&
-         in_owned_closure( *this, entity , parallel_rank() ) )
-    {
-      // Has been changed and is in owned closure, may be shared
-      ++num_created_or_modified;
-    }
+  for(size_t i=1; i<m_entity_states.size(); ++i) {
+      if (m_entity_states[i] != Unchanged &&
+          static_cast<entitySharing>(m_mark_entity[i])==BulkData::NOT_MARKED &&
+          m_closure_count[i])
+      {
+          ++num_created_or_modified;
+      }
   }
 
   local_created_or_modified.reserve(num_created_or_modified);
 
-  for ( impl::EntityRepository::const_iterator
-        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i )
-  {
-    Entity entity = i->second ;
-
-    if ( state(entity) != Unchanged &&  is_entity_marked(entity)==BulkData::NOT_MARKED &&
-         in_owned_closure(*this, entity , parallel_rank() ) )
-    {
-      // Has been changed and is in owned closure, may be shared
-      local_created_or_modified.push_back( entity_key(entity) );
-    }
+  for(size_t i=1; i<m_entity_states.size(); ++i) {
+      if (m_entity_states[i] != Unchanged &&
+          static_cast<entitySharing>(m_mark_entity[i])==BulkData::NOT_MARKED &&
+          m_closure_count[i])
+      {
+          // Has been changed and is in owned closure, may be shared
+          local_created_or_modified.push_back( m_entity_keys[i] );
+      }
   }
 }
 
@@ -4524,7 +4520,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
 void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity> &shared_modified )
 {
-    CommAll comm_all( parallel() );
+    bool propagate_local_error_flags = false;
+    CommAll comm_all( parallel(), propagate_local_error_flags );
 
     for ( int phase = 0; phase < 2; ++phase ) {
         for ( std::vector<Entity>::const_iterator i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
@@ -4539,7 +4536,7 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
 
         if (phase == 0) { //allocation phase
             BABBLE_STK_PARALLEL_COMM(parallel(), "      calling allocate_buffers from internal_resolve_parallel_create");
-            comm_all.allocate_buffers( parallel_size() / 4 );
+            comm_all.allocate_buffers( parallel_size() / 2 );
         }
         else { // communication phase
             BABBLE_STK_PARALLEL_COMM(parallel(), "      calling communicate from internal_resolve_parallel_create");
@@ -4568,7 +4565,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
     std::ostringstream error_msg ;
     int error_flag = 0 ;
 
-    PartVector shared_part , owned_part ;
+    PartVector shared_part , owned_part , empty;
     shared_part.push_back( & m_mesh_meta_data.globally_shared_part() );
     owned_part.push_back(  & m_mesh_meta_data.locally_owned_part() );
 
@@ -4600,12 +4597,12 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
       else if ( ! entity_comm_map_shared(entity_key(entity)).empty() ) {
         // Own it and has sharing information.
         // Add the globally_shared
-        internal_change_entity_parts( entity , shared_part /*add*/, PartVector() /*remove*/ );
+        internal_change_entity_parts( entity , shared_part /*add*/, empty /*remove*/ );
       }
       else {
         // Own it and does not have sharing information.
         // Remove the globally_shared
-        internal_change_entity_parts( entity , PartVector() /*add*/, shared_part /*remove*/);
+        internal_change_entity_parts( entity , empty /*add*/, shared_part /*remove*/);
       }
 
       // Newly created shared entity had better be in the owned closure
@@ -4863,6 +4860,19 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
   }
 }
 
+bool BulkData::internal_modification_end_for_change_parts()
+{
+    if (this->parallel_size() > 1 && stk::mesh::impl::shared_entities_modified_on_any_proc(*this, this->parallel())) {
+      internal_resolve_shared_membership();
+    }
+
+    m_bucket_repository.internal_sort_bucket_entities();
+
+    m_sync_state = SYNCHRONIZED ;
+
+    return true;
+}
+
 bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
@@ -5007,8 +5017,12 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 #endif
   }
   else {
+    if (!add_fmwk_data()) {
+      //only do this if we are *not* under framework, because framework
+      //doesn't need the distributed index to be updated.
       std::vector<Entity> shared_modified ;
       internal_update_distributed_index( shared_modified );
+    }
   }
 
   // ------------------------------
@@ -5541,31 +5555,42 @@ enum { PART_ORD_SHARED    = 2 };
 
 namespace {
 
+bool shared_with_proc(const EntityCommListInfo& info, int proc) {
+    const EntityCommInfoVector& comm_vec = info.entity_comm->comm_map;
+    for(size_t i=0; i<comm_vec.size(); ++i) {
+        if (comm_vec[i].ghost_id!=BulkData::SHARED) {
+            return false;
+        }
+        if (comm_vec[i].proc == proc) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void pack_induced_memberships( BulkData& bulk_data,
                                CommAll & comm ,
                                const EntityCommListInfoVector & entity_comm )
 {
   OrdinalVector empty , induced ;
-  for ( EntityCommListInfoVector::const_iterator
-        i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
+  for ( size_t i=0; i<entity_comm.size(); ++i) {
 
-    if ( bulk_data.in_shared( i->key , i->owner ) ) {
+    if ( shared_with_proc( entity_comm[i] , entity_comm[i].owner ) ) {
       // Is shared with owner, send to owner.
 
       empty.clear();
       induced.clear();
 
-      induced_part_membership(bulk_data, i->entity , empty , induced );
+      induced_part_membership(bulk_data, entity_comm[i].entity , empty , induced );
 
-      CommBuffer & buf = comm.send_buffer( i->owner );
+      CommBuffer & buf = comm.send_buffer( entity_comm[i].owner );
 
       unsigned tmp = induced.size();
 
       buf.pack<unsigned>( tmp );
 
-      for ( OrdinalVector::iterator
-            j = induced.begin() ; j != induced.end() ; ++j ) {
-        buf.pack<unsigned>( *j );
+      for ( size_t j=0; j<induced.size(); ++j) {
+        buf.pack<unsigned>( induced[j] );
       }
     }
   }
@@ -5685,7 +5710,7 @@ void BulkData::internal_resolve_shared_membership()
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
         BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling allocate_buffers");
-        comm.allocate_buffers(p_size / 4);
+        comm.allocate_buffers(p_size / 2);
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
@@ -5709,7 +5734,7 @@ void BulkData::internal_resolve_shared_membership()
 
                 induced_part_membership(*this, i->entity, empty, induced_parts);
 
-                for(PairIterEntityComm ec = entity_comm_map_shared(i->key); !ec.empty(); ++ec)
+                for(PairIterEntityComm ec = shared_comm_info_range(i->entity_comm->comm_map); !ec.empty(); ++ec)
                 {
                     CommBuffer & buf = comm.recv_buffer(ec->proc);
 
@@ -5934,6 +5959,22 @@ void BulkData::change_entity_parts( Entity entity,
 {
     INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, entity_rank(entity), DESTROY_ALL_GHOSTING);
     internal_verify_and_change_entity_parts(entity, add_parts, remove_parts, always_propagate_internal_changes);
+}
+
+void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entities,
+                          const std::vector<PartVector>& add_parts,
+                          const std::vector<PartVector>& remove_parts,
+                          bool always_propagate_internal_changes)
+{
+    bool starting_modification = modification_begin();
+    ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
+                    <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
+
+    for(size_t i=0; i<entities.size(); ++i) {
+        internal_verify_and_change_entity_parts(entities[i], add_parts[i], remove_parts[i], always_propagate_internal_changes);
+    }
+
+    internal_modification_end_for_change_parts();
 }
 
 void BulkData::internal_verify_and_change_entity_parts( Entity entity,
@@ -6224,8 +6265,10 @@ void BulkData::internal_propagate_part_changes(
 
   const EntityRank erank = entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+  const PartVector& all_parts = mesh_meta_data().get_parts();
 
   OrdinalVector to_del , to_add , empty ;
+  PartVector addParts, delParts, emptyParts;
   EntityVector temp_entities;
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
   {
@@ -6247,7 +6290,7 @@ void BulkData::internal_propagate_part_changes(
 
         // Induce part membership from this relationship to
         // pick up any additions.
-        induced_part_membership(*this, entity, empty, irank, to_add );
+        induced_part_membership(*this, all_parts, entity, empty, irank, to_add );
 
         if ( ! removed.empty() ) {
           // Something was removed from the 'from' entity,
@@ -6277,7 +6320,7 @@ void BulkData::internal_propagate_part_changes(
               if (entity != back_rel_entities[k])  // Already did this entity
               {
                 // Relation from to_rel->entity() to e_to
-                induced_part_membership(*this, back_rel_entities[k], empty, e_to_rank, to_add );
+                induced_part_membership(*this, all_parts, back_rel_entities[k], empty, e_to_rank, to_add );
               }
             }
           }
@@ -6294,7 +6337,9 @@ void BulkData::internal_propagate_part_changes(
         }
 
 
-        PartVector addParts, delParts, emptyParts;
+        addParts.clear();
+        delParts.clear();
+        emptyParts.clear();
 
         addParts.reserve(to_add.size());
         for(unsigned ipart=0; ipart<to_add.size(); ++ipart) {
@@ -6307,7 +6352,7 @@ void BulkData::internal_propagate_part_changes(
 
 
 
-        if ( parallel_size() < 2 || entity_comm_map_shared(entity_key(e_to)).empty() ) {
+        if ( parallel_size() < 2 || !bucket(e_to).shared() ) {
           // Entirely local, ok to remove memberships now
           internal_change_entity_parts( e_to , addParts , delParts );
         }

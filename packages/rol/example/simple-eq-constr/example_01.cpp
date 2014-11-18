@@ -48,6 +48,7 @@
 
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -80,28 +81,13 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > constr;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
     Teuchos::RCP<std::vector<RealT> > sol_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
-    ROL::OptStdVector<RealT> x(x_rcp);      // Iteration vector.
-    ROL::OptStdVector<RealT> sol(sol_rcp);  // Reference solution vector.
+    ROL::StdVector<RealT> x(x_rcp);      // Iteration vector.
+    ROL::StdVector<RealT> sol(sol_rcp);  // Reference solution vector.
 
     // Retrieve objective, constraint, iteration vector, solution vector.
-    ROL::getSimpleEqConstrained(obj, constr, x, sol);
+    ROL::ZOO::getSimpleEqConstrained <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
 
     Teuchos::ParameterList parlist;
-    // Enumerations
-    parlist.set("Descent Type",                           "Newton Krylov");
-    parlist.set("Linesearch Type",                        "Cubic Interpolation");
-    parlist.set("Linesearch Curvature Condition",         "Wolfe");
-    // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations", 20);
-    parlist.set("Sufficient Decrease Parameter",          1.e-4);
-    parlist.set("Curvature Conditions Parameter",         0.9);
-    parlist.set("Backtracking Rate",                      0.5);
-    parlist.set("Initial Linesearch Parameter",           1.0);
-    parlist.set("User Defined Linesearch Parameter",      false);
-    // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    10);
     // Define Step
     parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
     ROL::CompositeStepSQP<RealT> step(parlist);
@@ -116,12 +102,12 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > vc_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
     Teuchos::RCP<std::vector<RealT> > vl_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    ROL::OptStdVector<RealT> xtest(xtest_rcp);
-    ROL::OptStdVector<RealT> g(g_rcp);
-    ROL::OptStdVector<RealT> d(d_rcp);
-    ROL::OptStdVector<RealT> v(v_rcp);
-    ROL::ConStdVector<RealT> vc(vc_rcp);
-    ROL::ConDualStdVector<RealT> vl(vl_rcp);
+    ROL::StdVector<RealT> xtest(xtest_rcp);
+    ROL::StdVector<RealT> g(g_rcp);
+    ROL::StdVector<RealT> d(d_rcp);
+    ROL::StdVector<RealT> v(v_rcp);
+    ROL::StdVector<RealT> vc(vc_rcp);
+    ROL::StdVector<RealT> vl(vl_rcp);
     // set xtest, d, v
     for (int i=0; i<dim; i++) {
       (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
@@ -137,13 +123,13 @@ int main(int argc, char *argv[]) {
     obj->checkHessVec(xtest, v, true);  *outStream << "\n";
     obj->checkHessSym(xtest, d, v, true);  *outStream << "\n";
     constr->checkApplyJacobian(xtest, v, vc, true);  *outStream << "\n";
-    constr->checkApplyAdjointJacobian(xtest, vl, vc, true);  *outStream << "\n";
-    constr->checkApplyAdjointHessian(xtest, vl, d, true);  *outStream << "\n";
+    constr->checkApplyAdjointJacobian(xtest, vl, vc, xtest, true);  *outStream << "\n";
+    constr->checkApplyAdjointHessian(xtest, vl, d, xtest, true);  *outStream << "\n";
 
     Teuchos::RCP<std::vector<RealT> > v1_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > v2_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    ROL::OptStdVector<RealT> v1(v1_rcp);
-    ROL::ConDualStdVector<RealT> v2(v2_rcp);
+    ROL::StdVector<RealT> v1(v1_rcp);
+    ROL::StdVector<RealT> v2(v2_rcp);
     RealT augtol = 1e-8;
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     

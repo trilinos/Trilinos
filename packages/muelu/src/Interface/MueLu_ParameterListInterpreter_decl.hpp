@@ -144,8 +144,9 @@ namespace MueLu {
     //! Setup Operator object
     virtual void SetupOperator(Operator& A) const;
 
-    int       blockSize_; ///< block size of matrix (fixed block size)
-    CycleType Cycle_;     ///< multigrid cycle type (V-cycle or W-cycle)
+    int       blockSize_;     ///< block size of matrix (fixed block size)
+    CycleType Cycle_;         ///< multigrid cycle type (V-cycle or W-cycle)
+    GlobalOrdinal dofOffset_; ///< global offset variable describing offset of DOFs in operator
 
     //! Easy interpreter stuff
     //@{

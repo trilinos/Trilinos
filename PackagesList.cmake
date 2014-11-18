@@ -113,6 +113,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Tpetra                packages/tpetra                   PS
   EpetraExt             packages/epetraext                PS
   Xpetra                packages/xpetra                   PS
+  Domi                  packages/domi                     EX
   Thyra                 packages/thyra                    PS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS

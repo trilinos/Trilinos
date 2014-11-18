@@ -262,18 +262,29 @@ public:
 	DefaultPlatform::getDefaultPlatform ().getComm ();
       RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
 
+      // Get element-node connectivity
+
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-      int LocalNumIDs = getLocalNumIDs();
-      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+      //
+      // Get global element ids
+      //
+
+      zgid_t const *Ids=NULL;
+      getIDsView(Ids);
+
+      /***********************************************************************/
+      /*********************** BUILD MAPS FOR TRANSPOSE **********************/
+      /***********************************************************************/
 
       Array<GO> GIDs;
       RCP<const map_type> MapG;
 
-      zgid_t const *Ids=NULL;
-      getIDsView(Ids);
+      // count owned elements
+      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       // Build a list of the global ids...
       GIDs.resize (LocalNumIDs);
@@ -284,29 +295,31 @@ public:
       //Generate Map for elements.
       MapG = rcp (new map_type (-1, GIDs (), 0, comm, node));
 
+      /***********************************************************************/
+      /********************** BUILD GRAPH FOR TRANSPOSE **********************/
+      /***********************************************************************/
+
       RCP<sparse_graph_type> adjsGraphTranspose;
 
       // Construct Tpetra::CrsGraph objects.
       adjsGraphTranspose = rcp (new sparse_graph_type (MapG, 0));
 
-      for (int i = 0; i < LocalNumIDs; ++i) {
+      for (int localRow = 0; localRow < LocalNumIDs; ++localRow) {
 
-	int Row = Ids[i];
-	int globalRow = as<int> (Row);
+	int globalRow = as<int> (Ids[localRow]);
 	//create ArrayView globalRow object for Tpetra
 	ArrayView<int> globalRowAV = Teuchos::arrayView (&globalRow, 1);
 
 	int NumAdjs;
-	if (i + 1 < LocalNumIDs) {
-	  NumAdjs = offsets[i+1];
+	if (localRow + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[localRow+1];
 	} else {
 	  NumAdjs = LocalNumAdjs;
 	}
 
-	for (int j = offsets[i]; j < NumAdjs; ++j) {
-	  int Col = adjacencyIds[j];
+	for (int j = offsets[localRow]; j < NumAdjs; ++j) {
 	  //globalCol for Tpetra Graph
-	  global_size_t globalColT = as<global_size_t> (Col);
+	  global_size_t globalColT = as<global_size_t> (adjacencyIds[j]);
 
 	  //Update Tpetra adjs Graph Transpose
 	  adjsGraphTranspose->insertGlobalIndices (globalColT, globalRowAV);
@@ -315,6 +328,19 @@ public:
 
       //Fill-complete adjs Graph Transpose.
       adjsGraphTranspose->fillComplete ();
+
+      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	int NumAdjs;
+	if (localElement + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[localElement+1];
+	} else {
+	  NumAdjs = LocalNumAdjs;
+	}
+
+	for (int Adjs = offsets[localElement]; Adjs < NumAdjs; ++Adjs) {
+	  //global_size_t globalNode = adjacencyIds[Adjs];
+	}
+      }
     }
   }
 

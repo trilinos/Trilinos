@@ -48,6 +48,10 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <Tpetra_KokkosRefactor_DistObject.hpp>
 
+#ifdef KOKKOS_HAVE_CXX11
+#  include <type_traits>
+#endif // KOKKOS_HAVE_CXX11
+
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of DefaultArithmetic
@@ -308,7 +312,7 @@ namespace Tpetra {
     //@{
 
     //! The type of entries in the vector(s).
-    typedef Scalar scalar_type;
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type scalar_type;
     //! The type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
@@ -321,7 +325,7 @@ namespace Tpetra {
     /// This is usually the same as <tt>scalar_type</tt>, but may
     /// differ if <tt>scalar_type</tt> is e.g., an uncertainty
     /// quantification type from the Stokhos package.
-    typedef typename Kokkos::Details::InnerProductSpaceTraits<Scalar>::dot_type dot_type;
+    typedef typename Kokkos::Details::InnerProductSpaceTraits<scalar_type>::dot_type dot_type;
 
     /// \brief Type of a norm result.
     ///
@@ -329,7 +333,7 @@ namespace Tpetra {
     /// (absolute value) of <tt>scalar_type</tt>, but may differ if
     /// <tt>scalar_type</tt> is e.g., an uncertainty quantification
     /// type from the Stokhos package.
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type mag_type;
+    typedef typename Kokkos::Details::ArithTraits<scalar_type>::mag_type mag_type;
 
     //! Type of the (new) Kokkos Device which implements parallel operations.
     typedef DeviceType device_type;
@@ -509,55 +513,143 @@ namespace Tpetra {
 
     /// \brief Replace value, using global (row) index.
     ///
-    /// Replace the current value at row globalRow (a global index)
-    /// and column vectorIndex with the given value.  The column index
-    /// is zero based.
+    /// Replace the current value at row \c globalRow (a global index)
+    /// and column \c col with the given value.  The column index is
+    /// zero based.
     ///
     /// \pre \c globalRow must be a valid global element on this
     ///   process, according to the row Map.
     void
     replaceGlobalValue (GlobalOrdinal globalRow,
-                        size_t vectorIndex,
-                        const Scalar &value);
+                        size_t col,
+                        const scalar_type& value);
+
+    /// \brief Like the above replaceGlobalValue, but only enabled if
+    ///   T differs from scalar_type.
+    ///
+    /// This method only exists if the template parameter T and
+    /// scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to scalar_type.
+    ///
+    /// This method is mainly useful for backwards compatibility, when
+    /// Scalar differs from scalar_type.
+    template<typename T>
+#ifdef KOKKOS_HAVE_CXX11
+    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+#else
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+#endif // KOKKOS_HAVE_CXX11
+    replaceGlobalValue (GlobalOrdinal globalRow,
+                        size_t col,
+                        const T& value)
+    {
+      replaceGlobalValue (globalRow, col, static_cast<scalar_type> (value));
+    }
 
     /// \brief Add value to existing value, using global (row) index.
     ///
-    /// Add the given value to the existing value at row globalRow (a
-    /// global index) and column vectorIndex.  The column index is
-    /// zero based.
+    /// Add the given value to the existing value at row \c globalRow
+    /// (a global index) and column \c col.  The column index is zero
+    /// based.
     ///
     /// \pre \c globalRow must be a valid global element on this
     ///   process, according to the row Map.
     void
     sumIntoGlobalValue (GlobalOrdinal globalRow,
-                        size_t vectorIndex,
-                        const Scalar &value);
+                        size_t col,
+                        const scalar_type& value);
+
+    /// \brief Like the above sumIntoGlobalValue, but only enabled if
+    ///   T differs from scalar_type.
+    ///
+    /// This method only exists if the template parameter T and
+    /// scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to scalar_type.
+    ///
+    /// This method is mainly useful for backwards compatibility, when
+    /// Scalar differs from scalar_type.
+    template<typename T>
+#ifdef KOKKOS_HAVE_CXX11
+    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+#else
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+#endif // KOKKOS_HAVE_CXX11
+    sumIntoGlobalValue (GlobalOrdinal globalRow,
+                        size_t col,
+                        const T& value)
+    {
+      sumIntoGlobalValue (globalRow, col, static_cast<scalar_type> (value));
+    }
 
     /// \brief Replace value, using local (row) index.
     ///
-    /// Replace the current value at row myRow (a local index) and
-    /// column vectorIndex with the given value.  The column index is
+    /// Replace the current value at row \c localRow (a local index)
+    /// and column \c col with the given value.  The column index is
     /// zero based.
     ///
-    /// \pre \c myRow must be a valid local element on this process,
-    ///   according to the row Map.
+    /// \pre \c localRow must be a valid local element on this
+    ///   process, according to the row Map.
     void
-    replaceLocalValue (LocalOrdinal myRow,
-                       size_t vectorIndex,
-                       const Scalar &value);
+    replaceLocalValue (LocalOrdinal localRow,
+                       size_t col,
+                       const scalar_type& value);
+
+    /// \brief Like the above replaceLocalValue, but only enabled if
+    ///   T differs from scalar_type.
+    ///
+    /// This method only exists if the template parameter T and
+    /// scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to scalar_type.
+    ///
+    /// This method is mainly useful for backwards compatibility, when
+    /// Scalar differs from scalar_type.
+    template<typename T>
+#ifdef KOKKOS_HAVE_CXX11
+    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+#else
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+#endif // KOKKOS_HAVE_CXX11
+    replaceLocalValue (LocalOrdinal localRow,
+                       size_t col,
+                       const T& value)
+    {
+      replaceLocalValue (localRow, col, static_cast<scalar_type> (value));
+    }
 
     /// \brief Add value to existing value, using local (row) index.
     ///
-    /// Add the given value to the existing value at row myRow (a
-    /// local index) and column vectorIndex.  The column index is
-    /// zero based.
+    /// Add the given value to the existing value at row \c localRow
+    /// (a local index) and column \c col.  The column index is zero
+    /// based.
     ///
-    /// \pre \c myRow must be a valid local element on this process,
+    /// \pre \c localRow must be a valid local element on this process,
     ///   according to the row Map.
     void
-    sumIntoLocalValue (LocalOrdinal myRow,
-                       size_t vectorIndex,
-                       const Scalar &value);
+    sumIntoLocalValue (LocalOrdinal localRow,
+                       size_t col,
+                       const scalar_type& value);
+
+    /// \brief Like the above sumIntoLocalValue, but only enabled if
+    ///   T differs from scalar_type.
+    ///
+    /// This method only exists if the template parameter T and
+    /// scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to scalar_type.
+    ///
+    /// This method is mainly useful for backwards compatibility, when
+    /// Scalar differs from scalar_type.
+    template<typename T>
+#ifdef KOKKOS_HAVE_CXX11
+    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+#else
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+#endif // KOKKOS_HAVE_CXX11
+    sumIntoLocalValue (LocalOrdinal localRow,
+                       size_t col,
+                       const T& value)
+    {
+      sumIntoLocalValue (localRow, col, static_cast<scalar_type> (value));
+    }
 
     //! Set all values in the multivector with the given value.
     void putScalar (const Scalar &value);
@@ -803,10 +895,10 @@ namespace Tpetra {
     getVectorNonConst (size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
-    Teuchos::ArrayRCP<const Scalar> getData(size_t j) const;
+    Teuchos::ArrayRCP<const scalar_type> getData (size_t j) const;
 
     //! View of the local values in a particular vector of this multivector.
-    Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j);
+    Teuchos::ArrayRCP<scalar_type> getDataNonConst (size_t j);
 
     /// \brief Fill the given array with a copy of this multivector's local values.
     ///
@@ -814,40 +906,78 @@ namespace Tpetra {
     ///   matrix with column-major storage.
     ///
     /// \param LDA [in] Leading dimension of the matrix A.
-    void get1dCopy (Teuchos::ArrayView<Scalar> A, size_t LDA) const;
+    void
+    get1dCopy (const Teuchos::ArrayView<scalar_type>& A,
+               const size_t LDA) const;
+
+    template<typename T>
+#ifdef KOKKOS_HAVE_CXX11
+    typename std::enable_if<! std::is_same<T, scalar_type>::value &&
+                            sizeof (T) == sizeof (scalar_type), void>::type
+#else
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+#endif // KOKKOS_HAVE_CXX11
+    get1dCopy (const Teuchos::ArrayView<T>& A, const size_t LDA) const
+    {
+      Teuchos::ArrayView<scalar_type> A_r =
+        Teuchos::av_reinterpret_cast<scalar_type> (A);
+      this->get1dCopy (A_r, LDA);
+    }
 
     /// \brief Fill the given array with a copy of this multivector's local values.
     ///
     /// \param ArrayOfPtrs [out] Array of arrays, one for each column
     ///   of the multivector.  On output, we fill ArrayOfPtrs[j] with
     ///   the data for column j of this multivector.
-    void get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
+    void get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > ArrayOfPtrs) const;
+
+    template<typename T>
+#ifdef KOKKOS_HAVE_CXX11
+    typename std::enable_if<! std::is_same<T, scalar_type>::value &&
+                            sizeof (T) == sizeof (scalar_type), void>::type
+#else
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+#endif // KOKKOS_HAVE_CXX11
+    get2dCopy (const Teuchos::ArrayView<const Teuchos::ArrayView<T> >& A,
+               const size_t LDA) const
+    {
+      const size_t numVecs = this->getNumVectors ();
+      const size_t numEnts = A.size ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numVecs != numEnts, std::invalid_argument, "Tpetra::MultiVector::"
+        "get2dCopy: this->getNumVectors() = " << numVecs << " != A.size() = "
+        << numEnts << ".");
+      for (size_t j = 0; j < numVecs; ++j) {
+        Teuchos::ArrayView<T> A_j = Teuchos::av_reinterpret_cast<T> (A[j]);
+        this->getVector (j)->get1dCopy (A_j);
+      }
+    }
 
     /// \brief Const persisting (1-D) view of this multivector's local values.
     ///
     /// This method assumes that the columns of the multivector are
     /// stored contiguously.  If not, this method throws
     /// std::runtime_error.
-    Teuchos::ArrayRCP<const Scalar> get1dView() const;
+    Teuchos::ArrayRCP<const scalar_type> get1dView () const;
 
     //! Return const persisting pointers to values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > get2dView () const;
 
     /// \brief Nonconst persisting (1-D) view of this multivector's local values.
     ///
     /// This method assumes that the columns of the multivector are
     /// stored contiguously.  If not, this method throws
     /// std::runtime_error.
-    Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
+    Teuchos::ArrayRCP<scalar_type> get1dViewNonConst ();
 
     //! Return non-const persisting pointers to values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > get2dViewNonConst ();
 
     /// \brief A view of the underlying KokkosClassic::MultiVector object.
     ///
     /// \brief This method is for expert users only.
     ///   It may change or be removed at any time.
-    KokkosClassic::MultiVector<Scalar,Node> getLocalMV() const;
+    KokkosClassic::MultiVector<scalar_type, node_type> getLocalMV () const;
 
     /// \brief A nonconst reference to a view of the underlying
     ///   KokkosClassic::MultiVector object.
@@ -859,7 +989,7 @@ namespace Tpetra {
     ///   time.  Please call getLocalMV() instead.  There was never
     ///   actually a need for a getLocalMVNonConst() method, as far as
     ///   I can tell.
-    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar,Node>
+    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<scalar_type, node_type>
     getLocalMVNonConst ();
 
     /// \brief Get the Kokkos::DualView which implements local storage.
@@ -969,11 +1099,11 @@ namespace Tpetra {
     /// \tparam T The output type of the dot products.
     ///
     /// This method only exists if dot_type and T are different types.
-    /// For example, if Scalar and dot_type differ, then this method
-    /// ensures backwards compatibility with the previous interface
-    /// (that returned dot products as Scalar rather than as
-    /// dot_type).  The complicated \c enable_if expression just
-    /// ensures that the method only exists if dot_type and T are
+    /// For example, if scalar_type and dot_type differ, then this
+    /// method ensures backwards compatibility with the previous
+    /// interface (that returned dot products as scalar_type rather
+    /// than as dot_type).  The complicated \c enable_if expression
+    /// just ensures that the method only exists if dot_type and T are
     /// different types; the method still returns \c void, as above.
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
@@ -984,6 +1114,7 @@ namespace Tpetra {
       Teuchos::Array<dot_type> dts (sz);
       this->dot (A, dts);
       for (size_t i = 0; i < sz; ++i) {
+        // If T and dot_type differ, this does an implicit conversion.
         dots[i] = dts[i];
       }
     }
@@ -1033,15 +1164,17 @@ namespace Tpetra {
       // FIXME (mfh 14 Jul 2014) Does this actually work if dot_type
       // and T differ?  We would need a test for this, but only the
       // Sacado and Stokhos packages are likely to care about this use
-      // case.
+      // case.  It could also come up for Kokkos::complex ->
+      // std::complex conversions, but those two implementations
+      // should generally be bitwise compatible.
       Kokkos::deep_copy (dots, dts);
     }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
+    void abs (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
 
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
+    void reciprocal (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
 
     /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
@@ -1050,7 +1183,7 @@ namespace Tpetra {
     /// means, for example, that if \c *this contains NaN entries
     /// before calling this method, the NaN entries will remain after
     /// this method finishes.
-    void scale (const Scalar &alpha);
+    void scale (const Scalar& alpha);
 
     /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
     ///
@@ -1070,7 +1203,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (const Kokkos::View<const Scalar*, device_type> alpha);
+    void scale (const Kokkos::View<const scalar_type*, device_type> alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
@@ -1145,7 +1278,8 @@ namespace Tpetra {
       // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
       // and T differ?  We would need a test for this, but only the
       // Sacado and Stokhos packages are likely to care about this use
-      // case.
+      // case.  It could also come up with Kokkos::complex ->
+      // std::complex conversion.
       Kokkos::deep_copy (norms, tmpNorms);
     }
 
@@ -1178,6 +1312,7 @@ namespace Tpetra {
       Teuchos::Array<mag_type> theNorms (sz);
       this->norm1 (theNorms);
       for (size_type i = 0; i < sz; ++i) {
+        // If T and mag_type differ, this does an implicit conversion.
         norms[i] = theNorms[i];
       }
     }
@@ -1218,7 +1353,8 @@ namespace Tpetra {
       // FIXME (mfh 14 Jul 2014) Does this actually work if mag_type
       // and T differ?  We would need a test for this, but only the
       // Sacado and Stokhos packages are likely to care about this use
-      // case.
+      // case.  This could also come up with Kokkos::complex ->
+      // std::complex conversion.
       Kokkos::deep_copy (norms, theNorms);
     }
 
@@ -1251,6 +1387,7 @@ namespace Tpetra {
       Teuchos::Array<mag_type> theNorms (sz);
       this->norm2 (theNorms);
       for (size_type i = 0; i < sz; ++i) {
+        // If T and mag_type differ, this does an implicit conversion.
         norms[i] = theNorms[i];
       }
     }
@@ -1285,7 +1422,8 @@ namespace Tpetra {
       // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
       // and T differ?  We would need a test for this, but only the
       // Sacado and Stokhos packages are likely to care about this use
-      // case.
+      // case.  This could also come up with Kokkos::complex ->
+      // std::complex conversion.
       Kokkos::deep_copy (norms, theNorms);
     }
 
@@ -1317,6 +1455,7 @@ namespace Tpetra {
       Teuchos::Array<mag_type> theNorms (sz);
       this->norm2 (theNorms);
       for (size_type i = 0; i < sz; ++i) {
+        // If T and mag_type differ, this does an implicit conversion.
         norms[i] = theNorms[i];
       }
     }
@@ -1327,8 +1466,10 @@ namespace Tpetra {
     normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
                   const Teuchos::ArrayView<mag_type>& norms) const;
 
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
+    /// \brief Compute the weighted 2-norm (RMS Norm) of each column.
+    ///
+    /// The outcome of this routine is undefined for non-floating
+    /// point scalar types (e.g., int).
     ///
     /// This method only exists if mag_type and T are different types.
     /// For example, if Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -1349,13 +1490,30 @@ namespace Tpetra {
       Teuchos::Array<mag_type> theNorms (sz);
       this->normWeighted (weights, theNorms);
       for (size_type i = 0; i < sz; ++i) {
+        // If T and mag_type differ, this does an implicit conversion.
         norms[i] = theNorms[i];
       }
     }
 
-    //! \brief Compute mean (average) value of each vector in multi-vector.
-    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
+    /// \brief Compute mean (average) value of each column.
+    ///
+    /// The outcome of this routine is undefined for non-floating
+    /// point scalar types (e.g., int).
+    void meanValue (const Teuchos::ArrayView<scalar_type>& means) const;
+
+    template <typename T>
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<scalar_type, T>::value, void>::type
+    meanValue (const Teuchos::ArrayView<T>& means) const
+    {
+      typedef typename Teuchos::Array<T>::size_type size_type;
+      const size_type numMeans = means.size ();
+
+      Teuchos::Array<scalar_type> theMeans (numMeans);
+      this->meanValue (theMeans ());
+      for (size_type k = 0; k < numMeans; ++k) {
+        means[k] = static_cast<T> (theMeans[k]);
+      }
+    }
 
     /// \brief Matrix-matrix multiplication: <tt>this = beta*this + alpha*op(A)*op(B)</tt>.
     ///
@@ -1538,8 +1696,8 @@ namespace Tpetra {
     deep_copy (MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
                const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
 
-    typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
-    typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
+    typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
 
     /// \brief The KokkosClassic::MultiVector containing the MultiVector's data.
     ///
@@ -1598,14 +1756,16 @@ namespace Tpetra {
     /// view of any other multivector.  Furthermore, the stride
     /// between columns of this multivector is a constant: thus,
     /// isConstantStride() returns true.
-    Array<size_t> whichVectors_;
+    Teuchos::Array<size_t> whichVectors_;
 
     //! @name View constructors, used only by nonmember constructors.
     //@{
 
     template <class S,class LO,class GO,class N>
     friend Teuchos::RCP<MultiVector<S,LO,GO,N> >
-    createMultiVectorFromView (const Teuchos::RCP<const Map<LO,GO,N> >&, const Teuchos::ArrayRCP<S>&, const size_t, const size_t);
+    createMultiVectorFromView (const Teuchos::RCP<const Map<LO, GO, N> >&,
+                               const Teuchos::ArrayRCP<S>&,
+                               const size_t, const size_t);
 
     bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
@@ -1614,7 +1774,8 @@ namespace Tpetra {
     /// This method considers isConstantStride().  The ArrayRCP may
     /// correspond either to a compute buffer or a host view.
     template <class T>
-    ArrayRCP<T> getSubArrayRCP(ArrayRCP<T> arr, size_t j) const;
+    Teuchos::ArrayRCP<T>
+    getSubArrayRCP (Teuchos::ArrayRCP<T> arr, size_t j) const;
 
     //! "Original" number of rows in the (local) data.
     size_t getOrigNumLocalRows () const;
@@ -1643,14 +1804,14 @@ namespace Tpetra {
     copyAndPermuteNew (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type>& permuteToLIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type>& permuteFromLIDs);
+      const Kokkos::View<const local_ordinal_type*, device_type>& permuteToLIDs,
+      const Kokkos::View<const local_ordinal_type*, device_type>& permuteFromLIDs);
 
     virtual void
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const LocalOrdinal*, device_type>& exportLIDs,
-      Kokkos::View<Scalar*, device_type>& exports,
+      const Kokkos::View<const local_ordinal_type*, device_type>& exportLIDs,
+      Kokkos::View<scalar_type*, device_type>& exports,
       const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
@@ -1658,7 +1819,7 @@ namespace Tpetra {
     virtual void
     unpackAndCombineNew (
       const Kokkos::View<const LocalOrdinal*, device_type>& importLIDs,
-      const Kokkos::View<const Scalar*, device_type>& imports,
+      const Kokkos::View<const scalar_type*, device_type>& imports,
       const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,

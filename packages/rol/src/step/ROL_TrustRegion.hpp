@@ -141,28 +141,28 @@ public:
     forceFactor_ = parlist.get("Value Update Forcing Sequence Reduction Factor",0.1);
   }
 
-  void initialize( Vector<Real> &x) {
+  void initialize( const Vector<Real> &x, const Vector<Real> &g) {
     xupdate_ = x.clone();
     if (etr_ == TRUSTREGION_TRUNCATEDCG ) {
       s_ = x.clone();
-      g_ = x.clone();
+      g_ = g.clone();
       v_ = x.clone();
       p_ = x.clone();
-      Hp_ = x.clone();
+      Hp_ = g.clone();
     }
     else if ( etr_ == TRUSTREGION_DOGLEG ) {
       s_ = x.clone();
-      Hp_ = x.clone();
+      Hp_ = g.clone();
     }
     else if ( etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
       s_ = x.clone();
       v_ = x.clone();
-      Hp_ = x.clone();
+      Hp_ = g.clone();
     }
     else if ( etr_ == TRUSTREGION_CAUCHYPOINT ) {
-      Hp_ = x.clone();
+      Hp_ = g.clone();
       if ( useCGTCP_ ) {
-        g_ = x.clone();
+        g_ = g.clone();
         p_ = x.clone();
       }
     }
@@ -182,20 +182,20 @@ public:
     // BEGIN INEXACT OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
     Real fold1 = fold;
-    if ( this->useInexact_[0] ) {
-      if ( !(this->cnt_%this->updateIter_) && (this->cnt_ != 0) ) {
-        this->force_ *= this->forceFactor_;
+    if ( useInexact_[0] ) {
+      if ( !(cnt_%updateIter_) && (cnt_ != 0) ) {
+        force_ *= forceFactor_;
       }
-      Real c = this->scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(this->pRed_,std::sqrt(ROL_EPSILON))));
-      Real ftol = c*std::pow(std::min(this->eta1_,1.0-this->eta2_)
-                   *std::min(std::max(this->pRed_,std::sqrt(ROL_EPSILON)),this->force_),1.0/this->omega_);
-      if ( this->ftol_old_ > ftol || this->cnt_ == 0 ) {
-        this->ftol_old_ = ftol;
-        fold1 = pObj.value(x,this->ftol_old_);
+      Real c = scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON))));
+      Real ftol = c*std::pow(std::min(eta1_,1.0-eta2_)
+                   *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON)),force_),1.0/omega_);
+      if ( ftol_old_ > ftol || cnt_ == 0 ) {
+        ftol_old_ = ftol;
+        fold1 = pObj.value(x,ftol_old_);
       }
       pObj.update(*xupdate_,true,iter);
       fnew = pObj.value(*xupdate_,ftol);
-      this->cnt_++;
+      cnt_++;
     }
     else {
       pObj.update(*xupdate_,true,iter);
@@ -208,22 +208,22 @@ public:
     /***************************************************************************************************/
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed -= this->eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
-    this->pRed_ -= this->eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    aRed -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    pRed_ -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
     Real rho  = 0.0; 
-    if ((std::abs(aRed) < this->eps_) && (std::abs(this->pRed_) < this->eps_)) {
+    if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
       rho = 1.0; 
       flagTR = 0;
     }
     else {
-      rho = aRed/this->pRed_;
-      if (this->pRed_ < 0 && aRed > 0) { 
+      rho = aRed/pRed_;
+      if (pRed_ < 0 && aRed > 0) { 
         flagTR = 1;
       }
-      else if (aRed <= 0 && this->pRed_ > 0) {
+      else if (aRed <= 0 && pRed_ > 0) {
         flagTR = 2;
       }
-      else if (aRed <= 0 && this->pRed_ < 0) { 
+      else if (aRed <= 0 && pRed_ < 0) { 
         flagTR = 3;
       }
       else {
@@ -233,16 +233,16 @@ public:
 
     // Check Sufficient Decrease in the Reduced Quadratic Model
     bool decr = true;
-    if ( pObj.isConActivated() && (std::abs(aRed) > this->eps_) ) { 
+    if ( pObj.isConActivated() && (std::abs(aRed) > eps_) ) { 
       // Compute Criticality Measure || x - P( x - g ) ||
       xupdate_->set(x);
-      xupdate_->axpy(-1.0,g);
+      xupdate_->axpy(-1.0,g.dual());
       pObj.project(*xupdate_);
       xupdate_->scale(-1.0);
       xupdate_->plus(x);
       Real pgnorm = xupdate_->norm();
       // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
-      xupdate_->set(g);
+      xupdate_->set(g.dual());
       pObj.pruneActive(*xupdate_,g,x);
       Real lam = std::min(1.0, del/xupdate_->norm());
       xupdate_->scale(-lam);
@@ -252,30 +252,31 @@ public:
       xupdate_->plus(x);      
       pgnorm *= xupdate_->norm();
       // Sufficient decrease?
-      decr = ( aRed >= 0.1*this->eta0_*pgnorm );
+      decr = ( aRed >= 0.1*eta0_*pgnorm );
+      flagTR = (!decr ? 4 : flagTR);
     }
     
     // Accept or Reject Step and Update Trust Region
-    if ((rho < this->eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
+    if ((rho < eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
       pObj.update(x,true,iter);
       fnew = fold1;
       if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
-        Real gs = g.dot(s);
-        pObj.hessVec(*xupdate_,s,x,tol);
-        Real modelVal = xupdate_->dot(s);
+        Real gs = s.dot(g.dual());
+        pObj.hessVec(*Hp_,s,x,tol);
+        Real modelVal = s.dot(Hp_->dual());
         modelVal *= 0.5;
         modelVal += gs + fold1;
-        Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold1+gs)+this->eta2_*modelVal-fnew);
-        del  = std::min(this->gamma1_*snorm,std::max(this->gamma0_,theta)*del);
+        Real theta = (1.0-eta2_)*gs/((1.0-eta2_)*(fold1+gs)+eta2_*modelVal-fnew);
+        del = std::min(gamma1_*snorm,std::max(gamma0_,theta)*del);
       }
       else { // Shrink trust-region radius
-        del = this->gamma1_*snorm; 
+        del = gamma1_*snorm; 
       } 
     }
-    else if ((rho >= this->eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
+    else if ((rho >= eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
       x.axpy(1.0,s);
-      if (rho >= this->eta2_) { // Increase trust-region radius
-        del = std::min(this->gamma2_*del,this->delmax_);
+      if (rho >= eta2_) { // Increase trust-region radius
+        del = std::min(gamma2_*del,delmax_);
       }
     }
   }
@@ -283,32 +284,32 @@ public:
   void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
             const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
     // Run Trust Region
-    if ( this->etr_ == TRUSTREGION_CAUCHYPOINT ) {
-      this->cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+    if ( etr_ == TRUSTREGION_CAUCHYPOINT ) {
+      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
     }
-    else if ( this->etr_ == TRUSTREGION_TRUNCATEDCG ) {
-      this->truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+    else if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
       if ( pObj.isConActivated() ) {
         pObj.computeProjectedStep(s,x);
       }
 #if 0
       if ( pObj.isConActivated() ) {
-        this->truncatedCG_proj(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+        truncatedCG_proj(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
       }
       else {
-        this->truncatedCG(s,snorm,del,iflag,iter,x,grad,grad,gnorm,pObj);
+        truncatedCG(s,snorm,del,iflag,iter,x,grad,grad,gnorm,pObj);
       }
 #endif
     }
-    else if ( this->etr_ == TRUSTREGION_DOGLEG ) {
-      this->dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+    else if ( etr_ == TRUSTREGION_DOGLEG ) {
+      dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
     }
-    else if ( this->etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
-      this->doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+    else if ( etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
+      doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
     }
 #if 0
     // If constraints are active, then determine a feasible step
-    if ( pObj.isConActivated() && this->etr_ != TRUSTREGION_CAUCHYPOINT ) {
+    if ( pObj.isConActivated() && etr_ != TRUSTREGION_CAUCHYPOINT ) {
       // Compute projected step stmp = P( x + alpha*s ) - x and xtmp = x + stmp
       Real alpha = 1.0;
       Teuchos::RCP<Vector<Real> > stmp = x.clone();
@@ -349,7 +350,7 @@ public:
         if ( cnt >= maxit ) { break; }
       }
       s.set(*stmp);
-      this->pRed_ = -val;
+      pRed_ = -val;
     }
 #endif
   }
@@ -358,21 +359,21 @@ public:
                     const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     if ( pObj.isConActivated() ) {
       if ( useCGTCP_ ) {
-        this->cauchypoint_CGT( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
+        cauchypoint_CGT( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
       } 
       else {
-        this->cauchypoint_M( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
+        cauchypoint_M( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
       }
     }
     else {
-      this->cauchypoint_unc( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
+      cauchypoint_unc( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
     }
   }
 
   void truncatedCG( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                     const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
-    const Real gtol = std::min(this->tol1_,this->tol2_*gnorm);
+    const Real gtol = std::min(tol1_,tol2_*gnorm);
 
     // Old and New Step Vectors
     s.zero(); 
@@ -396,7 +397,7 @@ public:
     // Basis Vector
     p_->set(*v_); 
     p_->scale(-1.0);
-    Real pnorm2 = v_->dot(*g_);
+    Real pnorm2 = v_->dot(g_->dual());
 
     iter        = 0; 
     iflag       = 0;
@@ -405,15 +406,15 @@ public:
     Real sigma  = 0.0; 
     Real alpha  = 0.0; 
     Real tmp    = 0.0;
-    Real gv     = v_->dot(*g_);
+    Real gv     = v_->dot(g_->dual());
     Real sMp    = 0.0;
-    this->pRed_ = 0.0;
+    pRed_       = 0.0;
 
-    for (iter = 0; iter < this->maxit_; iter++) {
+    for (iter = 0; iter < maxit_; iter++) {
       //pObj.hessVec(*Hp,*p,x,tol);
       pObj.reducedHessVec(*Hp_,*p_,x,grad,x,tol);
 
-      kappa = p_->dot(*Hp_);
+      kappa = p_->dot(Hp_->dual());
       if (kappa <= 0.0) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p_);
@@ -433,7 +434,7 @@ public:
         break;
       }
 
-      this->pRed_ += 0.5*alpha*gv;
+      pRed_ += 0.5*alpha*gv;
 
       s.set(*s_);
       snorm2 = s1norm2;  
@@ -447,7 +448,7 @@ public:
       //pObj.precond(*v,*g,x,tol);
       pObj.reducedPrecond(*v_,*g_,x,grad,x,tol);
       tmp   = gv; 
-      gv    = v_->dot(*g_);
+      gv    = v_->dot(g_->dual());
       beta  = gv/tmp;    
 
       p_->scale(beta);
@@ -456,10 +457,10 @@ public:
       pnorm2 = gv + beta*beta*pnorm2; 
     }
     if (iflag > 0) {
-      this->pRed_ += sigma*(gv-0.5*sigma*kappa);
+      pRed_ += sigma*(gv-0.5*sigma*kappa);
     }
 
-    if (iter == this->maxit_) {
+    if (iter == maxit_) {
       iflag = 1;
     }
     if (iflag != 1) { 
@@ -474,12 +475,12 @@ public:
                          const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    const Real gtol = std::min(this->tol1_,this->tol2_*gnorm);
+    const Real gtol = std::min(tol1_,tol2_*gnorm);
 
     // Compute Cauchy Point
     Real scnorm = 0.0;
     Teuchos::RCP<Vector<Real> > sc = x.clone();
-    this->cauchypoint(*sc,scnorm,del,iflag,iter,x,grad,gnorm,pObj);
+    cauchypoint(*sc,scnorm,del,iflag,iter,x,grad,gnorm,pObj);
     Teuchos::RCP<Vector<Real> > xc = x.clone();
     xc->set(x);
     xc->plus(*sc);
@@ -522,9 +523,9 @@ public:
     Real tmp    = 0.0;
     Real gv     = v->dot(*g);
     Real sMp    = 0.0;
-    this->pRed_ = 0.0;
+    pRed_ = 0.0;
 
-    for (iter = 0; iter < this->maxit_; iter++) {
+    for (iter = 0; iter < maxit_; iter++) {
       pObj.reducedHessVec(*Hp,*p,*xc,x,tol);
 
       kappa = p->dot(*Hp);
@@ -547,7 +548,7 @@ public:
         break;
       }
 
-      this->pRed_ += 0.5*alpha*gv;
+      pRed_ += 0.5*alpha*gv;
 
       s.set(*s1);
       snorm2 = s1norm2;  
@@ -569,10 +570,10 @@ public:
       pnorm2 = gv + beta*beta*pnorm2; 
     }
     if (iflag > 0) {
-      this->pRed_ += sigma*(gv-0.5*sigma*kappa);
+      pRed_ += sigma*(gv-0.5*sigma*kappa);
     }
 
-    if (iter == this->maxit_) {
+    if (iter == maxit_) {
       iflag = 1;
     }
     if (iflag != 1) { 
@@ -591,14 +592,14 @@ public:
     pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
     s_->scale(-1.0);
     Real sNnorm = s_->norm();
-    Real gsN    = grad.dot(*s_);
+    Real gsN    = s_->dot(grad.dual());
     bool negCurv = false;
     if ( gsN >= 0.0 ) {
       negCurv = true;
     }
 
     if ( negCurv ) {
-      this->cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
       iflag = 2;
     }  
     else {
@@ -606,7 +607,7 @@ public:
       if (sNnorm <= del) {        // Use the quasi-Newton step
         s.set(*s_); 
         snorm = sNnorm;
-        this->pRed_ = -0.5*gsN;
+        pRed_ = -0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
@@ -619,7 +620,7 @@ public:
         if ( gamma*gnorm >= del || gBg <= 0.0 ) {
             alpha = 0.0;
             beta  = del/gnorm;
-            s.set(grad); 
+            s.set(grad.dual()); 
             s.scale(-beta); 
             snorm = del;
             iflag = 2;
@@ -630,13 +631,13 @@ public:
           Real c = gamma*gamma*gnorm2 - del*del;
           alpha  = (-b + sqrt(b*b - a*c))/a;
           beta   = gamma*(1.0-alpha);
-          s.set(grad);
+          s.set(grad.dual());
           s.scale(-beta);
           s.axpy(alpha,*s_);
           snorm = del;
           iflag = 1;
         }
-        this->pRed_ = (alpha*(0.5*alpha-1)*gsN - 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+        pRed_ = (alpha*(0.5*alpha-1)*gsN - 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
       }
     }
   }
@@ -649,7 +650,7 @@ public:
     pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
     s_->scale(-1.0);
     Real sNnorm = s_->norm();
-    Real tmp    = grad.dot(*s_);
+    Real tmp    = s_->dot(grad.dual());
     bool negCurv = false;
     if ( tmp >= 0.0 ) {
       negCurv = true;
@@ -657,7 +658,7 @@ public:
     Real gsN = std::abs(tmp);
 
     if ( negCurv ) {
-      this->cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
       iflag = 2;
     }  
     else {
@@ -665,7 +666,7 @@ public:
       if (sNnorm <= del) {        // Use the quasi-Newton step
         s.set(*s_); 
         snorm = sNnorm;
-        this->pRed_ = 0.5*gsN;
+        pRed_ = 0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
@@ -689,13 +690,13 @@ public:
           if (gnorm2*gamma1 >= del) { // Cauchy Point is outside trust region
             alpha = 0.0;
             beta  = -del/gnorm;
-            s.set(grad); 
+            s.set(grad.dual()); 
             s.scale(beta); 
             snorm = del;
             iflag = 2;
           }
           else {              // Find convex combination of Cauchy and Dogleg point
-            s.set(grad);
+            s.set(grad.dual());
             s.scale(-gamma1*gnorm);
             v_->set(s);
             v_->scale(-1.0);
@@ -711,7 +712,7 @@ public:
             iflag = 3;
           }
         }
-        this->pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+        pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
       }
     }
   }
@@ -719,19 +720,19 @@ public:
   void cauchypoint_unc( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                         const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     Real tol = std::sqrt(ROL_EPSILON);
-    pObj.hessVec(*Hp_,grad,x,tol);
+    pObj.hessVec(*Hp_,grad.dual(),x,tol);
     Real gBg = Hp_->dot(grad);
     Real tau = 1.0;
     if ( gBg > 0.0 ) {
       tau = std::min(1.0, gnorm*gnorm*gnorm/gBg);
     }
 
-    s.set(grad);
+    s.set(grad.dual());
     s.scale(-tau*del/gnorm);
     snorm = tau*del;
     iflag = 0;
     iter  = 0;
-    this->pRed_ = tau*del/gnorm * pow(gnorm,2.0) - 0.5*pow(tau*del/gnorm,2.0)*gBg;
+    pRed_ = tau*del/gnorm * pow(gnorm,2.0) - 0.5*pow(tau*del/gnorm,2.0)*gBg;
   }
 
   void cauchypoint_M( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
@@ -748,20 +749,20 @@ public:
 
     // Initial step length
     Real alpha  = 1.0;
-    if ( this->alpha_ > 0.0 ) {
-      alpha = this->alpha_;
+    if ( alpha_ > 0.0 ) {
+      alpha = alpha_;
     } 
     Real alpha0   = alpha;
     Real alphamax = 1.e4*alpha;
     
     // Initial model value
-    s.set(grad);
+    s.set(grad.dual());
     s.scale(-alpha);
     pObj.computeProjectedStep(s,x);
     snorm = s.norm();
     pObj.hessVec(*Hp_,s,x,tol);
-    Real gs   = grad.dot(s);
-    Real val  = gs + 0.5*Hp_->dot(s);
+    Real gs   = s.dot(grad.dual());
+    Real val  = gs + 0.5*s.dot(Hp_->dual());
     Real val0 = val;
 
     // Determine whether to increase or decrease alpha
@@ -783,24 +784,24 @@ public:
       alpha *= (beta1+beta2)*0.5;
   
       // Update model value
-      s.set(grad);
+      s.set(grad.dual());
       s.scale(-alpha);
       pObj.computeProjectedStep(s,x);
       snorm = s.norm();
       pObj.hessVec(*Hp_,s,x,tol);
-      gs    = grad.dot(s);
-      val   = gs + 0.5*Hp_->dot(s);
+      gs    = s.dot(grad.dual());
+      val   = gs + 0.5*s.dot(Hp_->dual());
 
       // Update termination criterion
       if ( decr ) {
         stat = ( val > mu0 * gs || snorm > mu1 * del );
-        if ( std::abs(val) < this->eps_ && std::abs(mu0 *gs) < this->eps_ ) {
+        if ( std::abs(val) < eps_ && std::abs(mu0 *gs) < eps_ ) {
           stat = (snorm > mu1 * del);
         }
       }
       else {
         stat = !( val > mu0 * gs || snorm > mu1 * del );
-        if ( std::abs(val) < this->eps_ && std::abs(mu0 *gs) < this->eps_ ) {
+        if ( std::abs(val) < eps_ && std::abs(mu0 *gs) < eps_ ) {
           stat = !(snorm > mu1 * del);
         }
         if ( alpha > alphamax ) {
@@ -811,13 +812,13 @@ public:
     // Reset to last 'successful' step
     val   = val0;
     alpha = alpha0;
-    s.set(grad);
+    s.set(grad.dual());
     s.scale(-alpha);
     pObj.computeProjectedStep(s,x);
     snorm = s.norm();
     
-    this->alpha_ = alpha;
-    this->pRed_  = -val;
+    alpha_ = alpha;
+    pRed_  = -val;
   }
 
   void cauchypoint_CGT( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
@@ -837,7 +838,7 @@ public:
     for ( int i = 0; i < maxit; i++ ) {
       // Compute p = x + s = P(x - t*g)
       p_->set(x);
-      p_->axpy(-t,grad); 
+      p_->axpy(-t,grad.dual()); 
       pObj.project(*p_);
       // Compute s = p - x = P(x - t*g) - x
       s.set(*p_);
@@ -845,18 +846,18 @@ public:
       snorm = s.norm();
       // Evaluate Model
       pObj.hessVec(*Hp_,s,x,tol);
-      gs = grad.dot(s);
-      this->pRed_ = -gs - 0.5*Hp_->dot(s);
+      gs = s.dot(grad.dual());
+      pRed_ = -gs - 0.5*s.dot(Hp_->dual());
 
       // Check Stopping Conditions
       g_->set(grad);
       pObj.pruneActive(*g_,grad,*p_); // Project gradient onto tangent cone at p
       pgnorm = g_->norm();
-      if ( snorm > del || this->pRed_ < -c2*gs ) {
+      if ( snorm > del || pRed_ < -c2*gs ) {
         tmax = t;
         tmax_flag = false;
       }
-      else if ( snorm < c3*del && this->pRed_ > -c1*gs && pgnorm > c4*std::abs(gs)/del ) {
+      else if ( snorm < c3*del && pRed_ > -c1*gs && pgnorm > c4*std::abs(gs)/del ) {
         tmin = t;
       } 
       else {

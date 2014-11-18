@@ -37,3 +37,6 @@
 
 /* Define if compiler supports c99 tr1 cmath functions */
 #cmakedefine HAS_C99_TR1_CMATH
+
+/* Define to enable C++11 support*/
+#cmakedefine HAVE_SACADO_CXX11

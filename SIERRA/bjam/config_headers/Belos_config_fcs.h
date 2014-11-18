@@ -54,7 +54,7 @@
 #define HAVE_TEUCHOS_COMPLEX
 
 /* Define if we are building Belos TSQR with TSQR support */
-#define HAVE_BELOS_TSQR
+/* #undef HAVE_BELOS_TSQR */
 
 /* Define if we are building with Teuchos TimeMonitors enabled */
 #define BELOS_TEUCHOS_TIME_MONITOR

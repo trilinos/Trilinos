@@ -1077,8 +1077,8 @@ int main(int argc, char *argv[]) {
       ROL::Vector_SimOpt<RealT> y(yup,yzp);
       // Test equality constraint.
       pcon->checkApplyJacobian(x,y,jv,true);
-      //pcon->checkApplyAdjointJacobian(x,yu,jv,true);
-      pcon->checkApplyAdjointHessian(x,yu,y,true);
+      //pcon->checkApplyAdjointJacobian(x,yu,jv,x,true);
+      pcon->checkApplyAdjointHessian(x,yu,y,x,true);
       // Test full objective function.
       pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
       pobj->checkGradient(x,y,true);

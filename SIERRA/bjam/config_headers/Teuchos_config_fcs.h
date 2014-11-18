@@ -75,7 +75,7 @@
 
 /* #undef HAVE_TEUCHOS_COMM_TIMERS */
 
-/* #undef HAVE_TEUCHOS_FLOAT */
+#define HAVE_TEUCHOS_FLOAT
 
 #define TEUCHOS_ORDINAL_TYPE ptrdiff_t
 

@@ -75,7 +75,7 @@ class UnitTestStkMeshBulkModification {
     m_ring_mesh(pm)
   { }
 
-  void test_bulkdata_not_syncronized();
+  void test_bulkdata_not_synchronized();
   void test_closure_of_non_locally_used_entities();
   void test_all_local_nodes();
   void test_all_local_elements();
@@ -105,10 +105,10 @@ namespace {
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-TEST( UnitTestBulkDataNotSyrncronized , testUnit )
+TEST( UnitTestBulkDataNotSynchronized , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
-  unit.test_bulkdata_not_syncronized();
+  unit.test_bulkdata_not_synchronized();
 }
 
 TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
@@ -137,11 +137,11 @@ TEST( UnitTestParallelConsistency , testUnit )
 
 } //end namespace
 
-void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
+void UnitTestStkMeshBulkModification::test_bulkdata_not_synchronized()
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  bulk_data.modification_begin(); // Intentially make things unsynced
+  bulk_data.modification_begin(); // Intentionally make things unsynced
 
   std::vector< Entity> entities;
   std::vector< Entity> entities_closure;

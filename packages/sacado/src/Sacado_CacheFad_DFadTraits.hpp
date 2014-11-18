@@ -61,32 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to DFad types
-  template <typename ValueT>
-  struct Promote< CacheFad::DFad<ValueT>, CacheFad::DFad<ValueT> > {
-    typedef CacheFad::DFad<ValueT> type;
-  };
-
-  //! Specialization of %Promote to DFad types
-  template <typename ValueT, typename R>
-  struct Promote< CacheFad::DFad<ValueT>, R > {
-    typedef typename ValueType< CacheFad::DFad<ValueT> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef CacheFad::DFad<value_type> type;
-  };
-
-  //! Specialization of %Promote to DFad types
-  template <typename L, typename ValueT>
-  struct Promote< L, CacheFad::DFad<ValueT> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< CacheFad::DFad<ValueT> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef CacheFad::DFad<value_type> type;
-  };
+  SACADO_FAD_PROMOTE_SPEC( CacheFad, DFad )
 
   //! Specialization of %ScalarType to DFad types
   template <typename ValueT>

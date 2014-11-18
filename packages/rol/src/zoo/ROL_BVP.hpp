@@ -58,6 +58,7 @@
 #include "ROL_StdBoundConstraint.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief The discrete boundary value problem.
    */
@@ -224,6 +225,7 @@ namespace ROL {
   }
 
 
+}// End ZOO Namespace
 }// End ROL Namespace
 
 #endif

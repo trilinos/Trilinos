@@ -57,6 +57,7 @@
 #include "ROL_Objective.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief Freudenstein and Roth's function.
    */
@@ -172,6 +173,7 @@ namespace ROL {
   }
 
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif

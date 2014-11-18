@@ -59,6 +59,7 @@
 #include "ROL_Types.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief W. Hock and K. Schittkowski 2nd test function.
    */
@@ -147,6 +148,7 @@ namespace ROL {
   }
 
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif

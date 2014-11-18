@@ -11,7 +11,7 @@
 /* #undef HAVE_ZOLTAN2_OMP */
 
 /* define if we have the METIS library*/
-/* #undef HAVE_ZOLTAN2_METIS */
+#define HAVE_ZOLTAN2_METIS
 
 /* define if we have the PaToH library*/
 /* #undef HAVE_ZOLTAN2_PATOH */
@@ -20,7 +20,7 @@
 /* #undef HAVE_ZOLTAN2_SCOTCH */
 
 /* define if we have the ParMETIS library*/
-/* #undef HAVE_ZOLTAN2_PARMETIS */
+#define HAVE_ZOLTAN2_PARMETIS
 
 /* define if we have the AMD library*/
 /* #undef HAVE_ZOLTAN2_AMD */
@@ -29,7 +29,7 @@
 /* #undef HAVE_ZOLTAN2_OVIS */
 
 /* define if we have the Ovis library*/
-/* #undef HAVE_ZOLTAN2_ANASAZI */
+#define HAVE_ZOLTAN2_ANASAZI
 
 /* define to turn on runtime display of
  * total memory committed at points throughout

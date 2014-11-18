@@ -174,7 +174,7 @@ class testGeneralScriptSupport(unittest.TestCase):
 
 
   def test_runSysCmndInteface_rtnOutput_pass(self):
-    self.assertEqual(("junk\n", None), runSysCmndInterface("echo junk", rtnOutput=True))
+    self.assertEqual(("junk\n", 0), runSysCmndInterface("echo junk", rtnOutput=True))
 
 
   def test_runSysCmndInteface_rtnOutput_fail(self):
@@ -243,12 +243,12 @@ IT: ./do-configure; 5; ''
       g_sysCmndInterceptor.setInterceptedCmnd("eg frog", 5)
       g_sysCmndInterceptor.setAllowExtraCmnds(False)
       self.assertEqual(3, runSysCmndInterface("eg log"))
-      self.assertEqual(("dummy1\n", None),
+      self.assertEqual(("dummy1\n", 0),
         runSysCmndInterface("echo dummy1", rtnOutput=True)) # Fall through!
       self.assertEqual(5, runSysCmndInterface("eg frog"))
       self.assertEqual(g_sysCmndInterceptor.hasInterceptedCmnds(), False)
       self.assertRaises(Exception, runSysCmndInterface, utilsDir+"/return_input.py 2")
-      self.assertEqual(("dummy2\n", None),
+      self.assertEqual(("dummy2\n", 0),
         runSysCmndInterface("echo dummy2", rtnOutput=True)) # Fall through!
       g_sysCmndInterceptor.setAllowExtraCmnds(True)
       self.assertEqual(4, runSysCmndInterface(utilsDir+"/return_input.py 4")) # Fall through!

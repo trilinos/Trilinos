@@ -57,6 +57,7 @@
 #include "ROL_Objective.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief Least squares function.
    */
@@ -187,6 +188,7 @@ namespace ROL {
     }
   }
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif

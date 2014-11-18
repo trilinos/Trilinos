@@ -6,12 +6,14 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_NoFE
     SOURCES example_Poisson_NoFE.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
 IF(Trilinos_ENABLE_SEACAS)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
 ENDIF()
@@ -19,17 +21,20 @@ ENDIF()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_BlockMaterials
     SOURCES example_Poisson_BlockMaterials.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson2D
     SOURCES example_Poisson2D.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
 
@@ -49,21 +54,25 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
     SOURCES example_Darcy.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_DivLSFEM
     SOURCES example_DivLSFEM.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_CurlLSFEM
     SOURCES example_CurlLSFEM.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_StabilizatedADR
     SOURCES example_StabilizedADR.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
@@ -109,6 +118,7 @@ IF(Trilinos_ENABLE_Belos AND
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_NoFE_Tpetra
     SOURCES example_Poisson_NoFE_Tpetra.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
 ENDIF()
@@ -128,6 +138,7 @@ IF(Trilinos_ENABLE_AztecOO AND
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_NoFE_Epetra
     SOURCES example_Poisson_NoFE_Epetra.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
 ENDIF()
@@ -150,6 +161,7 @@ IF(Trilinos_ENABLE_Belos AND
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
 ENDIF()
@@ -171,6 +183,7 @@ IF(Trilinos_ENABLE_Belos AND
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
 ENDIF()
@@ -187,13 +200,14 @@ IF(Trilinos_ENABLE_AztecOO AND
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithAztecOO.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
 ENDIF()
 
 # Copy over example xml file for [E|T]petraIntrepidPoisson example
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
-  DEST_FILES   intrepid_poisson.xml intrepid_poisson_muelu_cheby.xml
+  DEST_FILES   intrepid_poisson.xml intrepid_poisson_muelu_cheby.xml intrepid_poisson_pamgen.xml
   )
 
 # mfh 14 Feb 2013

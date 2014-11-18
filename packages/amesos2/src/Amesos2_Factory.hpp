@@ -92,6 +92,9 @@
 #include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_ctassert.hpp"
 
+#ifdef HAVE_AMESOS2_BASKER
+#include "Amesos2_Basker.hpp"
+#endif
 #if defined(HAVE_AMESOS2_KLU2)
 #include "Amesos2_KLU2.hpp"
 #endif
@@ -504,6 +507,16 @@ struct throw_no_scalar_support_exception {
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
     //
     // We use compiler guards in case a user does want to disable KLU2
+#ifdef HAVE_AMESOS2_BASKER
+    if((solverName == "Basker") || (solverName == "basker"))
+      {
+	
+	return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
+      }
+#endif
+
+
+
 #ifdef HAVE_AMESOS2_KLU2 
 
 if((solverName == "amesos2_klu2") || (solverName == "klu2") ||

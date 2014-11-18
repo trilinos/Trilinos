@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
     ROL::StatusTest<RealT> status(gtol,stol,maxit);
 
     // Krylov parameters.
+    parlist->set("Krylov Method",                          "Conjugate Residuals");
     parlist->set("Absolute Krylov Tolerance",              1.e-8);
     parlist->set("Relative Krylov Tolerance",              1.e-4);
     parlist->set("Maximum Number of Krylov Iterations",    50);

@@ -16,6 +16,7 @@
 
 
 namespace ROL {
+namespace ZOO {
 
   /*!
     \brief The diode circuit problem.
@@ -899,6 +900,7 @@ namespace ROL {
   // }
 
 
-}//end namespace ROL
+} //end namespace ZOO
+} //end namespace ROL
 
 #endif

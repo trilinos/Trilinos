@@ -114,19 +114,21 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 LIST(APPEND HEADERS
+  PyTrilinos_PythonException.hpp
+  PyTrilinos_FILEstream.hpp
+  PyTrilinos_Util.hpp
   numpy_include.hpp
   PyTrilinos_NumPyImporter.hpp
-  PyTrilinos_PythonException.hpp
-  PyTrilinos_Util.hpp
-  PyTrilinos_FILEstream.hpp
+  PyTrilinos_NumPy_Util.hpp
   PyTrilinos_DAP.hpp
   )
 
 LIST(APPEND SOURCES
-  PyTrilinos_NumPyImporter.cpp
   PyTrilinos_PythonException.cpp
-  PyTrilinos_Util.cpp
   PyTrilinos_FILEstream.cpp
+  PyTrilinos_Util.cpp
+  PyTrilinos_NumPyImporter.cpp
+  PyTrilinos_NumPy_Util.cpp
   PyTrilinos_DAP.cpp
   )
 
@@ -191,6 +193,20 @@ IF(PyTrilinos_ENABLE_EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 #
+# PyTrilinos + Domi headers and sources
+IF(PyTrilinos_ENABLE_Domi)
+
+  LIST(APPEND HEADERS
+    PyTrilinos_Domi_Util.hpp
+    )
+
+  LIST(APPEND SOURCES
+    PyTrilinos_Domi_Util.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 
@@ -199,20 +215,6 @@ IF(PyTrilinos_ENABLE_ML)
     )
 
 ENDIF(PyTrilinos_ENABLE_ML)
-
-#
-# PyTrilinos + Domi headers and sources
-# IF(PyTrilinos_ENABLE_Domi)
-
-#   LIST(APPEND HEADERS
-#     PyTrilinos_Domi_Util.hpp
-#     )
-
-#   LIST(APPEND SOURCES
-#     PyTrilinos_Domi_Util.cpp
-#     )
-
-# ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
 # Define the target for the swig runtime header

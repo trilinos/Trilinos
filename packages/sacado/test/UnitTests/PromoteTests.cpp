@@ -1,0 +1,209 @@
+// @HEADER
+// ***********************************************************************
+//
+//                           Sacado Package
+//                 Copyright (2006) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// USA
+// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+// (etphipp@sandia.gov).
+//
+// ***********************************************************************
+// @HEADER
+
+// This test requires C++11 (for static_assert), so why not use the
+// standard type traits
+#include <type_traits>
+
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_TestingHelpers.hpp"
+
+#include "Sacado.hpp"
+#include "Sacado_Fad_SimpleFad.hpp"
+#include "Sacado_Tay_CacheTaylor.hpp"
+#include "Sacado_mpl_apply.hpp"
+
+template <typename ad_type>
+bool testADPromote() {
+  using Sacado::Promote;
+  using std::is_same;
+
+  typedef typename Sacado::ValueType<ad_type>::type value_type;
+  typedef typename Sacado::ScalarType<ad_type>::type scalar_type;
+
+  // Get the type of the result of the expression 'ad_type * ad_type'
+  // The use of declval gets around actually instantiation objects of type
+  // ad_type.
+  typedef decltype(std::declval<ad_type>()*std::declval<ad_type>()) expr_type;
+
+  static_assert(
+    is_same<typename Promote<ad_type,ad_type>::type, ad_type >::value,
+    "Promote<ad_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<ad_type,value_type>::type, ad_type >::value,
+    "Promote<ad_type,value_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<value_type,ad_type>::type, ad_type >::value,
+    "Promote<value_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<ad_type,scalar_type>::type, ad_type >::value,
+    "Promote<ad_type,scalar_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<scalar_type,ad_type>::type, ad_type >::value,
+    "Promote<scalar_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<ad_type,expr_type>::type, ad_type >::value,
+    "Promote<expr_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,ad_type>::type, ad_type >::value,
+    "Promote<expr_type,ad_type>::type != ad_type");
+
+  // These tests are all compile-time tests, so if the test compiles,
+  // it passes...
+  return true;
+}
+
+template <typename fad_type, typename view_fad_type>
+bool testFadPromote() {
+  using Sacado::Promote;
+  using std::is_same;
+
+  typedef typename Sacado::mpl::apply< fad_type, fad_type >::type fad_fad_type;
+  typedef typename Sacado::mpl::apply< view_fad_type, fad_type >::type view_fad_fad_type;
+  typedef typename Sacado::mpl::apply< view_fad_type, view_fad_type >::type view_view_fad_type;
+
+  testADPromote<fad_type>();
+  testADPromote<fad_fad_type>();
+  testADPromote<view_fad_type>();
+  testADPromote<view_fad_fad_type>();
+  testADPromote<view_view_fad_type>();
+
+  static_assert(
+    is_same<typename Promote<view_fad_type,fad_type>::type, fad_type >::value,
+    "Promote<view_fad_type,fad_type>::type != fad_type");
+
+  static_assert(
+    is_same<typename Promote<fad_type,view_fad_type>::type, fad_type >::value,
+    "Promote<fad_type,view_fad_type>::type != fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_fad_fad_type,fad_fad_type>::type, fad_fad_type >::value,
+    "Promote<view_fad_fad_type,fad_fad_type>::type != fad_fad_type");
+
+  static_assert(
+    is_same<typename Promote<fad_fad_type,view_fad_fad_type>::type, fad_fad_type >::value,
+    "Promote<fad_fad_type,view_fad_fad_type>::type != fad_fad_type");
+
+  // These tests are all compile-time tests, so if the test compiles,
+  // it passes...
+  return true;
+}
+
+template <typename scalar_type>
+bool testPromote() {
+  typedef Sacado::Fad::DFad<scalar_type> fad_scalar_type;
+
+  testADPromote<scalar_type>();
+  testADPromote<fad_scalar_type>();
+
+  // These tests are all compile-time tests, so if the test compiles,
+  // it passes...
+  return true;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Promote, Fad, FAD, VIEWFAD )
+{
+  success = testFadPromote<FAD,VIEWFAD>();
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Promote, Other, AD )
+{
+  success = testPromote<AD>();
+}
+
+const int global_fad_size = 10;
+
+typedef Sacado::Fad::DFad<double> Fad_DFadType;
+typedef Sacado::Fad::SLFad<double,2*global_fad_size> Fad_SLFadType;
+typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
+typedef Sacado::Fad::DMFad<double> Fad_DMFadType;
+typedef Sacado::Fad::DVFad<double> Fad_DVFadType;
+typedef Sacado::Fad::SimpleFad<double> Fad_SimpleFadType;
+typedef Sacado::Fad::ViewFad<double,global_fad_size,1> Fad_VFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_DFadType, Fad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_SFadType, Fad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_SLFadType, Fad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_DMFadType, Fad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_DVFadType, Fad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_SimpleFadType, Fad_VFadType )
+
+typedef Sacado::ELRFad::DFad<double> ELRFad_DFadType;
+typedef Sacado::ELRFad::SLFad<double,2*global_fad_size> ELRFad_SLFadType;
+typedef Sacado::ELRFad::SFad<double,global_fad_size> ELRFad_SFadType;
+typedef Sacado::ELRFad::ViewFad<double,global_fad_size,1> ELRFad_VFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRFad_DFadType, ELRFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRFad_SFadType, ELRFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRFad_SLFadType, ELRFad_VFadType )
+
+typedef Sacado::CacheFad::DFad<double> CacheFad_DFadType;
+typedef Sacado::CacheFad::SLFad<double,2*global_fad_size> CacheFad_SLFadType;
+typedef Sacado::CacheFad::SFad<double,global_fad_size> CacheFad_SFadType;
+typedef Sacado::CacheFad::ViewFad<double,global_fad_size,1> CacheFad_VFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, CacheFad_DFadType, CacheFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, CacheFad_SFadType, CacheFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, CacheFad_SLFadType, CacheFad_VFadType )
+
+typedef Sacado::ELRCacheFad::DFad<double> ELRCacheFad_DFadType;
+typedef Sacado::ELRCacheFad::SLFad<double,2*global_fad_size> ELRCacheFad_SLFadType;
+typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheFad_SFadType;
+typedef Sacado::ELRCacheFad::ViewFad<double,global_fad_size,1> ELRCacheFad_VFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRCacheFad_DFadType, ELRCacheFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRCacheFad_SFadType, ELRCacheFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRCacheFad_SLFadType, ELRCacheFad_VFadType )
+
+typedef Sacado::LFad::LogicalSparse<double,bool> LFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, LFadType )
+
+typedef Sacado::FlopCounterPack::ScalarFlopCounter<double> SFCType;
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, SFCType )
+
+typedef Sacado::Tay::Taylor<double> TaylorType;
+typedef Sacado::Tay::CacheTaylor<double> CacheTaylorType;
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, TaylorType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, CacheTaylorType )
+
+typedef Sacado::Rad::ADvar<double> RadType;
+typedef Sacado::Rad2::ADvar<double> Rad2Type;
+typedef Sacado::RadVec::ADvar<double> RadVecType;
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, RadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, Rad2Type )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, RadVecType )
+
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}

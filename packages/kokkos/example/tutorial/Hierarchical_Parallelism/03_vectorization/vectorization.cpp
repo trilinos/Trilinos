@@ -47,11 +47,12 @@
 #include <Kokkos_Random.hpp>
 #include <cstdio>
 
+#ifdef KOKKOS_HAVE_CXX11
+
 // Using default execution space:
 typedef Kokkos::TeamVectorPolicy<32>      team_policy ;
 typedef typename team_policy::member_type team_member ;
 
-#ifdef KOKKOS_HAVE_CXX11
 struct SomeCorrelation {
   typedef int value_type; //Specify value type for reduction target, sum
   typedef Kokkos::DefaultExecutionSpace::scratch_memory_space shared_space;
@@ -132,4 +133,5 @@ int main(int narg, char* args[]) {
 
   Kokkos::finalize();
 }
+
 #endif //KOKKOS_HAVE_CXX11
