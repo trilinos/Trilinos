@@ -590,7 +590,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
       bool error_alloc = m_send == NULL || m_recv == NULL ;
 
       //--------------------------------
-      // Propogation of error flag, input flag, and quick/cheap/approximate
+      // Propagation of error flag, input flag, and quick/cheap/approximate
       // verification of send and receive messages.
       // Is the number and total size of messages consistent?
       // Sum message counts and sizes for grouped processors.

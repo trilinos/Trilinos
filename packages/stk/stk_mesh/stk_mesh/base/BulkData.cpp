@@ -4139,7 +4139,6 @@ void BulkData::internal_regenerate_aura()
   // Add new aura, remove all of the old aura.
   // The change_ghosting figures out what to actually delete and add.
   internal_change_ghosting( aura_ghosting() , send , std::vector<EntityKey>(), true /*full regen*/ );
-
 }
 
 
@@ -5706,26 +5705,24 @@ void pack_induced_memberships( BulkData& bulk_data,
                                const EntityCommListInfoVector & entity_comm )
 {
   OrdinalVector empty , induced ;
-  for ( EntityCommListInfoVector::const_iterator
-        i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
+  for ( size_t i=0; i<entity_comm.size(); ++i) {
 
-    if ( shared_with_proc( *i , i->owner ) ) {
+    if ( shared_with_proc( entity_comm[i] , entity_comm[i].owner ) ) {
       // Is shared with owner, send to owner.
 
       empty.clear();
       induced.clear();
 
-      induced_part_membership(bulk_data, i->entity , empty , induced );
+      induced_part_membership(bulk_data, entity_comm[i].entity , empty , induced );
 
-      CommBuffer & buf = comm.send_buffer( i->owner );
+      CommBuffer & buf = comm.send_buffer( entity_comm[i].owner );
 
       unsigned tmp = induced.size();
 
       buf.pack<unsigned>( tmp );
 
-      for ( OrdinalVector::iterator
-            j = induced.begin() ; j != induced.end() ; ++j ) {
-        buf.pack<unsigned>( *j );
+      for ( size_t j=0; j<induced.size(); ++j) {
+        buf.pack<unsigned>( induced[j] );
       }
     }
   }
@@ -5843,7 +5840,7 @@ void BulkData::internal_resolve_shared_membership()
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
-        comm.allocate_buffers(p_size / 4);
+        comm.allocate_buffers(p_size / 2);
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
