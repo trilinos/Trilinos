@@ -505,7 +505,6 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
   assert(sset->type() == Ioss::SIDESET);
 
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-  bool check_pre_existing = true;
 
   size_t block_count = sset->block_count();
   for (size_t i=0; i < block_count; i++) {
@@ -542,11 +541,11 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
           int side_ordinal = elem_side[is*2+1] - 1;
 
           if (par_dimen == 1) {
-            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal, NULL, check_pre_existing);
+            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
             sides[is] = side;
           }
           else if (par_dimen == 2) {
-            stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal, NULL, check_pre_existing);
+            stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
             sides[is] = side;
           }
         } else {
