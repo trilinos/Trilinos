@@ -2916,7 +2916,19 @@ void internal_print_comm_list(std::string title, BulkData & mesh)
       for (EntityCommInfoVector::const_iterator comm_map_it = comm_map.begin() ; comm_map_it != comm_map.end() ; ++comm_map_it ) {
           unsigned ghost_id = comm_map_it->ghost_id;
           int proc = comm_map_it->proc;
-          oss << "(" << (ghost_id == 0 ? "SHARED" : "AURA") << ", " << proc << ") " ;
+          if ( ghost_id == 0 )
+          {
+              oss << "SHARED";
+          }
+          else if ( ghost_id == 1 )
+          {
+              oss << "AURA";
+          }
+          else
+          {
+              oss << "CUSTOM: " << ghost_id;
+          }
+          oss << ", " << proc << ") " ;
       }
       oss << " }\n";
       ++index;
@@ -3060,7 +3072,20 @@ void BulkData::internal_print_comm_map (std::string title)
             for(; comm_pit.first != comm_pit.second; ++comm_pit){
                 unsigned ghost_id = comm_pit.first->ghost_id;
                 int proc = comm_pit.first->proc;
-                oss << "(" << (ghost_id == 0 ? "SHARED" : "AURA") << ", " << proc << ") " ;
+                oss << "(";
+                if ( ghost_id == 0 )
+                {
+                    oss << "SHARED";
+                }
+                else if ( ghost_id == 1 )
+                {
+                    oss << "AURA";
+                }
+                else
+                {
+                    oss << "CUSTOM: " << ghost_id;
+                }
+                oss << ", " << proc << ") " ;
             }
             oss << "}" << std::endl;
         }
