@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
   long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-  TrilinosCouplings::pamgen_error_check(*out,cr_result);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
     string msg("Poisson: ");
     if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
@@ -719,7 +719,7 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
           // Compute cell ordinal relative to the current workset
-          int worksetCellOrdinal = cell - worksetBegin;
+	  //          int worksetCellOrdinal = cell - worksetBegin;
 
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){

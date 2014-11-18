@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
   long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-  TrilinosCouplings::pamgen_error_check(*out,cr_result);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
     string msg("Poisson: ");
 
@@ -750,7 +750,7 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
           // Compute cell ordinal relative to the current workset
-          int worksetCellOrdinal = cell - worksetBegin;
+	  //          int worksetCellOrdinal = cell - worksetBegin;
 
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
@@ -1182,13 +1182,13 @@ int main(int argc, char *argv[]) {
     Teuchos::ArrayRCP<const int> myColsToZeroArrayRCP = myColsToZeroT->getData(0);
     size_t NumEntries = 0;
     /* Zero the columns */
-    for (int i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
+    for (size_t i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
        NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
        values.resize(NumEntries);
        indices.resize(NumEntries);
        gl_StiffMatrixT->getLocalRowCopy(i, indices(), values(), NumEntries);
        //Matrix.ExtractMyRowView(i,numEntries,vals,cols);
-       for (int j=0; j < NumEntries; j++){
+       for (size_t j=0; j < NumEntries; j++){
           //Teuchos::ArrayRCP<const int> myColsToZeroj = myColsToZeroT->getData();
           if (myColsToZeroArrayRCP[indices[j]] == 1)
               values[j] = 0.0;
@@ -1197,14 +1197,14 @@ int main(int argc, char *argv[]) {
     }/*end for*/
 
     /* Zero the rows, add ones to diagonal */
-   for (int i = 0; i<numBCNodes; i++) {
+    for (size_t i = 0; i<(size_t)numBCNodes; i++) {
       NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(BCNodes[i]);
       indices.resize(NumEntries);
       values.resize(NumEntries);
       gl_StiffMatrixT->getLocalRowCopy(BCNodes[i], indices(), values(), NumEntries);
       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
       int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
-      for (int j = 0; j<NumEntries; j++){
+      for (size_t j = 0; j<NumEntries; j++){
          values[j] = 0.0;
          if (indices[j] == localCol)
             values[j] = 1.0;

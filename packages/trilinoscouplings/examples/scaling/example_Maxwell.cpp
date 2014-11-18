@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
   int dim=3;
   long long maxInt = 9223372036854775807LL;
   long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-  TrilinosCouplings::pamgen_error_check(*out,cr_result);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
    // Get local mesh size info
     char title[100];

@@ -1591,7 +1591,7 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
 
 
   long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), spaceDim, procRank, numProcs, maxInt);
-  TrilinosCouplings::pamgen_error_check(*out,cr_result);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
   if(!Comm.MyPID() && verbose ) {
     std::cout << message << " Timing of Pamgen tasks: \n\n" ;
