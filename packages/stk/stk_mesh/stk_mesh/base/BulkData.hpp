@@ -799,7 +799,7 @@ protected: //functions
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
 
-  void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
+  void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
   bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
@@ -847,12 +847,12 @@ protected: //functions
   void get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
           stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
   void get_locally_modified_shared_entities(stk::mesh::EntityToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
-  void fill_modified_entities_list_based_on_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+  void fill_modified_entities_and_add_sharing_comm_map_info_for_shared_entities(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
           const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
   void erase_all_sharing_for_invalid_entities_on_comm_map();
   void fill_entities_that_have_lost_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
           const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
-  void update_comm_maps_based_on_modified_entities_in_sharing(std::vector<stk::mesh::Entity>& modifiedEntities);
+  void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities);
 
 private: //functions
 

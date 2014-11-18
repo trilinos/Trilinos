@@ -140,9 +140,9 @@ public:
         this->move_entities_to_proper_part_ownership( shared_modified );
     }
 
-    void my_update_comm_list( std::vector<stk::mesh::Entity> &shared_modified )
+    void my_add_comm_list_entries_for_entities( std::vector<stk::mesh::Entity> &shared_modified )
     {
-        this->update_comm_list( shared_modified );
+        this->add_comm_list_entries_for_entities( shared_modified );
     }
 
     void my_fillLocallyCreatedOrModifiedEntities(stk::parallel::DistributedIndex::KeyTypeVector &local_created_or_modified)
@@ -535,7 +535,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_pieces_of_internal_modific
             EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) ;
         }
 
-        stkMeshBulkData.my_update_comm_list( shared_new );
+        stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
         for (size_t i=0;i<edgeEntities.size();i++)
         {
@@ -689,7 +689,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
             EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) ;
         }
 
-        stkMeshBulkData.my_update_comm_list( shared_new );
+        stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
         for (size_t i=0;i<edgeEntities.size();i++)
         {
@@ -797,7 +797,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_and_test_internal_modificati
 
         stkMeshBulkData.my_move_entities_to_proper_part_ownership( shared_new );
 
-        stkMeshBulkData.my_update_comm_list( shared_new );
+        stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
         stkMeshBulkData.my_internal_resolve_shared_membership();
 
