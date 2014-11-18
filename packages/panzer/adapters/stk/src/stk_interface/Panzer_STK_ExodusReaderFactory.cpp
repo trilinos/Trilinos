@@ -52,6 +52,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_Region.h>
+#include <GetBuckets.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <stk_io/IossBridge.hpp>
 
@@ -60,11 +61,11 @@
 namespace panzer_stk_classic {
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-   : fileName_(""), restartIndex_(0), useLowerCase_(false)
+  : fileName_(""), restartIndex_(0), useLowerCase_(false), userMeshScaling_(false), meshScaleFactor_(0.0)
 { }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,int restartIndex)
-   : fileName_(fileName), restartIndex_(restartIndex), useLowerCase_(false)
+  : fileName_(fileName), restartIndex_(restartIndex), useLowerCase_(false), userMeshScaling_(false), meshScaleFactor_(0.0)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
@@ -164,6 +165,41 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk_
    // build mesh bulk data
    mesh.beginModification();
    stk_classic::io::populate_bulk_data(*bulkData, *meshData);
+
+   // The following section of code is applicable if mesh scaling is
+   // turned on from the input file.
+   if (userMeshScaling_)
+   {
+     stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian>* coord_field =
+       metaData.get_field<stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> >("coordinates");
+
+     std::vector<stk_classic::mesh::Bucket*> const all_node_buckets =
+       bulkData->buckets(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
+
+     stk_classic::mesh::Selector select_all_local = metaData.locally_owned_part() | metaData.globally_shared_part();
+     std::vector<stk_classic::mesh::Bucket*> my_node_buckets;
+     stk_classic::mesh::get_buckets(select_all_local, all_node_buckets, my_node_buckets);
+
+     int mesh_dim = mesh.getDimension();
+
+     // Scale the mesh
+     for (size_t i=0; i < my_node_buckets.size(); ++i)
+     {
+       stk_classic::mesh::Bucket& b = *(my_node_buckets[i]);
+       stk_classic::mesh::BucketArray<stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> > 
+         coordinate_data(*coord_field, b);
+
+       for (size_t j=0; j < b.size(); ++j) {
+
+         int index = j;
+
+         double inv_msf = 1.0/meshScaleFactor_;
+         for (int k=0; k < mesh_dim; ++k)
+           coordinate_data(k, index) = coordinate_data(k, index) * inv_msf;
+       }
+     }
+   }
+
    mesh.endModification();
 
    // put in a negative index and (like python) the restart will be from the back
@@ -202,8 +238,24 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
         "\nis required in parameter (sub)list \""<< paramList->name() <<"\"."
         "\n\nThe parsed parameter parameter list is: \n" << paramList->currentParametersString()
    );
-      
-   paramList->validateParametersAndSetDefaults(*getValidParameters(),0); 
+
+   // Set default values here. Not all the params should be set so this
+   // has to be done manually as opposed to using
+   // validateParametersAndSetDefaults().
+   if(!paramList->isParameter("Restart Index")) 
+     paramList->set<int>("Restart Index", -1);
+
+   if(!paramList->isParameter("Use Lower Case"))
+     paramList->set<bool>("Use Lower Case", false);
+       
+   if(!paramList->isSublist("Periodic BCs"))
+     paramList->sublist("Periodic BCs");
+
+   Teuchos::ParameterList& p_bcs = paramList->sublist("Periodic BCs");
+   if (!p_bcs.isParameter("Count"))
+     p_bcs.set<int>("Count", 0);
+
+   paramList->validateParameters(*getValidParameters(),0);
 
    setMyParamList(paramList);
 
@@ -212,6 +264,13 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    restartIndex_ = paramList->get<int>("Restart Index");
 
    useLowerCase_ = paramList->get<bool>("Use Lower Case");
+
+   // get any mesh scale factor
+   if (paramList->isParameter("Scale Factor"))
+   {
+     meshScaleFactor_ = paramList->get<double>("Scale Factor");
+     userMeshScaling_ = true;
+   }
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
@@ -229,6 +288,9 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       
       validParams->set<int>("Restart Index",-1,"Index of solution to read in", 
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
+
+      validParams->set<double>("Scale Factor", 1.0, "Scale factor to apply to mesh after read",
+                               Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
 
       validParams->set<bool>("Use Lower Case",false,"Convert fields to lower case for Exodus I/O.");
 

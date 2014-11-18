@@ -97,6 +97,8 @@ buildClosureModels(const std::string& model_id,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
 {
+  // Note that the Residual version of this is in the cpp file!!!!
+
   return userCMF_->buildClosureModels(model_id,models,fl,ir,default_params,user_data,global_data,fm);
 }
 

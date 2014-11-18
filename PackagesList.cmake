@@ -113,6 +113,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Tpetra                packages/tpetra                   PS
   EpetraExt             packages/epetraext                PS
   Xpetra                packages/xpetra                   PS
+  Domi                  packages/domi                     EX
   Thyra                 packages/thyra                    PS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS
@@ -156,7 +157,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   CTrilinos             packages/CTrilinos                SS # Switched to SS to speed up checkin testing
   ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               SS
-  Domi                  packages/domi                     EX
   WebTrilinos           packages/WebTrilinos              EX # Should be SS
   Didasko               packages/didasko                  SS
   NewPackage            packages/new_package              EX # Should be SS

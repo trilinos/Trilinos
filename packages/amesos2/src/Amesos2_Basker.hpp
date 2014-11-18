@@ -1,12 +1,13 @@
-//@HEADER
-// ************************************************************************
-// 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
-// 
+// @HEADER
+//
+// ***********************************************************************
+//
+//           Amesos2: Templated Direct Sparse Solver Package 
+//                  Copyright 2011 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,39 +35,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ************************************************************************
-//@HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
 
-#ifndef __TSQR_Tsqr_Config_hpp
-#define __TSQR_Tsqr_Config_hpp
+#ifndef AMESOS2_BASKER_HPP
+#define AMESOS2_BASKER_HPP
 
-/* #undef HAVE_LAPACK_DLARFP */
-/* #undef HAVE_LAPACK_SLARFP */
-/* #undef HAVE_LAPACK_ZLARFP */
-/* #undef HAVE_LAPACK_CLARFP */
+#include "Amesos2_Basker_decl.hpp"
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+  #include "Amesos2_Basker_def.hpp"
+#endif
 
-/* #undef HAVE_LAPACK_DLARFGP */
-/* #undef HAVE_LAPACK_SLARFGP */
-/* #undef HAVE_LAPACK_ZLARFGP */
-/* #undef HAVE_LAPACK_CLARFGP */
-
-/* #undef HAVE_LAPACK_DGEQRFP */
-/* #undef HAVE_LAPACK_SGEQRFP */
-/* #undef HAVE_LAPACK_ZGEQRFP */
-/* #undef HAVE_LAPACK_CGEQRFP */
-
-/* #undef HAVE_LAPACK_DGEQR2P */
-/* #undef HAVE_LAPACK_SGEQR2P */
-/* #undef HAVE_LAPACK_ZGEQR2P */
-/* #undef HAVE_LAPACK_CGEQR2P */
-
-
-/* #undef HAVE_TSQR_NEW_MPI_COMMUNICATORS */
-/* #undef HAVE_MPI_COMM_NETWORK */
-/* #undef HAVE_MPI_COMM_NODE */
-/* #undef HAVE_MPI_COMM_SOCKET */
-/* #undef HAVE_MPI_COMM_CACHE */
-
-#endif // __TSQR_Tsqr_Config_hpp
+#endif  // AMESOS2_Basker_HPP

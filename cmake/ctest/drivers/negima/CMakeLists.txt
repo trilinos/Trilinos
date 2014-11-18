@@ -3,14 +3,18 @@ TRILINOS_DRIVER_SETUP()
 # Get the day of the week
 execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 
-if(${DAYOFWEEK} MATCHES "Saturday")
-  SET(RUN_MEMORY_TESTS ON)
+# serial valgrind tests run on Sunday night
+# parallel valgrind tests run every night except Sunday
+# coverage tests run on Saturday night
+
+if(${DAYOFWEEK} MATCHES "Sunday")
+  SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
-elseif(${DAYOFWEEK} MATCHES "Sunday")
-  SET(RUN_MEMORY_TESTS OFF)
+elseif(${DAYOFWEEK} MATCHES "Saturday")
+  SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS ON)
 else()
-  SET(RUN_MEMORY_TESTS OFF)
+  SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS OFF)
 endif()
 
@@ -78,19 +82,11 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 330
 )
 
-if(RUN_MEMORY_TESTS)
+if(RUN_HEAVY_MEMORY_TESTS)
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_MueLu_Valgrind
     ctest_linux_nightly_serial_debug_valgrind_muelu_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-  )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.8.3_DEBUG_MueLu_Valgrind
-    ctest_linux_nightly_mpi_debug_valgrind_muelu_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
@@ -107,12 +103,13 @@ else()
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.8.3_DEBUG_MueLu
-    ctest_linux_nightly_mpi_debug_muelu_negima.cmake
+    OPENMPI_1.8.3_DEBUG_MueLu_Valgrind
+    ctest_linux_nightly_mpi_debug_valgrind_muelu_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
   )
+
 endif()
 
 if(RUN_COVERAGE_TESTS)

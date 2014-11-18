@@ -112,6 +112,15 @@ protected:
    std::string fileName_;
    int restartIndex_;
    bool useLowerCase_;
+
+private:
+
+  //! Did the user request mesh scaling
+  bool userMeshScaling_;
+
+  //! If requested, scale the input mesh by this factor
+  double meshScaleFactor_;
+
 };
 
 }

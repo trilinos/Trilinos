@@ -31,15 +31,6 @@
 /* Enable complex<double> type for CUDA nodes. */
 /* #undef HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE */
 
-/* TSQR (Tall Skinny QR factorization) support */
-#define HAVE_KOKKOSCLASSIC_TSQR
-/* Complex (via std::complex<T>) arithmetic support in TSQR */
-#define HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-/* Enable TSQR::CombineFortran backend for TSQR::Combine */
-/* #undef HAVE_KOKKOSCLASSIC_TSQR_FORTRAN */
-/* Enable Intel TBB paralleliation for intranode TSQR */
-/* #undef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB */
-
 /* Define if you want to build kokkos-tests */
 /* #undef HAVE_KOKKOSCLASSIC_TESTS */
 
