@@ -75,7 +75,7 @@ Basker<Matrix,Vector>::Basker(
 {
 
   //Nothing
- 
+
   // Override some default options
   // TODO: use data_ here to init
 }
@@ -132,7 +132,7 @@ Basker<Matrix,Vector>::numericFactorization_impl()
 #endif
 
       info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
-    
+
     }
 
   }
@@ -186,14 +186,14 @@ Basker<Matrix,Vector>::solve_impl(
   }
 
   int ierr = 0; // returned error code
-  
+
   if ( this->root_ ) {
     {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());    
+    ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
     }
 
   }
@@ -203,11 +203,11 @@ Basker<Matrix,Vector>::solve_impl(
 
   TEUCHOS_TEST_FOR_EXCEPTION( ierr  > 0,
                       std::runtime_error,
-		      "Encountered zero diag element at: " << ierr);
+                      "Encountered zero diag element at: " << ierr);
   TEUCHOS_TEST_FOR_EXCEPTION( ierr == -1,
                       std::runtime_error,
                       "Could not alloc needed working memory for solve" );
-  
+
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
@@ -309,7 +309,7 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template<class Matrix, class Vector>
 const char* Basker<Matrix,Vector>::name = "Basker";
-  
+
 
 } // end namespace Amesos2
 

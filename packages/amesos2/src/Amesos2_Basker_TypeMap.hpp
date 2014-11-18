@@ -47,7 +47,7 @@
            Siva Rajamanickam <srajama@sandia.gov>
 
    \brief Provides definition of Basker types as well as conversions and type
-	  traits.
+          traits.
 
 */
 
@@ -156,7 +156,7 @@ struct TypeMap<Basker,float>
   typedef float magnitude_type;
 };
 
- 
+
 template <>
 struct TypeMap<Basker,double>
 {
@@ -164,10 +164,10 @@ struct TypeMap<Basker,double>
   typedef double type;
   typedef double magnitude_type;
 };
- 
+
 
 #ifdef HAVE_TEUCHOS_COMPLEX
- 
+
 template <>
 struct TypeMap<Basker,std::complex<float> >
 {

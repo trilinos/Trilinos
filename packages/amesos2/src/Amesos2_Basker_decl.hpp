@@ -90,13 +90,13 @@ public:
 
   typedef TypeMap<Amesos2::Basker,scalar_type>                    type_map;
 
-  
+
   typedef typename type_map::type                                  slu_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Basker,slu_type>               function_map;
 
-  
+
   Basker(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B);
@@ -108,7 +108,7 @@ private:
   /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.
    *
-   *   Come back to add support to Amesos for preordering  
+   *   Come back to add support to Amesos for preordering
  */
   int preOrdering_impl();
 
@@ -144,7 +144,7 @@ private:
    */
   bool matrixShapeOK_impl() const;
 
-  
+
   void setParameters_impl(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
