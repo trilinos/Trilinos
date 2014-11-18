@@ -108,19 +108,21 @@ class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
+  typedef typename InputTraits<User>::zgid_t   zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef User user_t;
-  typedef User userCoord_t;
-  typedef int LO;
-  typedef int GO;
+  typedef User                                 user_t;
+  typedef User                                 userCoord_t;
+  typedef double                               ST;
+  typedef int                                  LO;
+  typedef int                                  GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::Map<LO, GO, Node>      map_type;
-  typedef Tpetra::CrsGraph<LO, GO, Node> sparse_graph_type;
+  typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
+  typedef Tpetra::Map<LO, GO, Node>            map_type;
+  typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -328,6 +330,10 @@ public:
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete ();
+
+      // Construct adjs matrix.
+      RCP<sparse_matrix_type> adjsMatrix =
+	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
     }
   }
 
