@@ -85,6 +85,7 @@
 
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -401,9 +402,10 @@ int main(int argc, char *argv[]) {
   long long ** comm_node_ids        = NULL;
   long long ** comm_node_proc_ids   = NULL;
 
-   // Generate mesh with Pamgen
-    long long maxInt = 9223372036854775807LL;
-    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  // Generate mesh with Pamgen
+  long long maxInt = 9223372036854775807LL;
+  long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(*out,cr_result);
 
     string msg("Poisson: ");
     if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
