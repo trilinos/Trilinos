@@ -296,6 +296,11 @@ namespace Sacado {
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative
+      //
+      // We use getTangent<>() to get dx components from expression
+      // arguments instead of getting the argument directly or extracting
+      // the dx array due to striding in ViewFad (or could use striding
+      // directly here if we need to get dx array).
       template <typename ExprT>
       struct FastLocalAccumOp {
         typedef typename ExprT::value_type value_type;
@@ -303,19 +308,16 @@ namespace Sacado {
         const ExprT& x;
         mutable value_type t;
         value_type partials[N];
-        const typename ExprT::base_expr_type* args[N];
         int i;
         KOKKOS_INLINE_FUNCTION
         FastLocalAccumOp(const ExprT& x_) : x(x_) {
           x.computePartials(value_type(1.), partials);
-          for (int j=0; j<N; j++)
-            args[j] = &(x.getArg(j));
         }
         template <typename ArgT>
         KOKKOS_INLINE_FUNCTION
         void operator () (ArgT arg) const {
           const int Arg = ArgT::value;
-          t += partials[Arg] * args[Arg]->fastAccessDx(i);
+          t += partials[Arg] * x.template getTangent<Arg>(i);
         }
       };
 
@@ -329,7 +331,7 @@ namespace Sacado {
         void operator () (ArgT arg) const {
           const int Arg = ArgT::value;
           if (this->x.template isActive<Arg>())
-            this->t += this->partials[Arg] * this->args[Arg]->fastAccessDx(this->i);
+            this->t += this->partials[Arg] * this->x.template getTangent<Arg>(this->i);
         }
       };
 

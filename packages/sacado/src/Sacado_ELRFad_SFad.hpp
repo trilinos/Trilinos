@@ -65,6 +65,9 @@ namespace Sacado {
     template <typename T, int Num>
     struct SFadExprTag {};
 
+    // Forward declaration
+    template <typename T, int Num> class SFad;
+
     /*!
      * \brief Expression template forward-mode AD class with static memory
      * allocation.
@@ -84,7 +87,7 @@ namespace Sacado {
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Typename of base-expressions
-      typedef Expr< SFadExprTag<T,Num> > base_expr_type;
+      typedef SFad<T,Num> base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -275,8 +278,9 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const T& getTangent(int i) const { return this->dx_[i]; }
 
+      //! Get dx array
       KOKKOS_INLINE_FUNCTION
-      const Expr& getArg(int j) const { return *this; }
+      const value_type* getDx(int j) const { return this->dx(); }
 
       //@}
 
@@ -357,6 +361,11 @@ namespace Sacado {
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative
+      //
+      // We use getTangent<>() to get dx components from expression
+      // arguments instead of getting the argument directly or extracting
+      // the dx array due to striding in ViewFad (or could use striding
+      // directly here if we need to get dx array).
       template <typename ExprT>
       struct LocalAccumOp {
         typedef typename ExprT::value_type value_type;
@@ -366,8 +375,9 @@ namespace Sacado {
         value_type partials[N];
         int i;
         KOKKOS_INLINE_FUNCTION
-        LocalAccumOp(const ExprT& x_) :
-          x(x_) { x.computePartials(value_type(1.), partials); }
+        LocalAccumOp(const ExprT& x_) : x(x_) {
+          x.computePartials(value_type(1.), partials);
+        }
         KOKKOS_INLINE_FUNCTION
         void getTangents(int i_) { i = i_; }
         template <typename ArgT>
@@ -505,18 +515,6 @@ namespace Sacado {
       }
 
     }; // class SFad<ValueT,Num>
-
-    //! Specialization of %ExprPromote to Expr<SFadExprTag> types
-    template <typename T, int Num>
-    struct ExprPromote< Expr< SFadExprTag<T,Num> >, T > {
-      typedef Expr< SFadExprTag<T,Num> > type;
-    };
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, int Num>
-    struct ExprPromote< T, Expr< SFadExprTag<T,Num> > > {
-      typedef Expr< SFadExprTag<T,Num> > type;
-    };
 
     template <typename T, int Num>
     std::ostream& operator << (std::ostream& os,

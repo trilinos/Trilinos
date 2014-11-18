@@ -49,6 +49,12 @@ namespace Sacado {
       //! Typename of values
       typedef typename ExprT::value_type value_type;
 
+      //! Typename of scalar's (which may be different from value_type)
+      typedef typename ExprT::scalar_type scalar_type;
+
+      //! Typename of base-expressions
+      typedef typename ExprT::base_expr_type base_expr_type;
+
       //! Constructor with given expression \c expr
       explicit Expr(const ExprT& expr) : expr_(expr) {}
 
@@ -90,6 +96,12 @@ namespace Sacado {
 
       //! Typename of argument values
       typedef ConstT value_type;
+
+      //! Typename of scalar's (which may be different from ConstT)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Typename of base-expressions
+      typedef ConstT base_expr_type;
 
       //! Constructor
       ConstExpr(const ConstT& constant) : constant_(constant) {}
@@ -134,6 +146,12 @@ namespace Sacado {
 
       //! Typename of argument value
       typedef typename ExprT::value_type value_type;
+
+      //! Typename of scalar's (which may be different from value_type)
+      typedef typename ExprT::scalar_type scalar_type;
+
+      //! Typename of base-expressions
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       //! Constructor
       UnaryExpr(const ExprT& expr) : expr_(expr), op_(expr) {}
@@ -184,15 +202,23 @@ namespace Sacado {
 
     public:
 
-      //! Typename of the first argument value
-      typedef typename ExprT1::value_type value_type_1;
-
-      //! Typename of the second argument value
-      typedef typename ExprT2::value_type value_type_2;
-
       //! Typename of the expression values
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
+
+      //! Typename of the expression scalars
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      //! Typename of the base expression
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) :
@@ -255,6 +281,8 @@ namespace Sacado {
 
       //! Typename of the second argument value
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
 
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) :
@@ -315,6 +343,8 @@ namespace Sacado {
 
       //! Typename of the second argument value
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
 
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) :

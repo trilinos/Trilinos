@@ -292,6 +292,11 @@ namespace Sacado {
 
     }; // class ViewFad<ValueT>
 
+    template <typename T, unsigned l, unsigned s>
+    struct BaseExpr< GeneralFad<T,Fad::ViewStorage<T,l,s> > > {
+      typedef ViewFad<T,l,s> type;
+    };
+
   } // namespace ELRCacheFad
 
 } // namespace Sacado

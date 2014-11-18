@@ -46,6 +46,9 @@ namespace Sacado {
      */
     template <typename ExprT> class Expr {};
 
+    // Forward declaration
+    template <typename ValT, typename LogT> class LogicalSparse;
+
     /*!
      * \brief Implementation class for computing the logical sparsity of a
      * derivative using forward-mode AD.
@@ -210,6 +213,9 @@ namespace Sacado {
       public LogicalSparseImp<ValT,LogT> {
 
     public:
+
+      //! Typename of base-expressions
+      typedef LogicalSparse<ValT,LogT> base_expr_type;
 
       //! Default constructor
       Expr() :

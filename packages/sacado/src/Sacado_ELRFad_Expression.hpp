@@ -58,17 +58,15 @@ namespace Sacado {
 
   namespace ELRFad {
 
-    //! Base template specification for %ExprPromote
+    //! Meta-function for determining concrete base expression
     /*!
-     * The %ExprPromote classes provide a mechanism for computing the
-     * promoted expression-type of a binary operation.
+     * This determines the concrete base expression type of each leaf in
+     * an expression tree.  The Promote meta-function is then used to promote
+     * all of the leaves to a single expression type that the whole expression
+     * can be assigned/promoted to.  This allows Promote to operate on
+     * expressions as well as AD types.
      */
-    template <typename A, typename B> struct ExprPromote {};
-
-    //! Specialization of %ExprPromote for a single type
-    template <typename A> struct ExprPromote<A,A> {
-      typedef A type;
-    };
+    template <typename> struct BaseExpr {};
 
     //! Wrapper for a generic expression template
     /*!
@@ -89,6 +87,9 @@ namespace Sacado {
 
       //! Typename of argument values
       typedef ConstT value_type;
+
+      //! Typename of scalar's (which may be different from ConstT)
+      typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Typename of base-expressions
       typedef ConstT base_expr_type;

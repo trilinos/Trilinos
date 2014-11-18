@@ -404,6 +404,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, MultiplyMixed, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type num_rows = 2;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill views -- do everything on the host for this test
+  FadType f0 = generate_fad<FadType>(
+    num_rows, size_type(2), fad_size, size_type(0), size_type(0));
+  FadType f1 = generate_fad<FadType>(
+    num_rows, size_type(2), fad_size, size_type(1), size_type(0));
+  host_view_type h_v("view1", num_rows, fad_size+1);
+  h_v(0) = f0;
+  h_v(1) = f1;
+
+  FadType f2 = f0 * h_v(1);
+
+  // Check
+  FadType f3 = f0 * f1;
+  success = checkFads(f3, f2, out);
+}
+
 // Tests that require view spec
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -664,6 +690,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, UnmanagedConst2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Multiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
@@ -691,18 +718,18 @@ typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
 
 // We can't use DFad unless we use the View specialization
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-#define VIEW_FAD_TESTS_D( D )                           \
-  VIEW_FAD_TESTS_FD( SFadType, D )                      \
-  VIEW_FAD_TESTS_FD( SLFadType, D )                     \
-  VIEW_FAD_TESTS_FD( DFadType, D )                      \
-  VIEW_FAD_TESTS_FD( ELRSFadType, D )                   \
-  VIEW_FAD_TESTS_FD( ELRSLFadType, D )                  \
-  VIEW_FAD_TESTS_FD( ELRDFadType, D )                   \
-  VIEW_FAD_TESTS_FD( CacheSFadType, D )                 \
-  VIEW_FAD_TESTS_FD( CacheSLFadType, D )                \
-  VIEW_FAD_TESTS_FD( CacheDFadType, D )                 \
-  VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )              \
-  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )             \
+#define VIEW_FAD_TESTS_D( D )                            \
+  VIEW_FAD_TESTS_FD( SFadType, D )                       \
+  VIEW_FAD_TESTS_FD( SLFadType, D )                      \
+  VIEW_FAD_TESTS_FD( DFadType, D )                       \
+  VIEW_FAD_TESTS_FD( ELRSFadType, D )                    \
+  VIEW_FAD_TESTS_FD( ELRSLFadType, D )                   \
+  VIEW_FAD_TESTS_FD( ELRDFadType, D )                    \
+  VIEW_FAD_TESTS_FD( CacheSFadType, D )                  \
+  VIEW_FAD_TESTS_FD( CacheSLFadType, D )                 \
+  VIEW_FAD_TESTS_FD( CacheDFadType, D )                  \
+  VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )               \
+  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )              \
   VIEW_FAD_TESTS_FD( ELRCacheDFadType, D )
 #else
 #define VIEW_FAD_TESTS_D( D )                        \

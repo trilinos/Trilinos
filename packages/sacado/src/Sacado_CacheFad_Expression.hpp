@@ -58,6 +58,16 @@ namespace Sacado {
 
   namespace CacheFad {
 
+    //! Meta-function for determining concrete base expression
+    /*!
+     * This determines the concrete base expression type of each leaf in
+     * an expression tree.  The Promote meta-function is then used to promote
+     * all of the leaves to a single expression type that the whole expression
+     * can be assigned/promoted to.  This allows Promote to operate on
+     * expressions as well as AD types.
+     */
+    template <typename> struct BaseExpr {};
+
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all Fad expression
@@ -78,8 +88,11 @@ namespace Sacado {
       //! Typename of argument values
       typedef ConstT value_type;
 
-      //! Typename of scalar values
-      typedef ConstT scalar_type;
+      //! Typename of scalar's (which may be different from ConstT)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Typename of base-expressions
+      typedef ConstT base_expr_type;
 
       //! Constructor
       KOKKOS_INLINE_FUNCTION

@@ -76,11 +76,27 @@ bool testADPromote() {
 
   static_assert(
     is_same<typename Promote<ad_type,expr_type>::type, ad_type >::value,
-    "Promote<expr_type,ad_type>::type != ad_type");
+    "Promote<ad_type,expr_type>::type != ad_type");
 
   static_assert(
     is_same<typename Promote<expr_type,ad_type>::type, ad_type >::value,
     "Promote<expr_type,ad_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,value_type>::type, ad_type >::value,
+    "Promote<expr_type,value_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<value_type,expr_type>::type, ad_type >::value,
+    "Promote<value_type,expr_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,scalar_type>::type, ad_type >::value,
+    "Promote<expr_type,scalar_type>::type != ad_type");
+
+  static_assert(
+    is_same<typename Promote<scalar_type,expr_type>::type, ad_type >::value,
+    "Promote<scalar_type,expr_type>::type != ad_type");
 
   // These tests are all compile-time tests, so if the test compiles,
   // it passes...
@@ -93,6 +109,7 @@ bool testFadPromote() {
   using std::is_same;
 
   typedef typename Sacado::mpl::apply< fad_type, fad_type >::type fad_fad_type;
+  typedef typename Sacado::mpl::apply< fad_type, view_fad_type >::type fad_view_type;
   typedef typename Sacado::mpl::apply< view_fad_type, fad_type >::type view_fad_fad_type;
   typedef typename Sacado::mpl::apply< view_fad_type, view_fad_type >::type view_view_fad_type;
 
@@ -117,6 +134,53 @@ bool testFadPromote() {
   static_assert(
     is_same<typename Promote<fad_fad_type,view_fad_fad_type>::type, fad_fad_type >::value,
     "Promote<fad_fad_type,view_fad_fad_type>::type != fad_fad_type");
+
+  typedef decltype(std::declval<fad_type>()*std::declval<fad_type>()) fad_expr_type;
+  typedef decltype(std::declval<view_fad_type>()*std::declval<view_fad_type>()) view_fad_expr_type;
+
+  static_assert(
+    is_same<typename Promote<view_fad_type,fad_expr_type>::type, fad_type >::value,
+    "Promote<view_fad_type,fad_expr_type>::type != fad_type");
+
+  static_assert(
+    is_same<typename Promote<fad_expr_type,view_fad_type>::type, fad_type >::value,
+    "Promote<fad_expr_type,view_fad_type>::type != fad_type");
+
+  static_assert(
+    is_same<typename Promote<fad_type,view_fad_expr_type>::type, fad_type >::value,
+    "Promote<fad_type,view_fad_expr_type>::type != fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_fad_expr_type,fad_type>::type, fad_type >::value,
+    "Promote<view_fad_expr_type,fad_type>::type != fad_type");
+
+  typedef decltype(std::declval<fad_fad_type>()*std::declval<fad_fad_type>()) fad_fad_expr_type;
+  typedef decltype(std::declval<view_fad_fad_type>()*std::declval<view_fad_fad_type>()) view_fad_fad_expr_type;
+   typedef decltype(std::declval<view_view_fad_type>()*std::declval<view_view_fad_type>()) view_view_fad_expr_type;
+
+  static_assert(
+    is_same<typename Promote<view_fad_type,fad_fad_expr_type>::type, fad_fad_type >::value,
+    "Promote<view_fad_type,fad_fad_expr_type>::type != fad_fad_type");
+
+  static_assert(
+    is_same<typename Promote<fad_fad_expr_type,view_fad_type>::type, fad_fad_type >::value,
+    "Promote<fad_fad_expr_type,view_fad_type>::type != fad_fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_fad_type,view_fad_fad_expr_type>::type, view_fad_fad_type >::value,
+    "Promote<view_fad_type,view_fad_fad_expr_type>::type != view_fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_fad_fad_expr_type,view_fad_type>::type, view_fad_fad_type >::value,
+    "Promote<view_fad_fad_expr_type,view_fad_type>::type != view_fad_type");
+
+  static_assert(
+    is_same<typename Promote<fad_type,view_view_fad_expr_type>::type, fad_view_type >::value,
+    "Promote<view_fad_type,view_fad_fad_expr_type>::type != view_fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_view_fad_expr_type,fad_type>::type, fad_view_type >::value,
+    "Promote<view_fad_fad_expr_type,view_fad_type>::type != view_fad_type");
 
   // These tests are all compile-time tests, so if the test compiles,
   // it passes...

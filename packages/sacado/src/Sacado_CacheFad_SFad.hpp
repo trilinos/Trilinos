@@ -66,6 +66,9 @@ namespace Sacado {
     template <typename T, int Num>
     struct SFadExprTag {};
 
+    // Forward declaration
+    template <typename T, int Num> class SFad;
+
     /*!
      * \brief Expression template forward-mode AD class with static memory
      * allocation.
@@ -83,6 +86,9 @@ namespace Sacado {
 
       //! Typename of scalar's (which may be different from T)
       typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Typename of base-expressions
+      typedef SFad<T,Num> base_expr_type;
 
       /*!
        * @name Initialization methods

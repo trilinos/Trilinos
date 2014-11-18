@@ -58,6 +58,16 @@ namespace Sacado {
 
   namespace Fad {
 
+    //! Meta-function for determining concrete base expression
+    /*!
+     * This determines the concrete base expression type of each leaf in
+     * an expression tree.  The Promote meta-function is then used to promote
+     * all of the leaves to a single expression type that the whole expression
+     * can be assigned/promoted to.  This allows Promote to operate on
+     * expressions as well as AD types.
+     */
+    template <typename> struct BaseExpr {};
+
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all Fad expression

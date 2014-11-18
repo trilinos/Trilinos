@@ -72,8 +72,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
-
       typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT& expr_) : expr(expr_)  {}
@@ -140,8 +140,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
-
       typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT& expr_) : expr(expr_)  {}
@@ -209,8 +209,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
-
       typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT& expr_) : expr(expr_)  {}
@@ -282,8 +282,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
-
       typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT& expr_) : expr(expr_)  {}
@@ -359,6 +359,7 @@ namespace Sacado {                                                      \
                                                                         \
       typedef typename ExprT::value_type value_type;                    \
       typedef typename ExprT::scalar_type scalar_type;                  \
+      typedef typename ExprT::base_expr_type base_expr_type;            \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       Expr(const ExprT& expr_) : expr(expr_)  {}                        \
@@ -509,7 +510,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -578,7 +584,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -645,7 +656,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -718,7 +734,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -787,7 +808,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -854,7 +880,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -927,7 +958,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1005,7 +1041,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1072,7 +1113,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1145,7 +1191,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1227,7 +1278,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1299,7 +1355,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1377,7 +1438,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1460,7 +1526,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1533,7 +1604,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1612,7 +1688,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1700,7 +1781,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1778,7 +1864,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1862,7 +1953,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -1937,7 +2033,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -2010,7 +2111,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -2089,7 +2195,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -2164,7 +2275,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -2237,7 +2353,12 @@ namespace Sacado {
       typedef typename ExprT1::scalar_type scalar_type_1;
       typedef typename ExprT2::scalar_type scalar_type_2;
       typedef typename Sacado::Promote<scalar_type_1,
-                                   scalar_type_2>::type scalar_type;
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :

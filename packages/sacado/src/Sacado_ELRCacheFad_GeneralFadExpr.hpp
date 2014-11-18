@@ -51,8 +51,8 @@ namespace Sacado {
       typedef typename GeneralFad<T,Storage>::value_type value_type;
       typedef typename GeneralFad<T,Storage>::scalar_type scalar_type;
 
-      //! Typename of base-expressions
-      typedef GeneralFad<T,Storage> base_expr_type;
+     //! Typename of base-expressions
+      typedef typename BaseExpr< GeneralFad<T,Storage> >::type base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -140,42 +140,11 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       T getTangent(int i) const { return this->fastAccessDx(i); }
 
+      //! Get dx array
       KOKKOS_INLINE_FUNCTION
-      const base_expr_type& getArg(int j) const { return *this; }
+      const value_type* getDx(int j) const { return this->dx(); }
 
     }; // class Expr<GeneralFad>
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, typename S>
-    struct ExprPromote< GeneralFad<T,S>,
-                        typename GeneralFad<T,S>::value_type > {
-      typedef GeneralFad<T,S> type;
-    };
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, typename S>
-    struct ExprPromote< typename GeneralFad<T,S>::value_type,
-                        GeneralFad<T,S> > {
-      typedef GeneralFad<T,S> type;
-    };
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, typename S>
-    struct ExprPromote< GeneralFad<T,S>,
-                        typename dummy<typename GeneralFad<T,S>::value_type,
-                                       typename GeneralFad<T,S>::scalar_type
-                                       >::type > {
-      typedef GeneralFad<T,S> type;
-    };
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, typename S>
-    struct ExprPromote< typename dummy<typename GeneralFad<T,S>::value_type,
-                                       typename GeneralFad<T,S>::scalar_type
-                                       >::type,
-                        GeneralFad<T,S> > {
-      typedef GeneralFad<T,S> type;
-    };
 
   } // namespace ELRCacheFad
 

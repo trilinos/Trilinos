@@ -169,6 +169,11 @@ namespace Sacado {
 
     }; // class DFad<ValueT>
 
+    template <typename T>
+    struct BaseExpr< GeneralFad<T,Fad::DynamicStorage<T> > > {
+      typedef DFad<T> type;
+    };
+
   } // namespace CacheFad
 
 } // namespace Sacado

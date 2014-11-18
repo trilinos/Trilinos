@@ -174,6 +174,11 @@ namespace Sacado {
 
     }; // class SLFad<ValueT,Num>
 
+    template <typename T, int N>
+    struct BaseExpr< GeneralFad<T,Fad::StaticStorage<T,N> > > {
+      typedef SLFad<T,N> type;
+    };
+
   } // namespace CacheFad
 
 } // namespace Sacado
