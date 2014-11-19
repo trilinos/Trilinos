@@ -74,7 +74,7 @@ namespace Amesos2 {
 
   /**
    * \brief Pass function calls to Basker based on data type.
-  
+
    */
   // TODO : Do we need the specializations for Basker ??
 

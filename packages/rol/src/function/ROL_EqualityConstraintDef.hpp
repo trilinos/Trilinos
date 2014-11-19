@@ -329,7 +329,8 @@ template <class Real>
 std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(const Vector<Real> &x,
                                                                              const Vector<Real> &v,
                                                                              const Vector<Real> &jv,
-                                                                             const bool printToScreen,
+                                                                             const bool printToStream,
+                                                                             std::ostream & outStream,
                                                                              const int numSteps) {
   Real tol = std::sqrt(ROL_EPSILON);
 
@@ -339,7 +340,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
-  std::ios::fmtflags f( std::cout.flags() );
+  std::ios::fmtflags f( outStream.flags() );
 
   // Compute constraint value at x.
   Teuchos::RCP<Vector<Real> > c = jv.clone();
@@ -370,7 +371,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
     cnew->axpy(-1.0, *Jv);
     jvCheck[i][3] = cnew->norm();
 
-    if (printToScreen) {
+    if (printToStream) {
       std::stringstream hist;
       if (i==0) {
       hist << std::right
@@ -391,14 +392,14 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
            << std::setw(20) << jvCheck[i][2]
            << std::setw(20) << jvCheck[i][3]
            << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
 
     // Update eta.
     eta = eta*eta_factor;
   }
 
-  std::cout.flags( f );
+  outStream.flags( f );
 
   return jvCheck;
 } // checkApplyJacobian
@@ -409,7 +410,8 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
                                                                                     const Vector<Real> &v,
                                                                                     const Vector<Real> &c,
                                                                                     const Vector<Real> &ajv,
-                                                                                    const bool printToScreen,
+                                                                                    const bool printToStream,
+                                                                                    std::ostream & outStream,
                                                                                     const int numSteps) {
   Real tol = std::sqrt(ROL_EPSILON);
 
@@ -428,7 +430,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
   Teuchos::RCP<Vector<Real> > ex   = x.clone();
   Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
 
-  std::ios::fmtflags f( std::cout.flags() );
+  std::ios::fmtflags f( outStream.flags() );
 
   // Compute constraint value at x.
   this->value(*c0, x, tol);
@@ -460,7 +462,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
     ajv1->axpy(-1.0, *ajv0);
     ajvCheck[i][3] = ajv1->norm();
 
-    if (printToScreen) {
+    if (printToStream) {
       std::stringstream hist;
       if (i==0) {
       hist << std::right
@@ -481,14 +483,14 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
            << std::setw(20) << ajvCheck[i][2]
            << std::setw(20) << ajvCheck[i][3]
            << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
 
     // Update eta.
     eta = eta*eta_factor;
   }
 
-  std::cout.flags( f );
+  outStream.flags( f );
 
   return ajvCheck;
 } // checkApplyAdjointJacobian
@@ -499,7 +501,8 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
                                                                                    const Vector<Real> &u,
                                                                                    const Vector<Real> &v,
                                                                                    const Vector<Real> &hv,
-                                                                                   const bool printToScreen,
+                                                                                   const bool printToStream,
+                                                                                   std::ostream & outStream,
                                                                                    const int numSteps) {
   Real tol = std::sqrt(ROL_EPSILON);
 
@@ -515,7 +518,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
-  std::ios::fmtflags f( std::cout.flags() );
+  std::ios::fmtflags f( outStream.flags() );
 
   // Apply adjoint Jacobian to u.
   this->applyAdjointJacobian(*AJu, u, x, tol);
@@ -540,7 +543,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
     AJnew->axpy(-1.0, *AHuv);
     ahuvCheck[i][3] = AJnew->norm();
 
-    if (printToScreen) {
+    if (printToStream) {
       std::stringstream hist;
       if (i==0) {
       hist << std::right
@@ -561,14 +564,14 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
            << std::setw(20) << ahuvCheck[i][2]
            << std::setw(20) << ahuvCheck[i][3]
            << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
 
     // Update eta.
     eta = eta*eta_factor;
   }
 
-  std::cout.flags( f );
+  outStream.flags( f );
 
   return ahuvCheck;
 } // checkApplyAdjointHessian

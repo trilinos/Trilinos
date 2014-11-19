@@ -4,7 +4,7 @@
 //                   Basker: A Direct Linear Solver package
 //                    Copyright 2011 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, with Sandia Corporation, the 
+// Under terms of Contract DE-AC04-94AL85000, with Sandia Corporation, the
 // U.S. Government retains certain rights in this software.
 //
 // This library is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
@@ -36,7 +36,7 @@ namespace Basker{
   template <class Int, class Entry>
   class Basker
   {
-    
+
   public:
     Basker();
     Basker(Int nnzL, Int nnzU);
@@ -49,24 +49,24 @@ namespace Basker{
     int solve( Entry* b, Entry* x);
     int solveMultiple(Int nrhs, Entry *b, Entry *x);
     //int solve();
-    
+
   private:
     int basker_dfs(
-		   Int n,
-		   Int j, 
-		   Int *Li, 
-		   Int *Lp, 
-		   Int *color, 
-		   Int *pattern, /* o/p */
-		   Int *top,       /* o/p */ 
-		   Int k,
-		   Int *pinv,
-		   Int *stack
-		   );
+                   Int n,
+                   Int j,
+                   Int *Li,
+                   Int *Lp,
+                   Int *color,
+                   Int *pattern, /* o/p */
+                   Int *top,       /* o/p */
+                   Int k,
+                   Int *pinv,
+                   Int *stack
+                   );
     void free_factor();
     void free_perm_matrix();
-    int low_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val,  Entry *x,  Entry *b); 
-    int up_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val, Entry *x, Entry *b); 
+    int low_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val,  Entry *x,  Entry *b);
+    int up_tri_solve_csc(Int n, Int* col_ptr, Int *row_idx, Entry *val, Entry *x, Entry *b);
     int permute_row(Int *p, basker_matrix<Int,Entry> *B);
     int permute_column(Int *p, basker_matrix<Int, Entry> *B);
     int sort_factors();

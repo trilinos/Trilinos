@@ -690,7 +690,8 @@ public:
 
   virtual Real checkSolve(const ROL::Vector<Real> &u, 
                           const ROL::Vector<Real> &z, 
-                          const bool printToScreen = true) {
+                          const bool printToStream = true,
+                          std::ostream & outStream = std::cout) {
     // Solve equality constraint for u. 
     Real tol = ROL_EPSILON;
     Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
@@ -700,11 +701,11 @@ public:
     value(*c,*s,z,tol);
     // Output norm of residual.
     Real cnorm = c->norm();
-    if ( printToScreen ) {
+    if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt solve at feasible (u,z): \n  ||c(u,z)|| = " << cnorm << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
     return cnorm;
   }
@@ -713,7 +714,8 @@ public:
                                const Vector<Real> &v, 
                                const Vector<Real> &u,
                                const Vector<Real> &z,
-                               const bool printToScreen = true) {
+                               const bool printToStream = true,
+                               std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = w.clone();
     applyJacobian_1(*Jv,v,u,z,tol);
@@ -722,14 +724,14 @@ public:
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
     Real vJw = v.dot(*Jw);
     Real diff = std::abs(wJv-vJw);
-    if ( printToScreen ) {
+    if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of Jacobian_1 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
            << diff << "\n";
       hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
       hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
     return diff;
   }
@@ -738,7 +740,8 @@ public:
                                const Vector<Real> &v, 
                                const Vector<Real> &u,
                                const Vector<Real> &z,
-                               const bool printToScreen = true) {
+                               const bool printToStream = true,
+                               std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = w.clone();
     applyJacobian_2(*Jv,v,u,z,tol);
@@ -747,14 +750,14 @@ public:
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
     Real vJw = v.dot(*Jw);
     Real diff = std::abs(wJv-vJw);
-    if ( printToScreen ) {
+    if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of Jacobian_2 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = "
            << diff << "\n";
       hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
       hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
     return diff;
   }
@@ -763,7 +766,8 @@ public:
                                       const Vector<Real> &v, 
                                       const Vector<Real> &u, 
                                       const Vector<Real> &z, 
-                                      const bool printToScreen = true) {
+                                      const bool printToStream = true,
+                                      std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     applyJacobian_1(*Jv,v,u,z,tol);
@@ -774,14 +778,14 @@ public:
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
     Real vnorm = v.norm();
-    if ( printToScreen ) {
+    if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of inverse Jacobian_1: \n  ||v-inv(J)Jv|| = " 
            << dnorm << "\n";
       hist << "  ||v||          = " << vnorm << "\n";
       hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
     return dnorm;
   }
@@ -790,7 +794,8 @@ public:
                                              const Vector<Real> &v, 
                                              const Vector<Real> &u, 
                                              const Vector<Real> &z, 
-                                             const bool printToScreen = true) {
+                                             const bool printToStream = true,
+                                             std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
@@ -801,14 +806,14 @@ public:
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
     Real vnorm = v.norm();
-    if ( printToScreen ) {
+    if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
            << dnorm << "\n";
       hist << "  ||v||                   = " << vnorm << "\n";
       hist << "  Relative Error          = " << dnorm / (vnorm+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
+      outStream << hist.str();
     }
     return dnorm;
   }

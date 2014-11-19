@@ -996,18 +996,18 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> g(gup,gzp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
     // Check derivatives.
-    obj.checkGradient(x,y,true);
-    obj.checkHessVec(x,y,true);
-    con.checkApplyJacobian(x,y,c,true);
-    con.checkApplyAdjointJacobian(x,yu,c,x,true);
-    con.checkApplyAdjointHessian(x,yu,y,x,true);
-    // Check Jacobians and adjoint Jacobians.
-    con.checkJacobian_1(c,yu,u,z,true);
-    con.checkJacobian_2(c,yz,u,z,true);
-    // Check solves.
-    con.checkSolve(u,z,true);
-    con.checkInverseJacobian_1(c,yu,u,z,true);
-    con.checkInverseAdjointJacobian_1(yu,c,u,z,true);
+    obj.checkGradient(x,x,y,true,*outStream);
+    obj.checkHessVec(x,x,y,true,*outStream);
+    con.checkApplyJacobian(x,y,c,true,*outStream);
+    con.checkApplyAdjointJacobian(x,yu,c,x,true,*outStream);
+    con.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
+    // Check consistency of Jacobians and adjoint Jacobians.
+    con.checkJacobian_1(c,yu,u,z,true,*outStream);
+    con.checkJacobian_2(c,yz,u,z,true,*outStream);
+    // Check consistency of solves.
+    con.checkSolve(u,z,true,*outStream);
+    con.checkInverseJacobian_1(c,yu,u,z,true,*outStream);
+    con.checkInverseAdjointJacobian_1(yu,c,u,z,true,*outStream);
 
     // Initialize reduced objective function.
     Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
@@ -1017,8 +1017,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
     // Check derivatives.
-    robj.checkGradient(z,yz,true);
-    robj.checkHessVec(z,yz,true);
+    robj.checkGradient(z,z,yz,true,*outStream);
+    robj.checkHessVec(z,z,yz,true,*outStream);
     // Optimization 
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
@@ -1033,9 +1033,9 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status_tr,false);
     z.zero();
     std::clock_t timer_tr = std::clock();
-    algo_tr.run(z,robj,true);
-    std::cout << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
-              << " seconds.\n";
+    algo_tr.run(z,robj,true,*outStream);
+    *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
+               << " seconds.\n";
 
     // SQP.
     RealT ctol = 1.e-14;
@@ -1044,9 +1044,9 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
     x.zero();
     std::clock_t timer_sqp = std::clock();
-    algo_sqp.run(x,g,l,c,obj,con,true);
-    std::cout << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
-              << " seconds.\n";
+    algo_sqp.run(x,g,l,c,obj,con,true,*outStream);
+    *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
+               << " seconds.\n";
  
     std::ofstream control;
     control.open("control.txt");

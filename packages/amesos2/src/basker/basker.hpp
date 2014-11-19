@@ -4,7 +4,7 @@
 //                   Basker: A Direct Linear Solver package
 //                    Copyright 2011 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, with Sandia Corporation, the 
+// Under terms of Contract DE-AC04-94AL85000, with Sandia Corporation, the
 // U.S. Government retains certain rights in this software.
 //
 // This library is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
@@ -42,7 +42,7 @@
 #define ASSERT(a) mxAssert(a,"")
 #define REALLOC(ptr,size) mxRealloc(ptr, size)
 #define CALLOC(num, size) mxCalloc(num, size)
-#define FREE(ptr)         
+#define FREE(ptr)
 
 #else
 #include <assert.h>
@@ -51,10 +51,9 @@
 #define ASSERT(a) assert(a)
 #define REALLOC(ptr, size) realloc(ptr, size)
 #define CALLOC(num, size) calloc(num,size)
-#define FREE(ptr)         free(ptr) 
+#define FREE(ptr)         free(ptr)
 
 #endif
 */
 
 #endif
-
