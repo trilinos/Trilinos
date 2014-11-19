@@ -51,7 +51,9 @@
 #include <Epetra_Operator.hpp>
 
 #include "Xpetra_Map.hpp"
+#include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_MultiVector.hpp"
+#include "Xpetra_EpetraMultiVector.hpp"
 #include "Xpetra_Operator.hpp"
 
 #include "Xpetra_Utils.hpp"

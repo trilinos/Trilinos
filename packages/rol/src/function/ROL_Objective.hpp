@@ -162,15 +162,17 @@ public:
       \f]
       @param[in]      x             is an optimization variable.
       @param[in]      d             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
                                                          const Vector<Real> &d,
-                                                         const bool printToScreen = true,
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
                                                          const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
 
-    return checkGradient(x, x, d, printToScreen, std::cout, numSteps);
+    return checkGradient(x, x, d, printToStream, outStream, numSteps);
 
   }
 
@@ -185,7 +187,8 @@ public:
       @param[in]      x             is an optimization variable.
       @param[in]      g             is used to create a temporary gradient vector.
       @param[in]      d             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
@@ -205,15 +208,17 @@ public:
       \f]
       @param[in]      x             is an optimization variable.
       @param[in]      d             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
                                                         const Vector<Real> &v,
-                                                        const bool printToScreen = true,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
 
-    return checkHessVec(x, x, v, printToScreen, std::cout, numSteps);
+    return checkHessVec(x, x, v, printToStream, outStream, numSteps);
 
   }
 
@@ -228,7 +233,8 @@ public:
       @param[in]      x             is an optimization variable.
       @param[in]      hv            is used to create temporary gradient and Hessian-times-vector vectors.
       @param[in]      d             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
@@ -249,14 +255,16 @@ public:
       @param[in]      x             is an optimization variable.
       @param[in]      v             is a direction vector.
       @param[in]      w             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
   */
   virtual std::vector<Real> checkHessSym( const Vector<Real> &x,
                                           const Vector<Real> &v,
                                           const Vector<Real> &w,
-                                          const bool printToScreen = true ) {
+                                          const bool printToStream = true,
+                                          std::ostream & outStream = std::cout ) {
 
-    return checkHessSym(x, x, v, w, printToScreen);
+    return checkHessSym(x, x, v, w, printToStream, outStream);
 
   }
 
@@ -272,7 +280,8 @@ public:
       @param[in]      hv            is used to create temporary Hessian-times-vector vectors.
       @param[in]      v             is a direction vector.
       @param[in]      w             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
   */
   virtual std::vector<Real> checkHessSym( const Vector<Real> &x,
                                           const Vector<Real> &hv,

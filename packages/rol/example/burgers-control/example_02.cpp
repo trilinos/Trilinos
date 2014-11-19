@@ -665,11 +665,10 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
     // Check derivatives.
-    /*obj.checkGradient(x,y,true);
-    obj.checkHessVec(x,y,true);
-    con.checkApplyJacobian(x,y,jv,true);
-    con.checkApplyAdjointJacobian(x,yu,true);
-    con.checkApplyAdjointHessian(x,yu,y,true);*/
+    obj.checkGradient(x,x,y,true,*outStream);
+    obj.checkHessVec(x,x,y,true,*outStream);
+    con.checkApplyJacobian(x,y,jv,true,*outStream);
+    con.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
 
     // Initialize reduced objective function.
     Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
@@ -679,8 +678,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
     // Check derivatives.
-    /*robj.checkGradient(z,yz,true);
-    robj.checkHessVec(z,yz,true);*/
+    robj.checkGradient(z,z,yz,true,*outStream);
+    robj.checkHessVec(z,z,yz,true,*outStream);
     // Optimization 
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
@@ -697,7 +696,7 @@ int main(int argc, char *argv[]) {
     // Run Algorithm
     //z.zero();
     z.scale(50.0);
-    algo.run(z,robj,true);
+    algo.run(z,robj,true,*outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

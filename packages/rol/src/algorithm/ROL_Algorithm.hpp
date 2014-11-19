@@ -82,10 +82,11 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
-                                        bool               print = false ) {
+                                        bool              print = false,
+                                        std::ostream      &outStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
-    return run(x,x,obj,con,print);
+    return run(x,x,obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
@@ -93,10 +94,11 @@ public:
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Vector<Real>      &g, 
                                         Objective<Real>   &obj,
-                                        bool               print = false ) {
+                                        bool              print = false,
+                                        std::ostream      &outStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
-    return run(x,g,obj,con,print);
+    return run(x,g,obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -104,8 +106,9 @@ public:
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
-                                        bool                  print = false ) {
-    return run(x,x,obj,con,print);
+                                        bool                  print = false,
+                                        std::ostream          &outStream = std::cout ) {
+    return run(x,x,obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -114,7 +117,8 @@ public:
                                         Vector<Real>          &g, 
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
-                                        bool                  print = false ) {
+                                        bool                  print = false,
+                                        std::ostream          &outStream = std::cout ) {
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
@@ -130,7 +134,7 @@ public:
     step_->initialize(x, g, obj, con, *state_);
     output.push_back(step_->print(*state_,true));
     if ( print ) {
-      std::cout << step_->print(*state_,true);
+      outStream << step_->print(*state_,true);
     }
 
     // Run Algorithm
@@ -139,7 +143,7 @@ public:
       step_->update(x, *s, obj, con, *state_);
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
-        std::cout << step_->print(*state_,printHeader_);
+        outStream << step_->print(*state_,printHeader_);
       }
     }
     return output;
@@ -153,7 +157,8 @@ public:
                                         Vector<Real>             &c, 
                                         Objective<Real>          &obj,
                                         EqualityConstraint<Real> &con,
-                                        bool                     print = false ) {
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
@@ -175,7 +180,7 @@ public:
     step_->initialize(x, g, l, c, obj, con, *state_);
     output.push_back(step_->print(*state_,true));
     if ( print ) {
-      std::cout << step_->print(*state_,true);
+      outStream << step_->print(*state_,true);
     }
 
     // Run Algorithm
@@ -184,7 +189,7 @@ public:
       step_->update(x, l, *s, obj, con, *state_);
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
-        std::cout << step_->print(*state_,printHeader_);
+        outStream << step_->print(*state_,printHeader_);
       }
     }
     return output;

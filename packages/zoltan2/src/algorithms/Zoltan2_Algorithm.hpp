@@ -137,7 +137,8 @@ public:
   //   \param dim : the number of dimensions specified for the point in space
   //   \param point : the coordinates of the point in space; array of size dim
   //   \return the part number of a part overlapping the given point
-  virtual part_t pointAssign(int dim, scalar_t *point) const
+  virtual part_t pointAssign(int dim, scalar_t *point, 
+                             const PartitioningSolution<Adapter> *soln) const
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
