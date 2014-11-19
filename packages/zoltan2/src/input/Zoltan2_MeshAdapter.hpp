@@ -338,6 +338,10 @@ public:
 
       adjsMatrix->setAllToScalar (STS::zero ());
       adjsMatrix->fillComplete ();
+
+      // Reenable changes to the values and structure of the global
+      // adjs matrix.
+      adjsMatrix->resumeFill ();
     }
   }
 
