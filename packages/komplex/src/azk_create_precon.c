@@ -94,7 +94,7 @@ void AZK_create_precon(int *options, double *params,
     int *proc_config,double *x, double *b,
     AZ_MATRIX *Amat, AZ_PRECOND **Prec)
 {
-  AZ_KOMPLEX *pass_data, *Prec_pass_data;
+  AZ_KOMPLEX *pass_data, *Prec_pass_data = NULL;
   AZ_MATRIX *Pmat, *Amat_real, *Amat_imag;
   int N_equations, N_real;
   int *data_org_real, *data_org_imag;
@@ -212,6 +212,6 @@ void AZK_create_precon(int *options, double *params,
 
     }
   }
-  free(Prec_pass_data);
+  if (Prec_pass_data != NULL) AZ_free(Prec_pass_data);
   Prec_pass_data = NULL;
 }
