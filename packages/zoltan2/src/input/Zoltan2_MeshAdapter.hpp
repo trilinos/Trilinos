@@ -52,7 +52,6 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-
 #include "Tpetra_DefaultPlatform.hpp"
 
 namespace Zoltan2 {
@@ -108,19 +107,23 @@ class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
+  typedef typename InputTraits<User>::zgid_t   zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef User user_t;
-  typedef User userCoord_t;
-  typedef int LO;
-  typedef int GO;
+  typedef User                                 user_t;
+  typedef User                                 userCoord_t;
+  typedef double                               ST;
+  typedef int                                  LO;
+  typedef int                                  GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::Map<LO, GO, Node>      map_type;
-  typedef Tpetra::CrsGraph<LO, GO, Node> sparse_graph_type;
+  typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
+  typedef Teuchos::ScalarTraits<ST>            STS;
+  typedef Tpetra::Map<LO, GO, Node>            map_type;
+  typedef Tpetra::Export<LO, GO, Node>         export_type;
+  typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -328,6 +331,47 @@ public:
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete ();
+
+      // Construct adjs matrix.
+      RCP<sparse_matrix_type> adjsMatrix =
+	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
+
+      adjsMatrix->setAllToScalar (STS::zero ());
+
+      // Find the local column numbers
+      RCP<const map_type> ColMap = adjsMatrix->getColMap ();
+      RCP<const map_type> globalMap =
+	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
+			   Tpetra::GloballyDistributed, node));
+
+      // Create the exporter from this process' column Map to the global
+      // 1-1 column map. (???)
+      RCP<const export_type> bdyExporter =
+	rcp (new export_type (ColMap, globalMap));
+      // Create a vector of global column indices to which we will export
+      RCP<Tpetra::Vector<int, LO, GO, Node> > globColsToZeroT =
+	rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
+      // Create a vector of local column indices from which we will export
+      RCP<Tpetra::Vector<int, LO, GO, Node> > myColsToZeroT =
+	rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
+      myColsToZeroT->putScalar (0);
+
+      // Set to 1 all local columns corresponding to the local rows specified.
+      for (int i = 0; i < LocalNumIDs; ++i) {
+	const GO globalRow = adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
+	const LO localCol =adjsMatrix->getColMap()->getLocalElement(globalRow);
+	// Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
+	// Epetra has a separate Epetra_IntVector class for ints.
+	myColsToZeroT->replaceLocalValue (localCol, 1);
+      }
+
+      // Export to the global column map.
+      globColsToZeroT->doExport (*myColsToZeroT, *bdyExporter, Tpetra::ADD);
+      // Import from the global column map to the local column map.
+      myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
+
+      // We're done modifying the adjs matrix.
+      adjsMatrix->fillComplete ();
     }
   }
 
