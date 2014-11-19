@@ -337,6 +337,7 @@ public:
 	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
 
       adjsMatrix->setAllToScalar (STS::zero ());
+      adjsMatrix->fillComplete ();
     }
   }
 
