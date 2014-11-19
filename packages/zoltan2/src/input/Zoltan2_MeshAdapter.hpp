@@ -121,6 +121,7 @@ public:
   typedef int                                  GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
+  typedef Teuchos::ScalarTraits<ST> STS;
   typedef Tpetra::Map<LO, GO, Node>            map_type;
   typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
 #endif
@@ -334,6 +335,8 @@ public:
       // Construct adjs matrix.
       RCP<sparse_matrix_type> adjsMatrix =
 	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
+
+      adjsMatrix->setAllToScalar (STS::zero ());
     }
   }
 
