@@ -123,6 +123,7 @@ public:
   typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef Tpetra::Map<LO, GO, Node>            map_type;
+  typedef Tpetra::Export<LO, GO, Node>         export_type;
   typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
 #endif
   
@@ -337,11 +338,39 @@ public:
 	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
 
       adjsMatrix->setAllToScalar (STS::zero ());
-      adjsMatrix->fillComplete ();
 
-      // Reenable changes to the values and structure of the global
-      // adjs matrix.
-      adjsMatrix->resumeFill ();
+      // Find the local column numbers
+      RCP<const map_type> ColMap = adjsMatrix->getColMap ();
+      RCP<const map_type> globalMap =
+	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
+			   Tpetra::GloballyDistributed, node));
+
+      // Create the exporter from this process' column Map to the global
+      // 1-1 column map. (???)
+      RCP<const export_type> bdyExporter =
+	rcp (new export_type (ColMap, globalMap));
+      // Create a vector of global column indices to which we will export
+      RCP<Tpetra::Vector<int, LO, GO, Node> > globColsToZeroT =
+	rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
+      // Create a vector of local column indices from which we will export
+      RCP<Tpetra::Vector<int, LO, GO, Node> > myColsToZeroT =
+	rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
+      myColsToZeroT->putScalar (0);
+
+      // Set to 1 all local columns corresponding to the local rows specified.
+      for (int i = 0; i < LocalNumIDs; ++i) {
+	const GO globalRow = adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
+	const LO localCol =adjsMatrix->getColMap()->getLocalElement(globalRow);
+	// Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
+	// Epetra has a separate Epetra_IntVector class for ints.
+	myColsToZeroT->replaceLocalValue (localCol, 1);
+      }
+
+      // Export to the global column map.
+      globColsToZeroT->doExport (*myColsToZeroT, *bdyExporter, Tpetra::ADD);
+      // Import from the global column map to the local column map.
+      myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
+
     }
   }
 
