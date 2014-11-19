@@ -140,7 +140,7 @@ public:
          * deep copy of the maximum and minimum boundaries.
          */
         coordinateModelPartBox(const coordinateModelPartBox <scalar_t, part_t> &other):
-            pID(0),
+            pID(other.getpId()),
             dim(other.getDim()),
             lmins(0), lmaxs(0),
             maxScalar (std::numeric_limits<scalar_t>::max()),
