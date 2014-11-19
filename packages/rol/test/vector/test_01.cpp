@@ -80,79 +80,54 @@ int main(int argc, char *argv[]) {
     int dim = 100;
     Teuchos::RCP<std::vector<ElementT> > x_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
     Teuchos::RCP<std::vector<ElementT> > y_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<ElementT> > z_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
     ROL::StdVector<RealT, ElementT> x(x_rcp);
     ROL::StdVector<RealT, ElementT> y(y_rcp);
+    ROL::StdVector<RealT, ElementT> z(z_rcp);
 
-    // set x,y
+    RealT left = -1e0, right = 1e0;
+
+    // set x,y,z
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = i;
-      (*y_rcp)[i] = 2.0;
+      (*x_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*y_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*z_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
-    // norm of x
-    RealT xnorm = x.norm();
-    *outStream << "\nNorm of ROL::StdVector x: " << xnorm << "\n";
+    // Standard tests.
+    std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
 
-    // norm of y
-    RealT ynorm = y.norm();
-    *outStream << "\nNorm of ROL::StdVector y: " << ynorm << "\n";
-
-    // scale x
-    x.scale(0.5);
-    RealT xnorm2 = x.norm();
-    *outStream << "\nNorm of half of x: " << xnorm2 << "\n";
-    if ( std::abs(xnorm/xnorm2 - 2.0) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
-    // clone z from x, deep copy x into z, norm of z
-    Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
-    z->set(x);
-    RealT znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
-    if ( std::abs(xnorm2 - znorm) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
-    // compute norm of x - x - 0
-    z->set(x);
-    x.scale(-1.0);
-    z->plus(x);
-    y.zero();
-    z->axpy(-1.0, y);
-    znorm = z->norm();
-    *outStream << "\nNorm of (x - x) - 0: " << znorm << "\n";
-    if ( std::abs(znorm) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
+    // Basis tests.
     // set x to first basis vector
-    z = x.basis(0);
-    znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
+    Teuchos::RCP<ROL::Vector<RealT> > zp = x.clone();
+    zp = x.basis(0);
+    RealT znorm = zp->norm();
+    *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";
     if ( std::abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     };
     // set x to middle basis vector
-    z = x.basis(dim/2);
-    znorm = z->norm();
+    zp = x.basis(dim/2);
+    znorm = zp->norm();
     *outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
     if ( std::abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     };
     // set x to last basis vector
-    z = x.basis(dim-1);
-    znorm = z->norm();
+    zp = x.basis(dim-1);
+    znorm = zp->norm();
     *outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
     if ( std::abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     };
+
+    ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcp(&consistency, false));
+    if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON)) {
+      errorFlag = 1;
+    }
 
   }
   catch (std::logic_error err) {
