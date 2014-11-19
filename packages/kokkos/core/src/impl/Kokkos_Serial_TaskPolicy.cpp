@@ -211,7 +211,6 @@ void Task::assign( Task ** const lhs , Task * rhs , const bool no_throw )
     }
   }
 }
-
 #endif
 
 namespace {

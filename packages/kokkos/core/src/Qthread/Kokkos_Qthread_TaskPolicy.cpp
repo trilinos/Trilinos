@@ -167,7 +167,6 @@ void Task::throw_error_verify_type()
 //----------------------------------------------------------------------------
 
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-
 void Task::assign( Task ** const lhs , Task * rhs , const bool no_throw )
 {
   static const char msg_error_header[]      = "Kokkos::Impl::TaskManager<Kokkos::Qthread>::assign ERROR" ;
@@ -232,8 +231,8 @@ void Task::assign( Task ** const lhs , Task * rhs , const bool no_throw )
     }
   }
 }
-
 #endif
+
 
 //----------------------------------------------------------------------------
 

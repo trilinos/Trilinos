@@ -199,39 +199,44 @@ public:
     }
 
   void schedule();
-  static void execute_ready_tasks();
   static void wait( const Future< void , Kokkos::Qthread > & );
 
   //----------------------------------------
 
   typedef FutureValueTypeIsVoidError get_result_type ;
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   get_result_type get() const { return get_result_type() ; }
 
+  KOKKOS_INLINE_FUNCTION
   Kokkos::TaskState get_state() const { return Kokkos::TaskState( m_state ); }
 
   //----------------------------------------
 
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
   static
   void assign( TaskMember ** const lhs , TaskMember * const rhs , const bool no_throw = false );
+#else
+  KOKKOS_INLINE_FUNCTION static
+  void assign( TaskMember ** const lhs , TaskMember * const rhs , const bool no_throw = false ) {}
+#endif
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   TaskMember * get_dependence( int i ) const
     { return ( Kokkos::TASK_STATE_EXECUTING == m_state && 0 <= i && i < m_dep_size ) ? m_dep[i] : (TaskMember*) 0 ; }
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   int get_dependence() const
     { return m_dep_size ; }
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void clear_dependence()
     {
       for ( int i = 0 ; i < m_dep_size ; ++i ) assign( m_dep + i , 0 );
       m_dep_size = 0 ;
     }
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void add_dependence( TaskMember * before )
     {
       if ( ( Kokkos::TASK_STATE_CONSTRUCTING == m_state ||
@@ -248,7 +253,7 @@ public:
   //----------------------------------------
 
   template< class FunctorType , class ResultType >
-  static
+  KOKKOS_INLINE_FUNCTION static
   void apply_single( typename Impl::enable_if< ! Impl::is_same< ResultType , void >::value , TaskMember * >::type t )
     {
       typedef TaskMember< Kokkos::Qthread , ResultType , FunctorType > derived_type ;
@@ -264,7 +269,7 @@ public:
     }
 
   template< class FunctorType , class ResultType >
-  static
+  KOKKOS_INLINE_FUNCTION static
   void apply_single( typename Impl::enable_if< Impl::is_same< ResultType , void >::value , TaskMember * >::type t )
     {
       typedef TaskMember< Kokkos::Qthread , ResultType , FunctorType > derived_type ;
@@ -558,13 +563,18 @@ private:
 
 public:
 
+  KOKKOS_INLINE_FUNCTION
   TaskPolicy() : m_default_dependence_capacity(4) {}
+
+  KOKKOS_INLINE_FUNCTION
   TaskPolicy( const TaskPolicy & rhs ) : m_default_dependence_capacity( rhs.m_default_dependence_capacity ) {}
 
+  KOKKOS_INLINE_FUNCTION
   explicit
   TaskPolicy( const unsigned arg_default_dependence_capacity )
     : m_default_dependence_capacity( arg_default_dependence_capacity ) {}
 
+  KOKKOS_INLINE_FUNCTION
   TaskPolicy( const TaskPolicy &
             , const unsigned arg_default_dependence_capacity )
     : m_default_dependence_capacity( arg_default_dependence_capacity ) {}
@@ -574,7 +584,12 @@ public:
   template< class ValueType >
   const Future< ValueType , execution_space > &
     spawn( const Future< ValueType , execution_space > & f ) const
-      { f.m_task->schedule(); return f ; }
+      {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+        f.m_task->schedule();
+#endif
+        return f ;
+      }
 
   // Create single-thread task
 
@@ -586,8 +601,11 @@ public:
       typedef typename FunctorType::value_type value_type ;
       typedef Impl::TaskMember< execution_space , value_type , FunctorType >  task_type ;
       return Future< value_type , execution_space >(
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         task_root_type::create< task_type >(
-          functor , ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) ) );
+          functor , ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) )
+#endif
+        );
     }
 
   // Create parallel foreach task
@@ -601,8 +619,11 @@ public:
       typedef typename FunctorType::value_type value_type ;
       typedef Impl::TaskForEach< PolicyType , value_type , FunctorType > task_type ;
       return Future< value_type , execution_space >(
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         task_root_type::create< task_type >( policy , functor ,
-          ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) ) );
+          ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) )
+#endif
+        );
     }
 
   // Create parallel reduce task
@@ -616,8 +637,11 @@ public:
       typedef typename FunctorType::value_type value_type ;
       typedef Impl::TaskReduce< PolicyType , value_type , FunctorType > task_type ;
       return Future< value_type , execution_space >(
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         task_root_type::create< task_type >( policy , functor ,
-          ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) ) );
+          ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) )
+#endif
+        );
     }
 
   // Add dependence
@@ -630,7 +654,11 @@ public:
                           Impl::is_same< typename Future<A3,A4>::execution_space , execution_space >::value
                         >::type * = 0
                       )
-    { after.m_task->add_dependence( before.m_task ); }
+    {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      after.m_task->add_dependence( before.m_task );
+#endif
+    }
 
   //----------------------------------------
   // Functions for an executing task functor to query dependences,
@@ -639,15 +667,29 @@ public:
   template< class FunctorType >
   Future< void , execution_space >
   get_dependence( const FunctorType * task_functor , int i ) const
-    { return Future<void,execution_space>( get_task_root(task_functor)->get_dependence(i) ); }
+    {
+      return Future<void,execution_space>(
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+        get_task_root(task_functor)->get_dependence(i)
+#endif
+        );
+    }
 
   template< class FunctorType >
   int get_dependence( const FunctorType * task_functor ) const
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     { return get_task_root(task_functor)->get_dependence(); }
+#else
+    { return 0 ; }
+#endif
 
   template< class FunctorType >
   void clear_dependence( FunctorType * task_functor ) const
-    { get_task_root(task_functor)->clear_dependence(); }
+    {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      get_task_root(task_functor)->clear_dependence();
+#endif
+    }
 
   template< class FunctorType , class A3 , class A4 >
   void add_dependence( FunctorType * task_functor
@@ -656,11 +698,20 @@ public:
                         < Impl::is_same< typename Future<A3,A4>::execution_space , execution_space >::value
                         >::type * = 0
                       )
-    { get_task_root(task_functor)->add_dependence( before.m_task ); }
+    {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      get_task_root(task_functor)->add_dependence( before.m_task );
+#endif
+    }
 
   template< class FunctorType >
   void respawn( FunctorType * task_functor ) const
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     { get_task_root(task_functor)->schedule(); }
+#else
+    {}
+#endif
+
 };
 
 inline

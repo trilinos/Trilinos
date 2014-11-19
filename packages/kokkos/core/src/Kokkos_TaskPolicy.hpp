@@ -244,6 +244,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   ~FutureArray()
     {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       if ( m_future ) {
         const size_t n = size();
         for ( size_t i = 1 ; i <= n ; ++i ) {
@@ -252,12 +253,13 @@ public:
         m_future[0].m_task = 0 ;
         MemorySpace::decrement( m_future );
       }
+#endif
     }
 
   KOKKOS_INLINE_FUNCTION
   FutureArray() : m_future(0) {}
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   FutureArray( const size_t n )
     : m_future(0)
     {
@@ -273,24 +275,21 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   FutureArray( const FutureArray & rhs )
-    : m_future(0)
+    : m_future( rhs.m_future )
     {
-      if ( rhs.m_future ) { 
-        const size_t n = rhs.size();
-
-        new( this ) FutureArray(n);
-
-        for ( size_t i = 1 ; i <= n ; ++i ) {
-          TaskRoot::assign( & m_future[i].m_task , rhs.m_future[i].m_task );
-        }
-      }
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      MemorySpace::increment( m_future );
+#endif
     }
 
   KOKKOS_INLINE_FUNCTION
   FutureArray & operator = ( const FutureArray & rhs )
     {
-      this->~FutureArray();
-      new( this ) FutureArray( rhs );
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      MemorySpace::decrement( m_future );
+      MemorySpace::increment( rhs.m_future );
+#endif
+      m_future = rhs.m_future ;
       return *this ;
     }
 };
