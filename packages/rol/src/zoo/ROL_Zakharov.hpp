@@ -52,7 +52,7 @@
     Gradient:
     \f[
     g=\nabla f(\mathbf{x}) = 2\mathbf{x} + 
-                           \frac{1}{2}\left(2(\mathbf{k}^\top\mathbf{x})+(\mathbf{k}^\top\mathbf{x})^3\right)\mathbf{k} 
+                           \frac{1}{4}\left(2(\mathbf{k}^\top\mathbf{x})+(\mathbf{k}^\top\mathbf{x})^3\right)\mathbf{k} 
     \f]
 
     Hessian: 
@@ -102,14 +102,14 @@ namespace ZOO {
       int n = xp->size();
 
       Real val = 0;
-      Real sum1 = 0; 
-      Real sum2 = 0; 
+      Real xdotx = 0; 
+      Real kdotx = 0; 
 
       for(int i=0; i<n; i++ ) {
-          sum1 += pow((*xp)[i],2);
-          sum2 += 0.5*double(i+1)*((*xp)[i]);
+          xdotx += pow((*xp)[i],2);
+          kdotx += double(i+1)*((*xp)[i]);
       }
-      val = sum1 + pow(sum2,2) + pow(sum2,4);
+      val = xdotx + pow(kdotx,2)/4.0 + pow(kdotx,4)/16.0;
       return val;
     }
 
@@ -121,14 +121,15 @@ namespace ZOO {
 
       int n = xp->size();
 
-      Real sum = 0;
+      Real kdotx = 0;
       for( int i=0; i<n; i++ ) {
-        sum += 0.5*double(i+1)*((*xp)[i]);
+        kdotx += double(i+1)*((*xp)[i]);
       }
-   
+
+      Real coeff = (2.0*kdotx+pow(kdotx,3))/4.0;  
 
       for( int i=0; i<n; i++ ) {
-        (*gp)[i]   =  2.0*((*xp)[i]) + double(i+1)*sum + 2*double(i+1)*pow(sum,3);
+        (*gp)[i]   =  2.0*((*xp)[i]) + double(i+1)*coeff;
       }
     }
 
@@ -143,14 +144,17 @@ namespace ZOO {
 
       int n = xp->size();
 
-      Real sum = 0;
+      Real kdotk = 0;
+      Real kdotx = 0;
       Real kdotv = 0;
+
       for( int i=0; i<n; i++ ) {
-        sum += 0.5*double(i+1)*((*xp)[i]);
+        kdotx += double(i+1)*((*xp)[i]);
+        kdotk += pow(double(i+1),2);
         kdotv += double(i+1)*((*vp)[i]); 
       }
       
-      Real coeff = (0.5+3*pow(sum,2))*kdotv;
+      Real coeff = (2.0+3.0*pow(kdotx,2))*kdotv/4.0;
 
       for( int i=0; i<n; i++ ) {
         (*hvp)[i] = 2.0*(*vp)[i] + coeff*double(i+1);
@@ -167,17 +171,17 @@ namespace ZOO {
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
 
       int n = xp->size();
-      Real sum = 0;
       Real kdotv = 0;
+      Real kdotx = 0; 
       Real kdotk = 0; 
 
       for( int i=0; i<n; i++) {
-          sum += 0.5*double(i+1)*((*xp)[i]);
           kdotv += double(i+1)*((*vp)[i]); 
+          kdotx += double(i+1)*((*xp)[i]); 
           kdotk += pow(double(i+1),2);
       }
 
-      Real coeff = -kdotv/(16.0/(2.0+3.0*pow(sum,2))+2.0*kdotk);
+      Real coeff = -kdotv/(16.0/(2.0+3.0*pow(kdotx,2))+2.0*kdotk);
 
       for( int i=0; i<n; i++) {
           (*hvp)[i] = 0.5*((*vp)[i]) + coeff*(i+1); 
