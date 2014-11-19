@@ -450,7 +450,10 @@ static void close_all_conn(void);
 
 static NNTI_result_t poll_all(
         int timeout);
-static NNTI_result_t progress(int timeout);
+static NNTI_result_t progress(
+        int                   timeout,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count);
 
 static void config_init(
         nnti_ib_config *c);
@@ -2860,10 +2863,7 @@ NNTI_result_t NNTI_ib_wait (
         trios_start_timer(call_time);
 
         while (1) {
-
-            print_all_qp_state();
-
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, &wr, 1);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3082,7 +3082,7 @@ NNTI_result_t NNTI_ib_waitany (
         log_debug(debug_level, "wr NOT complete (wr_list=%p)", wr_list);
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3267,7 +3267,7 @@ NNTI_result_t NNTI_ib_waitall (
         log_debug(debug_level, "all wr NOT complete (wr_list=%p)", wr_list);
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -6262,11 +6262,16 @@ cleanup:
 
 
 #define CQ_COUNT 2
-NNTI_result_t progress(int timeout)
+static NNTI_result_t progress(
+        int                   timeout,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
 {
     int           rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
     int           ibv_rc=0;
+
+    uint32_t which=0;
 
     struct ibv_wc            wc;
     struct ibv_comp_channel *comp_channel;
@@ -6298,6 +6303,10 @@ NNTI_result_t progress(int timeout)
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
+    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
+        nthread_unlock(&nnti_progress_lock);
+        goto cleanup;
+    }
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
