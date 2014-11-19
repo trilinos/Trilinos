@@ -52,7 +52,6 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-
 #include "Tpetra_DefaultPlatform.hpp"
 
 namespace Zoltan2 {
@@ -121,7 +120,7 @@ public:
   typedef int                                  GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
-  typedef Teuchos::ScalarTraits<ST> STS;
+  typedef Teuchos::ScalarTraits<ST>            STS;
   typedef Tpetra::Map<LO, GO, Node>            map_type;
   typedef Tpetra::Export<LO, GO, Node>         export_type;
   typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
@@ -371,6 +370,8 @@ public:
       // Import from the global column map to the local column map.
       myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
 
+      // We're done modifying the adjs matrix.
+      adjsMatrix->fillComplete ();
     }
   }
 
