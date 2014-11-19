@@ -6330,7 +6330,6 @@ static NNTI_result_t progress(
                 log_debug(debug_level, "waiting for progress with timeout=0.  immediate timeout.");
                 // timeout == 0 and we are not the progress maker.  report a timeout.
                 rc=ETIMEDOUT;
-                nthread_lock(&nnti_progress_lock);
             }
             elapsed_time = (trios_get_time_ms() - entry_time);
             log_debug(debug_level, "rc=%d, elapsed_time=%d", rc, elapsed_time);
