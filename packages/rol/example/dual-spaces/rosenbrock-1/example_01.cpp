@@ -49,6 +49,7 @@
 
 #include "ROL_Rosenbrock.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -239,7 +240,8 @@ int main(int argc, char *argv[]) {
 
     Teuchos::ParameterList parlist;
     // Enumerations
-    parlist.set("Descent Type",                           "Newton Krylov");
+    parlist.set("Descent Type",                           "Quasi-Newton Method");
+    parlist.set("Secant Type",                            "Limited-memory BFGS");
     parlist.set("Linesearch Type",                        "Cubic Interpolation");
     parlist.set("Linesearch Curvature Condition",         "Wolfe");
     // Linesearch Parameters
@@ -253,8 +255,12 @@ int main(int argc, char *argv[]) {
     parlist.set("Absolute Krylov Tolerance",              1.e-4);
     parlist.set("Relative Krylov Tolerance",              1.e-2);
     parlist.set("Maximum Number of Krylov Iterations",    10);
+    // Trust Region Parameters
+    parlist.set("Trust-Region Subproblem Solver Type","Truncated CG");
+    parlist.set("Use Secant Hessian-Times-A-Vector",true);
     // Define Step
-    ROL::LineSearchStep<RealT> step(parlist);
+    //ROL::LineSearchStep<RealT> step(parlist);
+    ROL::TrustRegionStep<RealT> step(parlist);
 
 
     // Define Status Test

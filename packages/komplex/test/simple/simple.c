@@ -124,14 +124,14 @@ int main(int argc, char *argv[])
   /* bindx_imag is not needed since real/imag have same pattern  */
   bindx_real = malloc((N_local+1)*sizeof(int));
 
-  update = malloc(N_local*sizeof(int)); /* Malloc equation update list */
+  update = malloc((N_local+1)*sizeof(int)); /* Malloc equation update list */
 
-  b_real = malloc(N_local*sizeof(double)); /* Malloc x and b arrays */
-  b_imag = malloc(N_local*sizeof(double));
-  x_real = malloc(N_local*sizeof(double));
-  x_imag = malloc(N_local*sizeof(double));
-  xx_real = malloc(N_local*sizeof(double));
-  xx_imag = malloc(N_local*sizeof(double));
+  b_real = malloc((N_local+1)*sizeof(double)); /* Malloc x and b arrays */
+  b_imag = malloc((N_local+1)*sizeof(double));
+  x_real = malloc((N_local+1)*sizeof(double));
+  x_imag = malloc((N_local+1)*sizeof(double));
+  xx_real = malloc((N_local+1)*sizeof(double));
+  xx_imag = malloc((N_local+1)*sizeof(double));
 
   for (i=0; i<N_local; i++)
   {

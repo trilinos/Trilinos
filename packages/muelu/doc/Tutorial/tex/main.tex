@@ -262,9 +262,10 @@ The first example is meant to quickly get into touch with \muelu.
 We generate a test matrix corresponding to the stencil of a 2D Laplacian operator on a structured Cartesian grid. The matrix stencil is
 \begin{equation}
 \label{lab:eq1}
-\frac{1}{h^2}\begin{pmatrix} & -1 & \\ -1 & 4 & -1 \\ & -1 & \end{pmatrix}.
+\frac{1}{h^2}\begin{pmatrix} & -1 & \\ -1 & 4 & -1 \\ & -1 & \end{pmatrix},
 \end{equation}
-The resulting matrix is symmetric positive definite. We choose the right hand side to be the constant vector one and use a random initial guess for the iterative solution process. The problem domain is the unit cube with a Cartesian (uniform) mesh.
+where $h$ denotes the mesh size parameter.
+The resulting matrix is symmetric positive definite. We choose the right hand side to be the constant vector one and use a random initial guess for the iterative solution process. The problem domain is the unit square with a Cartesian (uniform) mesh.
 
 \section{User interface}
 For this tutorial there is an easy-to-use user interface to perform some experiments with multigrid methods for the given problem as described in \S\ref{lab:examplesym}.
@@ -300,8 +301,7 @@ After pressing a key we are ready for a first analysis as it is stated by the gr
 If the results are not up to date always choose option 0 first to recalculate the results.
 \end{mycomment}
 
-To check the output select option 1 and you should find the following screen output
-This should produce the following output on screen.
+To check the output select option 1 and you should find the following screen output:
 
 \printScreenOutput{s1_easy.txt_3.fragment_1.fragment}
 
@@ -341,7 +341,7 @@ Change the number of processors. Use option 4 and select for example 4 processor
 Compare the output when using 4 processors with the output for only 2 processors. Is the number of aggregates changing? Is there some effect on the quality of the multigrid solution. How does the number and convergence history change for the preconditioned CG method?
 \end{exercise}
 \begin{exercise}
-Choose option 8 to close the program.
+Choose option 9 to close the program.
 \end{exercise}
 
 \section{The XML input deck -- multigrid parameters}
@@ -424,7 +424,7 @@ Note that the relaxation based methods provided by the \ifpack package are embed
 \end{mycomment}
 
 Of course, there exist other smoother methods such as polynomial smoothers (Chebyshev) and ILU based methods.
-A detailed overview of the different available smoothers can be found in the \muelu users guide. 
+A detailed overview of the different available smoothers can be found in the \muelu users guide (\cite{Mue}). 
 
 
 \begin{figure}
@@ -481,14 +481,16 @@ The right hand side vector $f$ is chosen to be the constant vector 1. Due to the
 \section{User interface}
 
 For this tutorial again we can use the easy-to-use user interface. Run the \texttt{hands-on.py} script in your terminal and choose option 2 for the \texttt{Recirc 2D} example on a $50\times 50$ mesh.
-Choose the parameters from the \texttt{n1\_easy.xml} file. If you run the example you might find that the CG method did not converge within 50 iterations.
+Note that the default values from the file \texttt{xml/s2a.xml} do not lead to a convergent multigrid preconditioner.
 \begin{center}\includegraphics[width=10cm]{pics/tut1_13.png} \end{center}
+
+Choose the parameters from the \texttt{n1\_easy.xml} file instead. If you run the example you might find that the GMRES method did not converge within 50 iterations.
 
 The convergence of the used unsmoothed transfer operators (\texttt{multigrid algorithm = unsmoothed}) is not optimal. In case of symmetric problems one can reduce the number of iterations using smoothed aggregation algebraic multigrid methods. In context of non-symmetric problems, especially when arising from problems with (highly) convective phenomena, one should use a Petrov-Galerkin approach for smoothing the prolongation and restriction operators more carefully.
 
 
 \begin{exercise}
-Use \texttt{multigrid algorithm = pg} and compare the results with \texttt{multigrid algorithm = unsmoothed}. What is the difference in the number of CG iterations? What is changing in the multigrid setup?
+Use \texttt{multigrid algorithm = pg} and compare the results with \texttt{multigrid algorithm = unsmoothed}. What is the difference in the number of GMRES iterations? What is changing in the multigrid setup?
 \end{exercise}
 \begin{exercise}
 For slightly non-symmetric problems the \texttt{sa} method often performs satisfactorily. Change the verbosity to high (\texttt{verbosity = high}) and compare the results of the \texttt{multigrid algorithm = pg} option with the \texttt{multigrid algorithm = sa} option. Try different values between 0 and 1.5 for the damping parameter within the smoothed aggregation method (i.e., try values 0.0, 0.5, 1.0, 1.33 and 1.5 for \texttt{sa: damping factor}). What do you observe?
@@ -510,7 +512,7 @@ We can visualize the aggregates using the vtk file format and paraview. First ad
 \lstinputlisting{../src/xml/n2_easy_agg.xml}
 The file is stored in \texttt{xml/n2\_easy\_agg.xml}.
 
-Run the \texttt{hands-on.py} script and select, e.g., the Laplace 2D example on a $50\times 50$ mesh. Select above xml file for the multigrid parameters with the \texttt{aggregation: export visualization data} enabled. Run the program and then choose option 7 for post-processing the aggregates.
+Run the \texttt{hands-on.py} script and select, e.g., the Laplace 2D example on a $50\times 50$ mesh. Select above xml file for the multigrid parameters with the \texttt{aggregation: export visualization data} enabled. Run the program and then choose option 8 for post-processing the aggregates.
 \begin{center}\includegraphics[width=10cm]{pics/tut1_14.png} \end{center}
 \begin{mycomment}
 Be aware that without \texttt{aggregation: export visualization data = true} the post processing step for the aggregates will fail.
@@ -572,7 +574,7 @@ The implementation of a \verb|coupled| aggregation method is much more complicat
 
 \section{Export data}
 \label{sec:exportdatasimple}
-For debugging purposes it can be very helpful to have a look at the coarse level matrices as well as the transfer operators. \muelu allows to export the corresponding operators to the matrix market format such that the files can be imported, e.g., into MATLAB (or Scilab) for some in-depth analysis.
+For debugging purposes it can be very helpful to have a look at the coarse level matrices as well as the transfer operators. \muelu allows to export the corresponding operators to the matrix market format such that the files can be imported, e.g., into MATLAB (or FreeMat\footnote{In the virtual image you find a FreeMat installation (\texttt{http://freemat.sourceforge.net/}).}) for some in-depth analysis.
 
 Using the following xml file writes the fine level operator and the coarse level operator as well as the prolongation and restriction operator to the hard disk using the filenames \texttt{A\_0.m}, \texttt{A\_1.m} as well as \texttt{P\_1.m} and \texttt{R\_1.m}
 \lstinputlisting{../src/xml/n2_easy_export.xml}
@@ -1551,6 +1553,8 @@ PDF-viewer:  & evince \\
 Terminal:    & LXTerminal\\
 Visualization: & paraview, gnuplot \\
 File manager: & PCManFM \\
+Analysis: & FreeMat v4.0 \\
+& GNU octave 3.8.1\\
 \end{tabular}
 
 The following system libraries are installed:

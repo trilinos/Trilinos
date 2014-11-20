@@ -92,6 +92,14 @@ if(RUN_HEAVY_MEMORY_TESTS)
     TIMEOUT_MINUTES 330
   )
 
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.8.3_DEBUG_MueLu
+    ctest_linux_nightly_mpi_debug_muelu_negima.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+  )
+
 else()
 
   TRILINOS_DRIVER_ADD_DASHBOARD(

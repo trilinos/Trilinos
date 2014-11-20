@@ -230,8 +230,6 @@ public:
   inline
   Type shepherd_reduce( const int team_size , const Type & value ) const
     {
-      typedef volatile Type * pointer ;
-
       *shepherd_team_scratch_value<Type>() = value ;
 
       memory_fence();
@@ -275,7 +273,6 @@ public:
                    , const JoinOp & op ) const
     {
       typedef typename JoinOp::value_type Type ;
-      typedef volatile Type * pointer ;
 
       *shepherd_team_scratch_value<Type>() = value ;
 
@@ -318,8 +315,6 @@ public:
                     , const Type & value
                     ,       Type * const global_value = 0 ) const
     {
-      typedef volatile Type * pointer ;
-
       *shepherd_team_scratch_value<Type>() = value ;
 
       memory_fence();

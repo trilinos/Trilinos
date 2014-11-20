@@ -67,6 +67,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SmootherPrototype.hpp"
@@ -83,11 +84,12 @@
 #include "MueLu_ParameterListUtils.hpp"
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
-#include "MueLu_RebalanceMapFactory.hpp"
+//#include "MueLu_RebalanceMapFactory.hpp"
 #endif
 
 // Note: do not add options that are only recognized by MueLu.
@@ -294,12 +296,24 @@ namespace MueLu {
       AcFact->SetFactory("P", PFact);
       AcFact->SetFactory("R", RFact);
 
+      // define rebalancing factory for coarse matrix
+
+      Teuchos::RCP<MueLu::AmalgamationFactory<SC, LO, GO, NO> > rebAmalgFact = Teuchos::rcp(new MueLu::AmalgamationFactory<SC, LO, GO, NO>());
+      rebAmalgFact->SetFactory("A", AcFact);
+
       MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
       MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
 
       // create "Partition"
       Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", AcFact);
+      isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
+
+      // create "Partition" by unamalgamtion
+      Teuchos::RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = Teuchos::rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
+      repInterface->SetFactory("A", AcFact);
+      repInterface->SetFactory("AmalgamatedPartition", isoInterface);
+      //repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact); // not necessary?
 
       // Repartitioning (creates "Importer" from "Partition")
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
@@ -310,17 +324,20 @@ namespace MueLu {
         RepartitionFact->SetParameterList(paramListRepFact);
       }
       RepartitionFact->SetFactory("A", AcFact);
-      RepartitionFact->SetFactory("Partition", isoInterface);
+      RepartitionFact->SetFactory("Partition", repInterface);
 
       // Reordering of the transfer operators
       RebalancedPFact = Teuchos::rcp(new RebalanceTransferFactory());
       RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
       RebalancedPFact->SetFactory("P", PFact);
+      RebalancedPFact->SetFactory("Nullspace", PtentFact);
+      RebalancedPFact->SetFactory("Importer",    RepartitionFact);
 
       RebalancedRFact = Teuchos::rcp(new RebalanceTransferFactory());
       RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
       RebalancedRFact->SetFactory("R", RFact);
-      RebalancedRFact->SetFactory("Nullspace", PtentFact);
+      RebalancedRFact->SetFactory("Importer",    RepartitionFact);
+      //RebalancedRFact->DisableMultipleCheckGlobally();
 
       // Compute Ac from rebalanced P and R
       RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());
@@ -419,7 +436,7 @@ namespace MueLu {
       manager->SetFactory("A", RebalancedAFact);
       manager->SetFactory("P", RebalancedPFact);
       manager->SetFactory("R", RebalancedRFact);
-      manager->SetFactory("Nullspace",   RebalancedRFact);
+      manager->SetFactory("Nullspace",   RebalancedPFact);
       manager->SetFactory("Importer",    RepartitionFact);
     } else {
 #endif // #ifdef HAVE_MUELU_ISORROPIA

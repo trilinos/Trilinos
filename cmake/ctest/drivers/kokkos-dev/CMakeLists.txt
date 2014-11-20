@@ -1,0 +1,13 @@
+TRILINOS_DRIVER_SETUP()
+
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_RELEASE_DEV_KokkosCore_all
+  ctest_linux_nightly_serial_release_core_all_kokkos-dev.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 180
+)
+
+
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

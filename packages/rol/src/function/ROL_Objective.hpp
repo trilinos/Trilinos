@@ -149,7 +149,7 @@ public:
       @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Pv.set(v);
+    Pv.set(v.dual());
   }
 
   /** \brief Finite-difference gradient check.

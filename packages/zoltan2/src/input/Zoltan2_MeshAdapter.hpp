@@ -53,6 +53,7 @@
 
 #include <Zoltan2_Adapter.hpp>
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 namespace Zoltan2 {
   
@@ -372,6 +373,10 @@ public:
 
       // We're done modifying the adjs matrix.
       adjsMatrix->fillComplete ();
+
+      //Create Transpose
+      Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
+      RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
     }
   }
 
