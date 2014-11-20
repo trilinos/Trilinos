@@ -6123,8 +6123,7 @@ public:
       return *pBoxes;
     }
 
-    mj_part_t pointAssign(int dim, mj_scalar_t *point,
-                          const PartitioningSolution<Adapter> *solution) const;
+    mj_part_t pointAssign(int dim, mj_scalar_t *point) const;
 
     /*! \brief returns communication graph resulting from MJ partitioning.
      */
@@ -6419,8 +6418,7 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 template <typename Adapter>
 typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
   int dim, 
-  typename Adapter::scalar_t *point,
-  const PartitioningSolution<Adapter> *solution) const
+  typename Adapter::scalar_t *point) const
 {
 
   // TODO:  Implement with cuts rather than boxes to reduce algorithmic
@@ -6436,16 +6434,17 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
     if (nBoxes == 0) {
       throw std::logic_error("no part boxes exist");
     }
-//{
-//int me;
-//MPI_Comm_rank(MPI_COMM_WORLD, &me);
-//for (size_t i = 0; i < nBoxes; i++)
-//  printf("%d KDDKDD BOX %d PART %d (%f %f) x (%f %f)\n", me, i, (*partBoxes)[i].getpId(), (*partBoxes)[i].getlmins()[0], (*partBoxes)[i].getlmins()[1], (*partBoxes)[i].getlmaxs()[0], (*partBoxes)[i].getlmaxs()[1]);
-//}
+
+int me;
+MPI_Comm_rank(MPI_COMM_WORLD, &me);
+for (size_t i = 0; i < nBoxes; i++)
+  printf("%d MJ KDDKDD BOX %d PART %d (%f %f) x (%f %f)\n", me, i, (*partBoxes)[i].getpId(), (*partBoxes)[i].getlmins()[0], (*partBoxes)[i].getlmins()[1], (*partBoxes)[i].getlmaxs()[0], (*partBoxes)[i].getlmaxs()[1]);
 
 
     // Determine whether the point is within the global domain
     RCP<mj_partBox_t> globalBox = this->mj_partitioner.get_global_box();
+
+printf("%d MJ KDDKDD GLOBALBOX PART %d (%f %f) x (%f %f)\n", me, globalBox->getpId(), globalBox->getlmins()[0], globalBox->getlmins()[1], globalBox->getlmaxs()[0], globalBox->getlmaxs()[1]);
 
     if (globalBox->pointInBox(dim, point)) {
 
@@ -6455,11 +6454,11 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
         try {
           if ((*partBoxes)[i].pointInBox(dim, point)) {
             foundPart = (*partBoxes)[i].getpId();
-//          std::cout << "Point (";
-//          for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
-//          std::cout << ") found in box " << i << " part " << foundPart 
-//                    << std::endl;
-//          (*partBoxes)[i].print();
+            std::cout << "Point (";
+            for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
+            std::cout << ") found in box " << i << " part " << foundPart 
+                      << std::endl;
+            (*partBoxes)[i].print();
             break;
           }
         }

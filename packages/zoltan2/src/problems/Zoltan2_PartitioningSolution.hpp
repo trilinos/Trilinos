@@ -421,7 +421,7 @@ public:
       if (this->algorithm_ == Teuchos::null)
         throw std::logic_error("no partitioning algorithm has been run yet");
 
-      p = this->algorithm_->pointAssign(dim, point, this); 
+      p = this->algorithm_->pointAssign(dim, point); 
     }
     Z2_FORWARD_EXCEPTIONS
     return p;
