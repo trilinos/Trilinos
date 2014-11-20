@@ -44,17 +44,11 @@
 #ifndef ROL_THYRAVECTOR_H
 #define ROL_THYRAVECTOR_H
 
-#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#include "Teuchos_Tuple.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_VectorSpaceBase.hpp"
-
-
 #include "ROL_Vector.hpp"
 
 /** \class ROL::ThyraVector
-    \brief Implements the ROL::Vector interface for an Thyra Vector.
+    \brief Implements the ROL::Vector interface for a Thyra Vector.
 */
 
 namespace ROL {
@@ -73,19 +67,19 @@ public:
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void plus( const Vector<Real> &x ) {
-    axpy(1.0,x);
+    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    ::Thyra::Vp_V( thyra_vec_.ptr(), *ex.getVector());
   }
 
   /** \brief Compute \f$y \leftarrow \alpha y\f$ where \f$y = \mbox{*this}\f$.
   */
   void scale( const Real alpha ) { 
-    ::Thyra::scale(alpha, outArg(*thyra_vec_));
+    ::Thyra::scale(alpha, thyra_vec_.ptr());
   }
 
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
   Real dot( const Vector<Real> &x ) const {
-    Real val[1];
     const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
     return ::Thyra::dot<Real>(*thyra_vec_, *ex.thyra_vec_);
   }
@@ -107,43 +101,54 @@ public:
   */
   void axpy( const Real alpha, const Vector<Real> &x ) {
     const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
-
-  ::Thyra::linear_combination<Real>(
-      Teuchos::tuple<Real>(alpha)(),
-      Teuchos::tuple<Teuchos::Ptr<const ::Thyra::VectorBase<Real> > >(ex.getVector().ptr())(),
-      1.0,
-      outArg(*thyra_vec_)
-      );
+    ::Thyra::Vp_StV( thyra_vec_.ptr(), alpha, *ex.getVector());
   }
 
   /**  \brief Set to zero vector.
   */
   void zero() {
-    ::Thyra::put_scalar(0.0, outArg(*thyra_vec_));
+    ::Thyra::put_scalar(0.0, thyra_vec_.ptr());
   }
 
+  /**  \brief Set all entries of the vector to alpha.
+    */
   void putScalar(Real alpha) {
-      ::Thyra::put_scalar(alpha, outArg(*thyra_vec_));
+      ::Thyra::put_scalar(alpha, thyra_vec_.ptr());
     }
 
+  /**  \brief const get of the Thyra vector.
+    */
   Teuchos::RCP<const Thyra::VectorBase<Real> > getVector() const {
     return thyra_vec_;
   }
 
+  /**  \brief nonconst get of the Thyra vector.
+    */
   Teuchos::RCP<Thyra::VectorBase<Real> > getNonConstVector()  {
     return thyra_vec_;
   }
 
+  /** \brief Return i-th basis vector.
+    */
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
     Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
-    ::Thyra::put_scalar(0.0, outArg(*basisThyraVec));
-    ::Thyra::set_ele(i,1.0,outArg(*basisThyraVec));
-
+    ::Thyra::put_scalar(0.0, basisThyraVec.ptr());
+    ::Thyra::set_ele(i,1.0, basisThyraVec.ptr());
     return Teuchos::rcp(new ThyraVector(basisThyraVec));
   }
 
-  int dimension() const {return thyra_vec_->space()->dim();}
+  /** \brief Return dimension of the vector space.
+    */
+  int dimension() const {
+    return thyra_vec_->space()->dim();
+  }
 
+  /** \brief Set \f$y \leftarrow x\f$ where \f$y = \mathtt{*this}\f$.
+    */
+  void set(const Vector<Real> &x ) {
+    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    ::Thyra::copy( *ex.getVector(), thyra_vec_.ptr() );
+  }
 
 }; // class ThyraVector
 
