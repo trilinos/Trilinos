@@ -71,9 +71,8 @@ public:
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void plus( const Vector<Real> &x ) {
-    EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
-    Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
-    epetra_vec_->Update( 1.0, *xvalptr, 1.0 );
+    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+    epetra_vec_->Update( 1.0, *ex.getVector(), 1.0 );
   }
 
   /** \brief Compute \f$y \leftarrow \alpha y\f$ where \f$y = \mbox{*this}\f$.
@@ -85,19 +84,18 @@ public:
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
   Real dot( const Vector<Real> &x ) const {
-    double val[1];
-    EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
-    Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
-    epetra_vec_->Dot( *xvalptr, val );
-    return (Real)val[0];
+    double val;
+    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+    epetra_vec_->Dot( *ex.getVector(), &val );
+    return (Real)val;
   }
 
   /** \brief Returns \f$ \| y \| \f$ where \f$y = \mbox{*this}\f$.
   */
   Real norm() const {
-    double val[1];
-    epetra_vec_->Dot( *epetra_vec_, val );
-    return (Real)sqrt(val[0]);
+    double val;
+    epetra_vec_->Norm2(&val);
+    return (Real) val;
   } 
 
   /** \brief Clone to make a new (uninitialized) vector.
@@ -110,9 +108,8 @@ public:
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   virtual void axpy( const Real alpha, const Vector<Real> &x ) {
-    EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
-    Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
-    epetra_vec_->Update( alpha, *xvalptr, 1.0 );
+    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+    epetra_vec_->Update( alpha, *ex.getVector(), 1.0 );
   }
 
   /**  \brief Set to zero vector.
@@ -121,21 +118,38 @@ public:
     epetra_vec_->PutScalar(0.0);
   }
 
+  virtual void PutScalar(Real alpha) {
+    epetra_vec_->PutScalar((double) alpha);
+  }
+
   /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
   */
   virtual void set( const Vector<Real> &x ) {
-    EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
-    Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
-    epetra_vec_->Scale(1.0,*xvalptr);
+    const EpetraMultiVector &ex = Teuchos::dyn_cast<const EpetraMultiVector>(x);
+    epetra_vec_->Scale(1.0,*ex.getVector());
   }
 
   Teuchos::RCP<const Epetra_MultiVector> getVector() const {
     return this->epetra_vec_;
   }
 
+  Teuchos::RCP<Epetra_MultiVector> getNonConstVector() {
+    return this->epetra_vec_;
+  }
+
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
     Teuchos::RCP<EpetraMultiVector> e = Teuchos::rcp( new EpetraMultiVector( Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors(),true)) ));
-    const Epetra_BlockMap & domainMap = const_cast <Epetra_BlockMap &> (const_cast <Epetra_MultiVector &> ((*e->getVector())).Map());
+    const Epetra_BlockMap & domainMap = e->getVector()->Map();
+
+    Epetra_Map linearMap(domainMap.NumGlobalElements(), domainMap.NumMyElements(), 0, domainMap.Comm());
+    int lid = linearMap.LID(i);
+    if(lid >=0)
+      (*e->getNonConstVector())[0][lid]= 1.0;
+
+    return e;
+
+    /*
+
 
     // Build IntVector of GIDs on all processors.
     const Epetra_Comm & comm = domainMap.Comm();
@@ -157,11 +171,13 @@ public:
       int curGlobalCol = rootDomainMap.GID(i); // Should return same value on all processors
       if (domainMap.MyGID(curGlobalCol)){
         int curCol = domainMap.LID(curGlobalCol);
-        (const_cast <Epetra_MultiVector &> (*e->getVector()))[0][curCol]= 1.0;
+        (*e->getNonConstVector())[0][curCol]= 1.0;
       }
     }
 
     return e;
+
+    */
   }
 
   int dimension() const {return epetra_vec_->GlobalLength();}
