@@ -209,19 +209,19 @@ public:
         /*! \brief  function to get the indices of the buckets
          * that the part is inserted to
          */
-        std::vector <part_t> * getGridIndices (){
+        std::vector <part_t> * getGridIndices () {
             return this->gridIndices;
         }
 
         /*! \brief  function to get the indices of the neighboring parts.
          */
-        std::set<part_t> *getNeighbors(){
+        std::set<part_t> *getNeighbors() {
             return &(this->neighbors);
         }
 
         /*! \brief function to test whether a point is in the box
          */
-        bool pointInBox(int pointdim, scalar_t *point) {
+        bool pointInBox(int pointdim, scalar_t *point) const {
           if (pointdim != this->dim) 
             throw std::logic_error("dim of point must match dim of box");
           for (int i = 0; i < pointdim; i++) {
@@ -231,9 +231,46 @@ public:
           return true;
         }
 
+        /*! \brief function to test whether this box overlaps a given box
+         */
+        bool boxesOverlap(int cdim, scalar_t *lower, scalar_t *upper) const {
+          if (cdim != this->dim) 
+            throw std::logic_error("dim of given box must match dim of box");
+
+          // Check for this box completely inside box defined by lower X upper
+          bool foundinside = true;
+          for (int i = 0; i < cdim; i++) 
+            if (lower[i] >= this->lmins[i] || upper[i] <= this->lmaxs[i]) {
+              foundinside = false;
+              break;
+            }
+          if (foundinside) return true;
+ 
+          // Check for at least partial overlap
+          bool *found = new bool[cdim];
+          for (int i = 0; i < cdim; i++) {
+            found[i] = false;
+            if (lower[i] >= this->lmins[i] && lower[i] <= this->lmaxs[i]) 
+              found[i] = true;
+            if (upper[i] >= this->lmins[i] && upper[i] <= this->lmaxs[i]) 
+              found[i] = true;
+          }
+          bool foundalldims = true;
+          for (int i = 0; i < cdim; i++)
+            if (!found[i]) {
+              foundalldims = false;
+              break;
+            }
+          delete [] found;
+          if (foundalldims) return true;
+          
+          return false;
+        }
+
         /*! \brief  function to check if two boxes are neighbors.
          */
-        bool isNeighborWith(const coordinateModelPartBox <scalar_t, part_t> &other){
+        bool isNeighborWith(
+            const coordinateModelPartBox <scalar_t, part_t> &other) const{
 
 
             scalar_t *omins = other.getlmins();
@@ -242,10 +279,12 @@ public:
             int equality = 0;
             for (int i = 0; i < dim; ++i){
 
-                if (omins[i] - this->lmaxs[i] > _EPSILON  || this->lmins[i] - omaxs[i] > _EPSILON ){
+                if (omins[i] - this->lmaxs[i] > _EPSILON  || 
+                    this->lmins[i] - omaxs[i] > _EPSILON ) {
                     return false;
                 }
-                else if (Z2_ABS(omins[i] - this->lmaxs[i]) < _EPSILON  || Z2_ABS(this->lmins[i] - omaxs[i]) < _EPSILON ){
+                else if (Z2_ABS(omins[i] - this->lmaxs[i]) < _EPSILON || 
+                         Z2_ABS(this->lmins[i] - omaxs[i]) < _EPSILON ){
                     if (++equality > 1){
                         return false;
                     }
@@ -255,7 +294,8 @@ public:
                 return true;
             }
             else {
-                std::cout << "something is wrong: equality:" << equality << std::endl;
+                std::cout << "something is wrong: equality:" 
+                          << equality << std::endl;
                 return false;
             }
         }

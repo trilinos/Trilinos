@@ -440,7 +440,7 @@ public:
   //   \param nPartsFound : (out) the number of parts overlapping the box
   //   \param partsFound :  (out) array of parts overlapping the box
   void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
-                 size_t &nPartsFound, part_t **partsFound) 
+                 size_t &nPartsFound, part_t **partsFound) const
   {
     try {
       if (this->algorithm_ == Teuchos::null)
