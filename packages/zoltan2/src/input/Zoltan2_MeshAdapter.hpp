@@ -376,6 +376,7 @@ public:
 
       //Create Transpose
       Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
+      RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
     }
   }
 
