@@ -496,13 +496,13 @@ namespace ZOO {
 
       // Cast hv and v vectors to std::vector.
       Teuchos::RCP<std::vector<Real> > hvp = ROL::StdVector_Helper::downCast(hv);
-      Teuchos::RCP<std::vector<Real> >  vp = ROL::StdVector_Helper::downCast(v);
+      std::vector<Real> vp(*ROL::StdVector_Helper::constDownCast(v));
 //      Teuchos::RCP<std::vector<Real> > hvp =
 //        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
 //      Teuchos::RCP<std::vector<Real> > vp =
 //        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector());
 
-      int dim = vp->size();
+      int dim = vp.size();
 
       // Compute dense Hessian.
       Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
@@ -538,7 +538,7 @@ namespace ZOO {
 
       // Apply dense inverse Hessian.
       Teuchos::SerialDenseVector<int, Real> hv_teuchos(Teuchos::View, &((*hvp)[0]), dim);
-      Teuchos::SerialDenseVector<int, Real> v_teuchos(Teuchos::View, &((*vp)[0]), dim);
+      const Teuchos::SerialDenseVector<int, Real> v_teuchos(Teuchos::View, &(vp[0]), dim);
       hv_teuchos.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, invH, v_teuchos, 0.0);
     }
 
