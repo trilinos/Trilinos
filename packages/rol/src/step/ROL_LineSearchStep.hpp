@@ -490,7 +490,7 @@ public:
         nlcg_->run(s,*(step_state->gradientVec),x,obj);
         break;
       case DESCENT_STEEPEST:
-        s.set(*(step_state->gradientVec));
+        s.set(step_state->gradientVec->dual());
         break;
       default: break;
     }

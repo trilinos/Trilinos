@@ -131,11 +131,11 @@ namespace ZOO {
 #endif
     void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<XDual>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(hv)).getVector());
 
       int n = xp->size();
       for( int i=0; i<n/2; i++ ) {
