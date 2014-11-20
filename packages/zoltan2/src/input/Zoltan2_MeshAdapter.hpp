@@ -54,6 +54,7 @@
 #include <Zoltan2_Adapter.hpp>
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {
   
@@ -377,6 +378,14 @@ public:
       //Create Transpose
       Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
       RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
+
+      // Form 2ndAdjs
+      RCP<sparse_matrix_type> secondAdjs =
+	rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+      Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrixTranspose,
+				     false,*secondAdjs);
+
+      return false;
     }
   }
 
