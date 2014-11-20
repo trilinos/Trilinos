@@ -63,11 +63,14 @@
 #include "GlobiPack_BrentsLineSearch.hpp"
 #endif
 
+#define Piro_ENABLE_ROL
 #ifdef Piro_ENABLE_ROL
 #include "ROL_ThyraVector.hpp"
+#include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 #endif
 
 using std::cout; using std::endl; using std::string;
@@ -297,106 +300,112 @@ Piro::PerformROLAnalysis(
 #ifdef Piro_ENABLE_ROL
   using std::string;
 
+  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
   p = Thyra::createMember(piroModel.get_p_space(0));
   RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(0);
   Thyra::copy(*p_init, p.ptr());
 
-  std::cout << "in Piro::PerformROLAnalysis" << std::endl;
   ROL::ThyraVector<double> rol_p(p);
-//  RCP<ROL::Vector<double> > t = rol_p.clone();
-  std::cout << "Parameter Vector Norm Before Optimization " << rol_p.norm() << std::endl;
 
+  int g_index = rolParams.get<int>("Response Vector Index", 0);
+  int p_index = rolParams.get<int>("Parameter Vector Index", 0);
+  ROL::ThyraME_Objective<double> obj(piroModel, g_index, p_index);
 
-  // TODO: pass in piroModel
-  ROL::ThyraME_Objective<double> obj(piroModel);
+  bool print = rolParams.get<bool>("Print Output", false);
 
+  rol_p.putScalar(rolParams.get<double>("parameter scalar guess", 2.0));
 
-  Teuchos::RCP<Thyra::VectorBase<double> > rand_vec = p->clone_v();
-  ::Thyra::put_scalar(1.0, outArg(*rand_vec));
-  //{
-  //  Thyra::DetachedVectorView<double> global_vec(rand_vec);
-  //  for (int i = 0; i < global_vec.subDim(); ++i)
-  //    global_vec[i] = double(rand())/RAND_MAX-0.5;
-  //}
+  int seed = rolParams.get<int>("Seed For Thyra Randomize", 42);
 
+  if(rolParams.get<bool>("Test Vector", false)) {
+      Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_x = p->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_y = p->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_z = p->clone_v();
+      ::Thyra::seed_randomize<double>( seed );
 
+      int num_tests = rolParams.get<int>("Number Of Vector Tests", 1);
 
-    ROL::ThyraVector<double> rol_direction(rand_vec);
-    double norm = rol_direction.norm();
-    std::cout << "direction Norm (should be 1) " << rol_direction.norm() << "  " << rol_direction.dimension() << std::endl;
-    if(norm > 0.0)
-      rol_direction.scale(1./norm);
-    ::Thyra::put_scalar(1.0, outArg(*rand_vec));
-    rol_p.putScalar(4);
+      for(int i=0; i< num_tests; i++) {
 
+        ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_x.ptr());
+        ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_y.ptr());
+        ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_z.ptr());
 
-    std::vector < std::vector<double> > gCheck = obj.checkGradient(rol_p, rol_direction, true);
+        ROL::ThyraVector<double> rol_x(rand_vec_x);
+        ROL::ThyraVector<double> rol_y(rand_vec_y);
+        ROL::ThyraVector<double> rol_z(rand_vec_z);
 
-
-    int dim = rol_p.dimension(); // Set problem dimension. Must be even.
-
-    Teuchos::ParameterList parlist;
-    // Enumerations
-    parlist.set("Descent Type", "Quasi-Newton Method");
-    parlist.set("Secant Type",  "Limited-Memory BFGS");
-    parlist.set("Linesearch Curvature Condition",         "Wolfe");
-    // Define Step
-    ROL::LineSearchStep<double> step(parlist);
-
-    // Define Status Test
-    double gtol  = 1e-6;  // norm of gradient tolerance
-    double stol  = 1e-6;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<double> status(gtol, stol, maxit);    
-
-    // Define Algorithm
-    ROL::DefaultAlgorithm<double> algo(step,status,true);
-
-    // Iteration Vector
-
-    // Run Algorithm
-    std::vector<std::string> output = algo.run(rol_p, obj, true);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
+        rol_x.checkVector(rol_y, rol_z,print, *out);
+      }
     }
 
-  std::cout << "Parameter Vector Norm After Optimization " << rol_p.norm() << std::endl;
+  if(rolParams.get<bool>("Check Gradient", false)) {
+    Teuchos::RCP<Thyra::VectorBase<double> > rand_vec = p->clone_v();
+    ::Thyra::seed_randomize<double>( seed );
 
-//AGS ALL THE REST NEEDS TO BE CONVERTED TO ROL
-/*
-  string dakotaIn  = dakotaParams.get("Input File","dakota.in");
+    int num_checks = rolParams.get<int>("Number Of Gradient Checks", 1);
+    double norm_p = rol_p.norm();
 
-  int p_index = dakotaParams.get("Parameter Vector Index", 0);
-  int g_index = dakotaParams.get("Response Vector Index", 0);
+    for(int i=0; i< num_checks; i++) {
 
-  TriKota::Driver dakota(dakotaIn, dakotaOut, dakotaErr, dakotaRes,
-                         dakotaRestartIn, dakotaRestartEvals);
+      *out << "\nROL performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
 
-  RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
-    rcp(new TriKota::ThyraDirectApplicInterface
-         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index),
-	false);
+      ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec.ptr());
 
-  dakota.run(trikota_interface.get());
+      ROL::ThyraVector<double> rol_direction(rand_vec);
 
-  Dakota::RealVector finalValues;
-  if (dakota.rankZero())
-    finalValues = dakota.getFinalSolution().all_continuous_variables();
+      double norm_d = rol_direction.norm();
+      if(norm_d*norm_p > 0.0)
+        rol_direction.scale(norm_p/norm_d);
 
-  // Copy Dakota parameters into Thyra
-  p = Thyra::createMember(piroModel.get_p_space(p_index));
-  {
-      Thyra::DetachedVectorView<double> global_p(p);
-      for (int i = 0; i < finalValues.length(); ++i)
-        global_p[i] = finalValues[i];
+      obj.checkGradient(rol_p, rol_direction, print, *out);
+    }
   }
-*/
+
+  // Define Step
+  ROL::LineSearchStep<double> step(rolParams.sublist("ROL Options"));
+  *out << "\nROL options:" << std::endl;
+  rolParams.sublist("ROL Options").print(*out);
+  *out << std::endl;
+
+
+  // Define Status Test
+  double gtol  = rolParams.get("Gradient Tolerance", 1e-5);  // norm of gradient tolerance
+  double stol  = rolParams.get("Step Tolerance", 1e-5);  // norm of step tolerance
+  int   maxit = rolParams.get("Max Iterations", 100);    // maximum number of iterations
+  ROL::StatusTest<double> status(gtol, stol, maxit);
+
+  // Define Algorithm
+  ROL::DefaultAlgorithm<double> algo(step,status,print);
+
+  // Run Algorithm
+  std::vector<std::string> output;
+  if(rolParams.get<bool>("Bound Constrained", false)) {
+    double x_lo = rolParams.get<double>("x_lo", -1e6);
+    double x_up = rolParams.get<double>("x_up", 1e6);
+    double eps_bound = rolParams.get<double>("eps_bound", 1e-6);
+
+    Teuchos::RCP<Thyra::VectorBase<double> > p_lo = p->clone_v();
+    ::Thyra::put_scalar(x_lo, p_lo.ptr());
+    Teuchos::RCP<Thyra::VectorBase<double> > p_up = p->clone_v();
+    ::Thyra::put_scalar(x_up, p_up.ptr());
+    ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo, p_up, eps_bound);
+    output  = algo.run(rol_p, obj, boundConstraint, print, *out);
+  }
+  else
+    output = algo.run(rol_p, obj, print, *out);
+
+
+  for ( unsigned i = 0; i < output.size(); i++ ) {
+    *out << output[i];
+  }
 
   return 0;
 #else
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
-      << "\nYou must enable TriKota." << endl;
+      << "\nYou must enable ROL." << endl;
  return 0;  // should not fail tests
 #endif
 }
