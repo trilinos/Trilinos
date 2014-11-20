@@ -377,6 +377,12 @@ public:
       //Create Transpose
       Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
       RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
+
+      // Form 2ndAdjs
+      RCP<sparse_matrix_type> secondAdjs =
+	rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+
+      return false;
     }
   }
 
