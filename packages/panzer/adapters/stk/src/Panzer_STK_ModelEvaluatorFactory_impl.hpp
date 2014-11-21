@@ -264,7 +264,7 @@ namespace panzer_stk_classic {
     Teuchos::RCP<Teuchos::ParameterList> physics_block_plist = Teuchos::sublist(this->getMyNonconstParamList(),"Physics Blocks");
 
     std::vector<panzer::BC> bcs;
-    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     // extract assembly information
     std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
@@ -1151,10 +1151,10 @@ namespace panzer_stk_classic {
 
       std::vector<panzer::BC> bcs;
       if(bc_list==Teuchos::null) {
-        panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+        panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), m_global_data);
       }
       else { 
-        panzer::buildBCs(bcs, *bc_list);
+        panzer::buildBCs(bcs, *bc_list, m_global_data);
       }
       
       fmb = buildFieldManagerBuilder(Teuchos::rcp_const_cast<panzer::WorksetContainer>(m_response_library->getWorksetContainer()),
