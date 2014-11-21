@@ -94,6 +94,10 @@ class MatrixFreeDecorator
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_lower_bounds(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_upper_bounds(int l) const;
+  /** \brief . */
   Teuchos::RCP<Epetra_Operator> create_W() const;
  /** \brief . */
   Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;

@@ -95,6 +95,16 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::MatrixFreeDecorator::get_p_init(
   return model->get_p_init(l);
 }
 
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::MatrixFreeDecorator::get_p_lower_bounds(int l) const
+{
+  return model->get_p_lower_bounds(l);
+}
+
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::MatrixFreeDecorator::get_p_upper_bounds(int l) const
+{
+  return model->get_p_upper_bounds(l);
+}
+
 Teuchos::RCP<Epetra_Operator> Piro::Epetra::MatrixFreeDecorator::create_W() const
 {
   return Teuchos::rcp(new Piro::Epetra::MatrixFreeOperator(model, lambda));
