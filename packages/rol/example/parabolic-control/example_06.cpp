@@ -982,7 +982,7 @@ int main(int argc, char *argv[]) {
     con.checkJacobian_1(c,yu,xu,xz,true);
     con.checkJacobian_2(c,yz,xu,xz,true);
     // Check solves.
-    con.checkSolve(xu,xz,true);
+    con.checkSolve(xu,xz,c,true);
     con.checkInverseJacobian_1(c,yu,xu,xz,true);
     con.checkInverseAdjointJacobian_1(yu,c,xu,xz,true);
     // Check reduced objective derivatives

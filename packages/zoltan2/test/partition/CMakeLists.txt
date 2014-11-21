@@ -17,32 +17,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
-    "I=1.03 P=2,2 O=0 C=4 F=simple"
+    "I=1.03 P=2,2 O=0 C=4 F=simple TB=1"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-#  TRIBITS_ADD_TEST(
-#    mjTest
-#    NAME mjTest_simple_boxes
-#    NUM_MPI_PROCS 4
-#    COMM serial mpi
-#    ARGS
-#    "I=1.03 P=2,2 O=0 C=4 F=simple TB=1"
-#    PASS_REGULAR_EXPRESSION "PASS"
-#    FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
-
-#  TRIBITS_ADD_TEST(
-#    mjTest
-#    NAME mjTest_simple_rectilinear_boxes
-#    NUM_MPI_PROCS 4
-#    COMM serial mpi
-#    ARGS
-#    "I=1.03 P=2,2 O=0 C=4 F=simple R=1 TB=1"
-#    PASS_REGULAR_EXPRESSION "PASS"
-#    FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_simple_rectilinear_boxes
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "I=1.03 P=2,2 O=0 C=4 F=simple R=1 TB=1"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
 
 TRIBITS_ADD_TEST(
     mjTest
@@ -50,7 +39,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS
-    "P=2,2,2,2 C=16 O=1 F=GeomGenParam.txt"
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam.txt TB=1"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -72,7 +61,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS
-    "P=2,2,2,2 C=16 O=1 F=GeomGenParam_noholes.txt"
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam_noholes.txt TB=1"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -84,7 +73,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS
-    "C=16 O=1 F=GeomGenParam_noholes.txt"
+    "C=16 O=1 F=GeomGenParam_noholes.txt TB=1"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
@@ -107,7 +96,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS
-    "C=9 O=1 F=GeomGenParam_noholes.txt"
+    "C=9 O=1 F=GeomGenParam_noholes.txt TB=1"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )

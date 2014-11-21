@@ -6458,20 +6458,20 @@ void Zoltan2_AlgMJ<Adapter>::boxAssign(
             nPartsFound++;
             partlist.push_back((*partBoxes)[i].getpId());
 
-            std::cout << "Box " << (*partBoxes)[i].getpId() << " (";
-            for (int j = 0; j < dim; j++)
-              std::cout << (*partBoxes)[i].getlmins()[j] << " ";
-            std::cout << ") x (";
-            for (int j = 0; j < dim; j++)
-              std::cout << (*partBoxes)[i].getlmaxs()[j] << " ";
-            std::cout << ") overlaps given box (";
-            for (int j = 0; j < dim; j++)
-              std::cout << lower[j] << " ";
-            std::cout << ") x (";
-            for (int j = 0; j < dim; j++)
-              std::cout << upper[j] << " ";
-            std::cout << ")" << std::endl;
-            break;
+//            std::cout << "Given box (";
+//            for (int j = 0; j < dim; j++)
+//              std::cout << lower[j] << " ";
+//            std::cout << ") x (";
+//            for (int j = 0; j < dim; j++)
+//              std::cout << upper[j] << " ";
+//            std::cout << ") overlaps PartBox " 
+//                      << (*partBoxes)[i].getpId() << " (";
+//            for (int j = 0; j < dim; j++)
+//              std::cout << (*partBoxes)[i].getlmins()[j] << " ";
+//            std::cout << ") x (";
+//            for (int j = 0; j < dim; j++)
+//              std::cout << (*partBoxes)[i].getlmaxs()[j] << " ";
+//            std::cout << ")" << std::endl;
           }
         }
         Z2_FORWARD_EXCEPTIONS;
@@ -6529,11 +6529,11 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
         try {
           if ((*partBoxes)[i].pointInBox(dim, point)) {
             foundPart = (*partBoxes)[i].getpId();
-            std::cout << "Point (";
-            for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
-            std::cout << ") found in box " << i << " part " << foundPart 
-                      << std::endl;
-            (*partBoxes)[i].print();
+//            std::cout << "Point (";
+//            for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
+//            std::cout << ") found in box " << i << " part " << foundPart 
+//                      << std::endl;
+//            (*partBoxes)[i].print();
             break;
           }
         }
