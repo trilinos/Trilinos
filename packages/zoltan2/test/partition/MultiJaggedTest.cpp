@@ -404,9 +404,9 @@ int run_boxAssign_tests(
       }
       for (size_t j = 0; j < nBoxes; j++) {
         for (int i = 0; i < coordDim; i++) {
-          if (pBoxes[j].getlmins()[i] < lower[i]) 
+          if (pBoxes[j].getlmins()[i] <= lower[i]) 
             lower[i] = pBoxes[j].getlmins()[i];
-          if (pBoxes[j].getlmaxs()[i] > upper[i]) 
+          if (pBoxes[j].getlmaxs()[i] >= upper[i]) 
             upper[i] = pBoxes[j].getlmaxs()[i];
         }
       }
