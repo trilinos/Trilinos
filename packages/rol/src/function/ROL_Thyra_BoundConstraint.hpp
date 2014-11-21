@@ -45,7 +45,7 @@
 #define ROL_THYRA_BOUND_CONSTRAINT_H
 
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_TOpEleBound.hpp"
+#include "TOpEleWiseBoundsHelpers.hpp"
 
 /** @ingroup func_group
     \class ROL::Thyra_BoundConstraint
