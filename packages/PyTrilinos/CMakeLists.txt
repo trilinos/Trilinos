@@ -143,6 +143,10 @@ IF(PyTrilinos_ENABLE_NOX)
     APPEND_SET(PyTrilinos_MODULES NOX.Epetra.__init__ )
     APPEND_SET(PyTrilinos_MODULES NOX.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
+  IF(NOX_ENABLE_PETSC)
+    APPEND_SET(PyTrilinos_MODULES NOX.PETSc.__init__ )
+    APPEND_SET(PyTrilinos_MODULES NOX.PETSc.Interface)
+  ENDIF(NOX_ENABLE_PETSC)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
 IF(NOX_ENABLE_LOCA)
@@ -211,6 +215,11 @@ INCLUDE(UseSWIG)
 IF(TPL_ENABLE_MPI)
   FIND_PACKAGE(Mpi4Py)
 ENDIF(TPL_ENABLE_MPI)
+
+# Python module petsc4py is required if NOX_ENABLE_PETSC is true
+IF(NOX_ENABLE_PETSC)
+  FIND_PACKAGE(PETSc4Py REQUIRED)
+ENDIF(NOX_ENABLE_PETSC)
 
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled PyTrilinos modules:")
