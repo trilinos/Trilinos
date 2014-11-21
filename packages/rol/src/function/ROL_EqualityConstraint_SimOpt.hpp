@@ -165,12 +165,12 @@ public:
     unew->set(u);
     unew->axpy(h,v);
     // Compute new constraint value
-    this->update(*unew,z);
-    this->value(jv,*unew,z,ctol);
+    update(*unew,z);
+    value(jv,*unew,z,ctol);
     // Compute current constraint value
     Teuchos::RCP<Vector<Real> > cold = jv.clone();
-    this->update(u,z);
-    this->value(*cold,u,z,ctol);
+    update(u,z);
+    value(*cold,u,z,ctol);
     // Compute Newton quotient
     jv.axpy(-1.0,*cold);
     jv.scale(1.0/h);
@@ -208,12 +208,12 @@ public:
     znew->set(z);
     znew->axpy(h,v);
     // Compute new constraint value
-    this->update(u,*znew);
-    this->value(jv,u,*znew,ctol);
+    update(u,*znew);
+    value(jv,u,*znew,ctol);
     // Compute current constraint value
     Teuchos::RCP<Vector<Real> > cold = jv.clone();
-    this->update(u,z);
-    this->value(*cold,u,z,ctol);
+    update(u,z);
+    value(*cold,u,z,ctol);
     // Compute Newton quotient
     jv.axpy(-1.0,*cold);
     jv.scale(1.0/h);
@@ -267,22 +267,22 @@ public:
     if (v.norm() > std::sqrt(ROL_EPSILON)) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
-    Teuchos::RCP<Vector<Real> > cold = v.clone();
-    Teuchos::RCP<Vector<Real> > cnew = v.clone();
-    this->update(u,z);
-    this->value(*cold,u,z,ctol);
+    Teuchos::RCP<Vector<Real> > cold = (v.dual()).clone();
+    Teuchos::RCP<Vector<Real> > cnew = (v.dual()).clone();
+    update(u,z);
+    value(*cold,u,z,ctol);
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     ajv.zero();
     for (int i = 0; i < u.dimension(); i++) {
       unew->set(u);
       unew->axpy(h,*(u.basis(i)));
-      this->update(*unew,z);
-      this->value(*cnew,*unew,z,ctol);
+      update(*unew,z);
+      value(*cnew,*unew,z,ctol);
       cnew->axpy(-1.0,*cold);
       cnew->scale(1.0/h);
-      ajv.axpy(cnew->dot(v),*(u.basis(i)));
+      ajv.axpy(cnew->dot(v),*((u.dual()).basis(i)));
     }
-    this->update(u,z);
+    update(u,z);
   }
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -310,22 +310,22 @@ public:
     if (v.norm() > std::sqrt(ROL_EPSILON)) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
-    Teuchos::RCP<Vector<Real> > cold = v.clone();
-    Teuchos::RCP<Vector<Real> > cnew = v.clone();
-    this->update(u,z);
-    this->value(*cold,u,z,ctol);
+    Teuchos::RCP<Vector<Real> > cold = (v.dual()).clone();
+    Teuchos::RCP<Vector<Real> > cnew = (v.dual()).clone();
+    update(u,z);
+    value(*cold,u,z,ctol);
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     ajv.zero();
     for (int i = 0; i < z.dimension(); i++) {
       znew->set(z);
       znew->axpy(h,*(z.basis(i)));
-      this->update(u,*znew);
-      this->value(*cnew,u,*znew,ctol);
+      update(u,*znew);
+      value(*cnew,u,*znew,ctol);
       cnew->axpy(-1.0,*cold);
       cnew->scale(1.0/h);
-      ajv.axpy(cnew->dot(v),*(z.basis(i)));
+      ajv.axpy(cnew->dot(v),*((z.dual()).basis(i)));
     }
-    this->update(u,z);
+    update(u,z);
   }
 
   /** \brief Apply the inverse of the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -383,12 +383,12 @@ public:
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
-    this->update(*unew,z);
-    this->applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
+    update(*unew,z);
+    applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
     // Evaluate Jacobian at old state
-    Teuchos::RCP<Vector<Real> > jv = u.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > jv = ahwv.clone();
+    update(u,z);
+    applyAdjointJacobian_1(*jv,w,u,z,jtol);
     // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
@@ -427,12 +427,12 @@ public:
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
-    this->update(*unew,z);
-    this->applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
+    update(*unew,z);
+    applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
     // Evaluate Jacobian at old state
-    Teuchos::RCP<Vector<Real> > jv = z.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > jv = ahwv.clone();
+    update(u,z);
+    applyAdjointJacobian_2(*jv,w,u,z,jtol);
     // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
@@ -471,12 +471,12 @@ public:
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
-    this->update(u,*znew);
-    this->applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
+    update(u,*znew);
+    applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
     // Evaluate Jacobian at old control
-    Teuchos::RCP<Vector<Real> > jv = u.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > jv = ahwv.clone();
+    update(u,z);
+    applyAdjointJacobian_1(*jv,w,u,z,jtol);
     // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
@@ -514,12 +514,12 @@ public:
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
-    this->update(u,*znew);
-    this->applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
+    update(u,*znew);
+    applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
     // Evaluate Jacobian at old control
-    Teuchos::RCP<Vector<Real> > jv = z.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > jv = ahwv.clone();
+    update(u,z);
+    applyAdjointJacobian_2(*jv,w,u,z,jtol);
     // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
@@ -599,7 +599,7 @@ public:
       Teuchos::dyn_cast<const Vector<Real> >(x));
     Teuchos::RCP<ROL::Vector<Real> > ijv = (xs.get_1())->clone();
     applyInverseJacobian_1(*ijv, v, *(xs.get_1()), *(xs.get_2()), tol);
-    applyInverseAdjointJacobian_1(pv, *ijv, *(xs.get_1()), *(xs.get_2()), tol);
+    applyInverseAdjointJacobian_1(pv, ijv->dual(), *(xs.get_1()), *(xs.get_2()), tol);
   }
 
 
@@ -613,7 +613,7 @@ public:
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));
-    this->update(*(xs.get_1()),*(xs.get_2()),flag,iter);
+    update(*(xs.get_1()),*(xs.get_2()),flag,iter);
   }
 
   /** \brief Check if the vector, v, is feasible
@@ -625,7 +625,7 @@ public:
                      Real &tol) {
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));
-    this->value(c,*(xs.get_1()),*(xs.get_2()),tol);
+    value(c,*(xs.get_1()),*(xs.get_2()),tol);
   }
 
 
@@ -637,9 +637,9 @@ public:
       Teuchos::dyn_cast<const Vector<Real> >(x));
     const Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(v));
-    this->applyJacobian_1(jv,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    applyJacobian_1(jv,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
     Teuchos::RCP<Vector<Real> > jv2 = jv.clone();
-    this->applyJacobian_2(*jv2,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    applyJacobian_2(*jv2,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     jv.plus(*jv2);
   }
 
@@ -653,10 +653,10 @@ public:
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));
     Teuchos::RCP<Vector<Real> > ajv1 = (ajvs.get_1())->clone();
-    this->applyAdjointJacobian_1(*ajv1,v,*(xs.get_1()),*(xs.get_2()),tol);
+    applyAdjointJacobian_1(*ajv1,v,*(xs.get_1()),*(xs.get_2()),tol);
     ajvs.set_1(*ajv1);
     Teuchos::RCP<Vector<Real> > ajv2 = (ajvs.get_2())->clone();
-    this->applyAdjointJacobian_2(*ajv2,v,*(xs.get_1()),*(xs.get_2()),tol);
+    applyAdjointJacobian_2(*ajv2,v,*(xs.get_1()),*(xs.get_2()),tol);
     ajvs.set_2(*ajv2);
   }
 
@@ -675,21 +675,22 @@ public:
     // Block-row 1
     Teuchos::RCP<Vector<Real> > C11 = (ahwvs.get_1())->clone();
     Teuchos::RCP<Vector<Real> > C21 = (ahwvs.get_1())->clone();
-    this->applyAdjointHessian_11(*C11,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    this->applyAdjointHessian_21(*C21,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    applyAdjointHessian_11(*C11,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    applyAdjointHessian_21(*C21,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     C11->plus(*C21);
     ahwvs.set_1(*C11); 
     // Block-row 2
     Teuchos::RCP<Vector<Real> > C12 = (ahwvs.get_2())->clone();
     Teuchos::RCP<Vector<Real> > C22 = (ahwvs.get_2())->clone();
-    this->applyAdjointHessian_12(*C12,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    this->applyAdjointHessian_22(*C22,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
+    applyAdjointHessian_12(*C12,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
+    applyAdjointHessian_22(*C22,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     C22->plus(*C12);
     ahwvs.set_2(*C22); 
   }
 
   virtual Real checkSolve(const ROL::Vector<Real> &u, 
                           const ROL::Vector<Real> &z, 
+                          const ROL::Vector<Real> &c,
                           const bool printToStream = true,
                           std::ostream & outStream = std::cout) {
     // Solve equality constraint for u. 
@@ -697,10 +698,10 @@ public:
     Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
     solve(*s,z,tol);
     // Evaluate equality constraint residual at (u,z).
-    Teuchos::RCP<ROL::Vector<Real> > c = u.clone();
-    value(*c,*s,z,tol);
+    Teuchos::RCP<ROL::Vector<Real> > cs = c.clone();
+    value(*cs,*s,z,tol);
     // Output norm of residual.
-    Real cnorm = c->norm();
+    Real cnorm = cs->norm();
     if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
@@ -717,12 +718,12 @@ public:
                                const bool printToStream = true,
                                std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = w.clone();
+    Teuchos::RCP<Vector<Real> > Jv = (w.dual()).clone();
     applyJacobian_1(*Jv,v,u,z,tol);
-    Real wJv = w.dot(*Jv);
-    Teuchos::RCP<Vector<Real> > Jw = v.clone();
+    Real wJv = w.dot(Jv->dual());
+    Teuchos::RCP<Vector<Real> > Jw = (v.dual()).clone();
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
-    Real vJw = v.dot(*Jw);
+    Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
     if ( printToStream ) {
       std::stringstream hist;
@@ -743,12 +744,12 @@ public:
                                const bool printToStream = true,
                                std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = w.clone();
+    Teuchos::RCP<Vector<Real> > Jv = (w.dual()).clone();
     applyJacobian_2(*Jv,v,u,z,tol);
-    Real wJv = w.dot(*Jv);
-    Teuchos::RCP<Vector<Real> > Jw = v.clone();
+    Real wJv = w.dot(Jv->dual());
+    Teuchos::RCP<Vector<Real> > Jw = (v.dual()).clone();
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
-    Real vJw = v.dot(*Jw);
+    Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
     if ( printToStream ) {
       std::stringstream hist;

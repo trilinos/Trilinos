@@ -6123,8 +6123,11 @@ public:
       return *pBoxes;
     }
 
-    mj_part_t pointAssign(int dim, mj_scalar_t *point,
-                          const PartitioningSolution<Adapter> *solution) const;
+    mj_part_t pointAssign(int dim, mj_scalar_t *point) const;
+
+    void boxAssign(int dim, mj_scalar_t *lower, mj_scalar_t *upper,
+                   size_t &nPartsFound, mj_part_t **partsFound) const;
+
 
     /*! \brief returns communication graph resulting from MJ partitioning.
      */
@@ -6417,14 +6420,92 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
+void Zoltan2_AlgMJ<Adapter>::boxAssign(
+  int dim, 
+  typename Adapter::scalar_t *lower, 
+  typename Adapter::scalar_t *upper,
+  size_t &nPartsFound, 
+  typename Adapter::part_t **partsFound) const
+{
+  // TODO:  Implement with cuts rather than boxes to reduce algorithmic
+  // TODO:  complexity.  Or at least do a search through the boxes, using
+  // TODO:  p x q x r x ... if possible.
+
+  nPartsFound = 0;
+  *partsFound = NULL;
+
+  if (this->mj_keep_part_boxes) {
+
+    // Get vector of part boxes
+    RCP<mj_partBoxVector_t> partBoxes = this->getGlobalBoxBoundaries();
+
+    size_t nBoxes = (*partBoxes).size();
+    if (nBoxes == 0) {
+      throw std::logic_error("no part boxes exist");
+    }
+
+    // Determine whether the box overlaps the globalBox at all
+    RCP<mj_partBox_t> globalBox = this->mj_partitioner.get_global_box();
+
+    if (globalBox->boxesOverlap(dim, lower, upper)) {
+
+      std::vector<typename Adapter::part_t> partlist;
+
+      // box overlaps the global box; find specific overlapping boxes
+      for (size_t i = 0; i < nBoxes; i++) {
+        try {
+          if ((*partBoxes)[i].boxesOverlap(dim, lower, upper)) {
+            nPartsFound++;
+            partlist.push_back((*partBoxes)[i].getpId());
+
+            std::cout << "Box " << (*partBoxes)[i].getpId() << " (";
+            for (int j = 0; j < dim; j++)
+              std::cout << (*partBoxes)[i].getlmins()[j] << " ";
+            std::cout << ") x (";
+            for (int j = 0; j < dim; j++)
+              std::cout << (*partBoxes)[i].getlmaxs()[j] << " ";
+            std::cout << ") overlaps given box (";
+            for (int j = 0; j < dim; j++)
+              std::cout << lower[j] << " ";
+            std::cout << ") x (";
+            for (int j = 0; j < dim; j++)
+              std::cout << upper[j] << " ";
+            std::cout << ")" << std::endl;
+            break;
+          }
+        }
+        Z2_FORWARD_EXCEPTIONS;
+      }
+      if (nPartsFound) {
+        *partsFound = new mj_part_t[nPartsFound];
+        for (size_t i = 0; i < nPartsFound; i++)
+          (*partsFound)[i] = partlist[i];
+      }
+    }
+    else {
+      // Box does not overlap the domain at all.  Find the closest part
+      // Not sure how to perform this operation for MJ without having the 
+      // cuts.  With the RCB cuts, the concept of a part extending to 
+      // infinity was natural.  With the boxes, it is much more difficult.
+      // TODO:  For now, return information indicating NO OVERLAP.
+
+    }
+  }
+  else {
+    throw std::logic_error("need to use keep_cuts parameter for boxAssign");
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
 typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
   int dim, 
-  typename Adapter::scalar_t *point,
-  const PartitioningSolution<Adapter> *solution) const
+  typename Adapter::scalar_t *point) const
 {
 
   // TODO:  Implement with cuts rather than boxes to reduce algorithmic
-  // TODO:  complexity.
+  // TODO:  complexity.  Or at least do a search through the boxes, using
+  // TODO:  p x q x r x ... if possible.
 
   if (this->mj_keep_part_boxes) {
     typename Adapter::part_t foundPart = -1;
@@ -6436,13 +6517,6 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
     if (nBoxes == 0) {
       throw std::logic_error("no part boxes exist");
     }
-//{
-//int me;
-//MPI_Comm_rank(MPI_COMM_WORLD, &me);
-//for (size_t i = 0; i < nBoxes; i++)
-//  printf("%d KDDKDD BOX %d PART %d (%f %f) x (%f %f)\n", me, i, (*partBoxes)[i].getpId(), (*partBoxes)[i].getlmins()[0], (*partBoxes)[i].getlmins()[1], (*partBoxes)[i].getlmaxs()[0], (*partBoxes)[i].getlmaxs()[1]);
-//}
-
 
     // Determine whether the point is within the global domain
     RCP<mj_partBox_t> globalBox = this->mj_partitioner.get_global_box();
@@ -6455,11 +6529,11 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
         try {
           if ((*partBoxes)[i].pointInBox(dim, point)) {
             foundPart = (*partBoxes)[i].getpId();
-//          std::cout << "Point (";
-//          for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
-//          std::cout << ") found in box " << i << " part " << foundPart 
-//                    << std::endl;
-//          (*partBoxes)[i].print();
+            std::cout << "Point (";
+            for (int j = 0; j < dim; j++) std::cout << point[j] << " ";
+            std::cout << ") found in box " << i << " part " << foundPart 
+                      << std::endl;
+            (*partBoxes)[i].print();
             break;
           }
         }

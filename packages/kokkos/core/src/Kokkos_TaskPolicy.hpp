@@ -228,6 +228,7 @@ private:
 public:
 
   typedef ExecutionSpace  execution_space ;
+  typedef future_type     value_type ;
 
   //----------------------------------------
 
@@ -236,7 +237,7 @@ public:
     { return m_future ? reinterpret_cast<size_t>(m_future->m_task) : size_t(0) ; }
 
   KOKKOS_INLINE_FUNCTION
-  future_type & operator[]( const int i ) const
+  value_type & operator[]( const int i ) const
     { return m_future[i+1]; }
 
   //----------------------------------------

@@ -70,7 +70,7 @@ public:
 
     // Apply initial inverse Hessian approximation to v   
     Teuchos::RCP<Vector<Real> > tmp = Hv.clone();
-    Secant<Real>::applyH0(*tmp,Hv,x);
+    Secant<Real>::applyH0(*tmp,Hv.dual(),x);
     Hv.set(*tmp);
 
     Real beta = 0.0;

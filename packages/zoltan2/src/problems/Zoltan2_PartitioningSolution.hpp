@@ -421,7 +421,7 @@ public:
       if (this->algorithm_ == Teuchos::null)
         throw std::logic_error("no partitioning algorithm has been run yet");
 
-      p = this->algorithm_->pointAssign(dim, point, this); 
+      p = this->algorithm_->pointAssign(dim, point); 
     }
     Z2_FORWARD_EXCEPTIONS
     return p;
@@ -440,7 +440,7 @@ public:
   //   \param nPartsFound : (out) the number of parts overlapping the box
   //   \param partsFound :  (out) array of parts overlapping the box
   void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
-                 size_t &nPartsFound, part_t **partsFound) 
+                 size_t &nPartsFound, part_t **partsFound) const
   {
     try {
       if (this->algorithm_ == Teuchos::null)

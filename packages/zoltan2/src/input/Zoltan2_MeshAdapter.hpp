@@ -53,6 +53,8 @@
 
 #include <Zoltan2_Adapter.hpp>
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {
   
@@ -372,6 +374,28 @@ public:
 
       // We're done modifying the adjs matrix.
       adjsMatrix->fillComplete ();
+
+      //Create Transpose
+      Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
+      RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
+
+      // Form 2ndAdjs
+      RCP<sparse_matrix_type> secondAdjs =
+	rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+      Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrixTranspose,
+				     false,*secondAdjs);
+      Array<GO> Indices;
+      Array<ST> Values;
+
+      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	const GO globalRow = Ids[localElement];
+	size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
+	Indices.resize (NumEntries);
+	Values.resize (NumEntries);
+	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+      }
+
+      return false;
     }
   }
 
