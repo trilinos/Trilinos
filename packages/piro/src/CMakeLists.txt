@@ -161,10 +161,6 @@ IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
   APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
 ENDIF()
 
-IF (Piro_ENABLE_ROL)
-  APPEND_SET(HEADERS ROL_ThyraVector.hpp ROL_ThyraME_Objective.hpp ROL_Thyra_BoundConstraint.hpp)
-ENDIF()
-
 #
 # C) Define the targets for package's library(s)
 #
