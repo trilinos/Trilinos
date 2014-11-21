@@ -63,7 +63,6 @@
 #include "GlobiPack_BrentsLineSearch.hpp"
 #endif
 
-#define Piro_ENABLE_ROL
 #ifdef Piro_ENABLE_ROL
 #include "ROL_ThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
@@ -301,15 +300,15 @@ Piro::PerformROLAnalysis(
   using std::string;
 
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-
-  p = Thyra::createMember(piroModel.get_p_space(0));
-  RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(0);
+  int g_index = rolParams.get<int>("Response Vector Index", 0);
+  int p_index = rolParams.get<int>("Parameter Vector Index", 0);
+  p = Thyra::createMember(piroModel.get_p_space(p_index));
+  RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(p_index);
   Thyra::copy(*p_init, p.ptr());
 
   ROL::ThyraVector<double> rol_p(p);
 
-  int g_index = rolParams.get<int>("Response Vector Index", 0);
-  int p_index = rolParams.get<int>("Parameter Vector Index", 0);
+
   ROL::ThyraME_Objective<double> obj(piroModel, g_index, p_index);
 
   bool print = rolParams.get<bool>("Print Output", false);
@@ -382,15 +381,14 @@ Piro::PerformROLAnalysis(
   // Run Algorithm
   std::vector<std::string> output;
   if(rolParams.get<bool>("Bound Constrained", false)) {
-    double x_lo = rolParams.get<double>("x_lo", -1e6);
-    double x_up = rolParams.get<double>("x_up", 1e6);
     double eps_bound = rolParams.get<double>("eps_bound", 1e-6);
+    Teuchos::RCP<const Thyra::VectorBase<double> > p_lo = piroModel.getLowerBounds().get_p(p_index);
+    Teuchos::RCP<const Thyra::VectorBase<double> > p_up = piroModel.getUpperBounds().get_p(p_index);
+    TEUCHOS_TEST_FOR_EXCEPTION((p_lo == Teuchos::null)  || (p_up == Teuchos::null), Teuchos::Exceptions::InvalidParameter,
+          std::endl << "Error in Piro::PerformROLAnalysis:  " <<
+          "Lower and/or Upper bounds pointers are null, cannot perform bound constrained optimization"<<std::endl);
 
-    Teuchos::RCP<Thyra::VectorBase<double> > p_lo = p->clone_v();
-    ::Thyra::put_scalar(x_lo, p_lo.ptr());
-    Teuchos::RCP<Thyra::VectorBase<double> > p_up = p->clone_v();
-    ::Thyra::put_scalar(x_up, p_up.ptr());
-    ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo, p_up, eps_bound);
+    ROL::Thyra_BoundConstraint<double>  boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
     output  = algo.run(rol_p, obj, boundConstraint, print, *out);
   }
   else
