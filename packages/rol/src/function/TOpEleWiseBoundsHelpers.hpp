@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef RTOPPACK_TOP_ELE_WISE_BOUND_HPP
-#define RTOPPACK_TOP_ELE_WISE_BOUND_HPP
+#ifndef TOP_ELE_WISE_BOUNDS_HELPERS_HPP
+#define TOP_ELE_WISE_BOUNDS_HELPERS_HPP
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -245,6 +245,11 @@ namespace Thyra {
                                 null);
     }
 
+  /** \brief Element-wise prune lower:
+   * <tt> if ((x(i) >= x_up(i) - eps_) && (g(i) < 0.0)), v(i) = 0, i = 0...y->space()->dim()-1</tt>.
+   *
+   * \relates VectorBase
+   */
   template<class Scalar>
     void
     ele_wise_prune_upper (const ::Thyra::VectorBase<Scalar>& x,
@@ -260,6 +265,12 @@ namespace Thyra {
                                 tuple (ptrInArg (x), ptrInArg (x_up), ptrInArg (g)), tuple (v),
                                 null);
     }
+
+  /** \brief Element-wise prune lower:
+   * <tt> if (x(i) >= x_up(i) - eps_), v(i) = 0, i = 0...y->space()->dim()-1</tt>.
+   *
+   * \relates VectorBase
+   */
 
   template<class Scalar>
     void
