@@ -40,6 +40,10 @@
 #include "Epetra_NumPyVector.hpp"
 %}
 
+#ifdef HAVE_NOX_PETSC
+%include "petsc4py/petsc4py.i"
+#endif
+
 ///////////////////////////////////////////////////////////////////
 // *** Utility functions for downcasting NOX::Abstract::Vectors ***
 ///////////////////////////////////////////////////////////////////
@@ -60,11 +64,11 @@
     static swig_type_info * swig_NAV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< NOX::Abstract::Vector > *");
 
-    // Try to downcast to a NOX::Epetra::Vector
 #ifdef HAVE_NOX_EPETRA
+    // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *");
-    NOX::Epetra::Vector* nevResult = dynamic_cast<NOX::Epetra::Vector*>(&nav);
+    NOX::Epetra::Vector * nevResult = dynamic_cast< NOX::Epetra::Vector * >(&nav);
     if (nevResult != NULL)
     {
       Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *smartresult = new
@@ -79,13 +83,13 @@
     }
 #endif
 
-    // Try to downcast to a NOX::Petsc::Vector
 #ifdef HAVE_NOX_PETSC
-    // NOX::Petsc::Vector* npvResult = dynamic_cast<NOX::Petsc::Vector*>(&nav);
-    // if (npvResult != NULL)
-    // {
-    //   int res = SWIG_AsPtr(...);
-    // }
+    // Try to downcast to a NOX::Petsc::Vector
+    NOX::Petsc::Vector * npvResult = dynamic_cast< NOX::Petsc::Vector * >(&nav);
+    if (npvResult != NULL)
+    {
+      return PyPetscVec_New(npvResult->getPetscVector());
+    }
 #endif
 
     // No downcasts worked, so return as a Python wrapped
@@ -113,11 +117,11 @@
     static swig_type_info * swig_NAV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< const NOX::Abstract::Vector > *");
 
-    // Try to downcast to a NOX::Epetra::Vector
 #ifdef HAVE_NOX_EPETRA
+    // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > *");
-    NOX::Epetra::Vector* nevResult =
+    const NOX::Epetra::Vector * nevResult =
       dynamic_cast< const NOX::Epetra::Vector * >(&nav);
     if (nevResult != NULL)
     {
@@ -133,13 +137,14 @@
     }
 #endif
 
-    // Try to downcast to a const NOX::Petsc::Vector
 #ifdef HAVE_NOX_PETSC
-    // const NOX::Petsc::Vector * npvResult = dynamic_cast< const NOX::Petsc::Vector * >(&nav);
-    // if (npvResult != NULL)
-    // {
-    //   int res = SWIG_AsPtr(...);
-    // }
+    // Try to downcast to a const NOX::Petsc::Vector
+    const NOX::Petsc::Vector * npvResult =
+      dynamic_cast< const NOX::Petsc::Vector * >(&nav);
+    if (npvResult != NULL)
+    {
+      return PyPetscVec_New(npvResult->getPetscVector());
+    }
 #endif
 
     // No downcasts worked, so return as a Python wrapped
@@ -167,8 +172,8 @@
     static swig_type_info * swig_NAV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< NOX::Abstract::Vector > *");
 
-    // Try to downcast to a NOX::Epetra::Vector
 #ifdef HAVE_NOX_EPETRA
+    // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *");
     Teuchos::RCP< NOX::Epetra::Vector > nevResult =
@@ -187,13 +192,14 @@
     }
 #endif
 
-    // Try to downcast to a NOX::Petsc::Vector
 #ifdef HAVE_NOX_PETSC
-    // NOX::Petsc::Vector* npvResult = dynamic_cast<NOX::Petsc::Vector*>(&nav);
-    // if (npvResult != NULL)
-    // {
-    //   int res = SWIG_AsPtr(...);
-    // }
+    // Try to downcast to a NOX::Petsc::Vector
+    Teuchos::RCP< NOX::Petsc::Vector > npvResult =
+      Teuchos::rcp_dynamic_cast< NOX::Petsc::Vector >(nav);
+    if (!npvResult.is_null())
+    {
+      return PyPetscVec_New(npvResult->getPetscVector());
+    }
 #endif
 
     // No downcasts worked, so return as a Python wrapped
@@ -204,7 +210,6 @@
                               swig_NAV_ptr,
                               SWIG_POINTER_OWN);
   }
-}
 
   /////////////////////////////////////////////////////////////////////
 
@@ -222,8 +227,8 @@
     static swig_type_info * swig_NAV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< const NOX::Abstract::Vector > *");
 
-    // Try to downcast to a NOX::Epetra::Vector
 #ifdef HAVE_NOX_EPETRA
+    // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > *");
     Teuchos::RCP< const NOX::Epetra::Vector > nevResult =
@@ -242,13 +247,14 @@
     }
 #endif
 
-    // Try to downcast to a NOX::Petsc::Vector
 #ifdef HAVE_NOX_PETSC
-    // NOX::Petsc::Vector* npvResult = dynamic_cast<NOX::Petsc::Vector*>(&nav);
-    // if (npvResult != NULL)
-    // {
-    //   int res = SWIG_AsPtr(...);
-    // }
+    // Try to downcast to a NOX::Petsc::Vector
+    Teuchos::RCP< const NOX::Petsc::Vector > npvResult =
+      Teuchos::rcp_dynamic_cast< const NOX::Petsc::Vector >(nav);
+    if (!npvResult.is_null())
+    {
+      return PyPetscVec_New(npvResult->getPetscVector());
+    }
 #endif
 
     // No downcasts worked, so return as a Python wrapped
