@@ -148,14 +148,26 @@ string trim_copy(
 
 template <typename Adapter>
 void print_boxAssign_result(
-  int coordDim, 
+  const char *str,
+  int dim, 
   typename Adapter::scalar_t *lower,
   typename Adapter::scalar_t *upper,
   size_t nparts, 
   typename Adapter::part_t *parts
 )
 {
-  std::cout << "TODO:  WRITE print_boxAssign_result" << std::endl;
+  std::cout << "boxAssign test " << str << ":  Box (";
+  for (int j = 0; j < dim; j++) std::cout << lower[j] << " ";
+  std::cout << ") x (";
+  for (int j = 0; j < dim; j++) std::cout << upper[j] << " ";
+
+  if (nparts == 0) 
+    std::cout << ") does not overlap any parts" << std::endl;
+  else {
+    std::cout << ") overlaps parts ";
+    for (size_t k = 0; k < nparts; k++) std::cout << parts[k] << " ";
+    std::cout << std::endl;
+  }
 }
 
 template <typename Adapter>
@@ -229,7 +241,7 @@ int run_pointAssign_tests(
         zscalar_t *lmax = pBoxes[i].getlmaxs();;
         std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId() 
                   << " (" << lmin[0] << "," << lmin[1] << ","
-                  << (coordDim > 2 ? lmin[2] : 0) << ") x ("
+                  << (coordDim > 2 ? lmin[2] : 0) << ") x "
                   << " (" << lmax[0] << "," << lmax[1] << ","
                   << (coordDim > 2 ? lmax[2] : 0) << ")" << std::endl;
       }
@@ -333,7 +345,8 @@ int run_boxAssign_tests(
                   << std::endl;
         ierr++;
       }
-      print_boxAssign_result<Adapter>(coordDim, lower, upper, nparts, parts);
+      print_boxAssign_result<Adapter>("smallerbox", coordDim,
+                                      lower, upper, nparts, parts);
       delete [] parts;
     }
 
@@ -376,7 +389,8 @@ int run_boxAssign_tests(
         ierr++;
       }
 
-      print_boxAssign_result<Adapter>(coordDim, lower, upper, nparts, parts);
+      print_boxAssign_result<Adapter>("largerbox", coordDim,
+                                      lower, upper, nparts, parts);
       delete [] parts;
     }
      
@@ -410,13 +424,44 @@ int run_boxAssign_tests(
                   << std::endl;
         ierr++;
       }
-      print_boxAssign_result<Adapter>(coordDim, lower, upper, nparts, parts);
+      print_boxAssign_result<Adapter>("globalbox", coordDim,
+                                      lower, upper, nparts, parts);
+      delete [] parts;
+    }
+
+    // test a box that is bigger than the entire domain
+    // Assuming lower and upper are still set to the global box boundary
+    // from the previous test
+    {
+      size_t nparts;
+      typename Adapter::part_t *parts;
+      for (int i = 0; i < coordDim; i++) {
+        lower[i] -= 2.;
+        upper[i] += 2.;
+      }
+      
+      try {
+        problem->getSolution().boxAssign(coordDim, lower, upper,
+                                         nparts, &parts);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- bigdomain");
+
+      // bigdomain box should have all parts
+      if (nparts != nBoxes) {
+        std::cout << me << " FAIL boxAssign error: "
+                  << "bigdomain test, nparts found " << nparts 
+                  << " != num global parts " << nBoxes
+                  << std::endl;
+        ierr++;
+      }
+      print_boxAssign_result<Adapter>("bigdomainbox", coordDim,
+                                      lower, upper, nparts, parts);
       delete [] parts;
     }
 
     // test a box that is way out there
-    // Assuming lower and upper are still set to the global box boundary
-    // from the previous test
+    // Assuming lower and upper are still set to at least the global box 
+    // boundary from the previous test
     {
       size_t nparts;
       typename Adapter::part_t *parts;
@@ -435,12 +480,13 @@ int run_boxAssign_tests(
       // TODO:  this result should be changed in boxAssign definition
       if (nparts != 0) {
         std::cout << me << " FAIL boxAssign error: "
-                  << "out there test, nparts found " << nparts 
+                  << "outthere test, nparts found " << nparts 
                   << " != zero"
                   << std::endl;
         ierr++;
       }
-      print_boxAssign_result<Adapter>(coordDim, lower, upper, nparts, parts);
+      print_boxAssign_result<Adapter>("outthere box", coordDim,
+                                      lower, upper, nparts, parts);
       delete [] parts;
     }
 
