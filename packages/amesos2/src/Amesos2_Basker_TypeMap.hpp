@@ -47,7 +47,7 @@
            Siva Rajamanickam <srajama@sandia.gov>
 
    \brief Provides definition of Basker types as well as conversions and type
-	  traits.
+          traits.
 
 */
 
@@ -142,10 +142,10 @@ namespace Amesos2 {
 
 template <class, class> class Basker;
 
-/* Specialize the Amesos2::TypeMap struct for KLU2 types
- * TODO: Mostly dummy assignments as KLU2 is templated. Remove if possible.
+/* Specialize the Amesos2::TypeMap struct for Basker types
+ * TODO: Mostly dummy assignments as Basker is templated. Remove if possible.
  *
- * \cond KLU2_type_specializations
+ * \cond Basker_type_specializations
  */
 
 template <>
@@ -156,7 +156,7 @@ struct TypeMap<Basker,float>
   typedef float magnitude_type;
 };
 
- 
+
 template <>
 struct TypeMap<Basker,double>
 {
@@ -164,10 +164,10 @@ struct TypeMap<Basker,double>
   typedef double type;
   typedef double magnitude_type;
 };
- 
+
 
 #ifdef HAVE_TEUCHOS_COMPLEX
- 
+
 template <>
 struct TypeMap<Basker,std::complex<float> >
 {

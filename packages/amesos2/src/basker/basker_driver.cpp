@@ -4,7 +4,7 @@
 //                   Basker: A Direct Linear Solver package
 //                    Copyright 2011 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, with Sandia Corporation, the 
+// Under terms of Contract DE-AC04-94AL85000, with Sandia Corporation, the
 // U.S. Government retains certain rights in this software.
 //
 // This library is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
@@ -42,19 +42,19 @@ int main(int argc, char* argv[])
 
   typedef int Int;
   typedef double Entry;
-  
+
   Int lnnz; //left guess
   Int unnz; //right guess
 
-  
+
  /*load martrix*/
   Int annz;
   Int anrow, ancol;
   Int *Ap, *Ai;
   Entry *Ax;
-  
 
- 
+
+
   //Read in Matrix file from CSR file
   string temp;
   ifstream fp;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   ancol =anrow;
   fp >> temp;
   annz = atoi(temp.c_str());
-  
+
   cout << "Size: " << anrow << " nnz: " << annz << endl;
   Ap = new Int[anrow+1];
   Ai = new Int[annz];
@@ -81,9 +81,9 @@ int main(int argc, char* argv[])
       fp >> t;
       Ai[i] = atoi(t.c_str())-1;
       if(i == 0)
-	{
-	  cout << "First index: " << Ai[i] << endl;
-	}
+        {
+          cout << "First index: " << Ai[i] << endl;
+        }
     }
   for(int i=0; i < annz; i++)
     {
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
       Ax[i] = atof(t.c_str());
     }
 
-  
+
   if(argc > 2)
     {
       lnnz = atoi(argv[2]);
@@ -101,19 +101,19 @@ int main(int argc, char* argv[])
   else
     {
       lnnz = 2*annz;
-      unnz = 2*annz; 
+      unnz = 2*annz;
     }
 
- 
+
 
   //Allocate some work space.
-  
-  
-  
+
+
+
 
   cout << "Done allocating space" << endl;
   Basker::Basker<int, double> mybasker;
-  mybasker.factor(anrow, ancol,annz, Ap, Ai, Ax); 
+  mybasker.factor(anrow, ancol,annz, Ap, Ai, Ax);
 
   Int *pp;
   mybasker.returnP(&pp);
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
 
 
   /*Make a fake rhs so the solution is all ones*/
- 
+
   for(int i = 0; i < anrow; i++)
     {
        b[i] = (Entry) 1.0;
@@ -137,13 +137,13 @@ int main(int argc, char* argv[])
 
  mybasker.solve(b, x);
 
-  
+
   cout << "Solution:" << endl;
   for(int i = 0; i < anrow; i++)
     {
       cout << x[i] << endl;
     }
-  
+
 
 
   free(x);
@@ -155,7 +155,3 @@ int main(int argc, char* argv[])
   //Int result = basker::basker<Int, Entry>(Ap, Ai, Ax, anrow, ancol, ws, X, Lp, &Li, &Lx, Up, &Ui, &Ux, &lnnz, &unnz, pinv);
 
 }
-
-    
-				      
-

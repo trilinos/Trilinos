@@ -263,7 +263,7 @@ void AZK_create_vector_ri2k(int *options, double *params,
 
   N_external = data_org[AZ_N_external];
 
-  (*vk) = (double *) AZ_allocate((N_equations+N_external)*sizeof(double));
+  (*vk) = (double *) AZ_allocate((N_equations+N_external + 1)*sizeof(double));
   if ((*vk) == NULL) AZ_perror("AZK_create_vector_ri2k: Out of memory");
 
   

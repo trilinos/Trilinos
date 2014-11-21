@@ -77,9 +77,8 @@ namespace MueLu {
   public:
 
     //!
-    // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() :
-        numDesiredLevel_        (MasterList::getDefault<int>("max levels")),
+    HierarchyManager(int numDesiredLevel = MasterList::getDefault<int>("max levels")) :
+        numDesiredLevel_        (numDesiredLevel),
         maxCoarseSize_          (MasterList::getDefault<int>("coarse: max size")),
         verbosity_              (Medium),
         doPRrebalance_          (MasterList::getDefault<bool>("repartition: rebalance P and R")),

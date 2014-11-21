@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,38 +43,25 @@
 
 
 /**
- * \file   Amesos2_KLU2_TypeMap.cpp
+ * \file   Amesos2_Basker_TypeMap.cpp
  * \author Joshua Dennis Booth <jdbooth@sandia.gov>
            Siva Rajamanickam <srajaman@sandia.gov>
- * 
+ *
  * \brief  Definitions for Basker TypeMap.
  */
 
 #include "Amesos2_Basker_TypeMap.hpp"
 
 namespace Amesos2 {
-  
+
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-  //SLU::Dtype_t TypeMap<KLU2,std::complex<float> >::dtype = SLU::SLU_C;
 
-  //SLU::Dtype_t TypeMap<KLU2,std::complex<double> >::dtype = SLU::SLU_Z;
-
-  //SLU::Dtype_t TypeMap<KLU2,SLU::C::complex>::dtype = SLU::SLU_C;
-
-  //SLU::Dtype_t TypeMap<KLU2,SLU::Z::doublecomplex>::dtype = SLU::SLU_Z;
 #endif
-  
+
 }
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-//namespace std {
-  //ostream& operator<<(ostream& out, const SLU::Z::doublecomplex z){
-    //return (out << "(" << z.r << "," << z.i << ")");
-  //}
 
-  //ostream& operator<<(ostream& out, const SLU::C::complex c){
-    //return (out << "(" << c.r << "," << c.i << ")");
-  //}
-//}
+
 #endif

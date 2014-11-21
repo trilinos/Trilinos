@@ -272,7 +272,7 @@ namespace ROL {
         return des;
       }
     }
-    return DESCENT_STEEPEST;
+    return DESCENT_SECANT;
   }
   
   /** \enum   ROL::ESecant

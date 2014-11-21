@@ -79,7 +79,7 @@ namespace ROL {
   void getTestObjectives( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x, 
                           const ETestObjectives test ) {
     switch (test) {
-      case TESTOBJECTIVES_ROSENBROCK:          ZOO::getRosenbrock(obj,x0,x);       break;
+      case TESTOBJECTIVES_ROSENBROCK:          ZOO::getRosenbrock<Real,StdVector<Real>,StdVector<Real> > (obj,x0,x);       break;
       case TESTOBJECTIVES_FREUDENSTEINANDROTH: ZOO::getFreudensteinRoth(obj,x0,x); break;
       case TESTOBJECTIVES_BEALE:               ZOO::getBeale(obj,x0,x);            break;
       case TESTOBJECTIVES_POWELL:              ZOO::getPowell(obj,x0,x);           break;

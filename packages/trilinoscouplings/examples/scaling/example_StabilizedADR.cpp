@@ -71,6 +71,9 @@
 */
 
 //#define DUMP_DATA
+// TrilinosCouplings includes
+#include "TrilinosCouplings_config.h"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -1587,7 +1590,8 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
   int128 ** comm_node_proc_ids   = NULL;
 
 
-  Create_Pamgen_Mesh(meshInput.c_str(), spaceDim, procRank, numProcs, maxInt);
+  long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), spaceDim, procRank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
   if(!Comm.MyPID() && verbose ) {
     std::cout << message << " Timing of Pamgen tasks: \n\n" ;

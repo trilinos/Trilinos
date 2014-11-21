@@ -278,7 +278,8 @@ public:
   virtual std::vector<std::vector<Real> > checkApplyJacobian( const Vector<Real> &x,
                                                               const Vector<Real> &v,
                                                               const Vector<Real> &jv,
-                                                              const bool printToScreen = true,
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
                                                               const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Jacobian.
@@ -290,7 +291,8 @@ public:
                                                                     const Vector<Real> &v,
                                                                     const Vector<Real> &c,
                                                                     const Vector<Real> &ajv,
-                                                                    const bool printToScreen = true,
+                                                                    const bool printToStream = true,
+                                                                    std::ostream & outStream = std::cout,
                                                                     const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Hessian.
@@ -303,6 +305,7 @@ public:
                                                                    const Vector<Real> &v,
                                                                    const Vector<Real> &hv,
                                                                    const bool printToScreen = true,
+                                                                   std::ostream & outStream = std::cout,
                                                                    const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
 }; // class EqualityConstraint

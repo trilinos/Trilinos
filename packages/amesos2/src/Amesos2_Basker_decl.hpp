@@ -90,72 +90,48 @@ public:
 
   typedef TypeMap<Amesos2::Basker,scalar_type>                    type_map;
 
-  /*
-   * The KLU2 interface will need two other typedef's, which are:
-   * - the KLU2 type that corresponds to scalar_type and
-   * - the corresponding type to use for magnitude
-   */
+
   typedef typename type_map::type                                  slu_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Basker,slu_type>               function_map;
 
-  /// \name Constructor/Destructor methods
-  //@{
 
-  /**
-   * \brief Initialize from Teuchos::RCP.
-   *
-   * \warning Should not be called directly!  Use instead
-   * Amesos2::create() to initialize a KLU2 interface.
-   */
   Basker(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B);
+   ~Basker( );
 
-
-
-  /// Destructor
-  ~Basker( );
-
-  //@}
 
 private:
 
   /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.
    *
-   *   Come back to add support to Amesos for preordering  
+   *   Come back to add support to Amesos for preordering
  */
   int preOrdering_impl();
 
 
-  /**
-   * \brief Perform symbolic factorization of the matrix using KLU2.
-   *
-   * Called first in the sequence before numericFactorization.
-   *
-   * \throw std::runtime_error KLU2 is not able to factor the matrix.
-   */
   int symbolicFactorization_impl();
 
 
   /**
-   * \brief KLU2 specific numeric factorization
+   * \brief Basker specific numeric factorization
    *
-   * \throw std::runtime_error KLU2 is not able to factor the matrix
+   * \throw std::runtime_error Basker is not able to factor the matrix
    */
   int numericFactorization_impl();
 
 
   /**
-   * \brief KLU2 specific solve.
+   * \brief Basker specific solve.
    *
    * Uses the symbolic and numeric factorizations, along with the RHS
    * vector \c B to solve the sparse system of equations.  The
    * solution is placed in X.
    *
-   * \throw std::runtime_error KLU2 is not able to solve the system.
+   * \throw std::runtime_error Basker is not able to solve the system.
    *
    * \callgraph
    */
@@ -169,33 +145,6 @@ private:
   bool matrixShapeOK_impl() const;
 
 
-  /**
-   * Currently, the following KLU2 parameters/options are
-   * recognized and acted upon:
-   *
-   * <ul>
-   *   <li> \c "Trans" : { \c "NOTRANS" | \c "TRANS" |
-   *     \c "CONJ" }.  Specifies whether to solve with the transpose system.</li>
-   *   <li> \c "Equil" : { \c true | \c false }.  Specifies whether
-   *     the solver to equilibrate the matrix before solving.</li>
-   *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
-   *     }. Specifies whether to perform iterative refinement, and in
-   *     what precision to compute the residual.</li>
-   *   <li> \c "SymmetricMode" : { \c true | \c false }.</li>
-   *   <li> \c "DiagPivotThresh" : \c double value. Specifies the threshold
-   *     used for a diagonal to be considered an acceptable pivot.</li>
-   *   <li> \c "ColPerm" which takes one of the following:
-   *     <ul>
-   *     <li> \c "NATURAL" : natural ordering.</li>
-   *     <li> \c "MMD_AT_PLUS_A" : minimum degree ordering on the structure of
-   *       \f$ A^T + A\f$ .</li>
-   *     <li> \c "MMD_ATA" : minimum degree ordering on the structure of
-   *       \f$ A T A \f$ .</li>
-   *     <li> \c "COLAMD" : approximate minimum degree column ordering.
-   *       (default)</li>
-   *     </ul>
-   * </ul>
-   */
   void setParameters_impl(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
@@ -219,21 +168,13 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
-  // struct holds all data necessary for KLU2 factorization or solve call
-  /*
-  mutable struct KLU2Data {
-      ::KLU2::klu_symbolic<slu_type, local_ordinal_type> *symbolic_;
-      ::KLU2::klu_numeric<slu_type, local_ordinal_type> *numeric_;
-      ::KLU2::klu_common<slu_type, local_ordinal_type> common_;
-  } data_ ;
-  */
 
   /*Handle for Basker object*/
   mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
 
 
   // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for KLU2
+  /// Stores the values of the nonzero entries for Basker
   Teuchos::Array<slu_type> nzvals_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   Teuchos::Array<local_ordinal_type> rowind_;
@@ -245,10 +186,10 @@ private:
   /// Persisting 1D store for B
   mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
 
-};                              // End class KLU2
+};                              // End class Basker
 
 
-// Specialize solver_traits struct for KLU2
+// Specialize solver_traits struct for Basker
 // TODO
 template <>
 struct solver_traits<Basker> {

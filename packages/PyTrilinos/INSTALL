@@ -42,9 +42,9 @@
 
 PyTrilinos prerequisites:
 
-  python 2.3 - 2.6
-  swig version 1.3.38 or higher
-  numpy 0.9.6 or better (python module for numeric n-dimensional arrays)
+  python 2.5 - 2.7
+  swig version 3.0.0 or higher
+  numpy 1.0 or better (python module for numeric n-dimensional arrays)
 
 Configuration:
 

@@ -877,6 +877,7 @@ NNTI_result_t NNTI_gni_init (
         nthread_lock_init(&nnti_conn_instance_lock);
         nthread_lock_init(&nnti_wr_wrhash_lock);
         nthread_lock_init(&nnti_buf_bufhash_lock);
+        nthread_lock_init(&nnti_sge_sgehash_lock);
 
         nthread_lock_init(&nnti_wr_pool_lock);
 
@@ -3839,6 +3840,7 @@ NNTI_result_t NNTI_gni_fini (
     nthread_lock_fini(&nnti_conn_instance_lock);
     nthread_lock_fini(&nnti_wr_wrhash_lock);
     nthread_lock_fini(&nnti_buf_bufhash_lock);
+    nthread_lock_fini(&nnti_sge_sgehash_lock);
     nthread_lock_fini(&nnti_wr_pool_lock);
 
     nthread_lock_fini(&transport_global_data.atomics_lock);

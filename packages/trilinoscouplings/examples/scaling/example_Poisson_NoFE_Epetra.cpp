@@ -85,6 +85,7 @@
 
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -423,9 +424,10 @@ int main(int argc, char *argv[]) {
   long long ** comm_node_ids        = NULL;
   long long ** comm_node_proc_ids   = NULL;
 
-   // Generate mesh with Pamgen
-    long long maxInt = 9223372036854775807LL;
-    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  // Generate mesh with Pamgen
+  long long maxInt = 9223372036854775807LL;
+  long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
     string msg("Poisson: ");
     
@@ -780,7 +782,7 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
     
           // Compute cell ordinal relative to the current workset
-          int worksetCellOrdinal = cell - worksetBegin;
+          //int worksetCellOrdinal = cell - worksetBegin;
     
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
