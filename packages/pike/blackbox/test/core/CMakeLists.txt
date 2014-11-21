@@ -14,28 +14,28 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   solvers
   SOURCES solvers.cpp ${UNIT_TEST_DRIVER}
-  DEPLIBS pike-test-apps
+  TESTONLYLIBS pike-test-apps
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   status_test
   SOURCES status_test.cpp ${UNIT_TEST_DRIVER}
-  DEPLIBS pike-test-apps
+  TESTONLYLIBS pike-test-apps
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   observers
   SOURCES observers.cpp ${UNIT_TEST_DRIVER}
-  DEPLIBS pike-test-apps
+  TESTONLYLIBS pike-test-apps
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   loggers
   SOURCES loggers.cpp ${UNIT_TEST_DRIVER}
-  DEPLIBS pike-test-apps
+  TESTONLYLIBS pike-test-apps
   NUM_MPI_PROCS 1
   )
 
