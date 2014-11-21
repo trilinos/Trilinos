@@ -237,34 +237,20 @@ public:
           if (cdim != this->dim) 
             throw std::logic_error("dim of given box must match dim of box");
 
-          // Check for this box completely inside box defined by lower X upper
-          bool foundinside = true;
-          for (int i = 0; i < cdim; i++) 
-            if (lower[i] >= this->lmins[i] || upper[i] <= this->lmaxs[i]) {
-              foundinside = false;
-              break;
-            }
-          if (foundinside) return true;
- 
           // Check for at least partial overlap
-          bool *found = new bool[cdim];
+          bool found = true;
           for (int i = 0; i < cdim; i++) {
-            found[i] = false;
-            if (lower[i] >= this->lmins[i] && lower[i] <= this->lmaxs[i]) 
-              found[i] = true;
-            if (upper[i] >= this->lmins[i] && upper[i] <= this->lmaxs[i]) 
-              found[i] = true;
-          }
-          bool foundalldims = true;
-          for (int i = 0; i < cdim; i++)
-            if (!found[i]) {
-              foundalldims = false;
+            if (!((lower[i] >= this->lmins[i] && lower[i] <= this->lmaxs[i]) 
+                   // lower i-coordinate in the box
+               || (upper[i] >= this->lmins[i] && upper[i] <= this->lmaxs[i]) 
+                   // upper i-coordinate in the box
+               || (lower[i] <  this->lmins[i] && upper[i] >  this->lmaxs[i]))) {
+                   // i-coordinates straddle the box
+              found = false;
               break;
             }
-          delete [] found;
-          if (foundalldims) return true;
-          
-          return false;
+          }
+          return found;
         }
 
         /*! \brief  function to check if two boxes are neighbors.

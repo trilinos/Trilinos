@@ -6458,20 +6458,20 @@ void Zoltan2_AlgMJ<Adapter>::boxAssign(
             nPartsFound++;
             partlist.push_back((*partBoxes)[i].getpId());
 
-            std::cout << "Box " << (*partBoxes)[i].getpId() << " (";
-            for (int j = 0; j < dim; j++)
-              std::cout << (*partBoxes)[i].getlmins()[j] << " ";
-            std::cout << ") x (";
-            for (int j = 0; j < dim; j++)
-              std::cout << (*partBoxes)[i].getlmaxs()[j] << " ";
-            std::cout << ") overlaps given box (";
+            std::cout << "Given box (";
             for (int j = 0; j < dim; j++)
               std::cout << lower[j] << " ";
             std::cout << ") x (";
             for (int j = 0; j < dim; j++)
               std::cout << upper[j] << " ";
+            std::cout << ") overlaps PartBox " 
+                      << (*partBoxes)[i].getpId() << " (";
+            for (int j = 0; j < dim; j++)
+              std::cout << (*partBoxes)[i].getlmins()[j] << " ";
+            std::cout << ") x (";
+            for (int j = 0; j < dim; j++)
+              std::cout << (*partBoxes)[i].getlmaxs()[j] << " ";
             std::cout << ")" << std::endl;
-            break;
           }
         }
         Z2_FORWARD_EXCEPTIONS;
