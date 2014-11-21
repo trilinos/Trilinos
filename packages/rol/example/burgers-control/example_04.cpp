@@ -1005,7 +1005,7 @@ int main(int argc, char *argv[]) {
     con.checkJacobian_1(c,yu,u,z,true,*outStream);
     con.checkJacobian_2(c,yz,u,z,true,*outStream);
     // Check consistency of solves.
-    con.checkSolve(u,z,true,*outStream);
+    con.checkSolve(u,z,c,true,*outStream);
     con.checkInverseJacobian_1(c,yu,u,z,true,*outStream);
     con.checkInverseAdjointJacobian_1(yu,c,u,z,true,*outStream);
 
