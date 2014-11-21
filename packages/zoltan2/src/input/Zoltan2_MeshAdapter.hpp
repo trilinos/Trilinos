@@ -393,6 +393,10 @@ public:
 	Indices.resize (NumEntries);
 	Values.resize (NumEntries);
 	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+	for (size_t j = 0; j < NumEntries; ++j) {
+	  Indices[j];
+	}
       }
 
       return false;
