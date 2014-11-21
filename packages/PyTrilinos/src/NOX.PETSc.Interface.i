@@ -123,6 +123,25 @@ NOX.Epetra.Interface provides the following user-level class:
   }
 }
 
+////////////////////////////////////////////////////////
+// Typemaps for NOX::Petsc::Interface virtual methods //
+////////////////////////////////////////////////////////
+
+%typemap(directorin) Vec &
+{
+  $input = PyPetscVec_New($1);
+}
+
+%typemap(directorin) const Vec &
+{
+  $input = PyPetscVec_New($1);
+}
+
+%typemap(directorin) Mat &
+{
+  $input = PyPetscMat_New($1);
+}
+
 /////////////////////////////////
 // NOX_Petsc_Interface support //
 /////////////////////////////////
@@ -148,6 +167,6 @@ NOX.Epetra.Interface provides the following user-level class:
 //   By returning False, you tell NOX that computeF() was unsuccessful.
 // ")
 // NOX::Epetra::Interface::Required::computeF;
-%teuchos_rcp(NOX::Petsc::Interface::Interface)
-%feature("director") NOX::Petsc::Interface::Interface;
+%teuchos_rcp(NOX::Petsc::Interface)
+%feature("director") NOX::Petsc::Interface;
 %include "NOX_Petsc_Interface.H"
