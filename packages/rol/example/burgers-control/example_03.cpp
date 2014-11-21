@@ -674,11 +674,11 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
 
     // Check derivatives.
-    obj.checkGradient(x,y,true);
-    obj.checkHessVec(x,y,true);
-    con.checkApplyJacobian(x,y,c,true);
-    con.checkApplyAdjointJacobian(x,yu,c,x,true);
-    con.checkApplyAdjointHessian(x,yu,y,x,true);
+    obj.checkGradient(x,x,y,true,*outStream);
+    obj.checkHessVec(x,x,y,true,*outStream);
+    con.checkApplyJacobian(x,y,c,true,*outStream);
+    con.checkApplyAdjointJacobian(x,yu,c,x,true,*outStream);
+    con.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
 
     // Optimization 
     std::string filename = "input.xml";
@@ -703,7 +703,7 @@ int main(int argc, char *argv[]) {
     //u.zero();
     c.zero();
     l.zero();
-    std::vector<std::string> output = algo.run(x, g, l, c, obj, con, true);
+    std::vector<std::string> output = algo.run(x, g, l, c, obj, con, true, *outStream);
     //for ( unsigned i = 0; i < output.size(); i++ ) {
     //  std::cout << output[i];
     //}

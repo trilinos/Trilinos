@@ -52,8 +52,9 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
-
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {
   
@@ -108,19 +109,23 @@ class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
+  typedef typename InputTraits<User>::zgid_t   zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef User user_t;
-  typedef User userCoord_t;
-  typedef int LO;
-  typedef int GO;
+  typedef User                                 user_t;
+  typedef User                                 userCoord_t;
+  typedef double                               ST;
+  typedef int                                  LO;
+  typedef int                                  GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::Map<LO, GO, Node>      map_type;
-  typedef Tpetra::CrsGraph<LO, GO, Node> sparse_graph_type;
+  typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
+  typedef Teuchos::ScalarTraits<ST>            STS;
+  typedef Tpetra::Map<LO, GO, Node>            map_type;
+  typedef Tpetra::Export<LO, GO, Node>         export_type;
+  typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -262,74 +267,53 @@ public:
 	DefaultPlatform::getDefaultPlatform ().getComm ();
       RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
 
-      // Get element-node connectivity
+      // Get node-element connectivity
 
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-      //
-      // Get global element ids
-      //
-
       zgid_t const *Ids=NULL;
-      getIDsView(Ids);
+      getIDsViewOf(MESH_VERTEX, Ids);
 
-      /***********************************************************************/
-      /*********************** BUILD MAPS FOR TRANSPOSE **********************/
-      /***********************************************************************/
-
-      Array<GO> GIDs;
-      RCP<const map_type> MapG;
-
-      // count owned elements
       int LocalNumIDs = getLocalNumIDs();
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
-      // Build a list of the global ids...
-      GIDs.resize (LocalNumIDs);
-      for (int i = 0; i < LocalNumIDs; ++i) {
-	GIDs[i] = as<int> (Ids[i]);
+      /***********************************************************************/
+      /************************* BUILD MAPS FOR ADJS *************************/
+      /***********************************************************************/
+
+      Array<GO> adjsGIDs;
+      RCP<const map_type> adjsMapG;
+
+      // count owned nodes
+      int LocalNumOfNodes = getLocalNumOf(MESH_VERTEX);
+      
+      // Build a list of the ADJS global ids...
+      adjsGIDs.resize (LocalNumOfNodes);
+      for (int i = 0; i < LocalNumOfNodes; ++i) {
+	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
-      //Generate Map for elements.
-      MapG = rcp (new map_type (-1, GIDs (), 0, comm, node));
+      getIDsView(Ids);
+
+      //Generate Map for nodes.
+      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
 
       /***********************************************************************/
-      /********************** BUILD GRAPH FOR TRANSPOSE **********************/
+      /************************* BUILD GRAPH FOR ADJS ************************/
       /***********************************************************************/
 
-      RCP<sparse_graph_type> adjsGraphTranspose;
+      RCP<sparse_graph_type> adjsGraph;
 
       // Construct Tpetra::CrsGraph objects.
-      adjsGraphTranspose = rcp (new sparse_graph_type (MapG, 0));
-
-      for (int localRow = 0; localRow < LocalNumIDs; ++localRow) {
-
-	int globalRow = as<int> (Ids[localRow]);
-	//create ArrayView globalRow object for Tpetra
-	ArrayView<int> globalRowAV = Teuchos::arrayView (&globalRow, 1);
-
-	int NumAdjs;
-	if (localRow + 1 < LocalNumIDs) {
-	  NumAdjs = offsets[localRow+1];
-	} else {
-	  NumAdjs = LocalNumAdjs;
-	}
-
-	for (int j = offsets[localRow]; j < NumAdjs; ++j) {
-	  //globalCol for Tpetra Graph
-	  global_size_t globalColT = as<global_size_t> (adjacencyIds[j]);
-
-	  //Update Tpetra adjs Graph Transpose
-	  adjsGraphTranspose->insertGlobalIndices (globalColT, globalRowAV);
-	}// *** col loop ***
-      }// *** row loop ***
-
-      //Fill-complete adjs Graph Transpose.
-      adjsGraphTranspose->fillComplete ();
+      adjsGraph = rcp (new sparse_graph_type (adjsMapG, 0));
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+
+	//globalRow for Tpetra Graph
+	global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
+
 	int NumAdjs;
 	if (localElement + 1 < LocalNumIDs) {
 	  NumAdjs = offsets[localElement+1];
@@ -337,10 +321,81 @@ public:
 	  NumAdjs = LocalNumAdjs;
 	}
 
-	for (int Adjs = offsets[localElement]; Adjs < NumAdjs; ++Adjs) {
-	  //global_size_t globalNode = adjacencyIds[Adjs];
-	}
+	for (int j = offsets[localElement]; j < NumAdjs; ++j) {
+	  int globalCol = as<int> (adjacencyIds[j]);
+	  //create ArrayView globalCol object for Tpetra
+	  ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol,1);
+	  
+	  //Update Tpetra adjs Graph
+	  adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
+	}// *** node loop ***
+      }// *** element loop ***
+
+      //Fill-complete adjs Graph
+      adjsGraph->fillComplete ();
+
+      // Construct adjs matrix.
+      RCP<sparse_matrix_type> adjsMatrix =
+	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
+
+      adjsMatrix->setAllToScalar (STS::zero ());
+
+      // Find the local column numbers
+      RCP<const map_type> ColMap = adjsMatrix->getColMap ();
+      RCP<const map_type> globalMap =
+	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
+			   Tpetra::GloballyDistributed, node));
+
+      // Create the exporter from this process' column Map to the global
+      // 1-1 column map. (???)
+      RCP<const export_type> bdyExporter =
+	rcp (new export_type (ColMap, globalMap));
+      // Create a vector of global column indices to which we will export
+      RCP<Tpetra::Vector<int, LO, GO, Node> > globColsToZeroT =
+	rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
+      // Create a vector of local column indices from which we will export
+      RCP<Tpetra::Vector<int, LO, GO, Node> > myColsToZeroT =
+	rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
+      myColsToZeroT->putScalar (0);
+
+      // Set to 1 all local columns corresponding to the local rows specified.
+      for (int i = 0; i < LocalNumIDs; ++i) {
+	const GO globalRow = adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
+	const LO localCol =adjsMatrix->getColMap()->getLocalElement(globalRow);
+	// Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
+	// Epetra has a separate Epetra_IntVector class for ints.
+	myColsToZeroT->replaceLocalValue (localCol, 1);
       }
+
+      // Export to the global column map.
+      globColsToZeroT->doExport (*myColsToZeroT, *bdyExporter, Tpetra::ADD);
+      // Import from the global column map to the local column map.
+      myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
+
+      // We're done modifying the adjs matrix.
+      adjsMatrix->fillComplete ();
+
+      //Create Transpose
+      Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
+      RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
+
+      // Form 2ndAdjs
+      RCP<sparse_matrix_type> secondAdjs =
+	rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+      Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrixTranspose,
+				     false,*secondAdjs);
+      Array<GO> Indices;
+      Array<ST> Values;
+
+      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	const GO globalRow = Ids[localElement];
+	size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
+	Indices.resize (NumEntries);
+	Values.resize (NumEntries);
+	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+      }
+
+      return false;
     }
   }
 

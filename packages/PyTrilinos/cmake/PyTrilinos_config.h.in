@@ -56,6 +56,9 @@
 /* Define if EpetraExt capabilities are enabled within NOX::Epetra */
 #cmakedefine HAVE_NOX_EPETRAEXT
 
+/* Define if Petsc namespace is enabled within NOX */
+#cmakedefine HAVE_NOX_PETSC
+
 /* Define ML options */
 #define MLAPI_LC
 

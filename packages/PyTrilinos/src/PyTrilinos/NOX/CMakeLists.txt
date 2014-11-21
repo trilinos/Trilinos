@@ -42,7 +42,11 @@
 # ***********************************************************************
 # @HEADER
 
-# The NOX module employs namespaces, so include the Epetra directory
+# The NOX module employs namespaces, so include the sub-packages
 IF(NOX_ENABLE_Epetra)
   ADD_SUBDIRECTORY(Epetra)
 ENDIF(NOX_ENABLE_Epetra)
+
+IF(NOX_ENABLE_PETSC)
+  ADD_SUBDIRECTORY(PETSc)
+ENDIF(NOX_ENABLE_PETSC)

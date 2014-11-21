@@ -450,7 +450,10 @@ static void close_all_conn(void);
 
 static NNTI_result_t poll_all(
         int timeout);
-static NNTI_result_t progress(int timeout);
+static NNTI_result_t progress(
+        int                   timeout,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count);
 
 static void config_init(
         nnti_ib_config *c);
@@ -2731,13 +2734,14 @@ NNTI_result_t NNTI_ib_cancel (
     ib_wr=IB_WORK_REQUEST(wr);
     assert(ib_wr);
 
-    /* TODO: does this need a lock? */
+    nthread_lock(&ib_wr->lock);
     if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
         ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
     } else {
         log_warn(nnti_debug_level, "wr=%p is not in progress (current state is %d).  Cannot cancel.", wr, ib_wr->state);
         rc=NNTI_EINVAL;
     }
+    nthread_unlock(&ib_wr->lock);
 
     log_debug(nnti_debug_level, "exit (wr=%p)", wr);
 
@@ -2762,13 +2766,14 @@ NNTI_result_t NNTI_ib_cancelall (
         ib_wr=IB_WORK_REQUEST(wr_list[i]);
         assert(ib_wr);
 
-        /* TODO: does this need a lock? */
+        nthread_lock(&ib_wr->lock);
         if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
             ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
         } else {
             log_warn(nnti_debug_level, "wr_list[%d]=%p is not in progress (current state is %d).  Cannot cancel.", i, wr_list[i], ib_wr->state);
             rc=NNTI_EINVAL;
         }
+        nthread_unlock(&ib_wr->lock);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -2858,10 +2863,7 @@ NNTI_result_t NNTI_ib_wait (
         trios_start_timer(call_time);
 
         while (1) {
-
-            print_all_qp_state();
-
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, &wr, 1);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3080,7 +3082,7 @@ NNTI_result_t NNTI_ib_waitany (
         log_debug(debug_level, "wr NOT complete (wr_list=%p)", wr_list);
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3265,7 +3267,7 @@ NNTI_result_t NNTI_ib_waitall (
         log_debug(debug_level, "all wr NOT complete (wr_list=%p)", wr_list);
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -4540,9 +4542,11 @@ static int8_t is_wr_canceling(
 {
     int8_t rc=FALSE;
 
+    nthread_lock(&ib_wr->lock);
     if (ib_wr->state == NNTI_IB_WR_STATE_CANCELING) {
         rc=TRUE;
     }
+    nthread_unlock(&ib_wr->lock);
 
     log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
@@ -4554,10 +4558,12 @@ static int8_t is_wr_complete(
 {
     int8_t rc=FALSE;
 
+    nthread_lock(&ib_wr->lock);
     if ((ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE) ||
         (ib_wr->state==NNTI_IB_WR_STATE_WAIT_COMPLETE)) {
         rc=TRUE;
     }
+    nthread_unlock(&ib_wr->lock);
 
     log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
@@ -6256,11 +6262,16 @@ cleanup:
 
 
 #define CQ_COUNT 2
-NNTI_result_t progress(int timeout)
+static NNTI_result_t progress(
+        int                   timeout,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
 {
     int           rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
     int           ibv_rc=0;
+
+    uint32_t which=0;
 
     struct ibv_wc            wc;
     struct ibv_comp_channel *comp_channel;
@@ -6292,6 +6303,10 @@ NNTI_result_t progress(int timeout)
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
+    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
+        nthread_unlock(&nnti_progress_lock);
+        goto cleanup;
+    }
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
@@ -6315,7 +6330,6 @@ NNTI_result_t progress(int timeout)
                 log_debug(debug_level, "waiting for progress with timeout=0.  immediate timeout.");
                 // timeout == 0 and we are not the progress maker.  report a timeout.
                 rc=ETIMEDOUT;
-                nthread_lock(&nnti_progress_lock);
             }
             elapsed_time = (trios_get_time_ms() - entry_time);
             log_debug(debug_level, "rc=%d, elapsed_time=%d", rc, elapsed_time);
@@ -6392,7 +6406,9 @@ NNTI_result_t progress(int timeout)
                 ib_work_request *ib_wr=decode_work_request(&wc);
                 trios_stop_timer("progress - decode_work_request", call_time);
                 trios_start_timer(call_time);
+                nthread_lock(&ib_wr->lock);
                 process_event(ib_wr, &wc);
+                nthread_unlock(&ib_wr->lock);
                 trios_stop_timer("progress - process_event", call_time);
 
                 made_progress=true;

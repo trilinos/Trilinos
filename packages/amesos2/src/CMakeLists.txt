@@ -79,6 +79,7 @@ APPEND_SET(HEADERS
 # will know to include this file in the dependency analysis
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Include)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Source)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/AMD/Include)
@@ -210,6 +211,40 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Basker)
+  APPEND_SET(HEADERS
+    Amesos2_Basker.hpp
+    Amesos2_Basker_decl.hpp
+    Amesos2_Basker_def.hpp
+    Amesos2_Basker_FunctionMap.hpp
+    Amesos2_Basker_TypeMap.hpp
+    )
+
+   APPEND_SET(SOURCES
+     Amesos2_Basker_TypeMap.cpp
+     )
+
+   APPEND_SET(SOURCES
+      Amesos2_Basker.cpp
+      )
+
+    APPEND_SET(HEADERS
+        basker/basker.hpp
+        basker/basker_decl.hpp
+        basker/basker_def.hpp
+        basker/basker_scalartraits.hpp 
+        basker/basker_types.hpp
+       
+     )
+
+ENDIF()
+
+
+
+
+
+
+
     IF (${PACKAGE_NAME}_ENABLE_SuperLU)
       APPEND_SET(HEADERS
         Amesos2_Superlu.hpp
@@ -232,6 +267,9 @@ ENDIF()
       Amesos2_Superlu.cpp
       )
   ENDIF()
+
+
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)

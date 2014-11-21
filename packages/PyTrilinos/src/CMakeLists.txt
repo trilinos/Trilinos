@@ -64,6 +64,10 @@ IF(NOX_ENABLE_EpetraExt)
   SET(HAVE_NOX_EPETRAEXT ON)
 ENDIF(NOX_ENABLE_EpetraExt)
 
+IF(NOX_ENABLE_PETSC)
+  SET(HAVE_NOX_PETSC ON)
+ENDIF(NOX_ENABLE_PETSC)
+
 IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
   IF(Mpi4Py_FOUND)
@@ -86,8 +90,8 @@ ENDIF(APPLE)
 
 #
 # Add the current binary and source directories, the python include
-# path, the NumPy include path, and the Mpi4Py include path to the
-# include directories
+# path, the NumPy include path, the Mpi4Py include path, and the
+# PETSc4Py include path to the include directories
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
@@ -97,6 +101,9 @@ IF(TPL_ENABLE_MPI)
     INCLUDE_DIRECTORIES(${Mpi4Py_INCLUDE_DIR})
   ENDIF(Mpi4Py_FOUND)
 ENDIF(TPL_ENABLE_MPI)
+IF(NOX_ENABLE_PETSC)
+  INCLUDE_DIRECTORIES(${PETSC4PY_INCLUDES})
+ENDIF(NOX_ENABLE_PETSC)
 
 #
 # Copy the pyfragments.swg file to the build directory
@@ -114,19 +121,21 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 LIST(APPEND HEADERS
+  PyTrilinos_PythonException.hpp
+  PyTrilinos_FILEstream.hpp
+  PyTrilinos_Util.hpp
   numpy_include.hpp
   PyTrilinos_NumPyImporter.hpp
-  PyTrilinos_PythonException.hpp
-  PyTrilinos_Util.hpp
-  PyTrilinos_FILEstream.hpp
+  PyTrilinos_NumPy_Util.hpp
   PyTrilinos_DAP.hpp
   )
 
 LIST(APPEND SOURCES
-  PyTrilinos_NumPyImporter.cpp
   PyTrilinos_PythonException.cpp
-  PyTrilinos_Util.cpp
   PyTrilinos_FILEstream.cpp
+  PyTrilinos_Util.cpp
+  PyTrilinos_NumPyImporter.cpp
+  PyTrilinos_NumPy_Util.cpp
   PyTrilinos_DAP.cpp
   )
 
@@ -191,6 +200,20 @@ IF(PyTrilinos_ENABLE_EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 #
+# PyTrilinos + Domi headers and sources
+IF(PyTrilinos_ENABLE_Domi)
+
+  LIST(APPEND HEADERS
+    PyTrilinos_Domi_Util.hpp
+    )
+
+  LIST(APPEND SOURCES
+    PyTrilinos_Domi_Util.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 
@@ -199,20 +222,6 @@ IF(PyTrilinos_ENABLE_ML)
     )
 
 ENDIF(PyTrilinos_ENABLE_ML)
-
-#
-# PyTrilinos + Domi headers and sources
-# IF(PyTrilinos_ENABLE_Domi)
-
-#   LIST(APPEND HEADERS
-#     PyTrilinos_Domi_Util.hpp
-#     )
-
-#   LIST(APPEND SOURCES
-#     PyTrilinos_Domi_Util.cpp
-#     )
-
-# ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
 # Define the target for the swig runtime header
@@ -321,6 +330,21 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.NOX.PETSc
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/PETSc")
+    SET(TRILINOS_LIBS ${NOXPETSC_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/PETSc/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/PETSc/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/PETSc/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/PETSc/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/PETSc)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/PETSc)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/PETSc/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")

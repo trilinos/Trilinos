@@ -61,7 +61,7 @@ namespace ZOO {
 
   /** \brief Rosenbrock's function.
    */
-  template<class Real>
+  template< class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real> >
   class Objective_Rosenbrock : public Objective<Real> {
   private:
     Real alpha_;
@@ -73,8 +73,8 @@ namespace ZOO {
     Objective_Rosenbrock(Real alpha = 100.0) : alpha_(alpha), const1_(100.0), const2_(20.0) {}
 
     Real value( const Vector<Real> &x, Real &tol ) {
-      StdVector<Real> & ex =
-        Teuchos::dyn_cast<StdVector<Real> >(const_cast <Vector<Real> &>(x));
+      XPrim & ex =
+        Teuchos::dyn_cast<XPrim>(const_cast <Vector<Real> &>(x));
       Teuchos::RCP<const std::vector<Real> > xp = ex.getVector();
 
       int n = xp->size();
@@ -93,9 +93,9 @@ namespace ZOO {
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > gp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(g)).getVector());
 
       int n = xp->size();
       for( int i=0; i<n/2; i++ ) {
@@ -112,11 +112,11 @@ namespace ZOO {
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(hv)).getVector());
 
       int n = xp->size();
       for( int i=0; i<n/2; i++ ) {
@@ -131,11 +131,11 @@ namespace ZOO {
 #endif
     void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<XDual>(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(hv)).getVector());
 
       int n = xp->size();
       for( int i=0; i<n/2; i++ ) {
@@ -149,20 +149,20 @@ namespace ZOO {
     }
   };
 
-  template<class Real>
+  template<class Real, class XPrim, class XDual>
   void getRosenbrock( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
     // Cast Initial Guess and Solution Vectors
     Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(x0)).getVector());
     Teuchos::RCP<std::vector<Real> > xp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(x)).getVector());
     int n = xp->size();
     // Resize Vectors
     n = 100;
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_Rosenbrock<Real> );
+    obj = Teuchos::rcp( new Objective_Rosenbrock<Real, XPrim, XDual> );
     // Get Initial Guess
     for (int i=0; i<n/2; i++) {
       (*x0p)[2*i]   = -1.2;
