@@ -167,8 +167,47 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
             if (equivalent == false) continue;
             // if the permutation_id is to a positive permutation
             // the sides are not opposing, i.e. the elements are superimposed on each other
-            ThrowErrorMsgIf( (permutation_id < side_topology.num_positive_permutations())
-                , "Error: Non shell elements cannot be superimposed");
+
+            if ( permutation_id < side_topology.num_positive_permutations() )
+            {
+                stk::mesh::PartVector user_parts_elem1;
+                stk::mesh::PartVector user_parts_elem2;
+
+                const stk::mesh::PartVector &parts1 = mesh.bucket(elem).supersets();
+                const stk::mesh::PartVector &parts2 = mesh.bucket(potential_element).supersets();
+                for (size_t mm=0;mm<parts1.size();mm++)
+                {
+                    if ( !stk::mesh::is_auto_declared_part(*parts2[mm]) )
+                    {
+                        user_parts_elem1.push_back(parts1[mm]);
+                    }
+                }
+                for (size_t mm=0;mm<parts2.size();mm++)
+                {
+                    if ( !stk::mesh::is_auto_declared_part(*parts2[mm]) )
+                    {
+                        user_parts_elem2.push_back(parts2[mm]);
+                    }
+                } 
+                std::ostringstream os;
+                os << "*** Warning: element " << mesh.identifier(elem) << " ( ";
+                for (size_t mm=0;mm<user_parts_elem1.size();mm++)
+                {
+                    os << user_parts_elem1[mm]->name() << " ";
+                } 
+                os << ") and element " << mesh.identifier(potential_element) << " ( ";
+                for (size_t mm=0;mm<user_parts_elem2.size();mm++)
+                {
+                    os << user_parts_elem2[mm]->name() << " ";
+                } 
+                os << ") have overlapping volumes. ***" << std::endl;
+                std::cerr << os.str();
+                continue;
+            }
+            
+//            ThrowErrorMsgIf( (permutation_id < side_topology.num_positive_permutations())
+//                , "Error: Non shell elements cannot be superimposed id of elem1  = " << mesh.identifier(elem) << " and elem2 = " << mesh.identifier(potential_element) );
+
 
             found_adjacent_element = true;
             break;
