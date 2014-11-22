@@ -56,6 +56,7 @@
 
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ML2MueLuParameterTranslator.hpp>
 
 // These files must be included last
 #include <MueLu_UseDefaultTypes.hpp>
@@ -104,13 +105,14 @@ int main(int argc, char *argv[]) {
     RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
 
-    const int numLists = 3;
+    const int numLists = 4;
 
     Teuchos::ArrayRCP<std::string> fileLists[numLists];
     std::string                    dirList  [numLists], outDir;
     dirList[0] = "EasyParameterListInterpreter/";
     dirList[1] = "FactoryParameterListInterpreter/";
-    dirList[2] = "MLParameterListInterpreter/";
+    dirList[2] = "MLParameterListInterpreter/";  // use same input for MLParameterListInterpreter
+    dirList[3] = "MLParameterListInterpreter2/";  // and ML2MueLuParameterTranslator
     outDir     = "Output/";
 
     if (numProc == 1) {
@@ -118,15 +120,17 @@ int main(int argc, char *argv[]) {
       fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string(".xml"));
       fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string(".xml"));
       fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string(".xml"));
+      fileLists[3] = MueLuTests::TestHelpers::GetFileList(dirList[3], std::string(".xml"));
     } else {
       // In addition, rerun some files in parallel mode
       fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
       fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
       fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
+      fileLists[3] = MueLuTests::TestHelpers::GetFileList(dirList[3], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
     }
 
     bool failed = false;
-    for (int k = 0; k < numLists; k++) {
+    for (int k = 2; k < numLists; k++) {
       Teuchos::ArrayRCP<std::string> fileList = fileLists[k];
 
       for (int i = 0; i < fileList.size(); i++) {
@@ -198,11 +202,27 @@ int main(int argc, char *argv[]) {
             // works with Tpetra matrices.
             if (k< 2) mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
             else if (k==2) mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
+            else if (k==3) {
+              std::cout << "ML ParameterList: " << std::endl;
+              std::cout << paramList << std::endl;
+              RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+              std::cout << "MueLu ParameterList: " << std::endl;
+              std::cout << *mueluParamList << std::endl;
+              mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
+            }
 
             RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
             H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
-            // H->GetLevel(0)->Set("Nullspace",   nullspace);
+
+            if (k==2) {
+              // MLParameterInterpreter needs the nullspace information if rebalancing is active!
+              // add default constant null space vector
+              RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
+              nullspace->putScalar(1.0);
+              H->GetLevel(0)->Set("Nullspace", nullspace);
+            }
+
             H->GetLevel(0)->Set("Coordinates", coordinates);
 
             mueluFactory->SetupHierarchy(*H);

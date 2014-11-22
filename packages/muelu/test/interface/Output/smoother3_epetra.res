@@ -3,7 +3,7 @@ Level 0
  relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
-
+ 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
@@ -12,11 +12,11 @@ Level 1
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-
+   
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-
+  
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: mode = old   [default]
@@ -36,39 +36,39 @@ Level 1
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-
+   
    Build (MueLu::AmalgamationFactory)
    [empty list]
-
+   
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-
+   
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-
+   
   [empty list]
-
+  
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
-
+ 
  Transpose P (MueLu::TransPFactory)
  [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
-
+ 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
-
+ 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
@@ -77,11 +77,11 @@ Level 2
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-
+   
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-
+  
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: mode = old   [default]
@@ -101,38 +101,38 @@ Level 2
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-
+   
    Build (MueLu::AmalgamationFactory)
    [empty list]
-
+   
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-
+   
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-
+   
   [empty list]
-
+  
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
-
+ 
  Transpose P (MueLu::TransPFactory)
  [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
-
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
- presmoother ->
+ 
+ Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+ presmoother -> 
   [empty list]
-
+ 
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -151,6 +151,6 @@ Smoother (level 0) post : MueLu::IfpackSmoother{type = point relaxation stand-al
 Smoother (level 1) pre  : no smoother
 Smoother (level 1) post : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 2) post : no smoother
 

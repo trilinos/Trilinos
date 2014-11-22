@@ -49,8 +49,6 @@ Level 1
        remaining  : 0
        aggregates : 0 (phase), 3333 (total)
     "UC": MueLu::Aggregates{nGlobalAggregates = 3333}
-   Nullspace factory (MueLu::NullspaceFactory)
-    Generating canonical nullspace: dimension = 1
    Build (MueLu::CoarseMapFactory)
     domainGIDOffset: 0 block size: 1 stridedBlockId: -1
    Column map is consistent with the row map, good.

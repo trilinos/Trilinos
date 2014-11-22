@@ -4,6 +4,8 @@
 
     <parameter>
       <name>problem: type</name>
+      <name-ML>default values</name-ML>
+      <comment-ML>needs special treatment in ML. problem types have different names in ML and MueLu</comment-ML>
       <type>string</type>
       <default>"unknown"</default>
       <description>Type of problem to be solved.  Possible values: see Table~\ref{t:problem_types}.</description>
@@ -14,6 +16,10 @@
       <type>string</type>
       <default>"high"</default>
       <description>Control of the amount of printed information. Possible values: "none", "low", "medium", "high", "extreme".</description>
+      <name-ML>ML output</name-ML>
+      <comment-ML>The ML type of this parameter is int! MLParameter interpreter transformes int to MueLu verbosity strings</comment-ML>
+      <type-ML>int</type-ML>
+      <default-ML>0</default-ML>
     </parameter>
 
     <parameter>
@@ -26,6 +32,7 @@
       <Elasticity-2D>2</Elasticity-2D>
       <Elasticity-3D>3</Elasticity-3D>
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
+      <name-ML>PDE equations</name-ML>
     </parameter>
 
     <parameter>
@@ -40,6 +47,9 @@
       <type>string</type>
       <default>"V"</default>
       <description>Multigrid cycle type. Possible values: "V", "W".</description>
+      <name-ML>prec type</name-ML>
+      <comment-ML>needs special treatment in ML. ML uses different namings than MueLu</comment-ML>
+      <default-ML>MGV</default-ML>
     </parameter>
 
     <parameter>
@@ -56,6 +66,7 @@
 
     <parameter>
       <name>smoother: pre or post</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
       <default>"both"</default>
       <description>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).</description>
@@ -63,6 +74,7 @@
 
     <parameter>
       <name>smoother: type</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
       <default>"RELAXATION"</default>
       <Poisson-2D>"CHEBYSHEV"</Poisson-2D>
@@ -76,6 +88,7 @@
 
     <parameter>
       <name>smoother: pre type</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
       <default>"RELAXATION"</default>
       <description>Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
@@ -83,6 +96,7 @@
 
     <parameter>
       <name>smoother: post type</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
       <default>"RELAXATION"</default>
       <description>Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
@@ -90,6 +104,7 @@
 
     <parameter>
       <name>smoother: params</name>
+      <comment-ML>not supported by ML</comment-ML>
       <type>\parameterlist</type>
       <MHD>
         <parameter>
@@ -115,6 +130,7 @@
         </parameter>
         <parameter>
           <name>subdomain solver parameters</name>
+          <comment-ML>not supported by ML</comment-ML>
           <type>\parameterlist</type>
 
             <parameter>
@@ -154,18 +170,21 @@
 
     <parameter>
       <name>smoother: pre params</name>
+      <comment-ML>not supported by ML</comment-ML>
       <type>\parameterlist</type>
       <description>Pre-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
       <name>smoother: post params</name>
+      <comment-ML>not supported by ML</comment-ML>
       <type>\parameterlist</type>
       <description>Post-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
       <name>smoother: overlap</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>int</type>
       <default>0</default>
       <description>Smoother subdomain overlap.</description>
@@ -173,6 +192,7 @@
 
     <parameter>
       <name>smoother: pre overlap</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>int</type>
       <default>0</default>
       <description>Pre-smoother subdomain overlap.</description>
@@ -180,20 +200,25 @@
 
     <parameter>
       <name>smoother: post overlap</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>int</type>
       <default>0</default>
       <description>Post-smoother subdomain overlap.</description>
     </parameter>
 
     <parameter>
-      <name>coarse: max size</name>
+      <name>coarse: max size</name>    
       <type>int</type>
       <default>2000</default>
       <description>Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.</description>
+      <name-ML>max size</name-ML>
+      <default-ML>128</default-ML>
+      <comment-ML>needs special treatment in ML</comment-ML>
     </parameter>
 
     <parameter>
       <name>coarse: type</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
       <default>"SuperLU"</default>
       <description>Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.</description>
@@ -201,12 +226,14 @@
 
     <parameter>
       <name>coarse: params</name>
+      <comment-ML>not supported by ML</comment-ML>
       <type>\parameterlist</type>
       <description>Coarse solver parameters. \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
       <name>coarse: overlap</name>
+      <comment-ML>needs special treatment in ML</comment-ML>
       <type>int</type>
       <default>0</default>
       <description>Coarse solver subdomain overlap.</description>
@@ -221,7 +248,8 @@
       <type>string</type>
       <default>"uncoupled"</default>
       <description>Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.</description>
-
+      <comment-ML>needs special treatment in ML</comment-ML>
+      <default-ML>Uncoupled</default-ML>
     </parameter>
 
     <parameter>
@@ -229,6 +257,7 @@
       <type>string</type>
       <default>"natural"</default>
       <description>Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <!--
@@ -245,6 +274,7 @@
       <type>string</type>
       <default>"classical"</default>
       <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -252,6 +282,7 @@
       <type>double</type>
       <default>0.0</default>
       <description>Connectivity dropping threshold for a graph used in aggregation.</description>
+      <name-ML>aggregation: threshold</name-ML>      
     </parameter>
 
     <parameter>
@@ -260,6 +291,7 @@
       <default>2</default>
       <description>Minimum size of an aggregate.</description>
       <visible>true</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -268,6 +300,7 @@
       <default>-1</default>
       <description>Maximum size of an aggregate (-1 means unlimited).</description>
       <visible>true</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -276,6 +309,7 @@
       <default>0</default>
       <description>Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -283,6 +317,7 @@
       <type>double</type>
       <default>0.0</default>
       <description>Threshold for determining whether entries are zero during Dirichlet row detection.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -291,6 +326,7 @@
       <default>true</default>
       <description>Turn on/off phase 1 of aggregation</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -299,6 +335,7 @@
       <default>true</default>
       <description>Turn on/off phase 2a of aggregation</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -307,6 +344,7 @@
       <default>true</default>
       <description>Turn on/off phase 2b of aggregation</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -315,6 +353,7 @@
       <default>true</default>
       <description>Turn on/off phase 3 of aggregation</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -323,6 +362,7 @@
       <default>false</default>
       <description>Turn on/off Dirichlet points preservation</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -330,6 +370,7 @@
       <type>bool</type>
       <default>false</default>
       <description>Export data for visualization post-processing.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
     <parameter>
@@ -344,6 +385,7 @@
       <ConvectionDiffusion>"new"</ConvectionDiffusion>
       <description>old = Tobias, new = ML</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>      
     </parameter>
 
   </aggregation>
@@ -354,6 +396,7 @@
       <name>export data</name>
       <type>\parameterlist</type>
       <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -361,6 +404,9 @@
       <type>bool</type>
       <default>true</default>
       <description>Print parameters provided for a hierarchy construction.</description>
+      <name-ML>ML print initial list</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>-2</default-ML>
     </parameter>
 
     <parameter>
@@ -368,6 +414,9 @@
       <type>bool</type>
       <default>true</default>
       <description>Print parameters unused during a hierarchy construction.</description>
+      <name-ML>print unused</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>-2</default-ML>     
     </parameter>
 
     <parameter>
@@ -376,6 +425,7 @@
       <default>false</default>
       <MHD>true</MHD>
       <description>Use implicit transpose for the restriction operator.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
   </misc>
@@ -393,6 +443,10 @@
       <MHD>"unsmoothed"</MHD>
       <ConvectionDiffusion>"pg"</ConvectionDiffusion>
       <description>Multigrid method. Possible values: see Table~\ref{t:mgs}.</description>
+      <name-ML>energy minimization: enable</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>0</default-ML>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -400,6 +454,7 @@
       <type>int</type>
       <default>3</default>
       <description>Rate at which to coarsen unknowns in the z direction.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -407,6 +462,7 @@
       <type>double</type>
       <default>1.33</default>
       <description>Damping factor for smoothed aggregation.</description>
+      <name-ML>aggregation: damping factor</name-ML>
     </parameter>
 
     <parameter>
@@ -415,6 +471,7 @@
       <default>true</default>
       <ConvectionDiffusion>true</ConvectionDiffusion>
       <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -423,6 +480,7 @@
       <default>false</default>
       <description>Force calculation of eigenvalue estimate during prolongator smoothing.</description>
       <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -431,6 +489,7 @@
       <default>10</default>
       <description>Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.</description>
       <visible>false</visible>
+      <name-ML>eigen-analysis: iterations</name-ML>
     </parameter>
 
     <parameter>
@@ -438,6 +497,7 @@
       <type>bool</type>
       <default>true</default>
       <description>Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -445,6 +505,7 @@
       <type>bool</type>
       <default>true</default>
       <description>Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -453,6 +514,7 @@
       <default>true</default>
       <description>Set values to zero instead of constructing a new graph.</description>
       <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -460,6 +522,7 @@
       <type>string</type>
       <default>"cg"</default>
       <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "sd" (steepest descent).</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -467,6 +530,7 @@
       <type>int</type>
       <default>2</default>
       <description>Number of iterations to minimize initial prolongator energy in energy-minimization.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -474,6 +538,7 @@
       <type>int</type>
       <default>1</default>
       <description>Number of iterations to minimize the reused prolongator energy in energy-minimization.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -481,6 +546,7 @@
       <type>string</type>
       <default>"AkPtent"</default>
       <description>Sparsity pattern to use for energy minimization. Possible values: "AkPtent".</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -488,6 +554,7 @@
       <type>int</type>
       <default>1</default>
       <description>Matrix order for the "AkPtent" pattern.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
   </multigrid>
@@ -498,6 +565,7 @@
       <type>bool</type>
       <default>false</default>
       <description>Rebalancing on/off switch.</description>
+      <default-ML>0</default-ML>
     </parameter>
 
     <parameter>
@@ -505,12 +573,15 @@
       <type>string</type>
       <default>"zoltan2"</default>
       <description>Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).</description>
+      <default-ML>Zoltan</default-ML>
+      <comment-ML>needs special handling</comment-ML>
     </parameter>
 
     <parameter>
       <name>repartition: params</name>
       <type>\parameterlist</type>
       <description>Partitioner parameters. \muelu passes them directly to the appropriate package library.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -518,13 +589,16 @@
       <type>int</type>
       <default>2</default>
       <description>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description>
+      <default-ML>1</default-ML>
     </parameter>
 
     <parameter>
-      <name>repartition: min rows per proc</name>
+      <name>repartition: min rows per proc</name> 
       <type>int</type>
       <default>800</default>
       <description>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description>
+      <name-ML>repartition: min per proc</name-ML>   
+      <default-ML>512</default-ML>
     </parameter>
 
     <parameter>
@@ -532,6 +606,8 @@
       <type>double</type>
       <default>1.2</default>
       <description>Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.</description>
+      <name-ML>repartition: max min ratio</name-ML>
+      <default-ML>1.3</default-ML>
     </parameter>
 
     <parameter>
@@ -539,6 +615,7 @@
       <type>bool</type>
       <default>true</default>
       <description>Postprocessing for partitioning to reduce data migration.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -547,6 +624,7 @@
       <default>4</default>
       <description>Number of maximum components from each processor used to construct partial bipartite graph.</description>
       <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -555,6 +633,7 @@
       <default>false</default>
       <description>Partition distribution printout.</description>
       <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -562,6 +641,7 @@
       <type>bool</type>
       <default>true</default>
       <description>Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
   </rebalancing>

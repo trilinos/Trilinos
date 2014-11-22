@@ -297,24 +297,23 @@ namespace MueLu {
       AcFact->SetFactory("R", RFact);
 
       // define rebalancing factory for coarse matrix
-
       Teuchos::RCP<MueLu::AmalgamationFactory<SC, LO, GO, NO> > rebAmalgFact = Teuchos::rcp(new MueLu::AmalgamationFactory<SC, LO, GO, NO>());
       rebAmalgFact->SetFactory("A", AcFact);
-
+      
       MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
       MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
-
+      
       // create "Partition"
       Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", AcFact);
       isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
-
+      
       // create "Partition" by unamalgamtion
       Teuchos::RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = Teuchos::rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
       repInterface->SetFactory("A", AcFact);
       repInterface->SetFactory("AmalgamatedPartition", isoInterface);
       //repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact); // not necessary?
-
+      
       // Repartitioning (creates "Importer" from "Partition")
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
       {
@@ -325,20 +324,20 @@ namespace MueLu {
       }
       RepartitionFact->SetFactory("A", AcFact);
       RepartitionFact->SetFactory("Partition", repInterface);
-
+      
       // Reordering of the transfer operators
       RebalancedPFact = Teuchos::rcp(new RebalanceTransferFactory());
       RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
       RebalancedPFact->SetFactory("P", PFact);
       RebalancedPFact->SetFactory("Nullspace", PtentFact);
       RebalancedPFact->SetFactory("Importer",    RepartitionFact);
-
+      
       RebalancedRFact = Teuchos::rcp(new RebalanceTransferFactory());
       RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
       RebalancedRFact->SetFactory("R", RFact);
       RebalancedRFact->SetFactory("Importer",    RepartitionFact);
       //RebalancedRFact->DisableMultipleCheckGlobally();
-
+            
       // Compute Ac from rebalanced P and R
       RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());
       RebalancedAFact->SetFactory("A", AcFact);
@@ -456,9 +455,9 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy & H) const {
     // if nullspace_ has already been extracted from ML parameter list
+    // make nullspace available for MueLu
     if (nullspace_ != NULL) {
       RCP<Level> fineLevel = H.GetLevel(0);
-
       RCP<Operator> Op = fineLevel->Get<RCP<Operator> >("A");
       RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Op);
       if (!A.is_null()) {
@@ -537,7 +536,7 @@ namespace MueLu {
       ifpackType = "CHEBYSHEV";
 
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,     smootherParamList, "chebyshev: degree");
-      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 30, smootherParamList, "chebyshev: ratio eigenvalue");
+      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
 
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);

@@ -49,8 +49,6 @@ Level 1
        remaining  : 0
        aggregates : 0 (phase), 3333 (total)
     "UC": MueLu::Aggregates{nGlobalAggregates = 3333}
-   Nullspace factory (MueLu::NullspaceFactory)
-    Generating canonical nullspace: dimension = 1
    Build (MueLu::CoarseMapFactory)
     domainGIDOffset: 0 block size: 1 stridedBlockId: -1
    Column map is consistent with the row map, good.
@@ -234,8 +232,7 @@ Level 3
   Ac   # rows per proc   : avg = 3.71e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   Ac   #  nnz per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Max coarse size (<= 1000) achieved
- Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
-  IFPACK (Local SGS, sweeps=2, damping=1)
+ Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -255,6 +252,6 @@ Smoother (level 1) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
 Smoother (level 2) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
-Smoother (level 3) pre  : IFPACK (Local SGS, sweeps=2, damping=1)
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 3) post : no smoother
 

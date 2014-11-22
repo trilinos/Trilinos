@@ -48,6 +48,8 @@
 #include <MueLu_ConfigDefs.hpp>
 
 #include <Teuchos_XMLParameterListHelpers.hpp> // getParametersFromXmlFile()
+//#include <Teuchos_XMLParameterListCoreHelpers.hpp>
+
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
 #include <Epetra_CrsMatrix.h>
 #include <ml_MultiLevelPreconditioner.h>
@@ -64,7 +66,10 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
+
+#include <MueLu_ML2MueLuParameterTranslator.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -108,7 +113,8 @@ int main(int argc, char *argv[]) {
     Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
     std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
-    int muelu = true;        clp.setOption("muelu", &muelu,       "use muelu"); //TODO: bool instead of int
+    int muelu = true;            clp.setOption("muelu",  &muelu,             "use muelu through MLParameterListInterpreter");
+    int translatedmuelu = true;  clp.setOption("muelu2", &translatedmuelu,   "use muelu through XML parameter translation and ParameterListInterpreter"); 
     int ml    = true;
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
     clp.setOption("ml",    &ml,          "use ml");
@@ -174,6 +180,8 @@ int main(int argc, char *argv[]) {
       // Construct a multigrid preconditioner
       //
 
+      std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
+      
       // Multigrid Hierarchy
       MLParameterListInterpreter mueLuFactory(*params);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -275,6 +283,115 @@ int main(int argc, char *argv[]) {
 
     } // if (muelu)
 
+    
+    if ( translatedmuelu ) {
+       //
+      // Construct a multigrid preconditioner
+      //
+
+      RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(*params, "SA"));
+      std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
+      
+      // Multigrid Hierarchy
+      ParameterListInterpreter mueLuFactory(*mueluParams);
+      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+      // build default null space
+      LocalOrdinal numPDEs = 1;
+      if(A->IsView("stridedMaps")==true) {
+        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+        oldView = A->SwitchToView(oldView);
+      }
+
+      RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
+
+      for (int i=0; i<numPDEs; ++i) {
+        Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+        int numBlocks = nsValues.size() / numPDEs;
+        for (int j=0; j< numBlocks; ++j) {
+          nsValues[j*numPDEs + i] = 1.0;
+        }
+      }
+
+      H->GetLevel(0)->Set("Nullspace", nullspace);
+      H->GetLevel(0)->Set("A", A);
+
+      //
+      // build hierarchy
+      //
+      mueLuFactory.SetupHierarchy(*H);
+
+      //
+      // Solve Ax = b
+      //
+
+      RCP<Vector> X = VectorFactory::Build(map);
+      RCP<Vector> B = VectorFactory::Build(map);
+
+      X->putScalar((Scalar) 0.0);
+      B->setSeed(846930886); B->randomize();
+
+      // AMG as a standalone solver
+      H->IsPreconditioner(false);
+      H->Iterate(*B, *X, nIts);
+
+      // Print relative residual norm
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+      if (comm->getRank() == 0)
+        std::cout << "||Residual|| = " << residualNorms << std::endl;
+
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+      if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
+
+        // AMG as a preconditioner
+
+        //TODO: name mueluPrec and mlPrec not
+
+        H->IsPreconditioner(true);
+        MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
+
+        //
+        // Solve Ax = b
+        //
+        RCP<Epetra_CrsMatrix> eA; //duplicate code
+        { // TODO: simplify this
+          RCP<CrsMatrixWrap>     xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
+          RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
+          RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+          eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
+        }
+
+        RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
+        RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
+
+        eX->PutScalar((Scalar) 0.0);
+        eB->SetSeed(846930886); eB->Random();
+
+        Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
+
+        // AMG as a standalone solver
+        AztecOO solver(eProblem);
+        solver.SetPrecOperator(&mueluPrec);
+        solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
+        solver.SetAztecOption(AZ_output, 1);
+
+        solver.Iterate(nIts, 1e-10);
+
+        { //TODO: simplify this
+          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
+          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
+          // Print relative residual norm
+          Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+          if (comm->getRank() == 0)
+            std::cout << "||Residual|| = " << residualNorms2 << std::endl;
+        }
+
+        // TODO: AMG as a preconditioner (AZ_cg)
+      }
+#endif // HAVE_MUELU_AZTECOO     
+    } // if (translatedmuelu)
+    
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
     if (ml) {
 
