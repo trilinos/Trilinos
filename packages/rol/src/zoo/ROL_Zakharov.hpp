@@ -70,7 +70,7 @@
     \f]
 
     \author Created by G. von Winckel
- */
+**/
 
 #ifndef USE_HESSVEC 
 #define USE_HESSVEC 1
