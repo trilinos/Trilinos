@@ -146,7 +146,7 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
   }
 
   stepper_->reset(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_);
-  stepper_->setCallerWillCallPrintSolution(true);
+  //stepper_->setCallerWillCallPrintSolution(true);
 
   LOCA::Abstract::Iterator::IteratorStatus istat;
   LOCA::Abstract::Iterator::StepStatus sstat;
@@ -208,11 +208,12 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
         NOX::Thyra::Vector v_current(x_current);
         v_current = group_->getX(); }
 
+      modelInArgs.set_t(cpa);
       modelInArgs.set_x(x_current);
       modelInArgs.set_p(l, p_inargs);
 
       this->evalConvergedModel(modelInArgs, outArgs);
-      stepper_->callPrintSolution();
+      //stepper_->callPrintSolution();
     }
 
     if (!keep_iterating) break;
