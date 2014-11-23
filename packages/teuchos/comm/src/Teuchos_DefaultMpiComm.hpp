@@ -1007,25 +1007,48 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
            char globalReducts[]) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::reduceAll(...)" );
+  int err = MPI_SUCCESS;
 
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
+  MPI_Op op = Details::setMpiReductionOp (opWrap);
+
+  // FIXME (mfh 23 Nov 2014) Ross decided to mash every type into
+  // char.  This can cause correctness issues if we're actually doing
+  // a reduction over, say, double.  Thus, he creates a custom
+  // MPI_Datatype here that represents a contiguous block of char, so
+  // that MPI doesn't split up the reduction type and thus do the sum
+  // wrong.  It's a hack but it works.
+
   MPI_Datatype char_block;
+  err = MPI_Type_contiguous (bytes, MPI_CHAR, &char_block);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
+    "MPI_Type_contiguous failed with error \"" << mpiErrorCodeToString (err)
+    << "\".");
+  err = MPI_Type_commit (&char_block);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
+    "MPI_Type_commit failed with error \"" << mpiErrorCodeToString (err)
+    << "\".");
 
-  // TODO (mfh 26 Mar 2012) Check returned error codes of the MPI
-  // custom datatype functions.
-  MPI_Type_contiguous(bytes, MPI_CHAR, &char_block);
-  MPI_Type_commit(&char_block);
-
-  const int err =
-    MPI_Allreduce (const_cast<char*>(sendBuffer), globalReducts, 1, char_block,
-                   op.mpi_op(), *rawMpiComm_);
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::reduceAll (custom op): MPI_Allreduce failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
-
-  // TODO (mfh 26 Mar 2012) Check returned error codes of the MPI
-  // custom datatype functions.
-  MPI_Type_free(&char_block);
+  err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, 1,
+                       char_block, op, *rawMpiComm_);
+  if (err != MPI_SUCCESS) {
+    // Don't throw until we release the type resources we allocated
+    // above.  If freeing fails for some reason, let the memory leak
+    // go; we already have more serious problems if MPI_Allreduce
+    // doesn't work.
+    (void) MPI_Type_free (&char_block);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, "Teuchos::reduceAll (MPI, custom op): "
+      "MPI_Allreduce failed with error \"" << mpiErrorCodeToString (err)
+      << "\".");
+  }
+  err = MPI_Type_free (&char_block);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
+    "MPI_Type_free failed with error \"" << mpiErrorCodeToString (err)
+    << "\".");
 }
 
 
@@ -1082,19 +1105,16 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
     int_recvCounts = &ws_int_recvCounts[0];
   }
 
-  // Perform the operation
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp, false)));
-
-  const int err = MPI_Reduce_scatter(
-    const_cast<char*>(sendBuffer), myGlobalReducts,
-    const_cast<int*>(int_recvCounts),
-    MPI_CHAR,
-    op.mpi_op(),
-    *rawMpiComm_
-    );
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::reduceAllAndScatter: MPI_Reduce_scatter failed with "
-    "error \"" << mpiErrorCodeToString (err) << "\".");
+  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
+  MPI_Op op = Details::setMpiReductionOp (opWrap);
+  const int err =
+    MPI_Reduce_scatter (const_cast<char*> (sendBuffer), myGlobalReducts,
+                        const_cast<int*> (int_recvCounts), MPI_CHAR,
+                        op, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::MpiComm::"
+    "reduceAllAndScatter: MPI_Reduce_scatter failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
 }
 
 
@@ -1106,10 +1126,11 @@ void MpiComm<Ordinal>::scan(
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::scan(...)" );
 
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
+  MPI_Op op = Details::setMpiReductionOp (opWrap);
   const int err =
-    MPI_Scan (const_cast<char*>(sendBuffer), scanReducts, bytes, MPI_CHAR,
-              op.mpi_op(), *rawMpiComm_);
+    MPI_Scan (const_cast<char*> (sendBuffer), scanReducts, bytes, MPI_CHAR,
+              op, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::scan: MPI_Scan() failed with error \""
     << mpiErrorCodeToString (err) << "\".");

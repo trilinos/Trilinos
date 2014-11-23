@@ -40,121 +40,217 @@
 // @HEADER
 
 #include "Teuchos_MpiReductionOpSetter.hpp"
-#include "Teuchos_OpaqueWrapper.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 
-#ifdef MPIAPI
-#define CALL_API MPIAPI
-#else
-#define CALL_API
-#endif
-
-//
-// This implementation of handling the reduction operator
-// will work just fine in a single threaded program.
-// For multi-threaded program this has to be reworked!
-//
+#ifdef HAVE_MPI
+#  ifdef MPIAPI
+#    define CALL_API MPIAPI
+#  else
+#    define CALL_API
+#  endif
 
 //
-// The callback that an MPI implementation will actually call
+// mfh 23 Nov 2014: My commits over the past day or two attempt to
+// address Bug 6263.  In particular, the code as I found it had the
+// following issues:
+//
+//   1. Static RCP instances (that persist past return of main())
+//   2. Static MPI_Op datum (that persists past MPI_Finalize())
+//   3. Code won't work with MPI_THREAD_{SERIALIZED,MULTIPLE},
+//      because it assumes that only one MPI_Op for reductions
+//      is needed at any one time
+//
+// I'm neglecting Issue #3 for now and focusing on the first two
+// issues.  #1 goes away if one doesn't use RCPs and handles
+// deallocation manually (we could also use std::shared_ptr, but that
+// would require C++11).  #2 goes away with the standard idiom of an
+// MPI_Finalize() hook (attach a (key,value) pair to MPI_COMM_SELF).
 //
 
 extern "C" {
-void CALL_API Teuchos_MPI_reduction_op(
-  void              *invec
-  ,void             *inoutvec
-  ,int              *len
-  ,MPI_Datatype     *datatype
-  );
 
-void Teuchos_MPI_Op_free( MPI_Op *op )
-{
-  //if(Teuchos::GlobalMPISession::mpiIsInitialized())
-  //  MPI_Op_free(op);
-  //else
-  //  *op = MPI_OP_NULL;
-  //
-  // RAB: I have commented this out because this is getting called after
-  // MPI_Finalize() is called when the Teuchos::GlobalMPISession class is not
-  // being used..  On some systems, like MPICH, this was not problem.
-  // However, there are some systems that complain when you do this.
-  // Therefore, since I don't really know how to fix this problem, I am just
-  // going to punt and just not delete this MPI_Op object.  I suspect that
-  // many people do not clean up their MPI objects correctly so I would guess
-  // that almost every MPI implementation allows you to not free objects and
-  // end just fine.
-}
-
+// The MPI_Op that implements the reduction or scan operation will
+// call this function.  We only need to create the MPI_Op once
+// (lazily, on demand).  This function in turn will invoke
+// theReductOp_ (see below), which gets set to the current reduction
+// operation.  Thus, we only never need to create one MPI_Op, but we
+// swap out the function.  This is meant to save overhead in creating
+// and freeing MPI_Op for each reduction or scan.
+void CALL_API
+Teuchos_MPI_reduction_op (void* invec, void* inoutvec,
+                          int* len, MPI_Datatype* datatype);
 } // extern "C"
 
+namespace { // anonymous
+
 //
-// Manage the reduction operation as static data.  I have used access
-// functions here to allow more insulation for other implementations other
-// other than just single threaded programs.
+// The two static variables theMpiOp_ and theMpiOpKey_ are persistent
+// and initialized lazily.
 //
 
-namespace {
+// The MPI_Op singleton that implements the reduction or scan
+// operation.  We only need to create the MPI_Op once (lazily, on
+// demand).  When we create the MPI_Op, we stash its "destructor" in
+// MPI_COMM_SELF so that it gets freed at MPI_Finalize.  (This is a
+// standard MPI idiom.)
+MPI_Op theMpiOp_ = MPI_OP_NULL;
 
-Teuchos::RCP<const Teuchos::MpiReductionOpBase> the_reduct_op = Teuchos::null;
+// When we stash the MPI_Op singleton's "destructor" in MPI_COMM_SELF,
+// we get back a key.  This is the key.  If we ever needed to change
+// the destructor, we could use the key to look it up and free it.  We
+// don't in this case, but knowing that the key value is valid (!=
+// MPI_KEYVAL_INVALID) tells us whether the MPI_Op singleton has been
+// created yet.
+int theMpiOpKey_ = MPI_KEYVAL_INVALID; // flag value
 
-Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Op> > the_mpi_op = Teuchos::null;
+// The current reduction or scan "function."  (It's actually a class
+// instance.)
+//
+// This static variable is _NOT_ persistent.  It does not need
+// deallocation.
+const Teuchos::Details::MpiReductionOpBase* theReductOp_ = NULL;
 
-Teuchos::RCP<const Teuchos::MpiReductionOpBase> get_reduct_op()
+// Free the given MPI_Op, and return the error code returned by MPI_Op_free.
+int
+freeMpiOp (MPI_Op* op)
 {
-  return the_reduct_op;
-}
-
-void set_reduct_op( const Teuchos::RCP<const Teuchos::MpiReductionOpBase>& reduct_op )
-{
-  using Teuchos::null;
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( get_reduct_op() != null && reduct_op != null  );
-#endif
-  if(!the_mpi_op.get()) {
-    MPI_Op mpi_op = MPI_OP_NULL;
-    TEUCHOS_TEST_FOR_EXCEPT(
-      0!=MPI_Op_create( &Teuchos_MPI_reduction_op ,1 ,&mpi_op ) // Assume op is commutative?
-      );
-    the_mpi_op = Teuchos::opaqueWrapper(mpi_op,Teuchos_MPI_Op_free);
+  // If this function is called as an MPI_Finalize hook, MPI should
+  // still be initialized at this point, and it should be OK to call
+  // MPI functions.  Thus, we don't need to check if MPI is
+  // initialized.
+  int err = MPI_SUCCESS;
+  if (op != NULL) {
+    err = MPI_Op_free (op);
+    if (err == MPI_SUCCESS) {
+      // No externally visible side effects unless the above function succeeded.
+      *op = MPI_OP_NULL;
+    }
   }
-  the_reduct_op = reduct_op;
+  return err;
 }
 
-} // namespace
+// Free the MPI_Op singleton (theMpiOp_), and return the error code
+// returned by freeMpiOp_.  This is the singleton's "destructor" that
+// we attach to MPI_COMM_SELF as an MPI_Finalize hook.
+int
+freeMpiOpCallback (MPI_Comm, int, void*, void*)
+{
+  // We don't need any of the arguments to this function, since we're
+  // just freeing the singleton.
+  if (theMpiOp_ == MPI_OP_NULL) {
+    return MPI_SUCCESS;
+  } else {
+    return freeMpiOp (&theMpiOp_);
+  }
+}
+
+// Create the MPI_Op singleton that invokes the
+// Teuchos_MPI_reduction_op callback.  Assign the MPI_Op to theMpiOp_,
+// and set it up with an MPI_Finalize hook so it gets freed
+// automatically.  Store the hook's key in theMpiOpKey_.
+void createReductOp ()
+{
+  // This function has side effects on global singletons.  This check
+  // ensures that the function is idempotent.  We only need to create
+  // the MPI_Op singleton once.
+  if (theMpiOpKey_ != MPI_KEYVAL_INVALID) {
+    return; // We've already called this function; we don't have to again.
+  }
+
+  MPI_Op mpi_op = MPI_OP_NULL;
+
+  // FIXME (mfh 23 Nov 2014) I found the following comment here:
+  // "Assume op is commutative".  That's what it means to pass 1 as
+  // the second argument.  I don't know whether it's a good idea to
+  // keep that assumption.
+  int err = MPI_Op_create (&Teuchos_MPI_reduction_op, 1, &mpi_op);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::createReductOp: "
+    "MPI_Op_create (for custom reduction operator) failed!");
+
+  // Use the standard MPI idiom (attach a (key,value) pair to
+  // MPI_COMM_SELF with a "destructor" function) in order that
+  // theMpiOp_ gets freed at MPI_Finalize, if necessary.  Save the
+  // resulting key in theMpiOpKey_.
+
+  // 'key' is an output argument; we don't need to come up with a
+  // unique key (thank goodness!).
+  int key = 0;
+  err = MPI_Comm_create_keyval (MPI_COMM_NULL_COPY_FN, freeMpiOpCallback,
+                                &key, NULL);
+  if (err != MPI_SUCCESS) {
+    // Attempt to clean up by freeing the newly created MPI_Op.  If
+    // cleaning up fails, just let it slide, since we're already in
+    // trouble if MPI can't create a (key,value) pair.
+    (void) MPI_Op_free (&mpi_op);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, "Teuchos::createReductOp: "
+      "MPI_Comm_create_keyval (for custom reduction operator) failed!");
+  }
+  int val = key; // doesn't matter
+
+  // OpenMPI 1.8.1 man page: "MPI_Comm_set_attr stores the stipulated
+  // attribute value attribute_val for subsequent retrieval by
+  // MPI_Comm_get_attr. If the value is already present, then the
+  // outcome is as if MPI_Comm_delete_attr was first called to delete
+  // the previous value (and the callback function delete_fn was
+  // executed), and a new value was next stored."
+  err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
+  if (err != MPI_SUCCESS) {
+    // Attempt to clean up by freeing the newly created MPI_Op.  If
+    // cleaning up fails, just let it slide, since we're already in
+    // trouble if MPI can't create a (key,value) pair.
+    (void) MPI_Op_free (&mpi_op);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, "Teuchos::createReductOp: "
+      "MPI_Comm_set_attr (for custom reduction operator) failed!");
+  }
+
+  // The "transaction" succeeded; save the results.
+  theMpiOp_ = mpi_op;
+  theMpiOpKey_ = key;
+}
+
+void
+setReductOp (const Teuchos::Details::MpiReductionOpBase* reductOp)
+{
+  if (theMpiOpKey_ == MPI_KEYVAL_INVALID) {
+    createReductOp ();
+  }
+  theReductOp_ = reductOp;
+}
+
+} // namespace (anonymous)
 
 extern "C" {
-void CALL_API Teuchos_MPI_reduction_op(
-  void              *invec
-  ,void             *inoutvec
-  ,int              *len
-  ,MPI_Datatype     *datatype
-  )
+
+void CALL_API
+Teuchos_MPI_reduction_op (void* invec,
+                          void* inoutvec,
+                          int* len,
+                          MPI_Datatype* datatype)
 {
-  get_reduct_op()->reduce(invec,inoutvec,len,datatype);
+  if (theReductOp_ != NULL) {
+    theReductOp_->reduce (invec, inoutvec, len, datatype);
+  }
 }
 
 } // extern "C"
 
 namespace Teuchos {
+namespace Details {
 
-MpiReductionOpSetter::MpiReductionOpSetter(
-  const Teuchos::RCP<const MpiReductionOpBase>& reduct_op
-  )
+MPI_Op setMpiReductionOp (const MpiReductionOpBase& reductOp)
 {
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!reduct_op.get())
-#endif
-  set_reduct_op(reduct_op);
+  setReductOp (&reductOp);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    theMpiOpKey_ == MPI_KEYVAL_INVALID || theMpiOp_ == MPI_OP_NULL,
+    std::logic_error, "Teuchos::Details::setMpiReductionOp: Failed to create "
+    "theMpiOpKey_ or theMpiOp_.  This should never happen.  "
+    "Please report this bug to the Teuchos developers.");
+  return theMpiOp_;
 }
 
-MpiReductionOpSetter::~MpiReductionOpSetter()
-{
-  set_reduct_op( null );
-}
-
-MPI_Op MpiReductionOpSetter::mpi_op() const
-{
-  return (*the_mpi_op)();
-}
-
+} // namespace Details
 } // namespace Teuchos
+
+#endif // HAVE_MPI
