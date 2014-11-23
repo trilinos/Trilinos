@@ -172,9 +172,11 @@ void createReductOp ()
   // theMpiOp_ gets freed at MPI_Finalize, if necessary.  Save the
   // resulting key in theMpiOpKey_.
 
-  // 'key' is an output argument; we don't need to come up with a
-  // unique key (thank goodness!).
-  int key = 0;
+  // Key is an output argument of MPI_Comm_create_keyval.  If we
+  // ever wanted to call MPI_Comm_free_keyval, we would need to save
+  // the key.  MPI_Finalize will free the (key,value) pair
+  // automatically, so we never need to call MPI_Comm_free_keyval.
+  int key = MPI_KEYVAL_INVALID;
   err = MPI_Comm_create_keyval (MPI_COMM_NULL_COPY_FN, freeMpiOpCallback,
                                 &key, NULL);
   if (err != MPI_SUCCESS) {
@@ -188,12 +190,7 @@ void createReductOp ()
   }
   int val = key; // doesn't matter
 
-  // OpenMPI 1.8.1 man page: "MPI_Comm_set_attr stores the stipulated
-  // attribute value attribute_val for subsequent retrieval by
-  // MPI_Comm_get_attr. If the value is already present, then the
-  // outcome is as if MPI_Comm_delete_attr was first called to delete
-  // the previous value (and the callback function delete_fn was
-  // executed), and a new value was next stored."
+  // Attach the attribute to MPI_COMM_SELF.
   err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
   if (err != MPI_SUCCESS) {
     // Attempt to clean up by freeing the newly created MPI_Op.  If
