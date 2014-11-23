@@ -485,13 +485,13 @@ SerialBandDenseSolver<OrdinalType,ScalarType>::SerialBandDenseSolver()
     LDAF_(0),
     INFO_(0),
     LWORK_(0),
+    ANORM_(0.0),
     RCOND_(ScalarTraits<MagnitudeType>::zero()),
     ROWCND_(ScalarTraits<MagnitudeType>::zero()),
     COLCND_(ScalarTraits<MagnitudeType>::zero()),
     AMAX_(ScalarTraits<MagnitudeType>::zero()),
-    A_(0),
-    AF_(0),
-    ANORM_(0.0)
+    A_(NULL),
+    AF_(NULL)
 {
   resetMatrix();
 }
