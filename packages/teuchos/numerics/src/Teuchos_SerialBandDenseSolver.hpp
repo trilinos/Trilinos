@@ -164,7 +164,7 @@ namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
   class SerialBandDenseSolver : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>,
-				public LAPACK<OrdinalType, ScalarType>
+                                public LAPACK<OrdinalType, ScalarType>
   {
 
   public:
@@ -208,7 +208,7 @@ namespace Teuchos {
       must match row dimension of A.  X and B must have the same dimensions.
     */
     int setVectors(const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& X,
-		   const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& B);
+                   const RCP<SerialDenseMatrix<OrdinalType, ScalarType> >& B);
 
     //@}
     //! @name Strategy Modifying Methods
@@ -463,7 +463,6 @@ namespace Teuchos {
 template<typename OrdinalType, typename ScalarType>
 SerialBandDenseSolver<OrdinalType,ScalarType>::SerialBandDenseSolver()
   : CompObject(),
-    Object("Teuchos::SerialBandDenseSolver"),
     equilibrate_(false),
     shouldEquilibrate_(false),
     equilibratedA_(false),
@@ -554,7 +553,7 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::setMatrix(const RCP<SerialBan
 
   // Check that the new matrix is consistent.
   TEUCHOS_TEST_FOR_EXCEPTION(AB->values()==0, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::setMatrix: A is an empty SerialBandDenseMatrix<T>!");
+                     "SerialBandDenseSolver<T>::setMatrix: A is an empty SerialBandDenseMatrix<T>!");
 
   resetMatrix();
   Matrix_ = AB;
@@ -575,19 +574,19 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::setMatrix(const RCP<SerialBan
 
 template<typename OrdinalType, typename ScalarType>
 int SerialBandDenseSolver<OrdinalType,ScalarType>::setVectors(const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& X,
-							   const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
+                                                           const RCP<SerialDenseMatrix<OrdinalType,ScalarType> >& B)
 {
   // Check that these new vectors are consistent.
   TEUCHOS_TEST_FOR_EXCEPTION(B->numRows()!=X->numRows() || B->numCols() != X->numCols(), std::invalid_argument,
-		     "SerialBandDenseSolver<T>::setVectors: X and B are not the same size!");
+                     "SerialBandDenseSolver<T>::setVectors: X and B are not the same size!");
   TEUCHOS_TEST_FOR_EXCEPTION(B->values()==0, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
+                     "SerialBandDenseSolver<T>::setVectors: B is an empty SerialDenseMatrix<T>!");
   TEUCHOS_TEST_FOR_EXCEPTION(X->values()==0, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
+                     "SerialBandDenseSolver<T>::setVectors: X is an empty SerialDenseMatrix<T>!");
   TEUCHOS_TEST_FOR_EXCEPTION(B->stride()<1, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::setVectors: B has an invalid stride!");
+                     "SerialBandDenseSolver<T>::setVectors: B has an invalid stride!");
   TEUCHOS_TEST_FOR_EXCEPTION(X->stride()<1, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::setVectors: X has an invalid stride!");
+                     "SerialBandDenseSolver<T>::setVectors: X has an invalid stride!");
 
   resetVectors();
   LHS_ = X;
@@ -680,11 +679,11 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::solve() {
   if (ierr != 0) return(ierr);  // Can't equilibrate B, so return.
 
   TEUCHOS_TEST_FOR_EXCEPTION( (equilibratedA_ && !equilibratedB_) || (!equilibratedA_ && equilibratedB_) ,
-		     std::logic_error, "SerialBandDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
+                     std::logic_error, "SerialBandDenseSolver<T>::solve: Matrix and vectors must be similarly scaled!");
   TEUCHOS_TEST_FOR_EXCEPTION( RHS_==Teuchos::null, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
+                     "SerialBandDenseSolver<T>::solve: No right-hand side vector (RHS) has been set for the linear system!");
   TEUCHOS_TEST_FOR_EXCEPTION( LHS_==Teuchos::null, std::invalid_argument,
-		     "SerialBandDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
+                     "SerialBandDenseSolver<T>::solve: No solution vector (LHS) has been set for the linear system!");
 
   if (shouldEquilibrate() && !equilibratedA_)
     std::cout << "WARNING!  SerialBandDenseSolver<T>::solve: System should be equilibrated!" << std::endl;
@@ -734,9 +733,9 @@ template<typename OrdinalType, typename ScalarType>
 int SerialBandDenseSolver<OrdinalType,ScalarType>::applyRefinement()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!solved(), std::logic_error,
-		     "SerialBandDenseSolver<T>::applyRefinement: Must have an existing solution!");
+                     "SerialBandDenseSolver<T>::applyRefinement: Must have an existing solution!");
   TEUCHOS_TEST_FOR_EXCEPTION(A_==AF_, std::logic_error,
-		     "SerialBandDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
+                     "SerialBandDenseSolver<T>::applyRefinement: Cannot apply refinement if no original copy of A!");
 
 #ifdef HAVE_TEUCHOSNUMERICS_EIGEN
   // Implement templated GERFS or use Eigen.
@@ -751,8 +750,8 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::applyRefinement()
   INFO_ = 0;
   std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GBRFS_WORK( N_ );
   this->GBRFS(ETranspChar[TRANS_], N_, KL_, KU_, NRHS, A_+KL_, LDA_, AF_, LDAF_, &IPIV_[0],
-	      RHS_->values(), RHS_->stride(), LHS_->values(), LHS_->stride(),
-	      &FERR_[0], &BERR_[0], &WORK_[0], &GBRFS_WORK[0], &INFO_);
+              RHS_->values(), RHS_->stride(), LHS_->values(), LHS_->stride(),
+              &FERR_[0], &BERR_[0], &WORK_[0], &GBRFS_WORK[0], &INFO_);
 
   solutionErrorsEstimated_ = true;
   reciprocalConditionEstimated_ = true;
@@ -802,8 +801,8 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
       ptr = A_ + KL_ + j*LDA_ + TEUCHOS_MAX(KU_-j, 0);
       ScalarType s1 = C_[j];
       for (i=TEUCHOS_MAX(0,j-KU_); i<=TEUCHOS_MIN(M_-1,j+KL_); i++) {
-	*ptr = *ptr*s1*R_[i];
-	ptr++;
+        *ptr = *ptr*s1*R_[i];
+        ptr++;
       }
     }
   } else {
@@ -815,8 +814,8 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
       ptr = A_ + KL_ + j*LDA_ + TEUCHOS_MAX(KU_-j, 0);
       ScalarType s1 = C_[j];
       for (i=TEUCHOS_MAX(0,j-KU_); i<=TEUCHOS_MIN(M_-1,j+KL_); i++) {
-	*ptr = *ptr*s1*R_[i];
-	ptr++;
+        *ptr = *ptr*s1*R_[i];
+        ptr++;
       }
     }
     for (j=0; j<N_; j++) {
@@ -824,12 +823,12 @@ int SerialBandDenseSolver<OrdinalType,ScalarType>::equilibrateMatrix()
       ptrL = AF_ + KL_ + KU_ + 1 + j*LDAF_;
       ScalarType s1 = C_[j];
       for (i=TEUCHOS_MAX(0,j-(KL_+KU_)); i<=TEUCHOS_MIN(M_-1,j); i++) {
-	*ptrU = *ptrU*s1*R_[i];
-	ptrU++;
+        *ptrU = *ptrU*s1*R_[i];
+        ptrU++;
       }
       for (i=TEUCHOS_MAX(0,j); i<=TEUCHOS_MIN(M_-1,j+KL_); i++) {
-	*ptrL = *ptrL*s1*R_[i];
-	ptrL++;
+        *ptrL = *ptrL*s1*R_[i];
+        ptrL++;
       }
     }
   }
