@@ -1,0 +1,36 @@
+ 
+\label{sec:ml_options}
+\muelu provides a basic compatibility layer for \ml parameter lists. This allows \ml users to quickly perform some experiments with \muelu. Long term, we would like to have users use the new \muelu interface, as that is where most of new features will be made accessible. One should make note of the fact that it may not be possible to make ML deck do exactly same things in \ml and \muelu, as internally \ml implicitly makes some decision that we have no control over and which could be different from \muelu.
+
+\noindent There are basically two distinct ways to use \ml input parameters with \muelu:
+\begin{description}
+\item[MLParameterListInterpreter:] This class is the pendant of the \texttt{ParameterListInterpreter} class for the \muelu parameters. It accepts parameter lists or XML files with \ml parameters and generates a \muelu multigrid hierarchy. It supports only a well-defined subset of \ml parameters which have a equivalent parameter in \muelu.
+\item[ML2MueLuParameterTranslator:] This class is a simple wrapper class which translates \ml parameters to the corresponding \muelu parameters. It has to be used in combination with the \muelu \texttt{ParameterListInterpreter} class to generate a \muelu multigrid hierarchy. It is also meant to be used in combination with the \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} routines (see \S\ref{sec:examples in code}). It supports only a small subset of the \ml parameters.
+\end{description}
+
+\section{Compatible \ml parameters}
+
+\subsection{General \ml options}
+\input{mloptions_general}
+
+\subsection{Smoothing and coarse solver options}
+
+\mlcbb{smoother: type}{string}{"symmetric Gauss-Seidel"}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Smoother type for fine- and intermedium multigrid levels. Possible values: "Jacobi", "Gauss-Seidel", "symmetric Gauss-Seidel", "Chebyshev", "ILU".}
+
+\mlcbb{smoother: sweeps}{int}{2}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Number of smoother sweeps for relaxation based level smoothers. In case of Chebyshev smoother it denotes the polynomial degree.}
+
+\mlcbb{smoother: damping factor}{double}{1.0}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Damping factor for relaxation based level smoothers.}
+
+\mlcbb{smoother: Chebyshev alpha}{double}{20}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Eigenvalue ratio for Chebyshev level smoother.}
+
+\input{mloptions_smoothing_and_coarse}
+
+\mlcbb{coarse: type}{string}{"Amesos-KLU"}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Solver for coarsest level. Possible values: "Amesos-KLU", "Amesos-Superlu" (depending on \muelu installation).}
+
+
+\subsection{Transfer operator options}
+\input{mloptions_multigrid}
+
+\subsection{Rebalancing options}
+\input{mloptions_rebalancing}
+

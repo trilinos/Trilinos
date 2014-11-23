@@ -4,11 +4,12 @@
 
     <parameter>
       <name>problem: type</name>
-      <name-ML>default values</name-ML>
-      <comment-ML>needs special treatment in ML. problem types have different names in ML and MueLu</comment-ML>
       <type>string</type>
       <default>"unknown"</default>
       <description>Type of problem to be solved.  Possible values: see Table~\ref{t:problem_types}.</description>
+      <name-ML>default values</name-ML>
+      <comment-ML>needs special treatment in ML. problem types have different names in ML and MueLu</comment-ML>
+      <type-ML>string</type-ML>      
     </parameter>
 
     <parameter>
@@ -20,12 +21,13 @@
       <comment-ML>The ML type of this parameter is int! MLParameter interpreter transformes int to MueLu verbosity strings</comment-ML>
       <type-ML>int</type-ML>
       <default-ML>0</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Control of the amount of printed information. Possible values: 0-10 with 0=no output and 10=maximum verbosity.</description-ML>
     </parameter>
 
     <parameter>
       <name>number of equations</name>
       <type>int</type>
-      <default>1</default>
       <default>1</default>
       <Poisson-2D>1</Poisson-2D>
       <Poisson-3D>1</Poisson-3D>
@@ -33,13 +35,22 @@
       <Elasticity-3D>3</Elasticity-3D>
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
       <name-ML>PDE equations</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>1</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Number of PDE equations at each grid node. Only constant block size is considered.</description-ML>      
     </parameter>
-
+    
     <parameter>
       <name>max levels</name>
       <type>int</type>
       <default>10</default>
       <description>Maximum number of levels in a hierarchy.</description>
+      <name-ML>max levels</name-ML>
+      <type-ML>int</type-ML>
+      <default-ML>10</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Maximum number of levels in a hierarchy.</description-ML>
     </parameter>
 
     <parameter>
@@ -48,8 +59,11 @@
       <default>"V"</default>
       <description>Multigrid cycle type. Possible values: "V", "W".</description>
       <name-ML>prec type</name-ML>
+      <type-ML>string</type-ML>
       <comment-ML>needs special treatment in ML. ML uses different namings than MueLu</comment-ML>
-      <default-ML>MGV</default-ML>
+      <default-ML>"MGV"</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Multigrid cycle type. Possible values: "MGV", "MGW". Other values are NOT supported by MueLu.</description-ML>
     </parameter>
 
     <parameter>
@@ -70,6 +84,11 @@
       <type>string</type>
       <default>"both"</default>
       <description>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).</description>
+	  <name-ML>smoother: pre or post</name-ML>
+	  <type-ML>string</type-ML>
+	  <default-ML>"both"</default-ML>      
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers).</description-ML>    
     </parameter>
 
     <parameter>
@@ -212,8 +231,11 @@
       <default>2000</default>
       <description>Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.</description>
       <name-ML>max size</name-ML>
+      <type-ML>int</type-ML>
       <default-ML>128</default-ML>
       <comment-ML>needs special treatment in ML</comment-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Maximum dimension of a coarse grid. \ml will stop coarsening once it is achieved.</description-ML>
     </parameter>
 
     <parameter>
@@ -446,6 +468,8 @@
       <name-ML>energy minimization: enable</name-ML>
       <type-ML>int</type-ML>
       <default-ML>0</default-ML>
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Enable energy minimization transfer operators (using Petrov-Galerkin approach).</description-ML>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -463,6 +487,10 @@
       <default>1.33</default>
       <description>Damping factor for smoothed aggregation.</description>
       <name-ML>aggregation: damping factor</name-ML>
+      <type-ML>double</type-ML>
+      <default-ML>1.33</default-ML>      
+      <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
+      <description-ML>Damping factor for smoothed aggregation.</description-ML>
     </parameter>
 
     <parameter>
@@ -565,7 +593,11 @@
       <type>bool</type>
       <default>false</default>
       <description>Rebalancing on/off switch.</description>
+      <name-ML>repartition: enable</name-ML>
+      <type-ML>int</type-ML>
       <default-ML>0</default-ML>
+      <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
+      <description-ML>Rebalancing on/off switch. Only limited support for repartitioning. Does not use provided node coordinates.</description-ML>
     </parameter>
 
     <parameter>
@@ -589,7 +621,11 @@
       <type>int</type>
       <default>2</default>
       <description>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description>
+      <name-ML>repartition: start level</name-ML>
+      <type-ML>int</type-ML>
       <default-ML>1</default-ML>
+      <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
+      <description-ML>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description-ML>      
     </parameter>
 
     <parameter>
@@ -597,8 +633,11 @@
       <type>int</type>
       <default>800</default>
       <description>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description>
-      <name-ML>repartition: min per proc</name-ML>   
+      <name-ML>repartition: min per proc</name-ML>  
+      <type-ML>int</type-ML> 
       <default-ML>512</default-ML>
+      <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
+      <description-ML>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description-ML>
     </parameter>
 
     <parameter>
@@ -607,7 +646,10 @@
       <default>1.2</default>
       <description>Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.</description>
       <name-ML>repartition: max min ratio</name-ML>
+      <type-ML>double</type-ML>
       <default-ML>1.3</default-ML>
+      <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
+      <description-ML>Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.</description-ML>
     </parameter>
 
     <parameter>
