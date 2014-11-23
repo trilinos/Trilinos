@@ -303,6 +303,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Make the ${PROJECT_NAME} configure process verbose."
     )
 
+  ADVANCED_SET(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_VERBOSE_CONFIGURE}
+    CACHE BOOL
+    "Show a configure time trace of every test added or not added any why (one line)."
+    )
+
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_LINK_LIBS
     "Dump the link libraries for every library and executable created."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )

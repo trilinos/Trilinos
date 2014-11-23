@@ -105,8 +105,8 @@ prints a table like:
   ----------------------------------------------------------------
   | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
   |----|-----------------|--------|-----------------|---|----|---|
-  |  0 | BaseRepo (Base) | dummy  |                 |   |  0 | 0 |
-  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 | 0 |
+  |  0 | BaseRepo (Base) | dummy  |                 |   |    |   |
+  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 |   |
   |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
   ----------------------------------------------------------------
 
@@ -193,6 +193,29 @@ externally developed git repos, git submodules are not well suited for
 managing the co-development of multiple git repos.  A more detailed discussion
 of different approaches to managing the development and integration of
 multiple git repos, see the TriBITS Developers Guide.
+
+USEFUL ALIASES:
+
+Two very useful Linux/Unix aliases are:
+
+  $ alias gitdist-status="gitdist dist-repo-status"
+  $ alias gitdist-mod="gitdist --dist-mod-only"
+
+This avoids lot of typing as these arguments are used a lot when working with
+many git repos.  For example, to see the status of all your repos, do:
+
+  $ gitdist-status | less
+
+To see the changes in the repos use:
+
+  $ gitdist-mod log --name-status HEAD ^origin/master
+
+or
+
+  $ gitdist-mod local-stat
+
+(where 'local-stat' is a useful git alias defined in the script
+'git-config-alias.sh').
 """
 
 import sys
