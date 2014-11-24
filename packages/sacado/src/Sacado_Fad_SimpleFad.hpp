@@ -32,7 +32,6 @@
 
 #include "Sacado_Fad_SimpleFadTraits.hpp"
 #include "Sacado_Fad_DynamicStorage.hpp"
-#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -53,12 +52,18 @@ namespace Sacado {
 
     public:
 
+      //! Base classes
+      typedef DynamicStorage<ValueT> StorageType;
+      typedef GeneralFad<ValueT,StorageType> GeneralFadType;
+
       //! Typename of values
-      typedef ValueT value_type;
+      typedef typename GeneralFadType::value_type value_type;
+
+      //! Typename of scalar's (which may be different from value_type)
+      typedef typename GeneralFadType::scalar_type scalar_type;
 
       //! Typename of scalar's (which may be different from ValueT)
-      typedef typename ScalarType<ValueT>::type scalar_type;
-      typedef scalar_type ScalarT;
+      typedef typename ScalarType<ValueT>::type ScalarT;
 
       //! Turn SimpleFad into a meta-function class usable with mpl::apply
       template <typename T>
@@ -76,29 +81,22 @@ namespace Sacado {
        * Initializes value to 0 and derivative array is empty
        */
       SimpleFad() :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >() {}
+        GeneralFadType() {}
 
-      //! Constructor with supplied value \c x of type ValueT
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      SimpleFad(const ValueT& x) :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
+      //! Constructor with supplied value \c x convertible to ValueT
       /*!
        * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
        */
-      SimpleFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >(ValueT(x)) {}
+      template <typename S>
+      SimpleFad(const S& x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        GeneralFadType(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       SimpleFad(const int sz, const ValueT& x) :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,x) {}
+        GeneralFadType(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -107,15 +105,15 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       SimpleFad(const int sz, const int i, const ValueT & x) :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,i,x) {}
+        GeneralFadType(sz,i,x) {}
 
       //! Copy constructor
       SimpleFad(const SimpleFad& x) :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
+        GeneralFadType(x) {}
 
       //! Tangent copy constructor
       SimpleFad(const SimpleFad& x, const ValueT& v, const ValueT& partial) :
-        GeneralFad< ValueT,DynamicStorage<ValueT> >(x.size(), v) {
+        GeneralFadType(x.size(), v) {
         for (int i=0; i<this->size(); i++)
           this->fastAccessDx(i) = x.fastAccessDx(i)*partial;
       }
@@ -136,46 +134,83 @@ namespace Sacado {
       }
 
       //! Assignment operator with constant right-hand-side
-      SimpleFad& operator=(const ValueT& v) {
-        GeneralFad< ValueT,DynamicStorage<ValueT> >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      SimpleFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        GeneralFad< ValueT,DynamicStorage<ValueT> >::operator=(ValueT(v));
+      template <typename S>
+      SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator=(const S& v) {
+        GeneralFadType::operator=(v);
         return *this;
       }
 
       //! Assignment operator with SimpleFad right-hand-side
       SimpleFad& operator=(const SimpleFad& x) {
-        GeneralFad< ValueT,DynamicStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,DynamicStorage<ValueT> >&>(x));
+        GeneralFadType::operator=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
-      //! Addition-assignment operator with Expr right-hand-side
-      SimpleFad& operator += (const SimpleFad& x);
+      //! Addition-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator += (const S& x) {
+        GeneralFadType::operator+=(x);
+        return *this;
+      }
 
-      //! Subtraction-assignment operator with Expr right-hand-side
-      SimpleFad& operator -= (const SimpleFad& x);
+      //! Subtraction-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator -= (const S& x) {
+        GeneralFadType::operator-=(x);
+        return *this;
+      }
 
-      //! Multiplication-assignment operator with Expr right-hand-side
-      SimpleFad& operator *= (const SimpleFad& x);
+      //! Multiplication-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator *= (const S& x) {
+        GeneralFadType::operator*=(x);
+        return *this;
+      }
 
-      //! Division-assignment operator with Expr right-hand-side
-      SimpleFad& operator /= (const SimpleFad& x);
+      //! Division-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator /= (const S& x) {
+        GeneralFadType::operator/=(x);
+        return *this;
+      }
+
+      //! Addition-assignment operator with SimpleFad right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      SimpleFad& operator += (const SimpleFad& x) {
+        GeneralFadType::operator+=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Subtraction-assignment operator with SimpleFad right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      SimpleFad& operator -= (const SimpleFad& x) {
+        GeneralFadType::operator-=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Multiplication-assignment operator with SimpleFad right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      SimpleFad& operator *= (const SimpleFad& x) {
+        GeneralFadType::operator*=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Division-assignment operator with SimpleFad right-hand-side
+      KOKKOS_INLINE_FUNCTION
+      SimpleFad& operator /= (const SimpleFad& x) {
+        GeneralFadType::operator/=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
 
     }; // class SimpleFad<ValueT>
 
   } // namespace Fad
 
 } // namespace Sacado
-
-// Include method definitions
-#include "Sacado_Fad_SimpleFadImp.hpp"
 
 // Include elementary operation overloads
 #include "Sacado_Fad_SimpleFadOps.hpp"

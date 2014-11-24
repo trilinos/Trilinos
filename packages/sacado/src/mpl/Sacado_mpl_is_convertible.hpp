@@ -27,31 +27,46 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_CACHEFAD_VIEWFAD_HPP
-#define SACADO_CACHEFAD_VIEWFAD_HPP
-
-#include "Sacado_CacheFad_GeneralFadExpr.hpp"
-#include "Sacado_CacheFad_ViewFadTraits.hpp"
-#include "Sacado_Fad_ViewStorage.hpp"
+#ifndef SACADO_MPL_IS_CONVERTIBLE_HPP
+#define SACADO_MPL_IS_CONVERTIBLE_HPP
 
 namespace Sacado {
 
-  namespace CacheFad {
+  namespace mpl {
 
-    /*!
-     * \brief Forward-mode AD class using dynamic memory allocation and
-     * expression templates.
-     */
-    /*!
-     * This is the user-level class for forward mode AD with dynamic
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is not known at compile time.  The user
-     * interface is provided by Sacado::Fad::GeneralFad.
-     */
-#include "Sacado_Fad_ViewFad_tmpl.hpp"
+    //
+    // A simplified implementation of boost type-trait
+    // is_convertible<From,To>.  We use this in a much more limited context
+    // within Sacado, and so the easy implementation should always work.
+    // We assume From and To are "scalar" types, e.g., are not pointer or
+    // reference types.
+    //
 
-  } // namespace CacheFad
+    struct convertible_impl {
+      typedef char yes;       // sizeof(yes) == 1
+      typedef char (&no)[2];  // sizeof(no)  == 2
 
-} // namespace Sacado
+      // A function that takes anything convertible to a To
+      template <typename To> static yes tester(To);
 
-#endif // SACADO_CACHEFAD_VIEWFAD_HPP
+      // Overload resolution prefers anything over ...
+      template <typename To> static no tester(...);
+
+      // Check if From is convertible to To
+      template <typename From, typename To>
+      struct checker {
+        static From& f;
+        static const bool value = sizeof(tester<To>(f)) == sizeof(yes);
+      };
+    };
+
+    template <typename From, typename To>
+    struct is_convertible {
+      static const bool value = convertible_impl::checker<From,To>::value;
+    };
+
+  }
+
+}
+
+#endif // SACADO_MPL_IS_CONVERTIBLE_HPP

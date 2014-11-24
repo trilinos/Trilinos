@@ -55,7 +55,6 @@
 #include "Sacado_Fad_SFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
-#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -104,9 +103,12 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array is empty
        */
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const T & x) : val_(x), update_val_(true)  {
-        ss_array<T>::zero(dx_, Num); }
+      Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        val_(x), update_val_(true) {
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz and value \c x
       /*!
@@ -131,7 +133,7 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x);
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL);
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -178,7 +180,7 @@ namespace Sacado {
       //! Returns whether two Fad objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      bool isEqualTo(const Expr<S>& x) const {
+      SACADO_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& x) const {
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
         bool eq = IE::eval(x.val(), this->val());
@@ -256,18 +258,22 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator=(const T& val);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator=(const S& v) {
+        val_ = v;
+        ss_array<T>::zero(dx_, Num);
+        return *this;
+      }
 
       //! Assignment with Expr right-hand-side
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >&
-      operator=(const Expr< SFadExprTag<T,Num> >& x);
+      Expr& operator=(const Expr& x);
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x);
 
       //@}
 
@@ -277,40 +283,60 @@ namespace Sacado {
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator += (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator += (const S& v) {
+        if (update_val_) this->val() += v;
+        return *this;
+      }
 
       //! Subtraction-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator -= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator -= (const S& v) {
+        if (update_val_) this->val() -= v;
+        return *this;
+      }
 
       //! Multiplication-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator *= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator *= (const S& v) {
+        if (update_val_) this->val() *= v;
+        for (int i=0; i<Num; ++i)
+          dx_[i] *= v;
+        return *this;
+      }
 
       //! Division-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator /= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator /= (const S& v) {
+        if (update_val_) this->val() /= v;
+        for (int i=0; i<Num; ++i)
+          dx_[i] /= v;
+        return *this;
+      }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x);
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x);
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x);
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x);
 
       //@}
 
@@ -334,120 +360,7 @@ namespace Sacado {
      * of derivative components is known at compile time.  The size
      * of the derivative array is fixed by the template parameter \c Num.
      */
-    template <typename ValueT, int Num>
-    class SFad :
-      public Expr< SFadExprTag<ValueT,Num > > {
-
-    public:
-
-      //! Typename of scalar's (which may be different from ValueT)
-      typedef typename ScalarType<ValueT>::type ScalarT;
-
-      //! Turn SFad into a meta-function class usable with mpl::apply
-      template <typename T>
-      struct apply {
-        typedef SFad<T,Num> type;
-      };
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad() :
-        Expr< SFadExprTag< ValueT,Num > >() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
-      /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        Expr< SFadExprTag< ValueT,Num > >(ValueT(x)) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const int sz, const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const int sz, const int i, const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(sz,i,x) {}
-
-      //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      SFad(const SFad& x) :
-        Expr< SFadExprTag< ValueT,Num > >(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x)) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SFad(const Expr<S>& x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //@}
-
-      //! Destructor
-      KOKKOS_INLINE_FUNCTION
-      ~SFad() {}
-
-      //! Assignment operator with constant right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const ValueT& v) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(v));
-        return *this;
-      }
-
-      //! Assignment operator with DFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const SFad& x) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x));
-        return *this;
-      }
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const Expr<S>& x)
-      {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(x);
-        return *this;
-      }
-
-    }; // class SFad<ValueT,Num>
+#include "Sacado_Fad_SFad_tmpl.hpp"
 
   } // namespace Fad
 

@@ -33,7 +33,6 @@
 #include "Sacado_ELRFad_GeneralFadExpr.hpp"
 #include "Sacado_ELRFad_SLFadTraits.hpp"
 #include "Sacado_Fad_StaticStorage.hpp"
-#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -53,125 +52,7 @@ namespace Sacado {
      * constructor or the \c n argument to diff().  The user
      * interface is provided by Sacado::Fad::GeneralFad.
      */
-    template <typename ValueT, int Num>
-    class SLFad :
-      public Expr< GeneralFad<ValueT,Fad::StaticStorage<ValueT,Num> > > {
-
-    public:
-
-      //! Typename of scalar's (which may be different from ValueT)
-      typedef typename ScalarType<ValueT>::type ScalarT;
-
-      //! Turn SLFad into a meta-function class usable with mpl::apply
-      template <typename T>
-      struct apply {
-        typedef SLFad<T,Num> type;
-      };
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SLFad() :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SLFad(const ValueT& x) :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
-      /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SLFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(ValueT(x)) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      SLFad(const int sz, const ValueT & x) :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SLFad(const int sz, const int i, const ValueT & x) :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(sz,i,x) {}
-
-      //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      SLFad(const SLFad& x) :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(x) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SLFad(const Expr<S>& x) :
-        Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(x) {}
-
-      //@}
-
-      //! Destructor
-      KOKKOS_INLINE_FUNCTION
-      ~SLFad() {}
-
-      //! Assignment operator with constant right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SLFad& operator=(const ValueT& v) {
-        GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SLFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(ValueT(v));
-        return *this;
-      }
-
-      //! Assignment operator with DFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SLFad& operator=(const SLFad& x) {
-        GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(static_cast<const GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >&>(x));
-        return *this;
-      }
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SLFad& operator=(const Expr<S>& x)
-      {
-        GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(x);
-        return *this;
-      }
-
-    }; // class SLFad<ValueT,Num>
-
-    template <typename T, int N>
-    struct BaseExpr< GeneralFad<T,Fad::StaticStorage<T,N> > > {
-      typedef SLFad<T,N> type;
-    };
+#include "Sacado_Fad_SLFad_tmpl.hpp"
 
   } // namespace ELRFad
 

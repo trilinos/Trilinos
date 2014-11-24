@@ -33,7 +33,6 @@
 #include "Sacado_CacheFad_GeneralFadExpr.hpp"
 #include "Sacado_CacheFad_DFadTraits.hpp"
 #include "Sacado_Fad_DynamicStorage.hpp"
-#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -52,127 +51,7 @@ namespace Sacado {
      * that cache the results of val() calculations for later dx()
      * calculations.
      */
-    template <typename ValueT>
-    class DFad : public Expr< GeneralFad<ValueT,
-                                         Fad::DynamicStorage<ValueT> > > {
-
-    public:
-
-      //! Typename of scalar's (which may be different from ValueT)
-      typedef typename ScalarType<ValueT>::type ScalarT;
-      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::value_type value_type;
-      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::scalar_type scalar_type;
-
-      //! Turn DFad into a meta-function class usable with mpl::apply
-      template <typename T>
-      struct apply {
-        typedef DFad<T> type;
-      };
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      DFad() :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >() {}
-
-      //! Constructor with supplied value \c x of type ValueT
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      DFad(const ValueT& x) :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
-      /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      DFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(ValueT(x)) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      DFad(const int sz, const ValueT& x) :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      DFad(const int sz, const int i, const ValueT & x) :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(sz,i,x) {}
-
-      //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      DFad(const DFad& x) :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(x) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      DFad(const Expr<S>& x) :
-        Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(x) {}
-
-      //@}
-
-      //! Destructor
-      KOKKOS_INLINE_FUNCTION
-      ~DFad() {}
-
-      //! Assignment operator with constant right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      DFad& operator=(const ValueT& v) {
-        GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      DFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(ValueT(v));
-        return *this;
-      }
-
-      //! Assignment operator with DFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      DFad& operator=(const DFad& x) {
-        GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >&>(x));
-        return *this;
-      }
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      DFad& operator=(const Expr<S>& x)
-      {
-        GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(x);
-        return *this;
-      }
-
-    }; // class DFad<ValueT>
-
-    template <typename T>
-    struct BaseExpr< GeneralFad<T,Fad::DynamicStorage<T> > > {
-      typedef DFad<T> type;
-    };
+#include "Sacado_Fad_DFad_tmpl.hpp"
 
   } // namespace CacheFad
 

@@ -33,7 +33,6 @@
 #include "Sacado_Fad_GeneralFadExpr.hpp"
 #include "Sacado_Fad_DVFadTraits.hpp"
 #include "Sacado_Fad_VectorDynamicStorage.hpp"
-#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -55,6 +54,17 @@ namespace Sacado {
 
     public:
 
+      //! Base classes
+      typedef VectorDynamicStorage<ValueT> StorageType;
+      typedef GeneralFad<ValueT,StorageType> GeneralFadType;
+      typedef Expr<GeneralFadType> ExprType;
+
+      //! Typename of values
+      typedef typename ExprType::value_type value_type;
+
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ExprType::scalar_type scalar_type;
+
       //! Typename of scalar's (which may be different from ValueT)
       typedef typename ScalarType<ValueT>::type ScalarT;
 
@@ -74,29 +84,22 @@ namespace Sacado {
        * Initializes value to 0 and derivative array is empty
        */
       DVFad() :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >() {}
+        ExprType() {}
 
-      //! Constructor with supplied value \c x of type ValueT
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      DVFad(const ValueT& x) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
+     //! Constructor with supplied value \c x convertible to ValueT
       /*!
        * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
        */
-      DVFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(ValueT(x)) {}
+      template <typename S>
+      DVFad(const S& x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        ExprType(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       DVFad(const int sz, const ValueT& x) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x) {}
+        ExprType(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -105,7 +108,7 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       DVFad(const int sz, const int i, const ValueT & x) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x) {}
+        ExprType(sz,i,x) {}
 
       //! Constructor with supplied memory
       /*!
@@ -113,7 +116,7 @@ namespace Sacado {
        * to\c dx.  Derivative array is zero'd out if \c zero_out is true.
        */
       DVFad(const int sz, ValueT* x, ValueT* dx, bool zero_out = false) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x,dx,zero_out) {}
+        ExprType(sz,x,dx,zero_out) {}
 
       //! Constructor with supplied memory and index \c i
       /*!
@@ -122,15 +125,16 @@ namespace Sacado {
        * i.e., sets derivative component \c i to 1 and all other's to zero.
        */
       DVFad(const int sz, const int i, ValueT* x, ValueT* dx) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x,dx) {}
+        ExprType(sz,i,x,dx) {}
 
       //! Copy constructor
       DVFad(const DVFad& x) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+        ExprType(x) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> DVFad(const Expr<S>& x) :
-        Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+      template <typename S>
+      DVFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
+        ExprType(x) {}
 
       //@}
 
@@ -138,30 +142,111 @@ namespace Sacado {
       ~DVFad() {}
 
       //! Assignment operator with constant right-hand-side
-      DVFad& operator=(const ValueT& v) {
-        GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      DVFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(ValueT(v));
+      template <typename S>
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator=(const S& v) {
+        GeneralFadType::operator=(v);
         return *this;
       }
 
       //! Assignment operator with DVFad right-hand-side
       DVFad& operator=(const DVFad& x) {
-        GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,VectorDynamicStorage<ValueT> >&>(x));
+        GeneralFadType::operator=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Assignment operator with any expression right-hand-side
-      template <typename S> DVFad& operator=(const Expr<S>& x)
+      template <typename S>
+      SACADO_ENABLE_EXPR_FUNC(DVFad&) operator=(const Expr<S>& x)
       {
-        GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(x);
+        GeneralFadType::operator=(x);
+        return *this;
+      }
+
+      //! Addition-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator += (const S& x) {
+        GeneralFadType::operator+=(x);
+        return *this;
+      }
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator -= (const S& x) {
+        GeneralFadType::operator-=(x);
+        return *this;
+      }
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator *= (const S& x) {
+        GeneralFadType::operator*=(x);
+        return *this;
+      }
+
+      //! Division-assignment operator with constant right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator /= (const S& x) {
+        GeneralFadType::operator/=(x);
+        return *this;
+      }
+
+      //! Addition-assignment operator with DVFad right-hand-side
+      DVFad& operator += (const DVFad& x) {
+        GeneralFadType::operator+=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Subtraction-assignment operator with DVFad right-hand-side
+      DVFad& operator -= (const DVFad& x) {
+        GeneralFadType::operator-=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Multiplication-assignment operator with DVFad right-hand-side
+      DVFad& operator *= (const DVFad& x) {
+        GeneralFadType::operator*=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Division-assignment operator with DVFad right-hand-side
+      DVFad& operator /= (const DVFad& x) {
+        GeneralFadType::operator/=(static_cast<const GeneralFadType&>(x));
+        return *this;
+      }
+
+      //! Addition-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator += (const Expr<S>& x) {
+        GeneralFadType::operator+=(x);
+        return *this;
+      }
+
+      //! Subtraction-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator -= (const Expr<S>& x) {
+        GeneralFadType::operator-=(x);
+        return *this;
+      }
+
+      //! Multiplication-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator *= (const Expr<S>& x) {
+        GeneralFadType::operator*=(x);
+        return *this;
+      }
+
+      //! Division-assignment operator with Expr right-hand-side
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      SACADO_ENABLE_VALUE_FUNC(DVFad&) operator /= (const Expr<S>& x) {
+        GeneralFadType::operator/=(x);
         return *this;
       }
 

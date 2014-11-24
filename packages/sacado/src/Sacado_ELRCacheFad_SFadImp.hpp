@@ -53,6 +53,15 @@
 #include "Sacado_mpl_range_c.hpp"
 #include "Sacado_mpl_for_each.hpp"
 
+#define SACADO_SFAD_ENABLE_FUNC \
+  typename Sacado::mpl::enable_if< \
+    Sacado::mpl::is_same< \
+      typename Sacado::ELRCacheFad::Expr<S>::value_type, \
+      typename Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::value_type\
+    >, \
+    Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >& \
+  >::type
+
 template <typename T, int Num>
 KOKKOS_INLINE_FUNCTION
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
@@ -86,7 +95,8 @@ template <typename T, int Num>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-Expr(const Expr<S>& x) : update_val_(x.updateValue())
+Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DEF) :
+  update_val_(x.updateValue())
 {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if (x.size() != Num)
@@ -153,18 +163,6 @@ template <typename T, int Num>
 KOKKOS_INLINE_FUNCTION
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-operator=(const T& v)
-{
-  val_ = v;
-  ss_array<T>::zero(dx_, Num);
-
-  return *this;
-}
-
-template <typename T, int Num>
-KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator=(const Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >& x)
 {
   // Copy value
@@ -183,7 +181,7 @@ operator=(const Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Nu
 template <typename T, int Num>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
+SACADO_SFAD_ENABLE_FUNC
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator=(const Expr<S>& x)
 {
@@ -221,63 +219,9 @@ operator=(const Expr<S>& x)
 }
 
 template <typename T, int Num>
-KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-operator += (const T& v)
-{
-  if (update_val_)
-    val_ += v;
-
-  return *this;
-}
-
-template <typename T, int Num>
-KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-operator -= (const T& v)
-{
-  if (update_val_)
-    val_ -= v;
-
-  return *this;
-}
-
-template <typename T, int Num>
-KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-operator *= (const T& v)
-{
-  if (update_val_)
-    val_ *= v;
-
-  for (int i=0; i<Num; ++i)
-    dx_[i] *= v;
-
-  return *this;
-}
-
-template <typename T, int Num>
-KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
-operator /= (const T& v)
-{
-  if (update_val_)
-    val_ /= v;
-
-  for (int i=0; i<Num; ++i)
-    dx_[i] /= v;
-
-  return *this;
-}
-
-template <typename T, int Num>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
+SACADO_SFAD_ENABLE_FUNC
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -317,7 +261,7 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 template <typename T, int Num>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
+SACADO_SFAD_ENABLE_FUNC
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -357,7 +301,7 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 template <typename T, int Num>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
+SACADO_SFAD_ENABLE_FUNC
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -400,7 +344,7 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 template <typename T, int Num>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >&
+SACADO_SFAD_ENABLE_FUNC
 Sacado::ELRCacheFad::Expr< Sacado::ELRCacheFad::SFadExprTag<T,Num> >::
 operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -442,3 +386,4 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
   return *this;
 }
 
+#undef SACADO_SFAD_ENABLE_FUNC

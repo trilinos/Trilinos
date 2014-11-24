@@ -52,9 +52,12 @@ namespace Sacado {
 
     public:
 
+      typedef T value_type;
+
       //! Default constructor (needed to satisfy interface)
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      ViewStorage(const T & x) :
+      ViewStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor with size \c sz (needed to satisfy interface)

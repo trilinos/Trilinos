@@ -212,6 +212,8 @@ ENDIF(${PACKAGE_NAME}_ENABLE_Teuchos)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mpl)
 SET(HEADERS ${HEADERS}
   mpl/Sacado_mpl_is_same.hpp
+  mpl/Sacado_mpl_is_convertible.hpp
+  mpl/Sacado_mpl_enable_if.hpp
   mpl/Sacado_mpl_disable_if.hpp
   mpl/Sacado_mpl_if.hpp
   mpl/Sacado_mpl_none.hpp

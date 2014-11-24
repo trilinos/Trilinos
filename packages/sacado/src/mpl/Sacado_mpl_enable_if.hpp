@@ -27,31 +27,39 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_CACHEFAD_VIEWFAD_HPP
-#define SACADO_CACHEFAD_VIEWFAD_HPP
-
-#include "Sacado_CacheFad_GeneralFadExpr.hpp"
-#include "Sacado_CacheFad_ViewFadTraits.hpp"
-#include "Sacado_Fad_ViewStorage.hpp"
+#ifndef SACADO_MPL_ENABLE_IF_HPP
+#define SACADO_MPL_ENABLE_IF_HPP
 
 namespace Sacado {
 
-  namespace CacheFad {
+  namespace mpl {
 
-    /*!
-     * \brief Forward-mode AD class using dynamic memory allocation and
-     * expression templates.
-     */
-    /*!
-     * This is the user-level class for forward mode AD with dynamic
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is not known at compile time.  The user
-     * interface is provided by Sacado::Fad::GeneralFad.
-     */
-#include "Sacado_Fad_ViewFad_tmpl.hpp"
+    template <bool, typename T = void>
+    struct enable_if_c {};
 
-  } // namespace CacheFad
+    template <typename T>
+    struct enable_if_c<true, T> {
+      typedef T type;
+    };
 
-} // namespace Sacado
+    template <class Cond, typename T = void>
+    struct enable_if
+      : enable_if_c<Cond::value, T> {};
 
-#endif // SACADO_CACHEFAD_VIEWFAD_HPP
+    template <bool, typename T = void>
+    struct lazy_enable_if_c {};
+
+    template <typename T>
+    struct lazy_enable_if_c<true, T> {
+      typedef typename T::type type;
+    };
+
+    template <class Cond, typename T = void>
+    struct lazy_enable_if
+      : lazy_enable_if_c<Cond::value, T> {};
+
+  }
+
+}
+
+#endif // SACADO_MPL_ENABLE_IF_HPP

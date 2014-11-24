@@ -236,7 +236,8 @@ namespace Sacado {
       ScalarFlopCounter() {}
 
       /// Construct to scalar value
-      ScalarFlopCounter(const T &v) : val_(v) {}
+      template <typename S>
+      ScalarFlopCounter(const S &v, SACADO_ENABLE_VALUE_CTOR_DECL) : val_(v) {}
 
       /// Return the current value
       const T& val() const { return val_; }
