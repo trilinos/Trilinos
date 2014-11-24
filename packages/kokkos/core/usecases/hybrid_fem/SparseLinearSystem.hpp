@@ -278,7 +278,13 @@ void cgsolve(
 
 #if defined( KOKKOS_HAVE_CUDA )
 
+#if ( CUDA_VERSION < 6000 )
+#pragma message "cusparse_v2.h"
 #include <cusparse_v2.h>
+#else
+#pragma message "cusparse.h"
+#include <cusparse.h>
+#endif
 
 namespace Kokkos {
 namespace Impl {
