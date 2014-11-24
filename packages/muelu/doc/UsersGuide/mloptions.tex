@@ -1,6 +1,8 @@
  
 \label{sec:ml_options}
-\muelu provides a basic compatibility layer for \ml parameter lists. This allows \ml users to quickly perform some experiments with \muelu. Long term, we would like to have users use the new \muelu interface, as that is where most of new features will be made accessible. One should make note of the fact that it may not be possible to make ML deck do exactly same things in \ml and \muelu, as internally \ml implicitly makes some decision that we have no control over and which could be different from \muelu.
+\muelu provides a basic compatibility layer for \ml parameter lists. This allows \ml users to quickly perform some experiments with \muelu. 
+
+\textbf{First and most important: } Long term, we would like to have users use the new \muelu interface, as that is where most of new features will be made accessible. One should make note of the fact that it may not be possible to make ML deck do exactly same things in \ml and \muelu, as internally \ml implicitly makes some decision that we have no control over and which could be different from \muelu.
 
 \noindent There are basically two distinct ways to use \ml input parameters with \muelu:
 \begin{description}
@@ -8,8 +10,81 @@
 \item[ML2MueLuParameterTranslator:] This class is a simple wrapper class which translates \ml parameters to the corresponding \muelu parameters. It has to be used in combination with the \muelu \texttt{ParameterListInterpreter} class to generate a \muelu multigrid hierarchy. It is also meant to be used in combination with the \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} routines (see \S\ref{sec:examples in code}). It supports only a small subset of the \ml parameters.
 \end{description}
 
-\section{Compatible \ml parameters}
+\section{Usage of \ml parameter lists with \muelu}
 
+\subsection{MLParameterListInterpreter}
+
+The \texttt{MLParameterListInterpreter} directly accepts a \texttt{ParameterList} containing \ml parameters. It also interprets the \texttt{null space: vectors} and the \texttt{null space: dimension} \ml parameters. However, it is recommended to provide the near null space vectors directly in the \muelu way as shown in the following code snippet.
+
+\begin{lstlisting}[language=C++]
+    Teuchos::RCP<Tpetra::CrsMatrix<> > A;
+    // create A here ...
+    
+    // XML file containing ML parameters
+    std::string xmlFile = "mlParameters.xml"
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+       
+    // use ParameterListInterpreter with MueLu parameters as input
+    Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(*paramList));
+    
+    RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
+    H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+    H->GetLevel(0)->Set("Nullspace", nullspace);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueluFactory->SetupHierarchy(*H);
+\end{lstlisting}
+
+Note that the \texttt{MLParameterListInterpreter} only supports a basic set of \ml parameters allowing to build smoothed aggregation transfer operaotrs (see \S\ref{sec:compatiblemlparameters} for a list of compatible \ml parameters).
+
+\subsection{ML2MueLuParameterTranslator}
+
+The \texttt{Ml2MueLuParameterTranslator} class is a simple wrapper translating \ml parameters to the corresponding \muelu parameters. This allows the usage of the simple \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} interface with \ml parameters:
+
+\begin{lstlisting}[language=C++]
+    Teuchos::RCP<Tpetra::CrsMatrix<> > A;
+    // create A here ...
+    
+    // XML file containing ML parameters
+    std::string xmlFile = "mlParameters.xml"
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+    // translate ML parameters to MueLu parameters
+    RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+
+    Teuchos::RCP<MueLu::TpetraOperator> mueLuPreconditioner =
+       MueLu::CreateTpetraPreconditioner(A, mueluParamList);
+\end{lstlisting}
+
+In a similar way, \ml input parameters can be used with the standard \muelu parameter list interpreter class. Note that the near null space vectors have to be provided in the \muelu way.
+
+\begin{lstlisting}[language=C++]
+    Teuchos::RCP<Tpetra::CrsMatrix<> > A;
+    // create A here ...
+    
+    // XML file containing ML parameters
+    std::string xmlFile = "mlParameters.xml"
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+    
+    // translate ML parameters to MueLu parameters
+    RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+    
+    // use ParameterListInterpreter with MueLu parameters as input
+    Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
+    
+    RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
+    H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+    H->GetLevel(0)->Set("Nullspace", nullspace);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueluFactory->SetupHierarchy(*H);
+\end{lstlisting}
+
+Note that the set of supported \ml parameters is very limited. Please refer to \S\ref{sec:compatiblemlparameters} for a list of all compatible \ml parameters.
+
+\section{Compatible \ml parameters}
+\label{sec:compatiblemlparameters}
 \subsection{General \ml options}
 \input{mloptions_general}
 

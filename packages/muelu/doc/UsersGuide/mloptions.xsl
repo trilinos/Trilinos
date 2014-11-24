@@ -11,14 +11,37 @@
       <xsl:if test="compatibility-ML">
 
         <!-- If default field is present, include it -->
-        <xsl:choose>
-          <xsl:when test="default-ML">
-\mlcbb{<xsl:value-of select="name-ML"/>}{<xsl:value-of select="type-ML"/>}{<xsl:value-of select="default-ML"/>}{<xsl:value-of select="compatibility-ML"/>}{<xsl:value-of select="description-ML"/>}
-          </xsl:when><xsl:otherwise>
-\mlcba{<xsl:value-of select="name-ML"/>}{<xsl:value-of select="type-ML"/>}{<xsl:value-of select="compatibility-ML"/>}{<xsl:value-of select="description-ML"/>}
-          </xsl:otherwise>
-        </xsl:choose>
-
+<xsl:choose>
+        <xsl:when test="name-ML">
+\mlcbb{<xsl:value-of select="name-ML"/>
+        </xsl:when>
+        <xsl:otherwise> 
+\mlcbb{<xsl:value-of select="name"/>
+      </xsl:otherwise>
+</xsl:choose>}{<xsl:choose>
+        <xsl:when test="type-ML">
+  <xsl:value-of select="type-ML"/>
+        </xsl:when>
+        <xsl:otherwise> 
+  <xsl:value-of select="type"/>
+      </xsl:otherwise>
+</xsl:choose>}{<xsl:choose>
+      <xsl:when test="default-ML">
+  <xsl:value-of select="default-ML"/>
+      </xsl:when><xsl:otherwise>
+  <xsl:value-of select="default"/>
+      </xsl:otherwise>
+</xsl:choose>}{<xsl:choose>
+      <xsl:when test="compatibility-ML">
+  <xsl:value-of select="compatibility-ML"/>
+      </xsl:when>
+</xsl:choose>}{<xsl:choose>
+      <xsl:when test="description-ML">
+  <xsl:value-of select="description-ML"/>
+      </xsl:when><xsl:otherwise>    
+  <xsl:value-of select="description"/>}
+      </xsl:otherwise>
+</xsl:choose>}   
       </xsl:if>
 
     </xsl:for-each>
