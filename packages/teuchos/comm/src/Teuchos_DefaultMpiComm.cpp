@@ -55,7 +55,15 @@ namespace Teuchos {
     else {
       char rawErrString[MPI_MAX_ERROR_STRING];
       int len = 0;
-      (void) MPI_Error_string (err, rawErrString, &len);
+      int err = MPI_Error_string (err, rawErrString, &len);
+      if (err != MPI_SUCCESS) {
+        // Assume that the string wasn't written.  This means it might
+        // not be null terminated, so make it a valid empty string by
+        // writing the null termination character to it.
+        if (MPI_MAX_ERROR_STRING > 0) {
+          rawErrString[0] = '\0';
+        }
+      }
       return std::string (rawErrString);
     }
   }
