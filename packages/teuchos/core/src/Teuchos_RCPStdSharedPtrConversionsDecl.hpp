@@ -39,24 +39,24 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_DECL_HPP
-#define TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_DECL_HPP
+#ifndef TEUCHOS_RCP_STD_SHAREDPTR_CONVERSIONS_DECL_HPP
+#define TEUCHOS_RCP_STD_SHAREDPTR_CONVERSIONS_DECL_HPP
 
 #include "Teuchos_RCPDecl.hpp"
-#include "boost/shared_ptr.hpp"
+#include <memory>
 
 
 namespace Teuchos {
 
 
-/** \defgroup Teuchos_RCPBoostSharedPtrConversions_grp Conversion utilities for going between Teuchos::RCP and boost::shared_ptr.
+/** \defgroup Teuchos_RCPStdSharedPtrConversions_grp Conversion utilities for going between Teuchos::RCP and std::shared_ptr.
 
-The smart pointer classes <tt>Teuchos::RCP</tt> and <tt>boost::shared_ptr</tt>
+The smart pointer classes <tt>Teuchos::RCP</tt> and <tt>std::shared_ptr</tt>
 are easily compatible.  The two templated conversion functions
-<tt>Teuchos::rcp( const boost::shared_ptr<T> & )</tt> and
-<tt>Teuchos::shared_pointer( const RCP<T> & )</tt> have been created for
+<tt>Teuchos::rcp( const std::shared_ptr<T> & )</tt> and
+<tt>Teuchos::get_shared_ptr( const RCP<T> & )</tt> have been created for
 converting back and forth (see the related non-member functions <tt>rcp()</tt>
-and <tt>shared_pointer()</tt> the <tt>RCP</tt> classes' documentation).
+and <tt>get_shared_ptr()</tt> the <tt>RCP</tt> classes' documentation).
 
 \ingroup teuchos_mem_mng_grp
 
@@ -64,39 +64,39 @@ and <tt>shared_pointer()</tt> the <tt>RCP</tt> classes' documentation).
 
 
 /** \brief <tt>Teuchos::RCP</tt> Deallocator class that wraps a
- * <tt>boost::shared_ptr</tt>
+ * <tt>std::shared_ptr</tt>
  *
- * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ * \ingroup Teuchos_RCPStdSharedPtrConversions_grp
  */
 template<class T>
-class DeallocBoostSharedPtr
+class DeallocStdSharedPtr
 {
 public:
   /** \brief. */
-  DeallocBoostSharedPtr( const boost::shared_ptr<T> &sptr ) : sptr_(sptr) {}
+  DeallocStdSharedPtr( const std::shared_ptr<T> &sptr ) : sptr_(sptr) {}
   /** \brief. */
 	typedef T ptr_t;
   /** \brief. */
 	void free( T* ptr_in ) const { sptr_.reset(); }
   /** \brief. */
-  const boost::shared_ptr<T>& ptr() const { return sptr_; }
+  const std::shared_ptr<T>& ptr() const { return sptr_; }
 private:
-  mutable boost::shared_ptr<T> sptr_;
-  DeallocBoostSharedPtr(); // Not defined and not to be called!
+  mutable std::shared_ptr<T> sptr_;
+  DeallocStdSharedPtr(); // Not defined and not to be called!
 };
 
 
-/** \brief <tt>boost::shared_ptr</tt> deleter class that wraps a
+/** \brief <tt>std::shared_ptr</tt> deleter class that wraps a
  * <tt>Teuchos::RCP</tt>.
  *
- * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ * \ingroup Teuchos_RCPStdSharedPtrConversions_grp
  */
 template<class T>
-class RCPDeleter
+class StdSharedPtrRCPDeleter
 {
 public:
   /** \brief. */
-  RCPDeleter( const RCP<T> &rcp ) : rcp_(rcp) {}
+  StdSharedPtrRCPDeleter( const RCP<T> &rcp ) : rcp_(rcp) {}
   /** \brief. */
   typedef void result_type;
   /** \brief. */
@@ -107,14 +107,14 @@ public:
   const RCP<T>& ptr() const { return rcp_; }
 private:
   mutable RCP<T> rcp_;
-  RCPDeleter(); // Not defined and not to be called!
+  StdSharedPtrRCPDeleter(); // Not defined and not to be called!
 };
 
 
-/** \brief Conversion function that takes in a <tt>boost::shared_ptr</tt>
+/** \brief Conversion function that takes in a <tt>std::shared_ptr</tt>
  * object and spits out a <tt>Teuchos::RCP</tt> object.
  *
- * If the input <tt>boost::shared_ptr</tt> already wraps a <tt>Teuchos::RCP</tt>
+ * If the input <tt>std::shared_ptr</tt> already wraps a <tt>Teuchos::RCP</tt>
  * object, then that <tt>Teuchos::RCP</tt> object will be copied and returned.
  *
  * This function is not complicated, just look at its defintion below.
@@ -122,14 +122,14 @@ private:
  * \relates RCP
  */
 template<class T>
-RCP<T> rcp( const boost::shared_ptr<T> &sptr );
+RCP<T> rcp( const std::shared_ptr<T> &sptr );
 
 
 /** \brief Conversion function that takes in a <tt>Teuchos::RCP</tt>
- * object and spits out a <tt>boost::shared_ptr</tt> object.
+ * object and spits out a <tt>std::shared_ptr</tt> object.
  *
  * If the input <tt>Teuchos::RCP</tt> already wraps a
- * <tt>boost::shared_ptr</tt> object, then that <tt>boost::shared_ptr</tt>
+ * <tt>std::shared_ptr</tt> object, then that <tt>std::shared_ptr</tt>
  * object will be copied and returned.
  *
  * This function is not complicated, just look at its defintion below.
@@ -137,21 +137,15 @@ RCP<T> rcp( const boost::shared_ptr<T> &sptr );
  * \relates RCP
  */
 template<class T>
-boost::shared_ptr<T> shared_pointer( const RCP<T> &rcp );
-
-
-} // namespace Teuchos
-
-
-namespace boost {
+std::shared_ptr<T> get_shared_ptr( const RCP<T> &rcp );
 
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
- * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ * \ingroup Teuchos_RCPStdSharedPtrConversions_grp
  */
 template<class T> inline
-bool is_null( const boost::shared_ptr<T> &p )
+bool is_null( const std::shared_ptr<T> &p )
 {
   return p.get() == 0;
 }
@@ -159,16 +153,17 @@ bool is_null( const boost::shared_ptr<T> &p )
 
 /** \brief Returns true if <tt>p.get()!=NULL</tt>.
  *
- * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ * \ingroup Teuchos_RCPStdSharedPtrConversions_grp
  */
 template<class T> inline
-bool nonnull( const boost::shared_ptr<T> &p )
+bool nonnull( const std::shared_ptr<T> &p )
 {
   return p.get() != 0;
 }
 
 
-} // namespace boost
+} // namespace Teuchos
 
 
-#endif	// TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_DECL_HPP
+
+#endif	// TEUCHOS_RCP_STD_SHAREDPTR_CONVERSIONS_DECL_HPP
