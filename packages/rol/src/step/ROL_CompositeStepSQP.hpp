@@ -941,7 +941,7 @@ public:
                                            // false - if subsolver tolerances are adjusted in this routine, discard adjusted values
     Real tol_fdiff    = 1e-12;             // relative objective function difference for ared computation
     int ct_max        = 10;                // maximum number of globalization tries
-    int mintol        = 1e-16;             // smallest projection tolerance value
+    Real mintol       = 1e-16;             // smallest projection tolerance value
 
     // Determines max value of |rpred|/pred. 
     Real rpred_over_pred = 0.5*(1-eta_);
