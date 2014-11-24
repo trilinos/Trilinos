@@ -285,8 +285,17 @@ void Multiply(
       Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
       Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
 
-
       int i = EpetraExt::MatrixMatrix::Multiply(epA,transposeA,epB,transposeB,epC,haveMultiplyDoFillComplete);
+      if (haveMultiplyDoFillComplete) {
+        // Due to Epetra wrapper intricacies, we need to explicitly call
+        // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+        // only keeps an internal variable to check whether we are in resumed
+        // state or not, but never touches the underlying Epetra object. As
+        // such, we need to explicitly update the state of Xpetra matrix to
+        // that of Epetra one afterwords
+        C.fillComplete();
+      }
+
       if (i != 0) {
         std::ostringstream buf;
         buf << i;

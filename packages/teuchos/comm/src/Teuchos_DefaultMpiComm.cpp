@@ -41,6 +41,8 @@
 
 #include <Teuchos_DefaultMpiComm.hpp>
 
+// Only enable the contents of this file if building with MPI.
+#ifdef HAVE_TEUCHOS_MPI
 
 namespace Teuchos {
 
@@ -53,7 +55,15 @@ namespace Teuchos {
     else {
       char rawErrString[MPI_MAX_ERROR_STRING];
       int len = 0;
-      (void) MPI_Error_string (err, rawErrString, &len);
+      int err = MPI_Error_string (err, rawErrString, &len);
+      if (err != MPI_SUCCESS) {
+        // Assume that the string wasn't written.  This means it might
+        // not be null terminated, so make it a valid empty string by
+        // writing the null termination character to it.
+        if (MPI_MAX_ERROR_STRING > 0) {
+          rawErrString[0] = '\0';
+        }
+      }
       return std::string (rawErrString);
     }
   }
@@ -65,10 +75,10 @@ namespace Teuchos {
       // Just to be safe, don't do anything if calling MPI_Finalized
       // didn't succeed.  It's better to leak memory than to crash.
       if (err == MPI_SUCCESS && ! finalized) {
-	// Don't throw an exception if MPI_Comm_free reports an error,
-	// since we're likely to be in a destructor and destructors
-	// shouldn't throw exceptions.
-	(void) MPI_Comm_free (comm);
+        // Don't throw an exception if MPI_Comm_free reports an error,
+        // since we're likely to be in a destructor and destructors
+        // shouldn't throw exceptions.
+        (void) MPI_Comm_free (comm);
       }
     }
 
@@ -82,3 +92,5 @@ namespace Teuchos {
   } // namespace details
 
 } // namespace Teuchos
+
+#endif // HAVE_TEUCHOS_MPI

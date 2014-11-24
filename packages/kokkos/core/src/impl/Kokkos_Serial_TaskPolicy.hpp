@@ -157,7 +157,16 @@ public:
     {
       enum { check_type = ! Impl::is_same< ResultType , void >::value };
 
-      if ( check_type && t != 0 && t->m_verify != & TaskMember::template verify_type< ResultType > ) {
+      //I have no clue whatsoever if the changes I did here are correct
+      //and do what should be done here. BUT it now compiles again with
+      //gcc 4.4.6. The change is modeled after:
+      //https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39018
+
+      //Old code:
+      //if ( check_type && t != 0 && t->m_verify != & TaskMember::template verify_type< ResultType > ) {
+      //New code:
+      typedef TaskMember* (*U)(TaskMember*);
+      if ( check_type && t != 0 && t->m_verify != (U) & TaskMember::template verify_type< ResultType > ) {
         t = 0 ;
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         throw_error_verify_type();

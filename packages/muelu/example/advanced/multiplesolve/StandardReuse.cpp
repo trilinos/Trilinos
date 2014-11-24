@@ -58,6 +58,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_Factory.hpp>
 
+#include <MueLu_RAPFactory.hpp>
 #include <MueLu_SaPFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
@@ -205,6 +206,8 @@ int main(int argc, char *argv[]) {
       H.Setup(M);
 
       H.Clear();
+      M.ResetDebugData();
+
       out << thinSeparator << "\nPreconditioner status:" << std::endl;
       H.print(out, MueLu::Extreme);
 
@@ -243,12 +246,22 @@ int main(int argc, char *argv[]) {
       RCP<Factory> RFact = rcp(new TransPFactory());
       M.SetFactory("R", RFact);
       H.Keep      ("R", RFact.get());
+      RCP<Factory> RAPFact = rcp(new RAPFactory());
+      if (lib == Xpetra::UseEpetra) {
+        ParameterList RAPparams;
+        RAPparams.set("Keep AP Pattern",  true);
+        RAPparams.set("Keep RAP Pattern", true);
+        RAPFact->SetParameterList(RAPparams);
+      }
+      M.SetFactory("A", RAPFact);
 
       // Original setup
       A->SetMaxEigenvalueEstimate(-one);
       H.Setup(M);
 
       H.Clear();
+      M.ResetDebugData();
+
       out << thinSeparator << "\nPreconditioner status:" << std::endl;
       H.print(out, MueLu::Extreme);
 
