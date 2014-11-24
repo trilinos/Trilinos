@@ -41,6 +41,8 @@
 
 #include <Teuchos_DefaultMpiComm.hpp>
 
+// Only enable the contents of this file if building with MPI.
+#ifdef HAVE_TEUCHOS_MPI
 
 namespace Teuchos {
 
@@ -65,10 +67,10 @@ namespace Teuchos {
       // Just to be safe, don't do anything if calling MPI_Finalized
       // didn't succeed.  It's better to leak memory than to crash.
       if (err == MPI_SUCCESS && ! finalized) {
-	// Don't throw an exception if MPI_Comm_free reports an error,
-	// since we're likely to be in a destructor and destructors
-	// shouldn't throw exceptions.
-	(void) MPI_Comm_free (comm);
+        // Don't throw an exception if MPI_Comm_free reports an error,
+        // since we're likely to be in a destructor and destructors
+        // shouldn't throw exceptions.
+        (void) MPI_Comm_free (comm);
       }
     }
 
@@ -82,3 +84,5 @@ namespace Teuchos {
   } // namespace details
 
 } // namespace Teuchos
+
+#endif // HAVE_TEUCHOS_MPI
