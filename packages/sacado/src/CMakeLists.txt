@@ -55,6 +55,10 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_ViewStorage.hpp
   Sacado_Fad_ViewFad.hpp
   Sacado_Fad_ViewFadTraits.hpp
+  Sacado_Fad_DFad_tmpl.hpp
+  Sacado_Fad_SFad_tmpl.hpp
+  Sacado_Fad_SLFad_tmpl.hpp
+  Sacado_Fad_ViewFad_tmpl.hpp
   )
 
 # ELRFAD
