@@ -176,6 +176,9 @@
   #endif
 #endif /* #if defined( __NVCC__ ) */
 
+#if defined( KOKKOS_HAVE_CXX11 ) && !defined (KOKKOS_LAMBDA)
+  #define KOKKOS_LAMBDA [=]
+#endif
 
 #if ! defined( __CUDA_ARCH__ ) /* Not compiling Cuda code to 'ptx'. */
 
