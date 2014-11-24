@@ -42,6 +42,15 @@
 #ifndef TEUCHOS_MPI_COMM_HPP
 #define TEUCHOS_MPI_COMM_HPP
 
+/// \file Teuchos_DefaultMpiComm.hpp
+/// \brief Implementation of Teuchos wrappers for MPI.
+///
+/// \warning It only makes sense to include this file if MPI is enabled.
+
+#include <Teuchos_ConfigDefs.hpp>
+
+// If MPI is not enabled, disable the contents of this file.
+#ifdef HAVE_TEUCHOS_MPI
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommUtilities.hpp"
@@ -59,11 +68,9 @@
 // This must be defined globally for the whole program!
 //#define TEUCHOS_MPI_COMM_DUMP
 
-
 #ifdef TEUCHOS_MPI_COMM_DUMP
 #  include "Teuchos_VerboseObject.hpp"
 #endif
-
 
 namespace Teuchos {
 
@@ -115,7 +122,6 @@ void dumpBuffer(
 }
 #endif // TEUCHOS_MPI_COMM_DUMP
 
-
 /// \class MpiCommStatus
 /// \brief MPI-specific implementation of CommStatus.
 ///
@@ -161,7 +167,6 @@ mpiCommStatus (MPI_Status rawMpiStatus)
 {
   return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
 }
-
 
 /// \class MpiCommRequestBase
 /// \brief Base class MPI implementation of CommRequest.
@@ -289,7 +294,6 @@ private:
   MPI_Request rawMpiRequest_;
 };
 
-
 /// \class MpiCommRequest
 /// \brief MPI implementation of CommRequest.
 /// \tparam OrdinalType Same as the template parameter of Comm.
@@ -372,7 +376,6 @@ mpiCommRequest (MPI_Request rawMpiRequest,
 template<typename Ordinal>
 class MpiComm : public Comm<Ordinal> {
 public:
-
   //! @name Constructors
   //@{
 
@@ -412,9 +415,7 @@ public:
   /// Preconditions:
   /// - <tt>rawMpiComm.get() != NULL</tt>
   /// - <tt>*rawMpiComm != MPI_COMM_NULL</tt>
-  MpiComm(
-    const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
-    );
+  MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm);
 
   /// \brief Construct an MpiComm with a wrapped MPI_Comm and a default tag.
   ///
@@ -436,11 +437,9 @@ public:
   MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
            const int defaultTag);
 
-public:
-
   /**
-   * \brief Construct a communicator with a new context with the same properties
-   * as the original.
+   * \brief Construct a communicator with a new context with the same
+   *   properties as the original.
    *
    * The newly constructed communicator will have a duplicate communication
    * space that has the same properties (e.g. processes, attributes,
@@ -454,11 +453,12 @@ public:
    * </tt></li>
    * </ul>
    */
-  MpiComm(const MpiComm<Ordinal>& other);
+  MpiComm (const MpiComm<Ordinal>& other);
 
   /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
-  RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
-  {return rawMpiComm_;}
+  RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm () const {
+    return rawMpiComm_;
+  }
 
   /// \brief Set the MPI error handler for this communicator.
   ///
@@ -530,16 +530,20 @@ public:
   //! @name Implementation of Comm interface
   //@{
 
-  /** \brief . */
+  //! The calling process' rank.
   virtual int getRank() const;
-  /** \brief . */
+
+  //! The number of processes in the communicator.
   virtual int getSize() const;
-  /** \brief . */
+
+  //! Execute a barrier; must be called collectively.
   virtual void barrier() const;
+
   /** \brief . */
   virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
+
   //! Gather values from all processes to the root process.
   virtual void
   gather (const Ordinal sendBytes, const char sendBuffer[],
@@ -1833,5 +1837,6 @@ Teuchos::createMpiComm(
   return Teuchos::null;
 }
 
-
+#endif // HAVE_TEUCHOS_MPI
 #endif // TEUCHOS_MPI_COMM_HPP
+
