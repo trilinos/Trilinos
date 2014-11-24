@@ -571,6 +571,19 @@ void DefaultProductVector<Scalar>::setSubVectorImpl(
 }
 
 
+// Overridden protected functions from MultiVectorBase
+
+
+template <class Scalar>
+void DefaultProductVector<Scalar>::assignImpl(Scalar alpha)
+{
+  const int num_vecs = vecs_.size();
+  for(int k = 0; k < num_vecs; ++k) {
+    vecs_[k].getNonconstObj()->assign(alpha);
+  }
+}
+
+
 } // namespace Thyra
 
 
