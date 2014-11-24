@@ -732,27 +732,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations
     Thyra::assign(A.ptr(), ST::zero())
     );
 
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::dot()",
+    tA->dot(*tB, avScal() ),      // norms calls scalarProd, which calls Tpetra::dot
+    Thyra::norms( *A, avMag() )
+    );
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::dot()",
+    tA->dot(*tB, avScal() ),
+    A->range()->scalarProds(*A, *B, avScal() )
+    );
+
   /*
   CHECK_TPETRA_FUNC_CALL_INCREMENT(
     "Tpetra::MultiVector::scale(alpha)",
     tB->scale( ST::zero() ),
     Thyra::scale( ST::zero(), B.ptr() )
-    );
-  */
-
-  /*
-  CHECK_TPETRA_FUNC_CALL_INCREMENT(
-    "Tpetra::MultiVector::norm2()",
-    tA->norm2(avMag()),
-    Thyra::norms_2( *A, avMag() )
-    );
-  */
-
-  /*
-  CHECK_TPETRA_FUNC_CALL_INCREMENT(
-    "Tpetra::MultiVector::dot()",
-    tA->dot(*tB, avScal() ),
-    Thyra::dots(*A, *B, avScal() )
     );
   */
 
