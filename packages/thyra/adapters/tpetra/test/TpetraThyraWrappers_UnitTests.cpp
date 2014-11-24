@@ -45,6 +45,8 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -54,9 +56,10 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_Tuple.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 //
@@ -73,13 +76,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::inOutArg;
 using Teuchos::Comm;
 using Teuchos::tuple;
-typedef Thyra::Ordinal Ordinal;
-using Thyra::VectorSpaceBase;
-using Thyra::SpmdVectorSpaceBase;
-using Thyra::MultiVectorBase;
-using Thyra::VectorBase;
-using Thyra::LinearOpBase;
-using Thyra::createMember;
 
 
 const int g_localDim = 4; // ToDo: Make variable!
@@ -1064,4 +1060,4 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLin
 THYRA_TPETRA_THYRA_WRAPPERS_INSTANT(double)
 
 
-} // namespace
+} // namespace Thyra
