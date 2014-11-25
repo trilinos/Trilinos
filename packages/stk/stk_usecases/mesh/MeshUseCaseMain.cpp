@@ -53,10 +53,10 @@
 void printStatus(bool status)
 {
   if (status) {
-    std::cout << "passed" << std::endl;
+    std::cerr << "passed" << std::endl;
   }
   else {
-    std::cout << "FAILED" << std::endl;
+    std::cerr << "FAILED" << std::endl;
   }
 }
 
@@ -95,7 +95,7 @@ main(
 //    // Use cases imported from stk_mesh/use_cases
 
     if ( single_process ) {
-      std::cout << "Use Case 1 ... ";
+      std::cerr << "Use Case 1 ... ";
       bool local_status = true ;
       try {
         stk::mesh::use_cases::UseCase_1_Mesh mesh(parallel_machine);
@@ -104,13 +104,13 @@ main(
       catch ( const std::exception & x ) {
         local_status = false ;
         printStatus(local_status);
-        std::cout << x.what();
+        std::cerr << x.what();
       }
       status = status && local_status;
     }
 
     if ( single_process ) {
-      std::cout << "Use Case 2 ... ";
+      std::cerr << "Use Case 2 ... ";
       bool local_status = true ;
       try {
         stk::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
@@ -121,13 +121,13 @@ main(
       catch ( const std::exception & x ) {
         local_status = false ;
         printStatus(local_status);
-        std::cout << x.what();
+        std::cerr << x.what();
       }
       status = status && local_status;
     }
 
     if ( single_process ) {
-      std::cout << "Use Case 3 ... ";
+      std::cerr << "Use Case 3 ... ";
       bool local_status = true ;
       try {
         stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
@@ -138,13 +138,13 @@ main(
       catch ( const std::exception & x ) {
         local_status = false ;
         printStatus(local_status);
-        std::cout << x.what();
+        std::cerr << x.what();
       }
       status = status && local_status;
     }
 
     {
-      std::cout << "Use Case Change Owner ... ";
+      std::cerr << "Use Case Change Owner ... ";
       Grid2D_Fixture test( parallel_machine );
       const bool local_status = test.test_change_owner();
       printStatus(local_status);
@@ -152,45 +152,45 @@ main(
     }
 
     {
-      std::cout << "Use Case Change Owner with constraint ... ";
+      std::cerr << "Use Case Change Owner with constraint ... ";
       const bool local_status = test_change_owner_with_constraint( parallel_machine );
       printStatus(local_status);
       status = status && local_status;
     }
 
     {
-      std::cout << "Use Case Change Owner #2 ... ";
+      std::cerr << "Use Case Change Owner #2 ... ";
       const bool local_status = test_change_owner_2( parallel_machine );
       printStatus(local_status);
       status = status && local_status;
     }
 
     {
-      std::cout << "Use Case Change Owner #3 ... ";
+      std::cerr << "Use Case Change Owner #3 ... ";
       const bool result = test_change_owner_3( parallel_machine );
       printStatus(result);
     }
 
     {
-      std::cout << "Use Case Element Death 1 ... ";
+      std::cerr << "Use Case Element Death 1 ... ";
       bool local_status = element_death_use_case_1(parallel_machine);
       printStatus(local_status);
       status = status && local_status;
     }
     {
-      std::cout << "Use Case Skinning 1 ... ";
+      std::cerr << "Use Case Skinning 1 ... ";
       bool local_status = skinning_use_case_1(parallel_machine);
       printStatus(local_status);
       status = status && local_status;
     }
     {
-      std::cout << "Use Case Skinning 1b ... ";
+      std::cerr << "Use Case Skinning 1b ... ";
       bool local_status = skinning_use_case_1b(parallel_machine);
       printStatus(local_status);
       status = status && local_status;
     }
     {
-      std::cout << "Use Case Skinning 2 ... ";
+      std::cerr << "Use Case Skinning 2 ... ";
       bool local_status = skinning_use_case_2(parallel_machine);
       printStatus(local_status);
       status = status && local_status;

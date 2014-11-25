@@ -122,12 +122,12 @@ public:
 
     void my_internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new )
     {
-        this->internal_update_distributed_index( shared_new );
+        this->internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_new );
     }
 
     void my_internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new )
     {
-        this->internal_update_distributed_index(entityRank, shared_new);
+        this->internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(entityRank, shared_new);
     }
 
     void my_resolve_ownership_of_modified_entities(std::vector<stk::mesh::Entity> & shared_modified )

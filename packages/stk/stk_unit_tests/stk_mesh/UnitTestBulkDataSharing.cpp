@@ -149,7 +149,6 @@ TEST(UnitTestingOfBulkData, node_sharing)
 
   mesh.modification_end();
 
-
   // Make sure we know about all nodes and elements (including aura, which
   // includes *all* entities in our small mesh)
   //
@@ -252,12 +251,7 @@ TEST(UnitTestingOfBulkData, node_sharing)
     EXPECT_EQ( 1u, sharingProcs.size() );
     EXPECT_EQ( 1, sharingProcs[0] );
   }
-
-
 }
-
-
-#ifdef WORK_ON_ADAPTIVITY_SUPPORT_PATH_FORWARD
 
 TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
 {
@@ -347,13 +341,12 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
   createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][3], node_part) );
   createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][4], node_part) );
 
+
   bool doNew = true;
   if (doNew)
     {
-      std::ostringstream oss;
       mesh.declare_entity(stk::topology::NODE_RANK, sharingInfo1[p_rank][0], node_part) ;
-      oss << "P[" << p_rank << "] declared node= " << sharingInfo1[p_rank][0] << std::endl;
-      std::cout << oss.str() << std::flush;
+      std::cout << "P[" << p_rank << "] declared node= " << sharingInfo1[p_rank][0] << std::endl;
     }
 
   // Add relations to nodes
@@ -370,30 +363,20 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
     mesh.add_node_sharing(node, sharingProc);
   }
 
-  mesh.modification_end();
-
-  // Now, use the extra nodes.
-  mesh.modification_begin();
-
   if (doNew)
-  {
-    std::ostringstream oss;
-    for (unsigned i = 0; i < numSharings1; ++i)
     {
-      int sharingProc = sharingInfo1[p_rank][i*2+1];
-      Entity degen_element = mesh.declare_entity(stk::topology::ELEM_RANK, 500 + p_rank, elem_part);
-      Entity node = mesh.get_entity(stk::topology::NODE_RANK, sharingInfo1[p_rank][i*2]);
-      mesh.declare_relation(degen_element, node, 0);
-      mesh.declare_relation(degen_element, node, 1);
-      mesh.declare_relation(degen_element, node, 2);
-      mesh.declare_relation(degen_element, node, 3);
-      oss << "P[" << p_rank << "] add_node_sharing node= " << sharingInfo1[p_rank][i*2] << " sharingProc= " << sharingProc <<  " is_valid= " << mesh.is_valid(node) << std::endl;
-      mesh.internal_add_node_sharing(node, sharingProc);
+      for (unsigned i = 0; i < numSharings1; ++i)
+        {
+          int sharingProc = sharingInfo1[p_rank][i*2+1];
+          Entity node = mesh.get_entity(stk::topology::NODE_RANK, sharingInfo1[p_rank][i*2]);
+          std::cout << "P[" << p_rank << "] add_node_sharing node= " << sharingInfo1[p_rank][i*2] << " sharingProc= " << sharingProc <<  " is_valid= " << mesh.is_valid(node) << std::endl;
+          mesh.add_node_sharing(node, sharingProc);
+        }
     }
-    std::cout << oss.str() << std::flush;
-  }
-  mesh.modification_end();
 
+  EXPECT_THROW(mesh.modification_end(), std::runtime_error);
+
+/*
   // Make sure we know about all nodes and elements (including aura, which
   // includes *all* entities in our small mesh)
   //
@@ -496,8 +479,6 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
     EXPECT_EQ( 1u, sharingProcs.size() );
     EXPECT_EQ( 1, sharingProcs[0] );
   }
-
-
+*/
 }
 
-#endif

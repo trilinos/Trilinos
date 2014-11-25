@@ -2320,16 +2320,22 @@ TEST(BulkData, testCommList)
 
         bulk.modification_begin();
 
+        stk::mesh::Entity node9 = bulk.get_entity(stk::topology::NODE_RANK, 9);
+        EXPECT_TRUE(bulk.is_valid(node9));
         if(p_rank == 0)
         {
-            stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 9);
-            EXPECT_TRUE(bulk.is_valid(node));
             stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
             EXPECT_TRUE(bulk.is_valid(node1));
             stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEMENT_RANK, 1);
             EXPECT_TRUE(bulk.is_valid(elem));
             bulk.destroy_relation(elem, node1, 0);
-            bulk.declare_relation(elem, node, 0);
+            bulk.declare_relation(elem, node9, 0);
+            bulk.add_node_sharing(node9, 3);
+        }
+
+        if (p_rank == 3)
+        {
+            bulk.add_node_sharing(node9, 0);
         }
 
         bool failed = false;
@@ -2339,6 +2345,7 @@ TEST(BulkData, testCommList)
         }
         catch(const std::exception & X)
         {
+            std::cout<<X.what()<<std::endl;
             failed = true;
         }
         EXPECT_FALSE(failed);
@@ -2580,7 +2587,7 @@ TEST(DocTestBulkData, onlyTheOwnerCanChangeEntityParts)
     }
 }
 
-TEST(DocTestBulkData, onlyKeepTheOwnersParts)
+TEST(BulkData, onlyKeepTheOwnersParts)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(communicator);
@@ -2614,6 +2621,8 @@ TEST(DocTestBulkData, onlyKeepTheOwnersParts)
     {
         stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_0, elem_parts);
         stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id, partA);
+        int sharingProc = 1;
+        stkMeshBulkData.add_node_sharing(node0, sharingProc);
         node0Key = stkMeshBulkData.entity_key(node0);
         for(stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
         {
@@ -2624,6 +2633,8 @@ TEST(DocTestBulkData, onlyKeepTheOwnersParts)
     {
         stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_1, elem_parts);
         stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id, partB);
+        int sharingProc = 0;
+        stkMeshBulkData.add_node_sharing(node0, sharingProc);
         node0Key = stkMeshBulkData.entity_key(node0);
         for(stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
         {
@@ -2652,7 +2663,7 @@ TEST(DocTestBulkData, onlyKeepTheOwnersParts)
     EXPECT_EQ( element1Owner, stkMeshBulkData.parallel_owner_rank(element1));
 }
 
-TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
+TEST(BulkData, newSharedNodeGetMergedPartsFromElements)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(communicator);
@@ -2686,6 +2697,8 @@ TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
         const stk::mesh::EntityId element_id = 1000;
         stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id, partA);
         stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id);
+        int sharingProc = 1;
+        stkMeshBulkData.add_node_sharing(node0, sharingProc);
         node0Key = stkMeshBulkData.entity_key(node0);
         stkMeshBulkData.change_entity_parts(element0, elem_parts, empty_parts);
         for(stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
@@ -2698,6 +2711,8 @@ TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
         const stk::mesh::EntityId element_id = 1001;
         stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id, partB);
         stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id);
+        int sharingProc = 0;
+        stkMeshBulkData.add_node_sharing(node0, sharingProc);
         node0Key = stkMeshBulkData.entity_key(node0);
         stkMeshBulkData.change_entity_parts(element1, elem_parts, empty_parts);
         for(stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
@@ -2720,7 +2735,7 @@ TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
     EXPECT_TRUE( stk::mesh::has_superset(node0Bucket,partB));
 }
 
-TEST(DocTestBulkData, mayCreateRelationsToNodesDifferently)
+TEST(BulkData, mayCreateRelationsToNodesDifferently)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(communicator);
@@ -2759,6 +2774,8 @@ TEST(DocTestBulkData, mayCreateRelationsToNodesDifferently)
     stk::mesh::Entity filler_node = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, 123456);
     if(myRank == 0)
     {
+        int sharingProc = 1;
+        stkMeshBulkData.add_node_sharing(filler_node, sharingProc);
         stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_0, partA);
         stkMeshBulkData.change_entity_parts(element0, elem_parts, empty_parts);
         stk::mesh::RelationIdentifier node_rel_id = 0;
@@ -2770,6 +2787,8 @@ TEST(DocTestBulkData, mayCreateRelationsToNodesDifferently)
     }
     else  // myRank == 1
     {
+        int sharingProc = 0;
+        stkMeshBulkData.add_node_sharing(filler_node, sharingProc);
         stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_1, partB);
         stkMeshBulkData.change_entity_parts(element1, elem_parts, empty_parts);
         const stk::mesh::RelationIdentifier node_rel_id = 0;
@@ -3968,6 +3987,216 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
   mesh.change_entity_owner(entities_to_move);
 
   CEOUtils::checkStatesAfterCEOME_3Elem4Proc1Edge3D(mesh);
+}
+
+TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
+{
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::Part& elem_part = meta.declare_part_with_topology("beam2", stk::topology::BEAM_2);
+    meta.commit();
+
+    BulkDataTester bulk(meta, MPI_COMM_WORLD);
+    if ( bulk.parallel_size() == 2 )
+    {
+        bulk.modification_begin();
+        stk::mesh::Ghosting &ghosting = bulk.create_ghosting("Ghost Both nodes");
+        stk::mesh::Part& ghost_part = bulk.ghosting_part(ghosting);
+
+        std::vector< std::pair<stk::mesh::Entity, int> > ghostingStruct;
+
+        if ( bulk.parallel_rank() == 0 )
+        {
+            stk::mesh::EntityId nodeId1 = 1;
+            stk::mesh::Entity node1 = bulk.declare_entity(stk::topology::NODE_RANK, nodeId1);
+
+            stk::mesh::EntityId nodeId2 = 2;
+            stk::mesh::Entity node2 = bulk.declare_entity(stk::topology::NODE_RANK, nodeId2);
+
+            ghostingStruct.push_back(std::make_pair(node1, 1));
+            ghostingStruct.push_back(std::make_pair(node2, 1));
+        }
+
+        bulk.change_ghosting(ghosting, ghostingStruct);
+
+        stk::mesh::EntityVector ghosted_nodes_that_need_to_be_shared;
+        bulk.my_find_ghosted_nodes_that_need_to_be_shared(ghosted_nodes_that_need_to_be_shared);
+
+        EXPECT_EQ(0u, ghosted_nodes_that_need_to_be_shared.size());
+
+        ASSERT_NO_THROW(bulk.modification_end());
+
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(bulk, counts);
+
+        size_t validNumberOfNodes = 2;
+        EXPECT_EQ(validNumberOfNodes,counts[stk::topology::NODE_RANK]);
+
+        bulk.modification_begin();
+
+        if ( bulk.parallel_rank() == 1 )
+        {
+            stk::mesh::EntityId elementId = 1;
+            stk::mesh::Entity element1 = bulk.declare_entity(stk::topology::ELEMENT_RANK, elementId, elem_part);
+            stk::mesh::Entity ghostedNode1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::Entity ghostedNode2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+
+            ASSERT_FALSE(bulk.bucket(ghostedNode1).in_aura());
+            ASSERT_FALSE(bulk.bucket(ghostedNode2).in_aura());
+
+            ASSERT_TRUE(bulk.bucket(ghostedNode1).member(ghost_part));
+            ASSERT_TRUE(bulk.bucket(ghostedNode2).member(ghost_part));
+
+            bulk.declare_relation( element1, ghostedNode1, 0 );
+            bulk.declare_relation( element1, ghostedNode2, 1 );
+        }
+
+        bulk.my_find_ghosted_nodes_that_need_to_be_shared(ghosted_nodes_that_need_to_be_shared);
+
+        if ( bulk.parallel_rank() == 1 )
+        {
+            EXPECT_EQ(2u, ghosted_nodes_that_need_to_be_shared.size());
+
+            stk::mesh::Entity ghostedNode1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+            EXPECT_EQ(ghostedNode1, ghosted_nodes_that_need_to_be_shared[0]);
+
+            stk::mesh::Entity ghostedNode2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+            EXPECT_EQ(ghostedNode2, ghosted_nodes_that_need_to_be_shared[1]);
+        }
+        else
+        {
+            EXPECT_EQ(0u, ghosted_nodes_that_need_to_be_shared.size());
+        }
+
+        ASSERT_NO_THROW(bulk.modification_end_for_percept());
+
+        stk::mesh::Entity shared_node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+        ASSERT_TRUE(bulk.bucket(shared_node1).shared());
+
+        stk::mesh::Entity shared_node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+        ASSERT_TRUE(bulk.bucket(shared_node2).shared());
+
+        stk::mesh::comm_mesh_counts(bulk, counts);
+        EXPECT_EQ(validNumberOfNodes,counts[stk::topology::NODE_RANK]);
+    }
+}
+
+TEST(BulkData, show_how_one_could_add_a_shared_node)
+{
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::SHELL_TRIANGLE_3);
+    meta.commit();
+
+    BulkDataTester bulk(meta, MPI_COMM_WORLD);
+
+    if ( bulk.parallel_size() == 2 )
+    {
+        bulk.modification_begin();
+
+        stk::mesh::EntityId nodeId1 = 1;
+        bulk.declare_entity(stk::topology::NODE_RANK, nodeId1);
+
+        stk::mesh::EntityId nodeId2 = 2;
+        bulk.declare_entity(stk::topology::NODE_RANK, nodeId2);
+
+        if ( bulk.parallel_rank() == 0 )
+        {
+            stk::mesh::EntityId nodeId3 = 3;
+            bulk.declare_entity(stk::topology::NODE_RANK, nodeId3);
+        }
+        else
+        {
+            stk::mesh::EntityId nodeId4 = 4;
+            bulk.declare_entity(stk::topology::NODE_RANK, nodeId4);
+        }
+
+        ASSERT_NO_THROW(bulk.modification_end());
+
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(bulk, counts);
+
+        size_t inValidNumberOfNodes = 6;
+        EXPECT_EQ(inValidNumberOfNodes,counts[stk::topology::NODE_RANK]);
+
+        stk::mesh::Entity shared_node1 = bulk.get_entity(stk::topology::NODE_RANK, nodeId1);
+        ASSERT_FALSE(bulk.bucket(shared_node1).shared());
+        ASSERT_TRUE(bulk.bucket(shared_node1).owned());
+
+        stk::mesh::Entity shared_node2 = bulk.get_entity(stk::topology::NODE_RANK, nodeId2);
+        ASSERT_FALSE(bulk.bucket(shared_node2).shared());
+        ASSERT_TRUE(bulk.bucket(shared_node2).owned());
+
+        bulk.modification_begin();
+
+        int otherProc = 1-bulk.parallel_rank();
+        std::vector<Entity> shared_modified ;
+
+        if ( bulk.parallel_rank() == 0 )
+        {
+            stk::mesh::EntityId elementId = 1;
+            stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, elementId, elem_part);
+
+            stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+            stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+
+            ASSERT_TRUE(bulk.is_valid(node1));
+            ASSERT_TRUE(bulk.is_valid(node2));
+            ASSERT_TRUE(bulk.is_valid(node3));
+            ASSERT_TRUE(bulk.is_valid(element));
+
+            bulk.declare_relation( element, node1, 0 );
+            bulk.declare_relation( element, node2, 1 );
+            bulk.declare_relation( element, node3, 2 );
+
+            bulk.add_node_sharing(node1, otherProc);
+            bulk.add_node_sharing(node2, otherProc);
+            shared_modified.push_back(node1);
+            shared_modified.push_back(node2);
+        }
+        else
+        {
+            stk::mesh::EntityId elementId = 2;
+            stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, elementId, elem_part);
+
+            stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+            stk::mesh::Entity node4 = bulk.get_entity(stk::topology::NODE_RANK, 4);
+
+            ASSERT_TRUE(bulk.is_valid(node1));
+            ASSERT_TRUE(bulk.is_valid(node2));
+            ASSERT_TRUE(bulk.is_valid(node4));
+            ASSERT_TRUE(bulk.is_valid(element));
+
+            bulk.declare_relation( element, node1, 0 );
+            bulk.declare_relation( element, node2, 1 );
+            bulk.declare_relation( element, node4, 2 );
+
+            bulk.add_node_sharing(node1, otherProc);
+            bulk.add_node_sharing(node2, otherProc);
+            shared_modified.push_back(node1);
+            shared_modified.push_back(node2);
+        }
+
+
+        for (size_t i=0;i<shared_modified.size();i++)
+        {
+            std::vector<int> procs;
+            bulk.comm_shared_procs(bulk.entity_key(shared_modified[i]), procs);
+            int owner = bulk.parallel_rank();
+            for (size_t j=0;j<procs.size();j++)
+            {
+               owner = std::min(owner, procs[j]);
+            }
+            bulk.fix_up_ownership(shared_modified[i], owner);
+        }
+
+        ASSERT_NO_THROW(bulk.modification_end());
+
+        stk::mesh::comm_mesh_counts(bulk, counts);
+        EXPECT_EQ(4u,counts[stk::topology::NODE_RANK]);
+    }
 }
 
 TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
