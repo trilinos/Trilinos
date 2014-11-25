@@ -136,16 +136,6 @@ public:
 
   virtual ~BulkData();
 
-  //Power users only.
-  //Call this right after construction, before any field-data has been allocated.
-  //If you call this method too late (after any field-data has been allocated, it will have no effect.
-  //It turns off field-data updating so that movement of entities between buckets etc., as is done during
-  //mesh-setup, will not cause corresponding churn of field-data.
-  //Once the mesh is initialized with entities and relations, turn on field-data by calling the
-  //method 'allocate_field_data'.
-  void deactivate_field_updating();
-  bool is_field_updating_active() const { return m_keep_fields_updated; }
-
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Ghosting & ghost);
 
@@ -222,16 +212,6 @@ public:
   bool modification_end( modification_optimization opt = MOD_END_SORT );
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
-
-  /** If field-data was set to not stay in sync with buckets as the mesh was populated,
-   * (by calling 'deactivate_field_updating' right after construction) this call
-   * causes field-data to be allocated and field-data updating is re-activated.
-   * If field-data was already allocated and staying in sync, then this call is a no-op.
-   */
-  void allocate_field_data();
-
-  inline bool final_modification_end();
-
   /** \brief  Give away ownership of entities to other parallel processes.
    *
    *  A parallel-synchronous operation while the mesh is not being modified
@@ -272,7 +252,7 @@ public:
    *           - Fields that exist on the dest that don't exist on the src will
    *             be zeroed or initialized with the Field-specified initial-value.
    */
-  inline void copy_entity_fields( Entity src, Entity dst);
+  inline void copy_entity_fields( Entity src, Entity dst);      // CLEANUP: only used in usecases and perf tests - REMOVE from class
 
   //------------------------------------
   /** \brief  Query all buckets of a given entity rank
@@ -471,9 +451,9 @@ public:
       const Entity side , unsigned local_side_id ) const;
 
   /** \brief  All entities with communication information. */
-  const EntityCommListInfoVector & comm_list() const { return m_entity_comm_list; }
+  const EntityCommListInfoVector & comm_list() const { return m_entity_comm_list; }     // CLEANUP: outside of unit tests only used in percept for consistency checks (copied from BulkData) and printing
 
-  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;
+  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
 
   /** \brief  Query the shared-entity aura.
    *          Is likely to be stale if ownership or sharing has changed
@@ -524,26 +504,26 @@ public:
 
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
-  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
-  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
-  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
+  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)
+  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }    // CLEANUP: switch apps to use comm_shared_procs
+  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }   //CLEANUP: can replace app usage with comm_procs
 
-  int entity_comm_map_owner(const EntityKey & key) const;
+  int entity_comm_map_owner(const EntityKey & key) const;       // CLEANUP: can make protected
 
   // Comm-related convenience methods
 
-  bool in_shared(EntityKey key) const { return !entity_comm_map_shared(key).empty(); }
-  bool in_shared(EntityKey key, int proc) const;
-  bool in_receive_ghost( EntityKey key ) const;
+  bool in_shared(EntityKey key) const { return !entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
+  bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
+  bool in_receive_ghost( EntityKey key ) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
-  bool in_send_ghost( EntityKey key) const;
-  bool in_send_ghost( EntityKey key , int proc ) const;
-  bool is_ghosted_onto_another_proc( EntityKey key ) const;
-  bool is_ghosted_onto_proc( EntityKey key, int otherProc ) const;
-  bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
+  bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
+  bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
+  bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
+  bool is_aura_ghosted_onto_proc( EntityKey key, int otherProc ) const;     // CLEANUP: used only by modification_end_for_entity_creation
+  bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
-  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;
 
@@ -553,14 +533,14 @@ public:
   bool has_no_relations(Entity entity) const;
 
   inline const MeshIndex& mesh_index(Entity entity) const;
-  inline MeshIndex& mesh_index(Entity entity);
+  inline MeshIndex& mesh_index(Entity entity);                          //CLEANUP: move to protected for Partition unit test
   inline EntityId identifier(Entity entity) const;
   inline EntityRank entity_rank(Entity entity) const;
   inline EntityKey entity_key(Entity entity) const;
   inline EntityState state(Entity entity) const;
-  inline void mark_entity(Entity entity, entitySharing sharedType);     //CRW
-  inline entitySharing is_entity_marked(Entity entity) const;           //CRW
-  inline bool add_node_sharing_called() const;                          //CRW
+  inline void mark_entity(Entity entity, entitySharing sharedType);     //CLEANUP: move this and calling functions to private
+  inline entitySharing is_entity_marked(Entity entity) const;           //CLEANUP: move this and calling functions to private
+  inline bool add_node_sharing_called() const;                          //CLEANUP: move this and calling functions to private
   inline Bucket & bucket(Entity entity) const;
   inline Bucket * bucket_ptr(Entity entity) const;
   inline Bucket::size_type bucket_ordinal(Entity entity) const;
@@ -694,7 +674,7 @@ public:
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
 
-  // CRW: move to protected and expose through StkTransitionBulkData
+  // CLEANUP: move to protected and expose through StkTransitionBulkData
   inline bool set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
   // Print all mesh info
@@ -714,6 +694,23 @@ public:
 
   bool use_entity_ids_for_resolving_sharing() const { return m_use_identifiers_for_resolving_sharing; }
   void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
+
+
+  //Power users only.
+  //Call this right after construction, before any field-data has been allocated.
+  //If you call this method too late (after any field-data has been allocated, it will have no effect.
+  //It turns off field-data updating so that movement of entities between buckets etc., as is done during
+  //mesh-setup, will not cause corresponding churn of field-data.
+  //Once the mesh is initialized with entities and relations, turn on field-data by calling the
+  //method 'allocate_field_data'.
+  void deactivate_field_updating();
+  bool is_field_updating_active() const { return m_keep_fields_updated; }
+  /** If field-data was set to not stay in sync with buckets as the mesh was populated,
+   * (by calling 'deactivate_field_updating' right after construction) this call
+   * causes field-data to be allocated and field-data updating is re-activated.
+   * If field-data was already allocated and staying in sync, then this call is a no-op.
+   */
+  void allocate_field_data();
 
 protected: //functions
 
@@ -1034,7 +1031,6 @@ private: // data
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
-  bool m_mesh_finalized;
   std::string m_modification_begin_description;
   int m_num_fields;
   bool m_keep_fields_updated;

@@ -301,7 +301,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_deleted_entities(),
     m_deleted_entities_current_modification_cycle(),
     m_ghost_reuse_map(),
-    m_mesh_finalized(false),
     m_modification_begin_description("UNSET"),
     m_num_fields(-1), // meta data not necessarily committed yet
     m_keep_fields_updated(true),
@@ -878,13 +877,11 @@ bool BulkData::modification_begin(const std::string description)
 
   parallel_machine_barrier( parallel() );
 
-  ThrowRequireMsg( m_mesh_finalized == false, "Unable to modifiy, BulkData has been finalized.");
-
   if (m_sync_count == 0) {
     m_mesh_meta_data.set_mesh_on_fields(this);
   }
 
-  if ( m_sync_state == MODIFIABLE && m_mesh_finalized == false ) return false ;
+  if ( m_sync_state == MODIFIABLE ) return false ;
 
 
   m_modification_begin_description = description;
@@ -1440,7 +1437,7 @@ bool BulkData::in_shared(EntityKey key, int proc) const
   return false ;
 }
 
-bool BulkData::is_ghosted_onto_proc( EntityKey key, int otherProc ) const
+bool BulkData::is_aura_ghosted_onto_proc( EntityKey key, int otherProc ) const
 {
   const int proc = parallel_rank();
   const int owner_rank = entity_comm_map_owner(key);
@@ -1457,7 +1454,7 @@ bool BulkData::is_ghosted_onto_proc( EntityKey key, int otherProc ) const
   return false;
 }
 
-bool BulkData::is_ghosted_onto_another_proc( EntityKey key ) const
+bool BulkData::is_aura_ghosted_onto_another_proc( EntityKey key ) const
 {
   const int proc = parallel_rank();
   const int owner_rank = entity_comm_map_owner(key);
@@ -5264,7 +5261,7 @@ bool doesEdgeNeedGhostingCommunication(stk::mesh::BulkData &stkMeshBulkData, std
     bool communicate_edge_for_ghosting = false;
     for (size_t j=0;j<connectedEntities.size();j++)
     {
-        bool isEntityGhostedToAnotherProc = stkMeshBulkData.is_ghosted_onto_another_proc(stkMeshBulkData.entity_key(connectedEntities[j]));
+        bool isEntityGhostedToAnotherProc = stkMeshBulkData.is_aura_ghosted_onto_another_proc(stkMeshBulkData.entity_key(connectedEntities[j]));
         if ( isEntityGhostedToAnotherProc )
         {
             communicate_edge_for_ghosting = true;
@@ -5375,7 +5372,7 @@ void determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData, stk
                     if ( ec->proc != stkMeshBulkData.parallel_rank() )
                     {
                         bool isEdgeSharedWithOtherProc = stkMeshBulkData.in_shared(stkMeshBulkData.entity_key(edge), ec->proc);
-                        bool isEntityGhostedToAnotherProc = stkMeshBulkData.is_ghosted_onto_proc(stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]), ec->proc);
+                        bool isEntityGhostedToAnotherProc = stkMeshBulkData.is_aura_ghosted_onto_proc(stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]), ec->proc);
 
                         if ( !isEdgeSharedWithOtherProc && isEntityGhostedToAnotherProc )
                         {
@@ -5386,43 +5383,6 @@ void determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData, stk
             }
         }
     }
-}
-
-void connect_edges_to_ghosted_entities_and_fill_edges_to_ghost_onto_other_processors(stk::mesh::BulkData &stkMeshBulkata, std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors)
-{
-    const stk::mesh::BucketVector& edge_buckets = stkMeshBulkata.buckets(stk::topology::EDGE_RANK);
-
-    for(size_t bucketIndex = 0; bucketIndex < edge_buckets.size(); bucketIndex++)
-    {
-        const stk::mesh::Bucket& bucket = *edge_buckets[bucketIndex];
-        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-        {
-            Entity edge = bucket[entityIndex];
-            if ( stkMeshBulkata.state(edge) == Unchanged ) continue;
-
-            std::vector<stk::mesh::Entity> edge_nodes(2);
-            stk::mesh::Entity const *  nodes = stkMeshBulkata.begin_nodes(edge);
-            edge_nodes[0] = nodes[0];
-            edge_nodes[1] = nodes[1];
-
-            std::vector<stk::mesh::Entity> facesConnectedToNodes;
-            fillFacesConnectedToNodes(stkMeshBulkata, edge_nodes, facesConnectedToNodes);
-            connectGhostedEntitiesToEdge(stkMeshBulkata, facesConnectedToNodes, edge, edge_nodes);
-
-            std::vector<stk::mesh::Entity> elementsConnectedToNodes;
-            fillElementsConnectedToNodes(stkMeshBulkata, edge_nodes, elementsConnectedToNodes);
-            connectGhostedEntitiesToEdge(stkMeshBulkata, elementsConnectedToNodes, edge, edge_nodes);
-
-            if ( bucket.owned() || bucket.shared() )
-            {
-                determineEntitiesThatNeedGhosting(stkMeshBulkata, edge, facesConnectedToNodes, edge_nodes, entitiesToGhostOntoOtherProcessors);
-                determineEntitiesThatNeedGhosting(stkMeshBulkata, edge, elementsConnectedToNodes, edge_nodes, entitiesToGhostOntoOtherProcessors);
-            }
-        }
-    }
-
-    std::set< EntityKey > entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
-    comm_sync_send_recv(stkMeshBulkata, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
 void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh, std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors, EntityRank entity_rank)
@@ -5620,7 +5580,6 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
 
     std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
 
-    //connect_edges_to_ghosted_entities_and_fill_edges_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors);
     find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank);
 
     ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);

@@ -1972,22 +1972,6 @@ TEST(BulkData, testParallelSideCreation)
    }
 }
 
-TEST(BulkData, test_final_modification_end)
-{
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-    const unsigned spatial_dim = 2;
-    MetaData meta_data(spatial_dim);
-    meta_data.commit();
-
-    BulkData mesh(meta_data, pm);
-
-    mesh.modification_begin();
-    mesh.final_modification_end();
-
-    ASSERT_THROW(mesh.modification_begin(), std::logic_error);
-}
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Testing of field_data_footprint(.)

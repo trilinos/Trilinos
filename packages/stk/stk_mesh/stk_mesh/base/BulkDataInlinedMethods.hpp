@@ -617,19 +617,6 @@ struct StoreEntityProcInSet
 
 ////////////////
 
-inline bool BulkData::final_modification_end()
-{
-  const bool mod_flag =  modification_end();
-
-  //call modification_begin and end one last time to free deleted entities
-  modification_begin();
-  modification_end();
-
-  m_mesh_finalized = true;
-
-  return mod_flag;
-}
-
 inline void BulkData::copy_entity_fields( Entity src, Entity dst)
 {
   //TODO fix const correctness for src
