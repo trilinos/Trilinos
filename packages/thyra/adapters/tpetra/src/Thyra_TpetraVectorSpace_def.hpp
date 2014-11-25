@@ -142,8 +142,8 @@ void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarProdsImpl(
 {
   typedef TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOVE;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMV;
-  RCP<const TpetraMV> tX = TOVE::getConstTpetraMultiVector(rcpFromRef(X)),
-                      tY = TOVE::getConstTpetraMultiVector(rcpFromRef(Y));
+  RCP<const TpetraMV> tX = TOVE::getConstTpetraMultiVector(Teuchos::rcpFromRef(X)),
+                      tY = TOVE::getConstTpetraMultiVector(Teuchos::rcpFromRef(Y));
   tX->dot(*tY, scalarProds_out);
 }
 
