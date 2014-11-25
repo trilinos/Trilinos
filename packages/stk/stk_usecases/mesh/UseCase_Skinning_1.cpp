@@ -81,6 +81,10 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     fixture.generate_mesh();
 
+    if ( mesh.parallel_size() != 2 ) return passed;
+
+    ///////////////////
+
     {
       stk::mesh::PartVector add_parts(1,&skin_part);
       stk::mesh::skin_mesh(mesh, add_parts);
@@ -175,7 +179,6 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     // pointer to middle_element after mesh modification.
     unsigned num_skin_entities = count_skin_entities(mesh, skin_part, side_rank);
-
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
     //there should be 90 faces in the skin part
