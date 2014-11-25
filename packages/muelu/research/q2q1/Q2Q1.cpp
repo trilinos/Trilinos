@@ -332,6 +332,7 @@ int main(int argc, char *argv[]) {
       X->putScalar(zero);
     }
 
+#ifdef HAVE_MUELU_BELOS
     // Operator and Multivector type that will be used with Belos
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
@@ -380,6 +381,7 @@ int main(int argc, char *argv[]) {
       else
         out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
     }
+#endif
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
