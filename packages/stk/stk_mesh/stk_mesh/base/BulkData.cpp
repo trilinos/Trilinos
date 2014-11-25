@@ -916,16 +916,11 @@ bool BulkData::modification_begin(const std::string description)
   return true ;
 }
 
-namespace impl {
+void BulkData::MarkAsModified::operator()(Entity entity) {
+    mesh.set_state(entity, Modified);
+}
 
-struct MarkAsModified
-{
-    MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
-    void operator()(Entity entity){
-        mesh.set_state(entity, Modified);
-    }
-    BulkData & mesh;
-};
+namespace impl {
 
 struct OnlyVisitUnchanged
 {
@@ -945,7 +940,7 @@ void BulkData::mark_entity_and_upward_related_entities_as_modified(Entity entity
 {
   TraceIfWatching("stk::mesh::BulkData::log_modified_and_propagate", LOG_ENTITY, entity_key(entity));
 
-  impl::MarkAsModified mam(*this);
+  BulkData::MarkAsModified mam(*this);
   impl::OnlyVisitUnchanged ovu(*this);
   impl::VisitUpwardClosureGeneral(*this, entity, mam, ovu);
 }

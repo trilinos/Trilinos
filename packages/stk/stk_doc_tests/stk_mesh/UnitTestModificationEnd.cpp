@@ -170,6 +170,11 @@ public:
         return !entity_comm_map(key, aura_ghosting()).empty();
     }
 
+    void my_set_state(stk::mesh::Entity entity, stk::mesh::EntityState entity_state)
+    {
+        set_state(entity,entity_state);
+    }
+
 };
 
 void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm communicator, stk::mesh::BulkData& bulkData);
@@ -180,7 +185,7 @@ void checkStatesOfEntities(std::vector<std::vector<stk::mesh::EntityState> > &no
         bool (&areNodesValid)[2][20], bool (&areElementsValid)[2][4],
         stk::mesh::BulkData &stkMeshBulkData);
 void checkThatMeshIsParallelConsistent(stk::mesh::BulkData& stkMeshBulkData);
-void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData);
+void mark_element3_as_modified(BulkDataTester& stkMeshBulkData);
 void makeSureEntityIsValidOnCommListAndBulkData(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &entityKey);
 void makeSureEntityIsValidOnCommListAndBut_NOT_BulkData(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &entityKey);
 void getMeshLineByLine(const stk::mesh::BulkData &stkMeshBulkData, std::vector<std::string> &output);
@@ -1063,7 +1068,7 @@ void checkStatesOfEntities(std::vector<std::vector<stk::mesh::EntityState> > &no
     }
 }
 
-void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData)
+void mark_element3_as_modified(BulkDataTester& stkMeshBulkData)
 {
     int elementToModify = 3;
     stk::mesh::EntityKey elementToModifyKey(stk::topology::ELEMENT_RANK, elementToModify);
@@ -1071,7 +1076,7 @@ void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData)
 
     if ( stkMeshBulkData.parallel_rank() == 1 )
     {
-        stkMeshBulkData.set_state(entity, stk::mesh::Modified);
+        stkMeshBulkData.my_set_state(entity, stk::mesh::Modified);
     }
 }
 

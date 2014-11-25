@@ -570,7 +570,6 @@ public:
 
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
-  inline void set_state(Entity entity, EntityState entity_state);
   inline void set_synchronized_count(Entity entity, size_t sync_count);
   inline void set_local_id(Entity entity, unsigned id);
 
@@ -731,6 +730,7 @@ public:
   void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
 
 protected: //functions
+  inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
 
@@ -853,6 +853,8 @@ protected: //functions
   void fill_entities_that_have_lost_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
           const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
   void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities);
+
+
 
 private: //functions
 
@@ -998,6 +1000,13 @@ private: //functions
   void write_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
   void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
   std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
+
+  struct MarkAsModified
+  {
+      MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
+      void operator()(Entity entity);
+      BulkData & mesh;
+  };
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
