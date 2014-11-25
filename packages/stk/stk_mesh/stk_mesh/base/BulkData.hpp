@@ -558,19 +558,15 @@ public:
   inline EntityRank entity_rank(Entity entity) const;
   inline EntityKey entity_key(Entity entity) const;
   inline EntityState state(Entity entity) const;
-  inline size_t synchronized_count(Entity entity) const;
-  inline void mark_entity(Entity entity, entitySharing sharedType);
-  inline entitySharing is_entity_marked(Entity entity) const;
-  inline bool add_node_sharing_called() const;
+  inline void mark_entity(Entity entity, entitySharing sharedType);     //CRW
+  inline entitySharing is_entity_marked(Entity entity) const;           //CRW
+  inline bool add_node_sharing_called() const;                          //CRW
   inline Bucket & bucket(Entity entity) const;
   inline Bucket * bucket_ptr(Entity entity) const;
   inline Bucket::size_type bucket_ordinal(Entity entity) const;
   inline int parallel_owner_rank(Entity entity) const;
   inline unsigned local_id(Entity entity) const;
 
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
-  inline void set_entity_key(Entity entity, EntityKey key);
-  inline void set_synchronized_count(Entity entity, size_t sync_count);
   inline void set_local_id(Entity entity, unsigned id);
 
 #ifdef SIERRA_MIGRATION
@@ -698,9 +694,7 @@ public:
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
 
-  //reserves space for a new entity, or reclaims space from a previously-deleted entity
-  size_t generate_next_local_offset(size_t preferred_offset = 0);
-
+  // CRW: move to protected and expose through StkTransitionBulkData
   inline bool set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
   // Print all mesh info
@@ -718,8 +712,6 @@ public:
   //
   void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
-  void internal_sync_comm_list_owners();
   bool use_entity_ids_for_resolving_sharing() const { return m_use_identifiers_for_resolving_sharing; }
   void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
 
@@ -855,6 +847,17 @@ protected: //functions
 
 private: //functions
 
+  //reserves space for a new entity, or reclaims space from a previously-deleted entity
+  size_t generate_next_local_offset(size_t preferred_offset = 0);
+
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+  inline void set_entity_key(Entity entity, EntityKey key);
+  inline void set_synchronized_count(Entity entity, size_t sync_count);
+  void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
+
+  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
+  void internal_sync_comm_list_owners();
+
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
   void entity_setter_debug_check(Entity entity) const
@@ -983,6 +986,7 @@ private: //functions
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::Partition;
+  friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
 

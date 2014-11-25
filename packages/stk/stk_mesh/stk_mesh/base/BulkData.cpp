@@ -5672,6 +5672,28 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
   return true ;
 }
 
+void BulkData::generate_send_list( const int p_rank, std::vector<EntityProc> & send_list )
+{
+  for ( EntityCommListInfoVector::const_iterator
+        i = m_entity_comm_list.begin() ; i != m_entity_comm_list.end() ; ++i ) {
+
+    if ( i->owner == p_rank &&
+            m_entity_sync_counts[i->entity.local_offset()] == m_sync_count ) {
+
+      for ( PairIterEntityComm ec = this->entity_comm_map(i->key); ! ec.empty(); ++ec ) {
+        EntityProc tmp( i->entity , ec->proc );
+        send_list.push_back( tmp );
+      }
+    }
+  }
+
+  {
+    std::sort( send_list.begin() , send_list.end() , EntityLess(*this) );
+    std::vector<EntityProc>::iterator i =
+      std::unique( send_list.begin() , send_list.end() );
+    send_list.erase( i , send_list.end() );
+  }
+}
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -5720,33 +5742,6 @@ void pack_induced_memberships( BulkData& bulk_data,
         buf.pack<unsigned>( induced[j] );
       }
     }
-  }
-}
-
-void generate_send_list( BulkData& bulk_data,
-                         const size_t sync_count ,
-                         const int p_rank ,
-                         const EntityCommListInfoVector & entity_comm ,
-                               std::vector<EntityProc> & send_list )
-{
-  for ( EntityCommListInfoVector::const_iterator
-        i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
-
-    if ( i->owner == p_rank &&
-         bulk_data.synchronized_count(i->entity) == sync_count ) {
-
-      for ( PairIterEntityComm ec = bulk_data.entity_comm_map(i->key); ! ec.empty(); ++ec ) {
-        EntityProc tmp( i->entity , ec->proc );
-        send_list.push_back( tmp );
-      }
-    }
-  }
-
-  {
-    std::sort( send_list.begin() , send_list.end() , EntityLess(bulk_data) );
-    std::vector<EntityProc>::iterator i =
-      std::unique( send_list.begin() , send_list.end() );
-    send_list.erase( i , send_list.end() );
   }
 }
 
@@ -5917,7 +5912,7 @@ void BulkData::internal_resolve_shared_membership()
     {
         std::vector<EntityProc> send_list;
 
-        generate_send_list(*this, m_sync_count, p_rank, m_entity_comm_list, send_list);
+        generate_send_list(p_rank, send_list);
 
         CommAll comm(p_comm);
 

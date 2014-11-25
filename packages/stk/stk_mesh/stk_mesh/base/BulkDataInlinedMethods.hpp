@@ -780,13 +780,6 @@ inline EntityState BulkData::state(Entity entity) const
   return static_cast<EntityState>(m_entity_states[entity.local_offset()]);
 }
 
-inline size_t BulkData::synchronized_count(Entity entity) const
-{
-  entity_getter_debug_check(entity);
-
-  return m_entity_sync_counts[entity.local_offset()];
-}
-
 inline void BulkData::mark_entity(Entity entity, entitySharing sharedType)
 {
     m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
