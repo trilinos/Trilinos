@@ -458,8 +458,7 @@ public:
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     } else {
-      offsets = start_;
-      adjacencyIds =  adj_;
+      get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
     }
   }
 
