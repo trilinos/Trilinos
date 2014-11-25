@@ -246,6 +246,7 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                                                         BlockedCrsMatrix& B, bool transposeB,
+                                                        Teuchos::FancyOStream& fos,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true);
 

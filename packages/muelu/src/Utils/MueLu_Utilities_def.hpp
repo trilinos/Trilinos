@@ -585,6 +585,7 @@ namespace MueLu {
   RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                          BlockedCrsMatrix& B, bool transposeB,
+                         Teuchos::FancyOStream& fos,
                          bool doFillComplete,
                          bool doOptimizeStorage) {
     if (transposeA || transposeB)
@@ -601,8 +602,6 @@ namespace MueLu {
 
     RCP<BlockedCrsMatrix> C = rcp(new BlockedCrsMatrix(rgmapextractor, domapextractor, 33 /* TODO fix me */));
 
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
     for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
       for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
         RCP<Matrix> Cij;
@@ -618,8 +617,7 @@ namespace MueLu {
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp =
-            MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply (*crop1, false, *crop2, false, *out);
+          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos, fos);
 
           if (Cij.is_null ())
             Cij = temp;
