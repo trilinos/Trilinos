@@ -300,7 +300,6 @@ public:
 
 };
 
-template<unsigned VECTOR_LENGTH>
 class CudaTeamVectorMember {
 private:
 
@@ -314,7 +313,7 @@ private:
 
 public:
 
-  enum { VectorLength = VECTOR_LENGTH };
+  const int VectorLength;
 
 #if defined( __CUDA_ARCH__ )
 
@@ -624,6 +623,7 @@ public:
     , m_team_shared( ((char *)shared) + shared_begin , shared_size )
     , m_league_rank( arg_league_rank )
     , m_league_size( arg_league_size )
+    , VectorLength( blockDim.x )
     {}
 
 #else
@@ -816,7 +816,7 @@ public:
         return Impl::cuda_get_opt_block_size< Impl::ParallelFor<FunctorType,TeamVectorPolicy> >(functor);
     }
 
-  typedef Kokkos::Impl::CudaTeamVectorMember<VectorLength> member_type ;
+  typedef Kokkos::Impl::CudaTeamVectorMember member_type ;
 };
 
 
@@ -1550,6 +1550,432 @@ public:
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+#ifdef KOKKOS_HAVE_CXX11
+
+namespace Kokkos {
+namespace Impl {
+  template<typename iType>
+  struct ThreadLoopBoundariesStruct<iType,CudaTeamMember> {
+    typedef iType index_type;
+    const iType start;
+    const iType end;
+    const iType increment;
+    const CudaTeamMember& thread;
+
+#ifdef __CUDA_ARCH__
+    __device__ inline
+    ThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+      start( threadIdx.y ),
+      end( count ),
+      increment( blockDim.y ),
+      thread(thread_)
+    {}
+#else
+    KOKKOS_INLINE_FUNCTION
+    ThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+      start( 0 ),
+      end( count ),
+      increment( 1 ),
+      thread(thread_)
+    {}
+#endif
+  };
+
+  template<typename iType>
+  struct ThreadLoopBoundariesStruct<iType,CudaTeamVectorMember> {
+    typedef iType index_type;
+    const iType start;
+    const iType end;
+    const iType increment;
+    const CudaTeamVectorMember& thread;
+
+#ifdef __CUDA_ARCH__
+    __device__ inline
+    ThreadLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
+      start( threadIdx.y ),
+      end( count ),
+      increment( blockDim.y ),
+      thread(thread_)
+    {}
+#else
+    KOKKOS_INLINE_FUNCTION
+    ThreadLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
+      start( 0 ),
+      end( count ),
+      increment( 1 ),
+      thread(thread_)
+    {}
+#endif
+  };
+
+  template<typename iType>
+  struct VectorLoopBoundariesStruct<iType,CudaTeamVectorMember> {
+    typedef iType index_type;
+    const iType start;
+    const iType end;
+    const iType increment;
+
+#ifdef __CUDA_ARCH__
+    __device__ inline
+    VectorLoopBoundariesStruct (const CudaTeamVectorMember& thread, const iType& count):
+    start( threadIdx.x ),
+    end( count ),
+    increment( blockDim.x )
+    {}
+#else
+    KOKKOS_INLINE_FUNCTION
+    VectorLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
+      start( 0 ),
+      end( count ),
+      increment( 1 )
+    {}
+#endif
+    };
+
+} // namespace Impl
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>
+  ThreadLoop(const Impl::CudaTeamMember& thread, const iType& count) {
+  return Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>(thread,count);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >
+  ThreadLoop(const Impl::CudaTeamVectorMember& thread, const iType& count) {
+  return Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >(thread,count);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >
+  VectorLoop(Impl::CudaTeamVectorMember thread, const iType count) {
+  return Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >(thread,count);
+}
+
+} // namespace Kokkos
+
+namespace Kokkos {
+
+  /** \brief  Inter-thread parallel_for. Executes lambda(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+template<typename iType, class Lambda>
+KOKKOS_INLINE_FUNCTION
+void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries, const Lambda& lambda) {
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+    lambda(i);
+}
+
+/** \brief  Inter-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all threads of the the calling thread team and a summation of
+ * val is performed and put into result. This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType >
+KOKKOS_INLINE_FUNCTION
+ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
+                     const Lambda & lambda, ValueType& result) {
+
+#ifdef __CUDA_ARCH__
+  result = ValueType();
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,result);
+  }
+  __shared__ ValueType sh_val[blockDim.y];
+
+  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
+  for(int _i = 1; _i < blockDim.y; _i*=2) {
+    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
+      sh_val[threadIdx.y] += sh_val[threadIdx.y+_i];
+    }
+    __threadfence_block();
+  }
+
+  result = sh_val[0];
+#endif
+}
+
+/** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
+ * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
+ * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
+ * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
+ * '1 for *'). This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType, class JoinType >
+KOKKOS_INLINE_FUNCTION
+void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
+                     const Lambda & lambda, ValueType& init_result, const JoinType& join) {
+
+#ifdef __CUDA_ARCH__
+  ValueType result = init_result;
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,result);
+  }
+
+  __shared__ ValueType sh_val[blockDim.y];
+
+  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
+  for(int _i = 1; _i < blockDim.y; _i*=2) {
+    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
+      join(sh_val[threadIdx.y], sh_val[threadIdx.y+_i]);
+    }
+    __threadfence_block();
+  }
+
+  init_result = sh_val[0];
+#endif
+}
+
+} //namespace Kokkos
+
+namespace Kokkos {
+
+  /** \brief  Inter-thread parallel_for. Executes lambda(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+template<typename iType, class Lambda>
+KOKKOS_INLINE_FUNCTION
+void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+    lambda(i);
+}
+
+/** \brief  Inter-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all threads of the the calling thread team and a summation of
+ * val is performed and put into result. This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType >
+KOKKOS_INLINE_FUNCTION
+ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries,
+                     const Lambda & lambda, ValueType& result) {
+#ifdef __CUDA_ARCH__
+
+  result = ValueType();
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,result);
+  }
+  __shared__ ValueType sh_val[blockDim.y];
+
+  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
+  for(int _i = 1; _i < blockDim.y; _i*=2) {
+    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
+      sh_val[threadIdx.y] += sh_val[threadIdx.y+_i];
+    }
+    __threadfence_block();
+  }
+
+  result = sh_val[0];
+#endif
+}
+
+/** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
+ * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
+ * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
+ * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
+ * '1 for *'). This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType, class JoinType >
+KOKKOS_INLINE_FUNCTION
+void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries,
+                     const Lambda & lambda, ValueType& init_result, const JoinType& join) {
+
+#ifdef __CUDA_ARCH__
+  ValueType result = init_result;
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,result);
+  }
+
+  __shared__ ValueType sh_val[blockDim.y];
+
+  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
+  for(int _i = 1; _i < blockDim.y; _i*=2) {
+    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
+      join(sh_val[threadIdx.y], sh_val[threadIdx.y+_i]);
+    }
+    __threadfence_block();
+  }
+
+  init_result = sh_val[0];
+#endif
+}
+
+} //namespace Kokkos
+
+namespace Kokkos {
+/** \brief  Intra-thread vector parallel_for. Executes lambda(iType i) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
+ * This functionality requires C++11 support.*/
+template<typename iType, class Lambda>
+KOKKOS_INLINE_FUNCTION
+void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+    loop_boundaries, const Lambda& lambda) {
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+    lambda(i);
+}
+
+/** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a summation of
+ * val is performed and put into result. This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType >
+KOKKOS_INLINE_FUNCTION
+void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+      loop_boundaries, const Lambda & lambda, ValueType& result) {
+#ifdef __CUDA_ARCH__
+  ValueType val = ValueType();
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,val);
+  }
+
+  result = val;
+
+  if (loop_boundaries.increment > 1)
+    result += shfl_down(result, 1,loop_boundaries.increment);
+  if (loop_boundaries.increment > 2)
+    result += shfl_down(result, 2,loop_boundaries.increment);
+  if (loop_boundaries.increment > 4)
+    result += shfl_down(result, 4,loop_boundaries.increment);
+  if (loop_boundaries.increment > 8)
+    result += shfl_down(result, 8,loop_boundaries.increment);
+  if (loop_boundaries.increment > 16)
+    result += shfl_down(result, 16,loop_boundaries.increment);
+
+  result = shfl(result,0,loop_boundaries.increment);
+#endif
+}
+
+/** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
+ * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
+ * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
+ * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
+ * '1 for *'). This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType, class JoinType >
+KOKKOS_INLINE_FUNCTION
+void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+      loop_boundaries, const Lambda & lambda, ValueType& init_result, const JoinType& join) {
+
+#ifdef __CUDA_ARCH__
+  ValueType result = init_result;
+
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,result);
+  }
+
+  if (loop_boundaries.increment > 1)
+    join( result, shfl_down(result, 1,loop_boundaries.increment));
+  if (loop_boundaries.increment > 2)
+    join( result, shfl_down(result, 2,loop_boundaries.increment));
+  if (loop_boundaries.increment > 4)
+    join( result, shfl_down(result, 4,loop_boundaries.increment));
+  if (loop_boundaries.increment > 8)
+    join( result, shfl_down(result, 8,loop_boundaries.increment));
+  if (loop_boundaries.increment > 16)
+    join( result, shfl_down(result, 16,loop_boundaries.increment));
+
+  init_result = shfl(result,0,loop_boundaries.increment);
+#endif
+}
+
+/** \brief  Intra-thread vector parallel exclusive prefix sum. Executes lambda(iType i, ValueType & val, bool final)
+ *          for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes in the thread and a scan operation is performed.
+ * Depending on the target execution space the operator might be called twice: once with final=false
+ * and once with final=true. When final==true val contains the prefix sum value. The contribution of this
+ * "i" needs to be added to val no matter whether final==true or not. In a serial execution
+ * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
+ * to the final sum value over all vector lanes.
+ * This functionality requires C++11 support.*/
+template< typename iType, class Lambda >
+KOKKOS_INLINE_FUNCTION
+void parallel_scan(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+      loop_boundaries, const Lambda & lambda) {
+
+#ifdef __CUDA_ARCH__
+  typedef decltype( & Lambda::operator() ) function_pointer_type ;
+  typedef typename Impl::ScanAdapterFunctorOperatorArgType< function_pointer_type >::type value_type ;
+
+  value_type scan_val = value_type();
+  const int VectorLength = blockDim.x;
+
+  iType loop_bound = ((loop_boundaries.end+VectorLength-1)/VectorLength) * VectorLength;
+  for(int _i = threadIdx.x; _i < loop_bound; _i += VectorLength) {
+    value_type val = value_type();
+    if(_i<loop_boundaries.end)
+      lambda(_i , val , false);
+
+    value_type tmp = val;
+    value_type result_i;
+
+    if(threadIdx.x%VectorLength == 0)
+      result_i = tmp;
+    if (VectorLength > 1) {
+      const value_type tmp2 = shfl_up(tmp, 1,VectorLength);
+      if(threadIdx.x > 0)
+        tmp+=tmp2;
+    }
+    if(threadIdx.x%VectorLength == 1)
+      result_i = tmp;
+    if (VectorLength > 3) {
+      const value_type tmp2 = shfl_up(tmp, 2,VectorLength);
+      if(threadIdx.x > 1)
+        tmp+=tmp2;
+    }
+    if ((threadIdx.x%VectorLength >= 2) &&
+        (threadIdx.x%VectorLength < 4))
+      result_i = tmp;
+    if (VectorLength > 7) {
+      const value_type tmp2 = shfl_up(tmp, 4,VectorLength);
+      if(threadIdx.x > 3)
+        tmp+=tmp2;
+    }
+    if ((threadIdx.x%VectorLength >= 4) &&
+        (threadIdx.x%VectorLength < 8))
+      result_i = tmp;
+    if (VectorLength > 15) {
+      const value_type tmp2 = shfl_up(tmp, 8,VectorLength);
+      if(threadIdx.x > 7)
+        tmp+=tmp2;
+    }
+    if ((threadIdx.x%VectorLength >= 8) &&
+        (threadIdx.x%VectorLength < 16))
+      result_i = tmp;
+    if (VectorLength > 31) {
+      const value_type tmp2 = shfl_up(tmp, 16,VectorLength);
+      if(threadIdx.x > 15)
+        tmp+=tmp2;
+    }
+    if (threadIdx.x%VectorLength >= 16)
+      result_i = tmp;
+
+    val = scan_val + result_i - val;
+    scan_val += shfl(tmp,VectorLength-1,VectorLength);
+    if(_i<loop_boundaries.end)
+      lambda(_i , val , true);
+  }
+#endif
+}
+
+} // namespace Kokkos
+
+#endif // KOKKOS_HAVE_CXX11
 
 #endif /* defined( __CUDACC__ ) */
 
