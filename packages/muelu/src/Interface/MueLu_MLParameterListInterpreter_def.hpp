@@ -209,7 +209,7 @@ namespace MueLu {
     if (verbosityLevel >  0) eVerbLevel = Low;
     if (verbosityLevel >  4) eVerbLevel = Medium;
     if (verbosityLevel >  7) eVerbLevel = High;
-    if (verbosityLevel >  9) eVerbLevel = Extreme;
+    if (verbosityLevel >  8) eVerbLevel = Extreme;
     if (verbosityLevel >  9) eVerbLevel = Test;
     this->verbosity_ = eVerbLevel;
 

@@ -254,7 +254,20 @@ public:
       return false;
     else {
       return false;
+    }
+  }
 
+
+  /*! \brief Returns the number of second adjacencies on this process.
+   *
+   *  Parameters will specify algorithm options:
+   *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
+   */
+  virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
+                                    MeshEntityType through) const {
+    if (!avail2ndAdjs(sourcetarget, through))
+      return 0;
+    else {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -274,9 +287,9 @@ public:
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
       zgid_t const *Ids=NULL;
-      getIDsViewOf(MESH_VERTEX, Ids);
+      getIDsViewOf(through, Ids);
 
-      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumIDs = getLocalNumOf(sourcetarget);
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       /***********************************************************************/
@@ -287,7 +300,7 @@ public:
       RCP<const map_type> adjsMapG;
 
       // count owned nodes
-      int LocalNumOfNodes = getLocalNumOf(MESH_VERTEX);
+      int LocalNumOfNodes = getLocalNumOf(through);
       
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (LocalNumOfNodes);
@@ -295,7 +308,7 @@ public:
 	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
-      getIDsView(Ids);
+      getIDsViewOf(sourcetarget, Ids);
 
       //Generate Map for nodes.
       adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
@@ -399,21 +412,6 @@ public:
 	}
       }
 
-      return false;
-    }
-  }
-
-
-  /*! \brief Returns the number of second adjacencies on this process.
-   *
-   *  Parameters will specify algorithm options:
-   *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
-   */
-  virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
-                                    MeshEntityType through) const {
-    if (!avail2ndAdjs(sourcetarget, through))
-      return 0;
-    else {
       return nadj_;
     }
   }
