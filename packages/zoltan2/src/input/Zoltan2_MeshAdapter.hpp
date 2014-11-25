@@ -258,16 +258,14 @@ public:
   }
 
 
-  /*! \brief Returns the number of second adjacencies on this process.
-   *
-   *  Parameters will specify algorithm options:
-   *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
-   */
-  virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
-                                    MeshEntityType through) const {
-    if (!avail2ndAdjs(sourcetarget, through))
-      return 0;
-    else {
+  virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
+				    MeshEntityType through,
+				    const lno_t *&offsets,
+				    const zgid_t *&adjacencyIds) const
+  {
+    size_t nadj = 0;
+
+    if (avail2ndAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -282,8 +280,8 @@ public:
 
       // Get node-element connectivity
 
-      lno_t const *offsets=NULL;
-      zgid_t const *adjacencyIds=NULL;
+      offsets=NULL;
+      adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
       zgid_t const *Ids=NULL;
@@ -408,11 +406,33 @@ public:
 	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
 	for (size_t j = 0; j < NumEntries; ++j) {
-	  Indices[j];
+	  if(globalRow != Indices[j]) {
+	    nadj++;;
+	  }
 	}
       }
+    }
 
-      return nadj_;
+    return nadj;
+  }
+
+  /*! \brief Returns the number of second adjacencies on this process.
+   *
+   *  Parameters will specify algorithm options:
+   *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
+   */
+  virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
+                                    MeshEntityType through) const {
+    if (!avail2ndAdjs(sourcetarget, through))
+      return 0;
+    else {
+      lno_t const *offsets;
+      zgid_t const *adjacencyIds;
+      size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
+				       adjacencyIds);
+      delete [] offsets;
+      delete [] adjacencyIds;
+      return nadj;
     }
   }
 
@@ -622,7 +642,6 @@ private:
                                                  // adjacencies.
   lno_t *start_;
   zgid_t *adj_;
-  size_t nadj_;
 };
   
 }  //namespace Zoltan2
