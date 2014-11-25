@@ -253,7 +253,7 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      return false;
+      return true;
     }
   }
 
@@ -263,8 +263,8 @@ public:
 				    const lno_t *&offsets,
 				    const zgid_t *&adjacencyIds) const
   {
+    /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
-
     if (avail2ndAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
@@ -306,6 +306,7 @@ public:
 	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
+      delete [] Ids;
       getIDsViewOf(sourcetarget, Ids);
 
       //Generate Map for nodes.
@@ -341,6 +342,9 @@ public:
 	  adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
 	}// *** node loop ***
       }// *** element loop ***
+
+      delete [] offsets;
+      delete [] adjacencyIds;
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete ();
@@ -398,7 +402,12 @@ public:
       Array<GO> Indices;
       Array<ST> Values;
 
+      /* Allocate memory necessary for the adjacency */
+      lno_t *start = new lno_t [LocalNumIDs+1];
+      std::vector<int> adj;
+
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	start[localElement] = nadj;
 	const GO globalRow = Ids[localElement];
 	size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
@@ -407,10 +416,24 @@ public:
 
 	for (size_t j = 0; j < NumEntries; ++j) {
 	  if(globalRow != Indices[j]) {
+	    adj.push_back(Indices[j]);
 	    nadj++;;
 	  }
 	}
       }
+
+      delete [] Ids;
+      Ids = NULL;
+      start[LocalNumIDs] = nadj;
+
+      zgid_t *adj_ = new zgid_t [nadj];
+
+      for (size_t i=0; i < nadj; i++) {
+	adj_[i] = adj[i];
+      }
+
+      offsets = start;
+      adjacencyIds = adj_;
     }
 
     return nadj;
@@ -639,8 +662,6 @@ private:
   enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
                                                  // defining second-order
                                                  // adjacencies.
-  lno_t *start_;
-  zgid_t *adj_;
 };
   
 }  //namespace Zoltan2
