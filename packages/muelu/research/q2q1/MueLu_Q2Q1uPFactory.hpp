@@ -190,6 +190,7 @@ namespace MueLu {
 
       } else {
         Input(fineLevel, "CoordinatesVelocity");
+        // FIXME: this is never executed due to GetLevelID() check above.
         if (fineLevel.GetLevelID() == 0)
           Input(fineLevel, "p2vMap");
       }

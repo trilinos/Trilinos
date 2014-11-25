@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
     Xpetra::Parameters xpetraParameters(clp);
 
-    std::string xmlFileName  = "driver.xml";   clp.setOption("xml",      &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
+    std::string xmlFileName  = "driver.xml";   clp.setOption("xml",      &xmlFileName,   "read parameters from a file (only used for point hierarchy)");
     double      tol          = 1e-12;          clp.setOption("tol",      &tol,           "solver convergence tolerance");
     int         n            = 9;              clp.setOption("n",        &n,             "problem size (1D)");
     int         maxLevels    = 2;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
@@ -292,11 +292,14 @@ int main(int argc, char *argv[]) {
     std::string ifpackType = "SCHWARZ";
     RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
     M.SetFactory("Smoother",     rcp(new SmootherFactory(smootherPrototype)));
-    M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
+
+    RCP<Factory> coarseFact = rcp(new SmootherFactory(rcp(new BlockedDirectSolver()), Teuchos::null));
+    M.SetFactory("CoarseSolver", coarseFact);
 
 #ifdef HAVE_MUELU_DEBUG
     M.ResetDebugData();
 #endif
+    // Replace the filtered matrix with the original one
     H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
     H[0]->Setup(M, 0, H[0]->GetNumLevels());
 
@@ -458,16 +461,12 @@ namespace MueLuTests {
 
     M.SetFactory("Smoother",     Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
-
-    RCP<Factory> coarseFact = rcp(new SmootherFactory(rcp(new BlockedDirectSolver()), Teuchos::null));
-    // M.SetFactory("CoarseSolver", coarseFact);
-    M.SetFactory("CoarseSolver", Teuchos::null);
   }
 
   void SetBlockDependencyTree(FactoryManager& M, int row, int col, const std::string& mode) {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1PFactory;
+    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>  Q2Q1PFactory;
     typedef MueLu::Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1uPFactory;
 
     RCP<SubBlockAFactory> AFact = rcp(new SubBlockAFactory());
@@ -485,6 +484,7 @@ namespace MueLuTests {
       ParameterList q2q1ParamList = *(Q2Q1Fact->GetValidParameterList());
       q2q1ParamList.set("mode", mode);
       // q2q1ParamList.set("phase2", false);
+      q2q1ParamList.set("dump status", false);
       Q2Q1Fact->SetParameterList(q2q1ParamList);
     }
     Q2Q1Fact->SetFactory("A", AFact);
