@@ -703,12 +703,6 @@ public:
 
   inline bool set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
-  // Do not call!
-  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
-
-  // Do not call!  Just for a legacy test!
-  impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
-
   // Print all mesh info
   void dump_all_mesh_info(std::ostream& out = std::cout) const;
 
@@ -730,6 +724,9 @@ public:
   void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
 
 protected: //functions
+
+  impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
+
   inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
@@ -857,6 +854,8 @@ protected: //functions
 
 
 private: //functions
+
+  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
   void entity_setter_debug_check(Entity entity) const
   {

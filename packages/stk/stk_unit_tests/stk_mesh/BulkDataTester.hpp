@@ -37,6 +37,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
+#include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 
 class BulkDataTester : public stk::mesh::BulkData
 {
@@ -115,6 +116,10 @@ public:
     void my_update_sharing_after_change_entity_owner()
     {
         this->update_sharing_after_change_entity_owner();
+    }
+
+    stk::mesh::impl::EntityRepository &my_get_entity_repository() {
+        return get_entity_repository();
     }
 };
 
