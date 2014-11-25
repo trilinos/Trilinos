@@ -166,13 +166,13 @@ struct functor_team_for {
     else {
       team.vector_single ([&] () {
           values(team.team_rank ()) = 0;
-        });
+      });
 
-      team.team_par_for (131,[&] (int i) {
+      Kokkos::parallel_for(Kokkos::ThreadLoop(team,131),[&] (int i) {
           team.vector_single ([&] () {
               values(team.team_rank ()) += i - team.league_rank () + team.league_size () + team.team_size ();
-            });
-        });
+          });
+      });
 
       team.team_barrier ();
       if (team.team_rank () == 0) {
@@ -209,7 +209,7 @@ struct functor_vec_single {
   void operator() (typename policy_type::member_type team) const {
     Scalar value = 0;
 
-    team.vector_par_for(13,[&] (int i) {
+    Kokkos::parallel_for(Kokkos::VectorLoop(team,13),[&] (int i) {
       value = i;
     });
 
@@ -217,7 +217,7 @@ struct functor_vec_single {
     },value);
 
     Scalar value2 = 0;
-    team.vector_par_reduce(13, [&] (int i, Scalar& val) {
+    Kokkos::parallel_reduce(Kokkos::VectorLoop(team,13), [&] (int i, Scalar& val) {
       val += value;
     },value2);
 
@@ -252,9 +252,9 @@ struct functor_vec_for {
       flag() = 1;
     }
     else {
-      team.vector_par_for (13, [&] (int i) {
-          values(13*team.team_rank() + i) = i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
-        });
+      Kokkos::parallel_for(Kokkos::VectorLoop(team,13), [&] (int i) {
+        values(13*team.team_rank() + i) = i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
+      });
 
       team.vector_single ([&] () {
           Scalar test = 0;
@@ -286,7 +286,7 @@ struct functor_vec_red {
   void operator() (typename policy_type::member_type team) const {
     Scalar value = 0;
 
-    team.vector_par_reduce(13,[&] (int i, Scalar& val) {
+    Kokkos::parallel_reduce(Kokkos::VectorLoop(team,13),[&] (int i, Scalar& val) {
       val += i;
     }, value);
 
@@ -315,7 +315,7 @@ struct functor_vec_red_join {
   void operator() (typename policy_type::member_type team) const {
     Scalar value = 1;
 
-    team.vector_par_reduce(13,[&] (int i, Scalar& val) {
+    Kokkos::parallel_reduce(Kokkos::VectorLoop(team,13),[&] (int i, Scalar& val) {
                                 val = i+1; }
       , value ,
       [&] (Scalar& val, const Scalar& src) {val*=src;}
@@ -344,8 +344,7 @@ struct functor_vec_scan {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (typename policy_type::member_type team) const {
-    Scalar reduce_value;
-    team.vector_par_scan(13,[&] (int i, Scalar& val, bool final) {
+    Kokkos::parallel_scan(Kokkos::VectorLoop(team,13),[&] (int i, Scalar& val, bool final) {
       val += i;
       if(final) {
         Scalar test = 0;
@@ -357,7 +356,7 @@ struct functor_vec_scan {
           flag()=1;
         }
       }
-    },reduce_value);
+    });
   }
 };
 
