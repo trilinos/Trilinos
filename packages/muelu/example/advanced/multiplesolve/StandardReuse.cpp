@@ -206,7 +206,9 @@ int main(int argc, char *argv[]) {
       H.Setup(M);
 
       H.Clear();
+#ifdef HAVE_MUELU_DEBUG
       M.ResetDebugData();
+#endif
 
       out << thinSeparator << "\nPreconditioner status:" << std::endl;
       H.print(out, MueLu::Extreme);
@@ -260,7 +262,9 @@ int main(int argc, char *argv[]) {
       H.Setup(M);
 
       H.Clear();
+#ifdef HAVE_MUELU_DEBUG
       M.ResetDebugData();
+#endif
 
       out << thinSeparator << "\nPreconditioner status:" << std::endl;
       H.print(out, MueLu::Extreme);
