@@ -58,6 +58,7 @@
 #include "ROL_StdBoundConstraint.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief The discrete boundary value problem.
    */
@@ -91,21 +92,18 @@ namespace ROL {
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
       g.zero();
       Real h  = 1.0/((Real)(this->dim_) + 1.0);
-      Real f = 0.0, fn = 0.0, df = 0.0;
+      std::vector<Real> f(this->dim_,0.0);
       for ( int i = 0; i < this->dim_; i++ ) {
-        f  = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0; 
-        df = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
-        if ( i < (this->dim_-1) ) {
-          f -= (*ex)[i+1]; 
-          fn = 2.0*(*ex)[i+1] - (*ex)[i] - (*ex)[i+2] + h*h*std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,3.0)/2.0;
-          (*eg)[i] -= 2.0*fn;
-        } 
-        if ( i > 0 ) {
-          f -= (*ex)[i-1]; 
-          fn = 2.0*(*ex)[i-1] - (*ex)[i-2] - (*ex)[i] + h*h*std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,3.0)/2.0;
-          (*eg)[i] -= 2.0*fn;
-        }
-        (*eg)[i] += 2.0*f*df;
+        f[i] = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
+        if ( i < (this->dim_-1) ) { f[i] -= (*ex)[i+1]; }
+        if ( i > 0)               { f[i] -= (*ex)[i-1]; }
+      }
+      Real df = 0.0;
+      for ( int i = 0; i < this->dim_; i++ ) {
+        df = (2.0 + 3.0*h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0)/2.0)*f[i];
+        if ( i < (this->dim_-1) ) { df -= f[i+1]; }
+        if ( i > 0 )              { df -= f[i-1]; }
+        (*eg)[i] += 2.0*df;
       }
     }
 #if USE_HESSVEC
@@ -227,6 +225,7 @@ namespace ROL {
   }
 
 
+}// End ZOO Namespace
 }// End ROL Namespace
 
 #endif

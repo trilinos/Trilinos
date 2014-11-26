@@ -84,6 +84,10 @@ template <typename T> struct is_const : public false_type {};
 template <typename T> struct is_const<const T> : public true_type {};
 template <typename T> struct is_const<const T & > : public true_type {};
 
+template <typename T> struct is_array : public false_type {};
+template <typename T> struct is_array< T[] > : public true_type {};
+template <typename T, unsigned N > struct is_array< T[N] > : public true_type {};
+
 //----------------------------------------------------------------------------
 // C++11 Type transformations:
 
@@ -96,9 +100,13 @@ template <typename T> struct add_const<T & > { typedef const T & type; };
 template <typename T> struct add_const<const T> { typedef const T type; };
 template <typename T> struct add_const<const T & > { typedef const T & type; };
 
-template<typename T> struct remove_reference { typedef T type ; };
-template<typename T> struct remove_reference< T & > { typedef T type ; };
-template<typename T> struct remove_reference< const T & > { typedef const T type ; };
+template <typename T> struct remove_reference { typedef T type ; };
+template <typename T> struct remove_reference< T & > { typedef T type ; };
+template <typename T> struct remove_reference< const T & > { typedef const T type ; };
+
+template <typename T> struct remove_extent { typedef T type ; };
+template <typename T> struct remove_extent<T[]> { typedef T type ; };
+template <typename T, unsigned N > struct remove_extent<T[N]> { typedef T type ; };
 
 //----------------------------------------------------------------------------
 // C++11 Other type generators:

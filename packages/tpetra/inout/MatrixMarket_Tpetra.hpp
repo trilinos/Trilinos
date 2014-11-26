@@ -5484,7 +5484,9 @@ namespace Tpetra {
         //     (We could just post receives with a max data size, but
         //     I feel uncomfortable about that.)
         //   - The C++ standard library doesn't allow nonblocking
-        //     output to an std::ostream.
+        //     output to an std::ostream.  (Thus, we have to start a
+        //     receive or send before starting the write, and hope
+        //     that MPI completes it in the background.)
         //
         // Process 0: Post receive-size receives from Processes 1 and 2.
         // Process 1: Post send-size send to Process 0.
@@ -5710,7 +5712,6 @@ namespace Tpetra {
                   out << printData[row + col * printStride] << endl;
                 }
               }
-              out << endl;
             }
           }
         }
@@ -5953,7 +5954,6 @@ namespace Tpetra {
                   out << printData[row + col * printStride] << endl;
                 }
               }
-              out << endl;
             }
           }
           else if (myRank == p) { // Process p

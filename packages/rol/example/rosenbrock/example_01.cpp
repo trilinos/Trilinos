@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    ROL::Objective_Rosenbrock<RealT> obj;
+    ROL::ZOO::Objective_Rosenbrock<RealT> obj;
     int dim = 100; // Set problem dimension. Must be even.
 
     Teuchos::ParameterList parlist;

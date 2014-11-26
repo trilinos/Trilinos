@@ -154,34 +154,45 @@ struct functor_team_for {
 
     typedef typename ExecutionSpace::scratch_memory_space shmem_space ;
     typedef Kokkos::View<Scalar*,shmem_space,Kokkos::MemoryUnmanaged> shared_int;
-    shared_int values = shared_int(team.team_shmem(),team.team_size()*13);
+    typedef typename shared_int::size_type size_type;
 
-    team.vector_single([&] () {
-      values(team.team_rank()) = 0;
-    });
+    const size_type shmemSize = team.team_size () * 13;
+    shared_int values = shared_int (team.team_shmem (), shmemSize);
 
-    team.team_par_for(131,[&] (int i) {
-      team.vector_single([&] () {
-        values(team.team_rank()) += i - team.league_rank() + team.league_size() + team.team_size();
-      });
-    });
+    if (values.ptr_on_device () == NULL || values.dimension_0 () < shmemSize) {
+      printf ("FAILED to allocate shared memory of size %u\n",
+              static_cast<unsigned int> (shmemSize));
+    }
+    else {
+      team.vector_single ([&] () {
+          values(team.team_rank ()) = 0;
+        });
 
-    team.team_barrier();
-    if(team.team_rank()==0) {
-      team.vector_single([&] () {
-        Scalar test = 0;
-        Scalar value = 0;
-        for(int i = 0; i < 131; i++) {
-          test += i - team.league_rank() + team.league_size() + team.team_size();
-        }
-        for(int i=0; i<team.team_size(); i++) {
-          value += values(i);
-        }
-        if(test!=value) {
-          printf("FAILED vector_par_for %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
-          flag()=1;
-        }
-      });
+      team.team_par_for (131,[&] (int i) {
+          team.vector_single ([&] () {
+              values(team.team_rank ()) += i - team.league_rank () + team.league_size () + team.team_size ();
+            });
+        });
+
+      team.team_barrier ();
+      if (team.team_rank () == 0) {
+        team.vector_single ([&] () {
+            Scalar test = 0;
+            Scalar value = 0;
+            for (int i = 0; i < 131; ++i) {
+              test += i - team.league_rank () + team.league_size () + team.team_size ();
+            }
+            for (int i = 0; i < team.team_size (); ++i) {
+              value += values(i);
+            }
+            if (test != value) {
+              printf ("FAILED vector_par_for %i %i %lf %lf\n",
+                      team.league_rank (), team.team_rank (),
+                      static_cast<double> (test), static_cast<double> (value));
+              flag() = 1;
+            }
+          });
+      }
     }
   }
 };
@@ -234,22 +245,32 @@ struct functor_vec_for {
     typedef Kokkos::View<Scalar*,shmem_space,Kokkos::MemoryUnmanaged> shared_int;
     shared_int values = shared_int(team.team_shmem(),team.team_size()*13);
 
-    team.vector_par_for(13,[&] (int i) {
-      values(13*team.team_rank() + i) = i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
-    });
+    if (values.ptr_on_device () == NULL ||
+        values.dimension_0 () < team.team_size () * 13) {
+      printf ("FAILED to allocate memory of size %i\n",
+              static_cast<int> (team.team_size () * 13));
+      flag() = 1;
+    }
+    else {
+      team.vector_par_for (13, [&] (int i) {
+          values(13*team.team_rank() + i) = i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
+        });
 
-    team.vector_single([&] () {
-      Scalar test = 0;
-      Scalar value = 0;
-      for(int i = 0; i < 13; i++) {
-        test += i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
-        value += values(13*team.team_rank() + i);
-      }
-      if(test!=value) {
-        printf("FAILED vector_par_for %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
-        flag()=1;
-      }
-    });
+      team.vector_single ([&] () {
+          Scalar test = 0;
+          Scalar value = 0;
+          for (int i = 0; i < 13; ++i) {
+            test += i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
+            value += values(13*team.team_rank() + i);
+          }
+          if (test != value) {
+            printf ("FAILED vector_par_for %i %i %lf %lf\n",
+                    team.league_rank (), team.team_rank (),
+                    static_cast<double> (test), static_cast<double> (value));
+            flag() = 1;
+          }
+        });
+    }
   }
 };
 

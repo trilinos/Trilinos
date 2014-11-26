@@ -193,6 +193,11 @@ main (int argc, char *argv[])
                     ", dump the matrix resp. row Map to their respective files "
                     "before exiting.");
 
+     // If matrixFilename is nonempty, dump the matrix to that file
+    // in MatrixMarket format.
+    int numMueluRebuilds=0;
+    cmdp.setOption ("rebuild", &numMueluRebuilds, "Number of times to rebuild the MueLu hierarchy.");
+
     parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
                                xmlInputParamsFile, solverName, verbose, debug);
     if (printedHelp) {
@@ -288,12 +293,14 @@ main (int argc, char *argv[])
 
         if (prec_type == "MueLu") {
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
-          if (inputList.isSublist("MueLu")) {
-            ParameterList mueluParams = inputList.sublist("MueLu");
-            M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
-          } else {
-            M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
-          }
+	  for(int i=0; i<numMueluRebuilds+1; i++) {
+	    if (inputList.isSublist("MueLu")) {
+	      ParameterList mueluParams = inputList.sublist("MueLu");
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+	    } else {
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+	    }
+	  }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU
           TEUCHOS_TEST_FOR_EXCEPTION(
             prec_type == "MueLu", std::runtime_error, "Tpetra scaling example: "

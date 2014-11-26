@@ -171,6 +171,19 @@ const int global_num_rows = 11;
 const int global_num_cols = 8;  // Currently must be a multiple of 8 based on
                                 // alignment assumptions for SFS
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Size, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v("view", num_rows, num_cols);
+  TEUCHOS_TEST_EQUALITY(v.size(), num_rows, out, success);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
 {
   typedef typename Storage::device_type Device;
@@ -456,6 +469,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
 
 
 #define VIEW_MP_VECTOR_TESTS_STORAGE_LAYOUT( STORAGE, LAYOUT )          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, Size, STORAGE, LAYOUT )                             \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy, STORAGE, LAYOUT )                         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \

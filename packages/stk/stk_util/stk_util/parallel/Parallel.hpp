@@ -150,9 +150,41 @@ int parallel_machine_rank( ParallelMachine parallel_machine );
  * @brief Member function <b>parallel_machine_barrier</b> ...
  */
 void parallel_machine_barrier( ParallelMachine parallel_machine);
-}
 
 //----------------------------------------------------------------------
+
+class Parallel {
+//keeps a copy of the machine (really MPI_Comm), and the rank & size for fast access
+//right now used in BulkData but could be used elsewhere
+public: //methods
+  Parallel(ParallelMachine parallel_in) :
+    m_parallel_machine( parallel_in ),
+    m_parallel_size( parallel_machine_size( parallel_in ) ),
+    m_parallel_rank( parallel_machine_rank( parallel_in ) )
+  {
+    //no-op constructor right now
+  }
+
+  /** \brief  The parallel machine */
+  inline ParallelMachine parallel() const { return m_parallel_machine ; }
+
+  /** \brief  Size of the parallel machine */
+  inline int parallel_size()   const { return m_parallel_size ; }
+
+  /** \brief  Rank of the parallel machine's local processor */
+  inline int parallel_rank()   const { return m_parallel_rank ; }
+
+  ~Parallel() {}  //do nothing destructor
+
+private: //data
+  ParallelMachine m_parallel_machine;
+  int m_parallel_size;
+  int m_parallel_rank;
+
+}; //class Parallel
+
+} //namespace stk
+
 
 #endif
 

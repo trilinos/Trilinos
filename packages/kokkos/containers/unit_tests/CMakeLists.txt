@@ -5,6 +5,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src )
 
 SET(SOURCES
   UnitTestMain.cpp 
+  TestCuda.cpp
   )
 
 SET(LIBRARIES kokkoscore)
@@ -27,14 +28,6 @@ IF(Kokkos_ENABLE_OpenMP)
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda)
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
-
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} TestCuda.cpp )
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTest

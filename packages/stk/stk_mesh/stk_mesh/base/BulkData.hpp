@@ -67,7 +67,6 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
-#include "stk_mesh/base/BulkDataParallel.hpp" // for BulkDataParallel
 
 namespace sierra { namespace Fmwk { class MeshBulkData; } }
 namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
@@ -334,8 +333,6 @@ public:
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
    *
-   *  A parallel-local operation.
-   *
    *  If the locally owned entity is shared or ghosted then
    *  the change will be propagated to the sharing or ghosting
    *  processes by modification_end.
@@ -344,6 +341,25 @@ public:
       const PartVector & add_parts ,
       const PartVector & remove_parts = PartVector(),
       bool always_propagate_internal_changes=true);
+
+  /** \brief Change part-membership of the specified entities by adding
+   * and/or removing parts for each entity.
+   *
+   * Each entity in the vector must be locally-owned.
+   *
+   * A parallel-synchronous operation, containing its own calls to
+   * modification_begin and modification_end. The mesh must not already
+   * be in the "ok-to-modify" state when this method is called.
+   *
+   * The supplied arguments are different on each processor (and may be
+   * empty on some processors) but all processors must call this method
+   * before it will complete since it includes communication to propagate
+   * the part membership of any entities that are on processor boundaries.
+   */
+  void batch_change_entity_parts( const stk::mesh::EntityVector& entities,
+                            const std::vector<PartVector>& add_parts,
+                            const std::vector<PartVector>& remove_parts,
+                            bool always_propagate_internal_changes=true );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -764,6 +780,7 @@ protected: //functions
                                                 bool always_propagate_internal_changes=true );
 
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_change_parts();
 
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
@@ -983,7 +1000,7 @@ protected: //data
   std::vector<uint16_t> m_closure_count;
 
 private: // data
-  BulkDataParallel m_parallel;
+  Parallel m_parallel;
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;

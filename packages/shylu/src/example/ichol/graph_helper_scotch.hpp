@@ -2,6 +2,10 @@
 #ifndef __GRAPH_HELPER_SCOTCH_HPP__
 #define __GRAPH_HELPER_SCOTCH_HPP__
 
+/// \file graph_helper_scotch.hpp
+/// \brief Interface to scotch reordering
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
 #include "scotch.h"
 #include "util.hpp"
 
@@ -46,6 +50,11 @@ namespace Example {
     ordinal_type_array PermVector()    const { return _perm; }
     ordinal_type_array InvPermVector() const { return _peri; }
 
+    ordinal_type_array RangeVector()   const { return _range; }
+    ordinal_type_array TreeVector()    const { return _tree; }
+
+    ordinal_type NumBlocks() const { return _cblk; }
+
     GraphHelper_Scotch(CrsMatrixType& A) {
 
       _label = "GraphHelper_Scotch::" + A.Label();
@@ -89,16 +98,6 @@ namespace Example {
     virtual~GraphHelper_Scotch() {
       SCOTCH_graphFree(&_graph);
     }
-    ordinal_type getNumBlocks() const {
-      return _cblk; 
-    }
-
-    // ordinal_type* getPermutationVector() const {
-    //   return _perm;
-    // }
-    // ordinal_type* getInversePermutationVector() const {
-    //   return _peri;
-    // }
 
     int computeOrdering() {
       int ierr = 0, level = log2(_nnz)+10;
@@ -129,9 +128,6 @@ namespace Example {
       _is_ordered = true;
 
       return 0;
-    }
-
-    int constructTree() {
     }
 
     ostream& showMe(ostream &os) const {

@@ -1,22 +1,27 @@
-
 ----------------------------------------
 Release Notes for TriBITS
 ----------------------------------------
 
+2014/11/22:
+
+(*) TriBITS Core: Added ${PROJECT_NAME}_TRACE_ADD_TEST: Now you can a single
+line print if a test got added (and its important properties if it did) or not
+and if not then why the test did not get added.
+
 2014/09/22:
 
-(*) Changed minimum version of CMake from 2.7 to 2.8.11.
+(*) TriBITS Core: Changed minimum version of CMake from 2.7 to 2.8.11.
 
 2014/09/21:
 
-(*) Added support for the env var TRIBITS_TDD_USE_SYSTEM_CTEST so that if
-equal to 1, then the TriBITS Dashboard Driver (TDD) system will use the CTest
-(and CMake) in the env will be used instead of being downloaded using
-download-cmake.py.  This not only speeds up the auotmated builds, but it also
-ensures that the automated testing uses exactly the install of CMake/CTest
-that is used by the developers on the system.  Also, it has been found that
-download-cmake.py will download and install a 32bit version even on 64bit
-machines.
+(*) TriBITS Dashboard Drivera: Added support for the env var
+TRIBITS_TDD_USE_SYSTEM_CTEST so that if equal to 1, then the TriBITS Dashboard
+Driver (TDD) system will use the CTest (and CMake) in the env will be used
+instead of being downloaded using download-cmake.py.  This not only speeds up
+the auotmated builds, but it also ensures that the automated testing uses
+exactly the install of CMake/CTest that is used by the developers on the
+system.  Also, it has been found that download-cmake.py will download and
+install a 32bit version even on 64bit machines.
 
 Trilinos 11.7:
 --------------

@@ -51,7 +51,9 @@
 #include <Tpetra_Operator.hpp>
 
 #include "Xpetra_Map.hpp"
+#include "Xpetra_TpetraMap.hpp"
 #include "Xpetra_MultiVector.hpp"
+#include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_Operator.hpp"
 
 #include "Xpetra_Utils.hpp"
@@ -90,7 +92,7 @@ namespace Xpetra {
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
            Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {
-      apply(toTpetra(X), toTpetra(Y), mode, alpha, beta);
+      op_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta);
     }
 
     /// \brief Whether this operator supports applying the transpose or conjugate transpose.

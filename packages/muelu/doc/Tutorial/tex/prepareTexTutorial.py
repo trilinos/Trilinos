@@ -148,7 +148,7 @@ if __name__ == '__main__':
   
   print bcolors.OKDARKGREEN + "Run test examples to include results in pdf... " + bcolors.ENDC
   # run simple easy input xml deck test
-  cmd = "../src/MueLu_tutorial_laplace2d.exe --xml=../src/xml/s1_easy.xml > s1_easy.txt"
+  cmd = "mpirun -np 2 ../src/MueLu_tutorial_laplace2d.exe --nx=50 --ny=50 --xml=../src/xml/s1_easy.xml > s1_easy.txt"
   runCommand(cmd)
   
   if os.path.isfile("s1_easy.txt") and os.access("s1_easy.txt", os.R_OK):
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     
   # clean up
   print bcolors.OKDARKGREEN + "Clean up files... " + bcolors.ENDC
-  runCommand("rm *.fragment *.out *.txt")  
-  runCommand("mv main.pdf muelu_tutorial.pdf")
+  #runCommand("rm *.fragment *.out *.txt")  
+  #runCommand("mv main.pdf muelu_tutorial.pdf")
 
   print bcolors.OKDARKGREEN + "Finished. " + bcolors.ENDC

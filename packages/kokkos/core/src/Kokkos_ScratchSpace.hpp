@@ -88,15 +88,15 @@ public:
 
   template< typename IntType >
   KOKKOS_INLINE_FUNCTION
-  void * get_shmem( const IntType & size ) const
-    {
-      void * tmp = m_iter ;
-      if ( m_end < ( m_iter += align( size ) ) ) {
-        printf("ScratchMemorySpace<...>::get_shmem overflow %ld\n",long(m_end-m_iter));
-        tmp = 0 ;
-      }
-      return tmp ;
+  void* get_shmem (const IntType& size) const {
+    void* tmp = m_iter ;
+    if (m_end < (m_iter += align (size))) {
+      m_iter -= align (size); // put it back like it was
+      printf ("ScratchMemorySpace<...>::get_shmem: Failed to allocate %ld byte(s); remaining capacity is %ld byte(s)\n", long(size), long(m_end-m_iter));
+      tmp = 0;
     }
+    return tmp;
+  }
 
   template< typename IntType >
   KOKKOS_INLINE_FUNCTION

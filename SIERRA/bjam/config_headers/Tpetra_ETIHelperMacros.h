@@ -6,23 +6,6 @@
 /* Tpetra provides official support for the following nodes */
 #include <Kokkos_DefaultNode.hpp>
 
-/*#include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-#  include <Kokkos_TPINode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-#  include <Kokkos_ThrustGPUNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-#  include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#endif*/
-
 /* Tpetra provides official support for dd_real and qd_real */
 #if defined(HAVE_TPETRA_QD)
 #include <qd/qd_real.h>
@@ -84,26 +67,26 @@
 #define TPETRA_INSTANTIATE_LGN_NOGPU(INSTMACRO)\
 	INSTMACRO( int , int , KokkosClassic_SerialNode )\
 	INSTMACRO( int , int , KokkosClassic_TPINode )
-  
+
 
 #define TPETRA_INSTANTIATE_SLG_NOGPU(INSTMACRO)\
 	INSTMACRO( double , int , int )
-  
+
 
 #define TPETRA_INSTANTIATE_LG_NOGPU(INSTMACRO)\
 	INSTMACRO( int , int )
-   
+
 
 #define TPETRA_INSTANTIATE_N_NOGPU(INSTMACRO)\
 	INSTMACRO( KokkosClassic_SerialNode )\
 	INSTMACRO( KokkosClassic_TPINode )
-    
+
 
 #define TPETRA_INSTANTIATE_TSLGN_NOGPU(INSTMACRO)
 
 
 #define TPETRA_INSTANTIATE_TSLG_NOGPU(INSTMACRO)
- 
+
 
 #define TPETRA_INSTANTIATE_CONVERT_NOGPU(INSTMACRO)
 

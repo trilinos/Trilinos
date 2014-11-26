@@ -63,7 +63,7 @@
 /* #undef HAVE_ASSERT_H */
 
 /* Define if you have a BLAS library. */
-/* #undef HAVE_BLAS */
+#define HAVE_BLAS
 
 #define EPETRA_ADDRESS64BIT
 
@@ -98,7 +98,7 @@
 /* #undef HAVE_GNUMAKE */
 
 /* Define if you have LAPACK library. */
-/* #undef HAVE_LAPACK */
+#define HAVE_LAPACK
 
 /* Define if want to build libcheck */
 /* #undef HAVE_LIBCHECK */

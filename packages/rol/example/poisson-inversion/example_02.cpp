@@ -583,8 +583,8 @@ int main(int argc, char *argv[]) {
     parlist.set("PDAS Maximum Number of Iterations",      10);
     parlist.set("PDAS Dual Scaling",                      alpha);      
     // Define step.
-    bool useSecant = true;
-    ROL::PrimalDualActiveSetStep<RealT> step(parlist,useSecant);
+    parlist.set("Use Secant Hessian-Times-A-Vector",      true);
+    ROL::PrimalDualActiveSetStep<RealT> step(parlist);
 
     // Define status test.
     RealT gtol  = 1e-12;  // norm of gradient tolerance
@@ -609,6 +609,7 @@ int main(int argc, char *argv[]) {
 
     // Projected Newtion.
     // Define step.
+    parlist.set("Use Secant Hessian-Times-A-Vector",      false);
     ROL::TrustRegionStep<RealT> step_tr(parlist);
     // Define algorithm.
     ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);

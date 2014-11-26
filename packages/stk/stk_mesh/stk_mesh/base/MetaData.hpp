@@ -181,6 +181,7 @@ public:
   {
       ThrowRequireMsg(m_bulk_data == NULL || m_bulk_data == bulk || bulk == NULL, "MetaData::set_mesh_bulk_data ERROR, trying to set mesh when it's already set.");
       m_bulk_data = bulk;
+      set_mesh_on_fields(bulk);
   }
 
   BulkData& mesh_bulk_data() {

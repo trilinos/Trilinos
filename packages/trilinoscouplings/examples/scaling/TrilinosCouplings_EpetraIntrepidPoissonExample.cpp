@@ -57,6 +57,7 @@
 
 // My includes
 #include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"
@@ -260,7 +261,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /******************************* GENERATE MESH ************************************/
   /**********************************************************************************/
 
-  *out << "Generating mesh" << endl;
+  *out << "Generating mesh (epetra)" << endl;
 
   int error = 0; // Number of errors in generating the mesh
 
@@ -271,8 +272,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   long long ** comm_node_proc_ids   = NULL;
 
   // Generate mesh with Pamgen
-  long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh (meshInput.c_str (), dim, myRank, numProcs, maxInt);
+  long long maxInt = 9223372036854775807LL;  
+  long long cr_result = Create_Pamgen_Mesh (meshInput.c_str (), dim, myRank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(*out,cr_result);
 
   std::string msg ("Poisson: ");
 

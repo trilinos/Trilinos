@@ -24,6 +24,7 @@ Usage::
     [KEYWORDS <keyword1> <keyword2> ...]
     [COMM [serial] [mpi]]
     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
+    [OVERALL_NUM_TOTAL_CORES_USED <overallNumTotalCoresUsed>]
     [CATEGORIES <category0> <category1> ...]
     [HOST <host0> <host1> ...]
     [XHOST <host0> <host1> ...]
@@ -56,6 +57,7 @@ command.  An atomic test command block ``TEST_<idx>`` (i.e. ``TEST_0``,
      [MESSAGE "<message>"]
      [WORKING_DIRECTORY <workingDir>]
      [NUM_MPI_PROCS <numProcs>]
+     [NUM_TOTAL_CORES_USED <numTotalCoresUsed>]
      [OUTPUT_FILE <outputFile>]
      [NO_ECHO_OUTPUT]]
      [PASS_ANY
@@ -134,18 +136,23 @@ Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
   ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
 
     If specified, gives the default number of MPI processes that each
-    executable command runs on.  If ``<numProcs>`` is greater than
+    executable command runs on.  If ``<overallNumProcs>`` is greater than
     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
     specified, then the default number of processes for an MPI build will be
     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
-    ignored.  This also results in the test property ``PROCESSORS`` being
-    set to ``<overallNumProcs>`` (see `Running multiple tests at the same
-    time (TRIBITS_ADD_ADVANCED_TEST())`_).  **WARNING!** If just running a
-    serial script or other command, then the property ``PROCESSORS`` will
-    still get set to ``${MPI_EXEC_DEFAULT_NUMPROCS}`` so in order to avoid
-    CTest unnecessarily resolving ``${MPI_EXEC_DEFAULT_NUMPROCS}`` processes
-    for a serial non-MPI test, then one must explicitly pass in
-    ``MPI_EXEC_DEFAULT_NUMPROCS 1``!
+    ignored.  For MPI builds with all ``TEST_<IDX> CMND`` blocks,
+    ``<overallNumProcs>`` is used to set the property ``PROCESSORS``. (see
+    `Running multiple tests at the same time
+    (TRIBITS_ADD_ADVANCED_TEST())`_).  **WARNING!** If just running a serial
+    script or other command, then the property ``PROCESSORS`` will still get
+    set to ``${OVERALL_NUM_MPI_PROCS}`` so in order to avoid CTest
+    unnecessarily reserving ``${OVERALL_NUM_MPI_PROCS}`` processes for a
+    serial non-MPI test, then one must leave off ``OVERALL_NUM_MPI_PROCS``
+    or explicitly pass in ``MPI_EXEC_DEFAULT_NUMPROCS 1``!
+
+  ``OVERALL_NUM_TOTAL_CORES_USED <overallNumTotalCoresUsed>``
+
+    Used for ``NUM_TOTAL_CORES_USED`` if missing in a ``TEST_<IDX>`` block.
 
   ``CATEGORIES <category0> <category1> ...``
 
@@ -209,7 +216,7 @@ executable or some general command executable and is defined as either
     the `TRIBITS_ADD_TEST()`_ function (see `Determining the Executable or
     Command to Run (TRIBITS_ADD_TEST())`_).  If this is an MPI build, then
     the executable will be run with MPI using ``NUM_MPI_PROCS <numProcs>``
-    or ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` (if ``NUM_MPI_PROCS`` is
+    (or ``OVERALL_NUM_MPI_PROCS <overallNumProcs>`` if ``NUM_MPI_PROCS`` is
     not set for this test case).  If the maximum number of MPI processes
     allowed is less than this number of MPI processes, then the test will
     *not* be run.  Note that ``EXEC <exeRootName>`` when ``NOEXEPREFIX`` and
@@ -277,6 +284,23 @@ Other miscellaneous arguments for each ``TEST_<idx>`` block include:
     If specified, then ``<numProcs>`` is the number of processors used for
     MPI executables.  If not specified, this will default to
     ``<overallNumProcs>`` from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
+
+  ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
+
+    If specified, gives the total number of processes used by this
+    command/executable.  If this is missing, but ``NUM_MPI_PROCS
+    <numProcs>`` is specified, then ``<numProcs>`` is used instead.  If
+    ``NUM_TOTAL_CORES_USED`` is missing BUT ``OVERALL_NUM_TOTAL_CORES_USED
+    <overallNumTotalCoresUsed>`` is, then ``<overallNumTotalCoresUsed>`` is
+    used for ``<numTotalCoresUsed>``.  This argument is used for test
+    scripts/executables that use more cores than MPI processes
+    (i.e. ``<numProcs>``) and its only purpose is to inform CTest and
+    TriBITS of the maximum number of cores that are used by the underlying
+    test executable/script.  When ``<numTotalCoresUsed>`` is greater than
+    ``${MPI_EXEC_MAX_NUMPROCS}``, then the test will not be added.
+    Otherwise, the CTest property ``PROCESSORS`` is set to the max over all
+    ``<numTotalCoresUsed>`` so that CTest knows how to best schedule the
+    test w.r.t. other tests on a given number of available processes.
 
   ``OUTPUT_FILE <outputFile>``
 
@@ -446,10 +470,12 @@ CDash also.
 **Runnning multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
 
 Just as with `TRIBITS_ADD_TEST()`_, setting ``NUM_MPI_PROCS <numProcs>`` or
-``OVERALL_NUM_MPI_PROCS <numOverallProcs>`` will set the ``PROCESSORS``
-CTest property to allow CTest to schedule and run mutiple tests at the same
-time when ``'ctest -j<N>'`` is used (see `Running multiple tests at the same
-time (TRIBITS_ADD_TEST())`_).
+``OVERALL_NUM_MPI_PROCS <numOverallProcs>`` or ``NUM_TOTAL_CORES_USED
+<numTotalCoresUsed>`` or ``OVERALL_NUM_TOTAL_CORES_USED
+<overallNumTotalCoresUsed>`` will set the ``PROCESSORS`` CTest property to
+allow CTest to schedule and run mutiple tests at the same time when ``'ctest
+-j<N>'`` is used (see `Running multiple tests at the same time
+(TRIBITS_ADD_TEST())`_).
 
 .. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
 
@@ -464,10 +490,11 @@ that shows up in ``ctest -N`` when running the test.
 
 **Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
 
-In order to see if the test gets added and to debug some issues in test
-creation, one can set the cache variable
-``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
-of some information about the test getting added or not.
+In order to see what tests get added and if not then why, configure with
+``${PROJECT_NAME}_TRACE_ADD_TEST=ON``.  That will print one line per show
+that the test got added and if not then why the test was not added (i.e. due
+to ``COMM``, ``OVERALL_NUM_MPI_PROCS``, ``NUM_MPI_PROCS``, ``CATEGORIES``,
+``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``).
 
 Likely the best way to debugging test generation using this function is to
 examine the generated file ``<testName>.cmake`` in the current binary
@@ -1064,6 +1091,7 @@ Usage::
         POSTFIX_AND_ARGS_1 ... ]
     [COMM [serial] [mpi]]
     [NUM_MPI_PROCS <numProcs>]
+    [NUM_TOTAL_CORES_USED <numTotalCoresUsed>]
     [CATEGORIES <category0>  <category1> ...]
     [HOST <host0> <host1> ...]
     [XHOST <host0> <host1> ...]
@@ -1211,8 +1239,24 @@ Usage::
     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
     For serial builds (i.e. ``TPL_ENABLE_MPI=OFF``), this argument is
     ignored.  This will also be set as the built-in test property
-    ``PROCESSORS`` to tell CTest how many processes this test will use (see
-    `Running multiple tests at the same time (TRIBITS_ADD_TEST())`_).
+    ``PROCESSORS`` if ``NUM_TOTAL_CORES_USED`` is not specified.
+
+  ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
+
+    If specified, gives the total number of processes or cores that is
+    reported to CTest as the built-in CTest ``PROCESSORS`` property.  If
+    this is not specified, then ``PROCESSORS`` is specified by the argument
+    ``NUM_MPI_PROCS <numProcs>``.  This argument is used for test
+    scripts/executables that use more cores than MPI processes
+    (i.e. ``<numProcs>``) and its only purpose is to inform CTest and
+    TriBITS of the maximum number of processes or cores that are used by the
+    underlying test executable/script.  When specified, if
+    ``<numTotalCoresUsed>`` is greater than ``${MPI_EXEC_MAX_NUMPROCS}``,
+    then the test will not be added.  Otherwise, the CTest property
+    ``PROCESSORS`` is set to ``<numTotalCoresUsed>`` so that CTest knows how
+    to best schedule the test w.r.t. other tests on a given number of
+    available processes.  See `Running multiple tests at the same time
+    (TRIBITS_ADD_TEST())`_.
 
   ``CATEGORIES <category0> <category1> ...``
 
@@ -1495,7 +1539,7 @@ directly supported and passed through this wrapper function can be set in
 the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 
 If tests are added, then the names of those tests will be returned in the
-varible ``ADDED_TESTS_NAMES_OUT <testsNames>``.  This can be used, for
+variable ``ADDED_TESTS_NAMES_OUT <testsNames>``.  This can be used, for
 example, to override the ``PROCESSORS`` property for the tests with::
 
   TRIBITS_ADD_TEST( someTest ...
@@ -1509,7 +1553,7 @@ example, to override the ``PROCESSORS`` property for the tests with::
 where the test writes a log file ``someTest.log`` that we want to submit to
 CDash also.
 
-This appraoch will work no matter what TriBITS names the individual test(s)
+This approach will work no matter what TriBITS names the individual test(s)
 or whether the test(s) are added or not (depending on other arguments like
 ``COMM``, ``XHOST``, etc.).
 
@@ -1528,9 +1572,10 @@ make usage of 10 processes.  If all of the defined tests only used one
 process (which is assumed by default except for MPI tests), then CTest will
 run 10 tests at the same time and will launch new tests as running tests
 finish.  One can also define tests using ``ADD_TEST()`` that use more than
-one process such as for MPI tests.  When passing in ``NUM_MPI_PROCS
-<numProcs>`` (see above), this TriBITS function will set the built-in CTest
-property ``PROCESSORS`` to ``<numProcs>`` using::
+one process or use more cores than the number of MPI processes.  When
+passing in ``NUM_MPI_PROCS <numProcs>`` (see above), this TriBITS function
+will set the built-in CTest property ``PROCESSORS`` to ``<numProcs>``
+using::
 
   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <numProcs>)
 
@@ -1540,6 +1585,21 @@ For example, if several ``NUM_MPI_PROCS 3`` tests are defined and CTest is
 run with ``'ctest -j12'``, then CTest would schedule and run 4 of these
 tests at a time (to make use of 12 processes), starting new ones as running
 tests finish, until all of the tests have been run.
+
+There are some situations where a test will use more processes/cores than
+specified by ``NUM_MPI_PROCS <numProcs>`` such as when the underlying
+executable fires off more processes in parallel to do processing.  Also, an
+MPI program may use threading and therefore use overall more cores than the
+number of MPI processes. For these cases, it is critical to set
+``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to tell TriBITS and CTest how
+many cores will be used.  This is needed to exclude the test if there are
+too many processes/cores needed to run the test than are available.  If the
+test is added, then this is needed to set the built-in CTest ``PROCESSORS``
+property.  That is critical so that CTest can avoid overloading the machine.
+For an MPI executable running on 4 processes that uses 10 threads per
+process would set::
+
+   NUM_MPI_PROCS 4 NUM_TOTAL_CORES_USED 40
 
 When the number of processes a test uses does not cleanly divide into the
 requested CTest parallel level, it is not clear how CTest schedules the
@@ -1552,45 +1612,21 @@ size of the ``PROCESSORS`` property or the value of
 still run those tests (using 20 processes) one at a time but will not
 schedule any other tests while the parallel level is exceeded.
 
-For single-thread MPI tests, the behavior built into TriBITS does exactly
-the right thing.  Defining the test with ``NUM_MPI_PROCS <numProcs>`` will
-call ``${MPI_EXEC}`` with ``<numProcs>`` and it will set the CTest property
-``PROCESSORS`` to ``<numProcs>``.  However, if the MPI processes use more
-than one thread, then CTest could easily oversubscribe the machine.  For
-example, consider the case where one is on a machine that only has 16 cores
-and one defines MPI tests with ``NUM_MPI_PROCS 4`` but each MPI process
-launches 6 threads.  In this case, running these tests with ``'ctest -j8'``,
-CTest would schedule 2 of these 4-process tests to run at a time but would
-in actuality be using ``2*4*6 = 48`` cores and would overload 32 core
-machine.  The other case that is not automatically handled by TriBITS is
-when a test script (not MPI) launches multiple processes simultaneously
-internally.
-
-Therefore, in cases where the executable or script uses multiple processes,
-then one must manually override the ``PROCESSORS`` property.  To do, this
-after the ``TRIBITS_ADD_TEST()`` (or `TRIBITS_ADD_ADVANCED_TEST()`_)
-function returns, one can reset the ``PROCESSORS`` property` with::
-
-  SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <fullNumProces>)
-
-For example, if one runs an MPI program that uses 4 processes and 6 threads
-per process, one would call::
-
-  TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...
-    ADDED_TESTS_NAMES_OUT  myProg_TEST_NAME)
-
-  IF (myProg_TEST_NAME)
-    SET_TESTS_PROPERTIES(${myProg_TEST_NAME} PROPERTIES PROCESSORS 12)
-  ENDIF()
+NOTE: **Never** manually override the ``PROCESSORS`` property.  Instead,
+always using ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to set this.  This
+is important becaues TriBITS needs to know how many processes/cores are
+required in order to be able disable a test with too many cores/processes
+for a given machine or imposed budget of processes to be used.
 
 .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 
 **Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
 
-In order to see what tests are getting added and to debug some issues in
-test creation, one can set the cache variable
-``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
-of some information about the test getting added or not.
+In order to see what tests get added and if not then why, configure with
+``${PROJECT_NAME}_TRACE_ADD_TEST=ON``.  That will print one line per show
+that the test got added and if not then why the test was not added (i.e. due
+to ``COMM``, ``NUM_MPI_PROCS``, ``CATEGORIES``, ``HOST``, ``XHOST``,
+``HOSTTYPE``, or ``XHOSTTYPE``).
 
 Also, CMake writes a file ``CTestTestfile.cmake`` in the current binary
 directory which contains all of the added tests and test properties that are

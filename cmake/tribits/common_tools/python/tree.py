@@ -8,6 +8,7 @@
 #
 # Prints the tree structure for the path specified on the command line
 
+import sys
 from os import listdir, sep
 from os.path import abspath, basename, isdir
 from sys import argv, exit
@@ -80,6 +81,9 @@ def main():
   
   (options, args) = clp.parse_args()
 
+  if len(args) != 1:
+    print "Error: Need to specify path a single path argument.  See, see --help"
+    sys.exit(1)
   path = args[0]
 
   if not isdir(path):

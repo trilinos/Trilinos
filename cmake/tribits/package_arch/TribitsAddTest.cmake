@@ -58,6 +58,7 @@ INCLUDE(TribitsAddTestHelpers)
 #         POSTFIX_AND_ARGS_1 ... ]
 #     [COMM [serial] [mpi]]
 #     [NUM_MPI_PROCS <numProcs>]
+#     [NUM_TOTAL_CORES_USED <numTotalCoresUsed>]
 #     [CATEGORIES <category0>  <category1> ...]
 #     [HOST <host0> <host1> ...]
 #     [XHOST <host0> <host1> ...]
@@ -205,8 +206,24 @@ INCLUDE(TribitsAddTestHelpers)
 #     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
 #     For serial builds (i.e. ``TPL_ENABLE_MPI=OFF``), this argument is
 #     ignored.  This will also be set as the built-in test property
-#     ``PROCESSORS`` to tell CTest how many processes this test will use (see
-#     `Running multiple tests at the same time (TRIBITS_ADD_TEST())`_).
+#     ``PROCESSORS`` if ``NUM_TOTAL_CORES_USED`` is not specified.
+#
+#   ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
+#
+#     If specified, gives the total number of processes or cores that is
+#     reported to CTest as the built-in CTest ``PROCESSORS`` property.  If
+#     this is not specified, then ``PROCESSORS`` is specified by the argument
+#     ``NUM_MPI_PROCS <numProcs>``.  This argument is used for test
+#     scripts/executables that use more cores than MPI processes
+#     (i.e. ``<numProcs>``) and its only purpose is to inform CTest and
+#     TriBITS of the maximum number of processes or cores that are used by the
+#     underlying test executable/script.  When specified, if
+#     ``<numTotalCoresUsed>`` is greater than ``${MPI_EXEC_MAX_NUMPROCS}``,
+#     then the test will not be added.  Otherwise, the CTest property
+#     ``PROCESSORS`` is set to ``<numTotalCoresUsed>`` so that CTest knows how
+#     to best schedule the test w.r.t. other tests on a given number of
+#     available processes.  See `Running multiple tests at the same time
+#     (TRIBITS_ADD_TEST())`_.
 #
 #   ``CATEGORIES <category0> <category1> ...``
 #
@@ -489,7 +506,7 @@ INCLUDE(TribitsAddTestHelpers)
 # the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 #
 # If tests are added, then the names of those tests will be returned in the
-# varible ``ADDED_TESTS_NAMES_OUT <testsNames>``.  This can be used, for
+# variable ``ADDED_TESTS_NAMES_OUT <testsNames>``.  This can be used, for
 # example, to override the ``PROCESSORS`` property for the tests with::
 #
 #   TRIBITS_ADD_TEST( someTest ...
@@ -503,7 +520,7 @@ INCLUDE(TribitsAddTestHelpers)
 # where the test writes a log file ``someTest.log`` that we want to submit to
 # CDash also.
 #
-# This appraoch will work no matter what TriBITS names the individual test(s)
+# This approach will work no matter what TriBITS names the individual test(s)
 # or whether the test(s) are added or not (depending on other arguments like
 # ``COMM``, ``XHOST``, etc.).
 #
@@ -522,9 +539,10 @@ INCLUDE(TribitsAddTestHelpers)
 # process (which is assumed by default except for MPI tests), then CTest will
 # run 10 tests at the same time and will launch new tests as running tests
 # finish.  One can also define tests using ``ADD_TEST()`` that use more than
-# one process such as for MPI tests.  When passing in ``NUM_MPI_PROCS
-# <numProcs>`` (see above), this TriBITS function will set the built-in CTest
-# property ``PROCESSORS`` to ``<numProcs>`` using::
+# one process or use more cores than the number of MPI processes.  When
+# passing in ``NUM_MPI_PROCS <numProcs>`` (see above), this TriBITS function
+# will set the built-in CTest property ``PROCESSORS`` to ``<numProcs>``
+# using::
 #
 #   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <numProcs>)
 #
@@ -534,6 +552,21 @@ INCLUDE(TribitsAddTestHelpers)
 # run with ``'ctest -j12'``, then CTest would schedule and run 4 of these
 # tests at a time (to make use of 12 processes), starting new ones as running
 # tests finish, until all of the tests have been run.
+#
+# There are some situations where a test will use more processes/cores than
+# specified by ``NUM_MPI_PROCS <numProcs>`` such as when the underlying
+# executable fires off more processes in parallel to do processing.  Also, an
+# MPI program may use threading and therefore use overall more cores than the
+# number of MPI processes. For these cases, it is critical to set
+# ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to tell TriBITS and CTest how
+# many cores will be used.  This is needed to exclude the test if there are
+# too many processes/cores needed to run the test than are available.  If the
+# test is added, then this is needed to set the built-in CTest ``PROCESSORS``
+# property.  That is critical so that CTest can avoid overloading the machine.
+# For an MPI executable running on 4 processes that uses 10 threads per
+# process would set::
+#
+#    NUM_MPI_PROCS 4 NUM_TOTAL_CORES_USED 40
 #
 # When the number of processes a test uses does not cleanly divide into the
 # requested CTest parallel level, it is not clear how CTest schedules the
@@ -546,45 +579,21 @@ INCLUDE(TribitsAddTestHelpers)
 # still run those tests (using 20 processes) one at a time but will not
 # schedule any other tests while the parallel level is exceeded.
 #
-# For single-thread MPI tests, the behavior built into TriBITS does exactly
-# the right thing.  Defining the test with ``NUM_MPI_PROCS <numProcs>`` will
-# call ``${MPI_EXEC}`` with ``<numProcs>`` and it will set the CTest property
-# ``PROCESSORS`` to ``<numProcs>``.  However, if the MPI processes use more
-# than one thread, then CTest could easily oversubscribe the machine.  For
-# example, consider the case where one is on a machine that only has 16 cores
-# and one defines MPI tests with ``NUM_MPI_PROCS 4`` but each MPI process
-# launches 6 threads.  In this case, running these tests with ``'ctest -j8'``,
-# CTest would schedule 2 of these 4-process tests to run at a time but would
-# in actuality be using ``2*4*6 = 48`` cores and would overload 32 core
-# machine.  The other case that is not automatically handled by TriBITS is
-# when a test script (not MPI) launches multiple processes simultaneously
-# internally.
-#
-# Therefore, in cases where the executable or script uses multiple processes,
-# then one must manually override the ``PROCESSORS`` property.  To do, this
-# after the ``TRIBITS_ADD_TEST()`` (or `TRIBITS_ADD_ADVANCED_TEST()`_)
-# function returns, one can reset the ``PROCESSORS`` property` with::
-#
-#   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <fullNumProces>)
-#
-# For example, if one runs an MPI program that uses 4 processes and 6 threads
-# per process, one would call::
-#
-#   TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...
-#     ADDED_TESTS_NAMES_OUT  myProg_TEST_NAME)
-#
-#   IF (myProg_TEST_NAME)
-#     SET_TESTS_PROPERTIES(${myProg_TEST_NAME} PROPERTIES PROCESSORS 12)
-#   ENDIF()
+# NOTE: **Never** manually override the ``PROCESSORS`` property.  Instead,
+# always using ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to set this.  This
+# is important becaues TriBITS needs to know how many processes/cores are
+# required in order to be able disable a test with too many cores/processes
+# for a given machine or imposed budget of processes to be used.
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 #
 # **Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
 #
-# In order to see what tests are getting added and to debug some issues in
-# test creation, one can set the cache variable
-# ``${PROJECT_NAME}_VERBOSE_CONFIGURE=ON``.  This will result in the printout
-# of some information about the test getting added or not.
+# In order to see what tests get added and if not then why, configure with
+# ``${PROJECT_NAME}_TRACE_ADD_TEST=ON``.  That will print one line per show
+# that the test got added and if not then why the test was not added (i.e. due
+# to ``COMM``, ``NUM_MPI_PROCS``, ``CATEGORIES``, ``HOST``, ``XHOST``,
+# ``HOSTTYPE``, or ``XHOSTTYPE``).
 #
 # Also, CMake writes a file ``CTestTestfile.cmake`` in the current binary
 # directory which contains all of the added tests and test properties that are
@@ -617,8 +626,9 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
     MESSAGE("TRIBITS_ADD_TEST: ${EXE_NAME} ${ARGN}")
   ENDIF()
 
-  GLOBAL_SET(TRIBITS_ADD_TEST_ADD_TEST_INPUT "")
+  GLOBAL_SET(TRIBITS_ADD_TEST_ADD_TEST_INPUT)
   GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
+  GLOBAL_SET(MESSAGE_WRAPPER_INPUT)
 
   #
   # A) Parse the input arguments
@@ -637,7 +647,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;RUN_SERIAL"
      ${ARGN}
@@ -666,6 +676,31 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   SET(ADDED_TESTS_NAMES_OUT)
 
   #
+  # Get test name
+  #
+
+
+  # If requested create a modifier for the name that will be inserted between
+  # the package name and the given name or exe_name for the test
+  SET(DIRECTORY_NAME "")
+  IF(PARSE_ADD_DIR_TO_NAME)
+    TRIBITS_CREATE_NAME_FROM_CURRENT_SOURCE_DIRECTORY(DIRECTORY_NAME)
+    SET(DIRECTORY_NAME "${DIRECTORY_NAME}_")
+  ENDIF()
+
+  #MESSAGE("TRIBITS_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
+
+  IF (PARSE_NAME)
+    SET(TEST_NAME "${DIRECTORY_NAME}${PARSE_NAME}")
+  ELSEIF (PARSE_NAME_POSTFIX)
+    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}_${PARSE_NAME_POSTFIX}")
+  ELSE()
+    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}")
+  ENDIF()
+
+  SET(TEST_NAME "${PACKAGE_NAME}_${TEST_NAME}")
+
+  #
   # B) Add or don't add tests based on a number of criteria
   #
 
@@ -692,24 +727,6 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
     ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME
     )
 
-  # If requested create a modifier for the name that will be inserted between
-  # the package name and the given name or exe_name for the test
-  SET(DIRECTORY_NAME "")
-  IF(PARSE_ADD_DIR_TO_NAME)
-    TRIBITS_CREATE_NAME_FROM_CURRENT_SOURCE_DIRECTORY(DIRECTORY_NAME)
-    SET(DIRECTORY_NAME "${DIRECTORY_NAME}_")
-  ENDIF()
-
-  #MESSAGE("TRIBITS_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
-
-  IF (PARSE_NAME)
-    SET(TEST_NAME "${DIRECTORY_NAME}${PARSE_NAME}")
-  ELSEIF (PARSE_NAME_POSTFIX)
-    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}_${PARSE_NAME_POSTFIX}")
-  ELSE()
-    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}")
-  ENDIF()
-
   TRIBITS_ADD_TEST_ADJUST_DIRECTORY( ${EXE_BINARY_NAME} "${PARSE_DIRECTORY}"
     EXECUTABLE_PATH)
 
@@ -726,8 +743,24 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   # E) Get the MPI options
   #
 
-  TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}" NUM_PROCS_USED)
+  TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}"
+    "NUM_MPI_PROCS"  NUM_PROCS_USED  NUM_PROCS_USED_NAME)
   IF (NUM_PROCS_USED LESS 0)
+    SET(ADD_MPI_TEST FALSE)
+  ENDIF()
+
+  IF (TPL_ENABLE_MPI)
+    SET(MPI_NAME_POSTFIX "_MPI_${NUM_PROCS_USED}")
+  ELSE()
+    SET(MPI_NAME_POSTFIX "")
+  ENDIF()
+
+  TRIBITS_ADD_TEST_GET_NUM_TOTAL_CORES_USED("${TEST_NAME}${MPI_NAME_POSTFIX}"
+    "${PARSE_NUM_TOTAL_CORES_USED}"  "NUM_TOTAL_CORES_USED"
+    "${NUM_PROCS_USED}"  "${NUM_PROCS_USED_NAME}"
+    NUM_TOTAL_CORES_USED  SKIP_TEST)
+  IF (SKIP_TEST)
+    SET(ADD_SERIAL_TEST FALSE)
     SET(ADD_MPI_TEST FALSE)
   ENDIF()
 
@@ -737,12 +770,6 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
   IF (NOT ADD_SERIAL_TEST AND NOT ADD_MPI_TEST)
     RETURN()
-  ENDIF()
-
-  IF (TPL_ENABLE_MPI)
-    SET(MPI_NAME_POSTFIX "_MPI_${NUM_PROCS_USED}")
-  ELSE()
-    SET(MPI_NAME_POSTFIX "")
   ENDIF()
 
   IF (PARSE_ARGS)
@@ -768,7 +795,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       ENDIF()
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
-        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"
+        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  "${NUM_TOTAL_CORES_USED}"
         ${PARSE_RUN_SERIAL}  ADDED_TEST_NAME  ${INARGS} )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
         LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
@@ -801,7 +828,8 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
-        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  ${PARSE_CREATE_WORKING_DIR}
+        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  "${NUM_TOTAL_CORES_USED}"
+        ${PARSE_CREATE_WORKING_DIR}
         ${PARSE_RUN_SERIAL}   ADDED_TEST_NAME  ${INARGS} )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
         LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})

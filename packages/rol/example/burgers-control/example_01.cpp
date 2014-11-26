@@ -593,8 +593,8 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> x(x_rcp);
     ROL::StdVector<RealT> y(y_rcp);
     // Check deriatives.
-    obj.checkGradient(x,y,true);
-    obj.checkHessVec(x,y,true);
+    obj.checkGradient(x,x,y,true,*outStream);
+    obj.checkHessVec(x,x,y,true,*outStream);
     // Initialize Constraints
     BoundConstraint_BurgersControl<RealT> icon(nx+2);
 
@@ -612,7 +612,7 @@ int main(int argc, char *argv[]) {
     // Define step.
     ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
     // Define status test.
-    RealT gtol  = 1e-14;  // norm of gradient tolerance
+    RealT gtol  = 1e-12;  // norm of gradient tolerance
     RealT stol  = 1e-16;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
@@ -620,7 +620,7 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo_pdas(step_pdas,status,false);
     // Run algorithm.
     x.zero();
-    algo_pdas.run(x, obj, icon, true);
+    algo_pdas.run(x, obj, icon, true, *outStream);
     // Output control to file.
     std::ofstream file_pdas;
     file_pdas.open("control_PDAS.txt");
@@ -639,7 +639,7 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);
     // Run Algorithm
     y.zero();
-    algo_tr.run(y,obj,icon,true);
+    algo_tr.run(y,obj,icon,true,*outStream);
     // Output control to file.
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
@@ -662,8 +662,8 @@ int main(int argc, char *argv[]) {
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm();
-    std::cout << "\nError between PDAS solution and TR solution is " << error << "\n";
-    errorFlag = ((error > std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
+    *outStream << "\nError between PDAS solution and TR solution is " << error << "\n";
+    errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

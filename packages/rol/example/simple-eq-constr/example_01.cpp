@@ -48,6 +48,7 @@
 
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -55,6 +56,7 @@
 #include <iostream>
 
 typedef double RealT;
+
 
 int main(int argc, char *argv[]) {
 
@@ -79,28 +81,13 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > constr;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
     Teuchos::RCP<std::vector<RealT> > sol_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);    // Iteration vector.
+    ROL::StdVector<RealT> x(x_rcp);      // Iteration vector.
     ROL::StdVector<RealT> sol(sol_rcp);  // Reference solution vector.
 
     // Retrieve objective, constraint, iteration vector, solution vector.
-    ROL::getSimpleEqConstrained(obj, constr, x, sol);
+    ROL::ZOO::getSimpleEqConstrained <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
 
     Teuchos::ParameterList parlist;
-    // Enumerations
-    parlist.set("Descent Type",                           "Newton Krylov");
-    parlist.set("Linesearch Type",                        "Cubic Interpolation");
-    parlist.set("Linesearch Curvature Condition",         "Wolfe");
-    // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations", 20);
-    parlist.set("Sufficient Decrease Parameter",          1.e-4);
-    parlist.set("Curvature Conditions Parameter",         0.9);
-    parlist.set("Backtracking Rate",                      0.5);
-    parlist.set("Initial Linesearch Parameter",           1.0);
-    parlist.set("User Defined Linesearch Parameter",      false);
-    // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    10);
     // Define Step
     parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
     ROL::CompositeStepSQP<RealT> step(parlist);
@@ -110,29 +97,34 @@ int main(int argc, char *argv[]) {
     int nc = 3;
     RealT left = -1e0, right = 1e0;
     Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > vc_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > vl_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
     ROL::StdVector<RealT> xtest(xtest_rcp);
+    ROL::StdVector<RealT> g(g_rcp);
     ROL::StdVector<RealT> d(d_rcp);
     ROL::StdVector<RealT> v(v_rcp);
     ROL::StdVector<RealT> vc(vc_rcp);
+    ROL::StdVector<RealT> vl(vl_rcp);
     // set xtest, d, v
     for (int i=0; i<dim; i++) {
       (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
-    // set vc
+    // set vc, vl
     for (int i=0; i<nc; i++) {
       (*vc_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vl_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
-    obj->checkGradient(xtest, d, true);  *outStream << "\n"; 
-    obj->checkHessVec(xtest, v, true);  *outStream << "\n";
-    obj->checkHessSym(xtest, d, v, true);  *outStream << "\n";
-    constr->checkApplyJacobian(xtest, v, vc, true);  *outStream << "\n";
-    constr->checkApplyAdjointJacobian(xtest, vc, true);  *outStream << "\n";
-    constr->checkApplyAdjointHessian(xtest, vc, d, true);  *outStream << "\n";
+    obj->checkGradient(xtest, d, true, *outStream);                             *outStream << "\n"; 
+    obj->checkHessVec(xtest, v, true, *outStream);                              *outStream << "\n";
+    obj->checkHessSym(xtest, d, v, true, *outStream);                           *outStream << "\n";
+    constr->checkApplyJacobian(xtest, v, vc, true, *outStream);                 *outStream << "\n";
+    constr->checkApplyAdjointJacobian(xtest, vl, vc, xtest, true, *outStream);  *outStream << "\n";
+    constr->checkApplyAdjointHessian(xtest, vl, d, xtest, true, *outStream);    *outStream << "\n";
 
     Teuchos::RCP<std::vector<RealT> > v1_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > v2_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
@@ -149,16 +141,16 @@ int main(int argc, char *argv[]) {
     ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
 
     // Define Algorithm
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    ROL::DefaultAlgorithm<RealT> algo(step, status, false);
 
     // Run Algorithm
-    vc.zero();
+    vl.zero();
     //(*x_rcp)[0] = 3.0; (*x_rcp)[1] = 2.0; (*x_rcp)[2] = 2.0; (*x_rcp)[3] = 1.0; (*x_rcp)[4] = 1.0;
     //(*x_rcp)[0] = -5.0; (*x_rcp)[1] = -5.0; (*x_rcp)[2] = -5.0; (*x_rcp)[3] = -6.0; (*x_rcp)[4] = -6.0;
 
-    std::vector<std::string> output = algo.run(x, vc, *obj, *constr, false);
+    std::vector<std::string> output = algo.run(x, g, vl, vc, *obj, *constr, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
+      *outStream << output[i];
     }
 
     // Compute Error

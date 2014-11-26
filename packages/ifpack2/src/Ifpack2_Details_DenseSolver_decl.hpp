@@ -82,7 +82,7 @@ struct LapackSupportsScalar<double> {
 };
 
 // FIXME (mfh 15 Nov 2013) Should we write IFPACK2_HAVE_COMPLEX ?
-#ifdef TEUCHOS_HAVE_COMPLEX
+#ifdef HAVE_TEUCHOS_COMPLEX
 template<>
 struct LapackSupportsScalar<std::complex<float> > {
   static const bool value = true;
@@ -92,7 +92,7 @@ template<>
 struct LapackSupportsScalar<std::complex<double> > {
   static const bool value = true;
 };
-#endif // TEUCHOS_HAVE_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX
 #endif //  IFPACK2_LAPACKSUPPORTSSCALAR
 
 /// \class DenseSolver

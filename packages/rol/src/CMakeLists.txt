@@ -54,6 +54,11 @@ APPEND_SET(HEADERS
   function/ROL_EqualityConstraint_SimOpt.hpp
   function/ROL_BoundConstraint.hpp
   function/ROL_StdBoundConstraint.hpp
+  function/ROL_LinearOperator.hpp
+  function/ROL_ProjectedHessian.hpp
+  function/ROL_ProjectedPreconditioner.hpp
+  function/ROL_PrimalDualHessian.hpp
+  function/ROL_PrimalDualPreconditioner.hpp
 )
 
 #
@@ -76,6 +81,12 @@ APPEND_SET(HEADERS
   step/ROL_Krylov.hpp
   step/ROL_NonlinearCG.hpp
   step/ROL_CompositeStepSQP.hpp
+  step/ROL_IterationScaling.hpp
+  step/ROL_BackTracking.hpp
+  step/ROL_CubicInterp.hpp
+  step/ROL_Bisection.hpp
+  step/ROL_GoldenSection.hpp
+  step/ROL_Brents.hpp
   )
 
 #
@@ -122,6 +133,7 @@ APPEND_SET(HEADERS
   zoo/ROL_HS38.hpp
   zoo/ROL_HS45.hpp
   zoo/ROL_BVP.hpp
+  zoo/ROL_Zakharov.hpp
   )
 
 

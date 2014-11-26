@@ -50,14 +50,22 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
+#if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#include <Amesos2_config.h> // needed for check whether KLU2 is available
+#endif
+
 #include <MueLu.hpp>
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_TestHelpers.hpp>
 
 #include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ML2MueLuParameterTranslator.hpp>
 
 // These files must be included last
 #include <MueLu_UseDefaultTypes.hpp>
+
+void run_sed(const std::string& pattern, const std::string& baseFile);
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -101,22 +109,37 @@ int main(int argc, char *argv[]) {
     RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
 
-    const int numLists = 2;
-
+#ifdef HAVE_AMESOS2_KLU2 
+    const int numLists = 4;  // run ML parameter list tests only if KLU is available
+#else
+    const int numLists = 2;  // skip tests with MLParameterListInterpreter
+#endif
     Teuchos::ArrayRCP<std::string> fileLists[numLists];
     std::string                    dirList  [numLists], outDir;
     dirList[0] = "EasyParameterListInterpreter/";
     dirList[1] = "FactoryParameterListInterpreter/";
+#ifdef HAVE_AMESOS2_KLU2 
+    dirList[2] = "MLParameterListInterpreter/";
+    dirList[3] = "MLParameterListInterpreter2/";
+#endif
     outDir     = "Output/";
 
     if (numProc == 1) {
       // Run all xml configs in serial/single mpi mode
       fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string(".xml"));
       fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string(".xml"));
+#ifdef HAVE_AMESOS2_KLU2 
+      fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string(".xml"));
+      fileLists[3] = MueLuTests::TestHelpers::GetFileList(dirList[3], std::string(".xml"));
+#endif
     } else {
       // In addition, rerun some files in parallel mode
       fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
       fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
+#ifdef HAVE_AMESOS2_KLU2 
+      fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
+      fileLists[3] = MueLuTests::TestHelpers::GetFileList(dirList[3], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
+#endif
     }
 
     bool failed = false;
@@ -173,23 +196,49 @@ int main(int argc, char *argv[]) {
         if (k == 0) {
           // easy
           paramList.set("verbosity", "test");
-        } else {
+        } else if (k == 1) {
           // factory
           ParameterList& hierList = paramList.sublist("Hierarchy");
           hierList.set("verbosity", "Test");
+        } else if (k == 2) {
+          // ML parameter list interpreter
+          paramList.set("ML output", 8);
         }
 
         try {
-          ParameterListInterpreter mueluFactory(paramList);
 
-          RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+            Teuchos::RCP<HierarchyManager> mueluFactory;
 
-          H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
-          // H->GetLevel(0)->Set("Nullspace",   nullspace);
-          H->GetLevel(0)->Set("Coordinates", coordinates);
+            // create parameter list interpreter
+            // here we have to distinguish between the general MueLu parameter list interpreter
+            // and the ML parameter list interpreter. Note that the ML paramter interpreter also
+            // works with Tpetra matrices.
+            if (k< 2) mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
+            else if (k==2) mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
+            else if (k==3) {
+              std::cout << "ML ParameterList: " << std::endl;
+              std::cout << paramList << std::endl;
+              RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+              std::cout << "MueLu ParameterList: " << std::endl;
+              std::cout << *mueluParamList << std::endl;
+              mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
+            }
 
-          mueluFactory.SetupHierarchy(*H);
+            RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
+            H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+
+            if (k==2) {
+              // MLParameterInterpreter needs the nullspace information if rebalancing is active!
+              // add default constant null space vector
+              RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
+              nullspace->putScalar(1.0);
+              H->GetLevel(0)->Set("Nullspace", nullspace);
+            }
+
+            H->GetLevel(0)->Set("Coordinates", coordinates);
+
+            mueluFactory->SetupHierarchy(*H);
         } catch (Teuchos::ExceptionBase& e) {
           std::string msg = e.what();
           msg = msg.substr(msg.find_last_of('\n')+1);
@@ -217,6 +266,11 @@ int main(int argc, char *argv[]) {
           std::cout.rdbuf(oldbuffer);
           buffer.close();
 
+          // Create a copy of outputs
+          cmd = "cp -f ";
+          system((cmd + baseFile + ".res " + baseFile + ".resorig").c_str());
+          system((cmd + baseFile + ".out " + baseFile + ".outorig").c_str());
+
           // Tpetra produces different eigenvalues in Chebyshev due to using
           // std::rand() for generating random vectors, which may be initialized
           // using different seed, and may have different algorithm from one
@@ -224,48 +278,36 @@ int main(int argc, char *argv[]) {
           // This leads to us always failing this test.
           // NOTE1 : Epetra, on the other hand, rolls out its out random number
           // generator, which always produces same results
-          // NOTE2 : sed behaviour differs between Mac and Linux
-          // You can run "sed -i 's//' " in Linux, but you always have to specify
-          // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
 
           // Ignore the value of "lambdaMax"
-          std::string sed_cmd = "sed -iorig 's/lambdaMax:\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
-          system((sed_cmd + baseFile + ".res").c_str());
-          system((sed_cmd + baseFile + ".out").c_str());
-
-          std::string sed_pref = "sed -i ";
-#ifdef __APPLE__
-          sed_pref = sed_pref +  "\"\" ";
-#endif
+          run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
 
           // Ignore the value of "lambdaMin"
-          sed_cmd = sed_pref + "'s/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
-          system((sed_cmd + baseFile + ".res").c_str());
-          system((sed_cmd + baseFile + ".out").c_str());
+          run_sed("'s/lambdaMin: [0-9]*.[0-9]*/lambdaMin = <ignored>/'", baseFile);
 
           // Ignore the value of "chebyshev: max eigenvalue"
           // NOTE: we skip lines with default value ([default])
-          sed_cmd = sed_pref + "'/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
-          system((sed_cmd + baseFile + ".res").c_str());
-          system((sed_cmd + baseFile + ".out").c_str());
+          run_sed("'/[default]/! s/chebyshev: max eigenvalue = [0-9]*.[0-9]*/chebyshev: max eigenvalue = <ignored>/'", baseFile);
 
-          // Stript template args for some classes
+          // Ignore the exact type of direct solver (it is selected semi-automatically
+          // depending on how Trilinos was configured
+          run_sed("'s/Amesos\\([2]*\\)Smoother{type = .*}/Amesos\\1Smoother{type = <ignored>}/'", baseFile);
+          run_sed("'s/SuperLU solver interface, direct solve/<Direct> solver interface/'", baseFile);
+          run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
+
+          // Strip template args for some classes
           std::vector<std::string> classes;
           classes.push_back("Xpetra::Matrix");
           classes.push_back("MueLu::Constraint");
-          for (size_t q = 0; q < classes.size(); q++) {
-            sed_cmd = sed_pref + "'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/' ";
-            system((sed_cmd + baseFile + ".res").c_str());
-            system((sed_cmd + baseFile + ".out").c_str());
-          }
+          for (size_t q = 0; q < classes.size(); q++)
+            run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
 #ifdef __APPLE__
           // Some Macs print outs ptrs as 0x0 instead of 0, fix that
-          sed_cmd = sed_pref + "'/RCP/ s/=0x0/=0/g' ";
-          system((sed_cmd + baseFile + ".out").c_str());
+          run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);
 #endif
 
-          // Run comparison
+          // Run comparison (ignoring whitespaces)
           cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
           int ret = system(cmd.c_str());
           if (ret)
@@ -284,4 +326,17 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+}
+
+void run_sed(const std::string& pattern, const std::string& baseFile) {
+  // sed behaviour differs between Mac and Linux
+  // You can run "sed -i 's//' " in Linux, but you always have to specify
+  // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
+  std::string sed_pref = "sed -i ";
+#ifdef __APPLE__
+  sed_pref = sed_pref +  "\"\" ";
+#endif
+
+  system((sed_pref + pattern + " " + baseFile + ".res").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".out").c_str());
 }

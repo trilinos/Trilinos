@@ -303,6 +303,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Make the ${PROJECT_NAME} configure process verbose."
     )
 
+  ADVANCED_SET(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_VERBOSE_CONFIGURE}
+    CACHE BOOL
+    "Show a configure time trace of every test added or not added any why (one line)."
+    )
+
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_LINK_LIBS
     "Dump the link libraries for every library and executable created."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
@@ -2307,19 +2312,11 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_START_SECONDS)
   ENDIF()
 
-  # K.1) Run packaging callback functions for repos and the project
+  # K.1) Run callback function for the base project.
 
-  # K.1.a) Loop through the Repositories and run their callback functions.
-  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
-    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
-    ENDIF()
-    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
-  ENDFOREACH()
-
-  # K.1.b) Run callback function for the base project.
   TRIBITS_PROJECT_DEFINE_PACKAGING_RUNNER()
+  # The above must define the basic project settings for CPACK that are
+  # specific to the project and should not be provided by the user.
 
   # K.2) Removing any packages or SE packages not enabled from the tarball
 
@@ -2375,12 +2372,11 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
 
   ENDFOREACH()
 
-  # Add excludes for git VC files/dirs
+  # Add excludes for VC files/dirs
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}
     /[.]git/
     [.]gitignore$
-    [.]egdist$
     )
 
   # Print the set of excluded files
@@ -2432,7 +2428,16 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     "The types of soruce generators to use for CPACK_SOURCE_GENERATOR.")
   SET(CPACK_SOURCE_GENERATOR ${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR})
 
-  # K.6) Include <Project>RepoVersion.txt if generated
+  # K.6) Loop through the Repositories and run their callback functions.
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
+    ENDIF()
+    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
+  ENDFOREACH()
+
+  # K.7) Include <Project>RepoVersion.txt if generated
   SET(PROJECT_REPO_VERSION_FILE
      "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}")
   IF (EXISTS "${PROJECT_REPO_VERSION_FILE}")
@@ -2442,7 +2447,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     ENDFOREACH()
   ENDIF()
 
-  # K.7) Finally process with CPack
+  # K.8) Finally process with CPack
   INCLUDE(CPack)
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)

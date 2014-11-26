@@ -127,7 +127,7 @@ private:
     o.resize(nx_-1,dx_/6.0 - dt_*eps1_/dx_);
     // Contribution from nonlinearity
     Real phi1 = 0.0, phi2 = 0.0, f = 0.0, x = 0.0, w = 0.0;
-    for (int i=0; i<nx_; i++) {
+    for (unsigned i=0; i<nx_; i++) {
       if (i<nx_-1) {
         for (int j=0; j<4; j++) {
           x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i+1);
@@ -194,7 +194,7 @@ private:
 
   void apply_control_jacobian(std::vector<Real> &jv, const std::vector<Real> &v, bool adjoint = false) {
     jv.clear();
-    int dim = ((adjoint == true) ? nx_+2 : nx_);
+    unsigned dim = ((adjoint == true) ? nx_+2 : nx_);
     jv.resize(dim,0.0);
     for (unsigned n = 0; n < dim; n++) {
       if ( adjoint ) {
@@ -731,7 +731,7 @@ private:
 /***************************************************************/
   Real dot(const std::vector<Real> &x, const std::vector<Real> &y) {
     Real ip = 0.0;
-    Real c = (((int)x.size()==nx_) ? 4.0 : 2.0);
+    Real c = ((x.size()==nx_) ? 4.0 : 2.0);
     for (unsigned i=0; i<x.size(); i++) {
       if ( i == 0 ) {
         ip += dx_/6.0*(c*x[i] + x[i+1])*y[i];
@@ -748,7 +748,7 @@ private:
 
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) {
     Mu.resize(u.size(),0.0);
-    Real c = (((int)u.size()==nx_) ? 4.0 : 2.0);
+    Real c = ((u.size()==nx_) ? 4.0 : 2.0);
     for (unsigned i=0; i<u.size(); i++) {
       if ( i == 0 ) {
         Mu[i] = dx_/6.0*(c*u[i] + u[i+1]);
@@ -926,8 +926,8 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 128;   // Set spatial discretization.
-    int nt      = 100;   // Set temporal discretization.
+    int nx      = 64;   // Set spatial discretization.
+    int nt      = 10;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT eps   = 5.e-1; // Set conductivity 
@@ -935,8 +935,10 @@ int main(int argc, char *argv[]) {
     EqualityConstraint_ParabolicControl<RealT> con(eps,nx,nt,T);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > xz_rcp = Teuchos::rcp( new std::vector<RealT> (nt*(nx+2), 1.0) );
-    Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nt*(nx+2), 1.0) );
     Teuchos::RCP<std::vector<RealT> > xu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
+    Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nt*(nx+2), 1.0) );
+    Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
+    Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nt*(nx+2), 1.0) );
     Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
     for (int i=0; i<nt; i++) {
       (*xz_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
@@ -947,35 +949,42 @@ int main(int argc, char *argv[]) {
       }
     }
     ROL::StdVector<RealT> xz(xz_rcp);
-    ROL::StdVector<RealT> yz(yz_rcp);
     ROL::StdVector<RealT> xu(xu_rcp);
+    ROL::StdVector<RealT> gz(gz_rcp);
+    ROL::StdVector<RealT> gu(gu_rcp);
+    ROL::StdVector<RealT> yz(yz_rcp);
     ROL::StdVector<RealT> yu(yu_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > xzp = Teuchos::rcp(&xz,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
     Teuchos::RCP<ROL::Vector<RealT> > xup = Teuchos::rcp(&xu,false);
+    Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&gz,false);
+    Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(&gu,false);
+    Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
     Teuchos::RCP<ROL::Vector<RealT> > yup = Teuchos::rcp(&yu,false);
     ROL::Vector_SimOpt<RealT> x(xup,xzp);
+    ROL::Vector_SimOpt<RealT> g(gup,gzp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
-    Teuchos::RCP<std::vector<RealT> > jv_rcp  = Teuchos::rcp( new std::vector<RealT> (nt*nx, 0.0) );
-    ROL::StdVector<RealT> jv(jv_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > jvp = Teuchos::rcp(&jv,false);
+    Teuchos::RCP<std::vector<RealT> > c_rcp  = Teuchos::rcp( new std::vector<RealT> (nt*nx, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > l_rcp  = Teuchos::rcp( new std::vector<RealT> (nt*nx, 0.0) );
+    ROL::StdVector<RealT> c(c_rcp);
+    ROL::StdVector<RealT> l(l_rcp);
+    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(&c,false);
     // Initialize reduced objective function
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,jvp);
-    // Check deriatives.
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+    // Check derivatives.
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
-    con.checkApplyJacobian(x,y,jv,true);
-    //con.checkApplyAdjointJacobian(x,yu,true);
-    con.checkApplyAdjointHessian(x,yu,y,true);
+    con.checkApplyJacobian(x,y,c,true);
+    //con.checkApplyAdjointJacobian(x,yu,c,x,true);
+    con.checkApplyAdjointHessian(x,yu,y,x,true);
     // Check Jacobians and adjoint Jacobians.
-    con.checkJacobian_1(jv,yu,xu,xz,true);
-    con.checkJacobian_2(jv,yz,xu,xz,true);
+    con.checkJacobian_1(c,yu,xu,xz,true);
+    con.checkJacobian_2(c,yz,xu,xz,true);
     // Check solves.
-    con.checkSolve(xu,xz,true);
-    con.checkInverseJacobian_1(jv,yu,xu,xz,true);
-    con.checkInverseAdjointJacobian_1(yu,jv,xu,xz,true);
+    con.checkSolve(xu,xz,c,true);
+    con.checkInverseJacobian_1(c,yu,xu,xz,true);
+    con.checkInverseAdjointJacobian_1(yu,c,xu,xz,true);
     // Check reduced objective derivatives
     robj.checkGradient(xz,yz,true);
     robj.checkHessVec(xz,yz,true);
@@ -1005,7 +1014,7 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
     x.zero();
     std::clock_t timer_sqp = std::clock();
-    algo_sqp.run(x,jv,obj,con,true);
+    algo_sqp.run(x,g,l,c,obj,con,true);
     std::cout << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC 
               << " seconds.\n";
   }

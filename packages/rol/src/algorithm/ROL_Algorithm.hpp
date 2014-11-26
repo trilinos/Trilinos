@@ -82,10 +82,23 @@ public:
   */
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
-                                        bool               print = false ) {
+                                        bool              print = false,
+                                        std::ostream      &outStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
-    return this->run(x,obj,con,print);
+    return run(x,x,obj,con,print,outStream);
+  }
+
+  /** \brief Run algorithm on unconstrained problems (Type-U).
+  */
+  virtual std::vector<std::string> run( Vector<Real>      &x,
+                                        Vector<Real>      &g, 
+                                        Objective<Real>   &obj,
+                                        bool              print = false,
+                                        std::ostream      &outStream = std::cout ) {
+    BoundConstraint<Real> con;
+    con.deactivate();
+    return run(x,g,obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
@@ -93,32 +106,44 @@ public:
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
-                                        bool                  print = false ) {
+                                        bool                  print = false,
+                                        std::ostream          &outStream = std::cout ) {
+    return run(x,x,obj,con,print,outStream);
+  }
+
+  /** \brief Run algorithm on bound constrained problems (Type-B).
+  */
+  virtual std::vector<std::string> run( Vector<Real>          &x, 
+                                        Vector<Real>          &g, 
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &con,
+                                        bool                  print = false,
+                                        std::ostream          &outStream = std::cout ) {
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( this->state_->iterateVec == Teuchos::null ) {
-      this->state_->iterateVec = x.clone();
-      this->state_->iterateVec->set(x);
+    if ( state_->iterateVec == Teuchos::null ) {
+      state_->iterateVec = x.clone();
+      state_->iterateVec->set(x);
     }
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
 
     // Initialize Step
-    this->step_->initialize(x, obj, con, *this->state_);
-    output.push_back(this->step_->print(*this->state_,true));
+    step_->initialize(x, g, obj, con, *state_);
+    output.push_back(step_->print(*state_,true));
     if ( print ) {
-      std::cout << this->step_->print(*this->state_,true);
+      outStream << step_->print(*state_,true);
     }
 
     // Run Algorithm
-    while (this->status_->check(*this->state_)) {
-      this->step_->compute(*s, x, obj, con, *this->state_);
-      this->step_->update(x, *s, obj, con, *this->state_);
-      output.push_back(this->step_->print(*this->state_,this->printHeader_));
+    while (status_->check(*state_)) {
+      step_->compute(*s, x, obj, con, *state_);
+      step_->update(x, *s, obj, con, *state_);
+      output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
-        std::cout << this->step_->print(*this->state_,this->printHeader_);
+        outStream << step_->print(*state_,printHeader_);
       }
     }
     return output;
@@ -127,52 +152,55 @@ public:
   /** \brief Run algorithm on equality constrained problems (Type-E).
   */
   virtual std::vector<std::string> run( Vector<Real>             &x,
+                                        Vector<Real>             &g, 
                                         Vector<Real>             &l, 
+                                        Vector<Real>             &c, 
                                         Objective<Real>          &obj,
                                         EqualityConstraint<Real> &con,
-                                        bool                     print = false ) {
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( this->state_->iterateVec == Teuchos::null ) {
-      this->state_->iterateVec = x.clone();
-      this->state_->iterateVec->set(x);
+    if ( state_->iterateVec == Teuchos::null ) {
+      state_->iterateVec = x.clone();
+      state_->iterateVec->set(x);
     }
 
     // Initialize Current Lagrange Multiplier Container 
-    if ( this->state_->lagmultVec == Teuchos::null ) {
-      this->state_->lagmultVec = l.clone();
-      this->state_->lagmultVec->set(l);
+    if ( state_->lagmultVec == Teuchos::null ) {
+      state_->lagmultVec = l.clone();
+      state_->lagmultVec->set(l);
     }
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
 
     // Initialize Step
-    this->step_->initialize(x, l, obj, con, *this->state_);
-    output.push_back(this->step_->print(*this->state_,true));
+    step_->initialize(x, g, l, c, obj, con, *state_);
+    output.push_back(step_->print(*state_,true));
     if ( print ) {
-      std::cout << this->step_->print(*this->state_,true);
+      outStream << step_->print(*state_,true);
     }
 
     // Run Algorithm
-    while (this->status_->check(*this->state_)) {
-      this->step_->compute(*s, x, l, obj, con, *this->state_);
-      this->step_->update(x, l, *s, obj, con, *this->state_);
-      output.push_back(this->step_->print(*this->state_,this->printHeader_));
+    while (status_->check(*state_)) {
+      step_->compute(*s, x, l, obj, con, *state_);
+      step_->update(x, l, *s, obj, con, *state_);
+      output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
-        std::cout << this->step_->print(*this->state_,this->printHeader_);
+        outStream << step_->print(*state_,printHeader_);
       }
     }
     return output;
   }
 
   std::string getIterHeader(void) {
-    return this->step_->printHeader();
+    return step_->printHeader();
   }
 
   std::string getIterInfo(bool withHeader = false) {
-    return this->step_->print(*this->state_,withHeader);
+    return step_->print(*state_,withHeader);
   }
 
   Teuchos::RCP<const AlgorithmState<Real> > getState(void) const {

@@ -40,7 +40,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACK
   TRIBITS_ADD_TEST(
     MLParameterList
     NAME MLParameterList_Repartition-Epetra
-    ARGS "--xml=ml_RebalancedParameterList.xml --linAlgebra=Epetra"
+    ARGS "--xml=ml_RebalancedParameterList.xml --linAlgebra=Epetra --muelu2=0"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )

@@ -181,10 +181,10 @@ inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
 
     if (proc == 0)
     {
-      const double bytesInMegabyte = 1024*1024;
+      const double bytesInMegabyte = 1024.0*1024.0;
       std::cout << "Max time: "  << maxTime << ", Min time: " << minTime << ", Avg time: " << avgTime << std::endl;
-      std::cout << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<double(maxHwm)/double(bytesInMegabyte)
-        <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
+      std::cout << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<maxHwm/bytesInMegabyte
+        <<", Min HWM: "<<minHwm/bytesInMegabyte<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
       std::cout<<"### Total Number of Steps Taken ###: 1"<<std::endl;
       std::cout<<"### Total Wall Clock Run Time Used ###: "<< maxTime <<std::endl;
 

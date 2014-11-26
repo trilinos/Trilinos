@@ -1,0 +1,111 @@
+ 
+\label{sec:ml_options}
+\muelu provides a basic compatibility layer for \ml parameter lists. This allows \ml users to quickly perform some experiments with \muelu. 
+
+\textbf{First and most important: } Long term, we would like to have users use the new \muelu interface, as that is where most of new features will be made accessible. One should make note of the fact that it may not be possible to make ML deck do exactly same things in \ml and \muelu, as internally \ml implicitly makes some decision that we have no control over and which could be different from \muelu.
+
+\noindent There are basically two distinct ways to use \ml input parameters with \muelu:
+\begin{description}
+\item[MLParameterListInterpreter:] This class is the pendant of the \texttt{ParameterListInterpreter} class for the \muelu parameters. It accepts parameter lists or XML files with \ml parameters and generates a \muelu multigrid hierarchy. It supports only a well-defined subset of \ml parameters which have a equivalent parameter in \muelu.
+\item[ML2MueLuParameterTranslator:] This class is a simple wrapper class which translates \ml parameters to the corresponding \muelu parameters. It has to be used in combination with the \muelu \texttt{ParameterListInterpreter} class to generate a \muelu multigrid hierarchy. It is also meant to be used in combination with the \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} routines (see \S\ref{sec:examples in code}). It supports only a small subset of the \ml parameters.
+\end{description}
+
+\section{Usage of \ml parameter lists with \muelu}
+
+\subsection{MLParameterListInterpreter}
+
+The \texttt{MLParameterListInterpreter} directly accepts a \texttt{ParameterList} containing \ml parameters. It also interprets the \texttt{null space: vectors} and the \texttt{null space: dimension} \ml parameters. However, it is recommended to provide the near null space vectors directly in the \muelu way as shown in the following code snippet.
+
+\begin{lstlisting}[language=C++]
+    Teuchos::RCP<Tpetra::CrsMatrix<> > A;
+    // create A here ...
+    
+    // XML file containing ML parameters
+    std::string xmlFile = "mlParameters.xml"
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+       
+    // use ParameterListInterpreter with MueLu parameters as input
+    Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(*paramList));
+    
+    RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
+    H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+    H->GetLevel(0)->Set("Nullspace", nullspace);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueluFactory->SetupHierarchy(*H);
+\end{lstlisting}
+
+Note that the \texttt{MLParameterListInterpreter} only supports a basic set of \ml parameters allowing to build smoothed aggregation transfer operaotrs (see \S\ref{sec:compatiblemlparameters} for a list of compatible \ml parameters).
+
+\subsection{ML2MueLuParameterTranslator}
+
+The \texttt{Ml2MueLuParameterTranslator} class is a simple wrapper translating \ml parameters to the corresponding \muelu parameters. This allows the usage of the simple \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} interface with \ml parameters:
+
+\begin{lstlisting}[language=C++]
+    Teuchos::RCP<Tpetra::CrsMatrix<> > A;
+    // create A here ...
+    
+    // XML file containing ML parameters
+    std::string xmlFile = "mlParameters.xml"
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+    // translate ML parameters to MueLu parameters
+    RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+
+    Teuchos::RCP<MueLu::TpetraOperator> mueLuPreconditioner =
+       MueLu::CreateTpetraPreconditioner(A, mueluParamList);
+\end{lstlisting}
+
+In a similar way, \ml input parameters can be used with the standard \muelu parameter list interpreter class. Note that the near null space vectors have to be provided in the \muelu way.
+
+\begin{lstlisting}[language=C++]
+    Teuchos::RCP<Tpetra::CrsMatrix<> > A;
+    // create A here ...
+    
+    // XML file containing ML parameters
+    std::string xmlFile = "mlParameters.xml"
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+    
+    // translate ML parameters to MueLu parameters
+    RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+    
+    // use ParameterListInterpreter with MueLu parameters as input
+    Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
+    
+    RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
+    H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+    H->GetLevel(0)->Set("Nullspace", nullspace);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueluFactory->SetupHierarchy(*H);
+\end{lstlisting}
+
+Note that the set of supported \ml parameters is very limited. Please refer to \S\ref{sec:compatiblemlparameters} for a list of all compatible \ml parameters.
+
+\section{Compatible \ml parameters}
+\label{sec:compatiblemlparameters}
+\subsection{General \ml options}
+\input{mloptions_general}
+
+\subsection{Smoothing and coarse solver options}
+
+\mlcbb{smoother: type}{string}{"symmetric Gauss-Seidel"}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Smoother type for fine- and intermedium multigrid levels. Possible values: "Jacobi", "Gauss-Seidel", "symmetric Gauss-Seidel", "Chebyshev", "ILU".}
+
+\mlcbb{smoother: sweeps}{int}{2}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Number of smoother sweeps for relaxation based level smoothers. In case of Chebyshev smoother it denotes the polynomial degree.}
+
+\mlcbb{smoother: damping factor}{double}{1.0}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Damping factor for relaxation based level smoothers.}
+
+\mlcbb{smoother: Chebyshev alpha}{double}{20}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Eigenvalue ratio for Chebyshev level smoother.}
+
+\input{mloptions_smoothing_and_coarse}
+
+\mlcbb{coarse: type}{string}{"Amesos-KLU"}{MLParameterListInterpreter, ML2MueLuParameterTranslator}{Solver for coarsest level. Possible values: "Amesos-KLU", "Amesos-Superlu" (depending on \muelu installation).}
+
+
+\subsection{Transfer operator options}
+\input{mloptions_multigrid}
+
+\subsection{Rebalancing options}
+\input{mloptions_rebalancing}
+

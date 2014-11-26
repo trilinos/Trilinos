@@ -50,9 +50,6 @@ Level 1
   
  [empty list]
  
- Transpose P (MueLu::TransPFactory)
- [empty list]
- 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
  Keep AP Pattern = 0   [default]
@@ -109,9 +106,6 @@ Level 2
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
   
- [empty list]
- 
- Transpose P (MueLu::TransPFactory)
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)

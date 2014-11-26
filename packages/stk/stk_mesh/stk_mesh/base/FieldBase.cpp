@@ -89,7 +89,7 @@ std::ostream & print_restrictions(std::ostream & s ,
 
 void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
 {
-  if (m_mesh == NULL) {
+  if (m_mesh == NULL || bulk == NULL) {
     m_mesh = bulk;
   }
   else {

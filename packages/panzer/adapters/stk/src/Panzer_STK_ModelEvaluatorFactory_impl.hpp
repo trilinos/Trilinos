@@ -187,6 +187,7 @@ namespace panzer_stk_classic {
 	p.set<bool>("Use DOFManager FEI",false);
 	p.set<bool>("Load Balance DOFs",false);
 	p.set<bool>("Use Tpetra",false);
+	p.set<bool>("Use Epetra ME",true);
 	p.set<bool>("Lump Explicit Mass",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
@@ -263,7 +264,7 @@ namespace panzer_stk_classic {
     Teuchos::RCP<Teuchos::ParameterList> physics_block_plist = Teuchos::sublist(this->getMyNonconstParamList(),"Physics Blocks");
 
     std::vector<panzer::BC> bcs;
-    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     // extract assembly information
     std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
@@ -272,6 +273,7 @@ namespace panzer_stk_classic {
     bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager
     bool use_load_balance = assembly_params.get<bool>("Load Balance DOFs");
     bool useTpetra = assembly_params.get<bool>("Use Tpetra");
+    bool useThyraME = !assembly_params.get<bool>("Use Epetra ME");
 
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
@@ -654,8 +656,11 @@ namespace panzer_stk_classic {
     if(is_transient)
       t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
 
+    if(blockedAssembly || useTpetra) // override the user request
+      useThyraME = true;
+
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
-        = buildPhysicsModelEvaluator(blockedAssembly || useTpetra, // this determines if a Thyra or Epetra ME is used
+        = buildPhysicsModelEvaluator(useThyraME, // blockedAssembly || useTpetra, // this determines if a Thyra or Epetra ME is used
                                      fmb,
                                      m_response_library,
                                      linObjFactory,
@@ -1146,10 +1151,10 @@ namespace panzer_stk_classic {
 
       std::vector<panzer::BC> bcs;
       if(bc_list==Teuchos::null) {
-        panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+        panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), m_global_data);
       }
       else { 
-        panzer::buildBCs(bcs, *bc_list);
+        panzer::buildBCs(bcs, *bc_list, m_global_data);
       }
       
       fmb = buildFieldManagerBuilder(Teuchos::rcp_const_cast<panzer::WorksetContainer>(m_response_library->getWorksetContainer()),

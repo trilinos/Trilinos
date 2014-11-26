@@ -1,4 +1,3 @@
-
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -390,6 +389,17 @@ IF(Stokhos_ENABLE_Sacado)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
+
+  IF (Stokhos_ENABLE_CXX11)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      SacadoPromoteUnitTest
+      SOURCES Stokhos_SacadoPromoteUnitTest.cpp
+      ARGS
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+  ENDIF()
 
   IF (Stokhos_ENABLE_KokkosCore)
 

@@ -1,38 +1,66 @@
-Usage: gitdist [gitdist options] [OPTIONS]
+Usage: gitdist [gitdist arguments] [git arguments]
+       gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over extra repos
+Run git recursively over extra repos and some extra tools for multi-repository
+git projects.
 
-Instead of typing
+Instead of typing:
 
-   $ git [OPTIONS]
+  $ git [git arguments]
 
 type:
 
-  $ gitdist [gitdist options] [OPTIONS]
+  $ gitdist [gitdist options] [git arguments]
 
-This will distribute git options across all git repos listed, including the
+This will distribute git commands across all git repos listed, including the
 base git repo.  The options in [gitdist options] are prefixed with '--dist-'
-and are are pulled out before running git on the underlying executable.  See
---help to see the gitdist options.
+and are are pulled out off before passing the remaining arguments in [git
+arguments] to all the git repos.  See --help to see the [gitdist options].
 
-If --dist-extra-repos="", then the list of extra repos will be read from the
-file .gitdist.  The format of this file is to have one repo name per line as
-in:
+For example, consider the following git repos with other git repos cloned
+under it:
 
-   Repo1
-   Repo2
-   Repo3
-   ...
+  BaseRepo/
+    .git/
+    ExtraRepo1/
+      .git/
+    ExtraRep2/
+      .git/
 
-NOTE: If any extra repository does not exist, then it will be ignored and no
-output will be produced.  Therefore, be careful to manually verify that the
-script recognizes the repositories that you list.  The best way to do that is
-to type 'gitdist status'.
+The gitdist command is run in the base git repo 'BaseRepo' and the git
+commands are run on it as well as the git repos 'ExtraRepo1' and 'ExtraRepo2'.
 
-NOTE: This script has no dependencies other than standard linux packagse so it
-can be copied and moved anywhere and used.
+The set of repos processed is determined by the argument --dist-extra-repos or
+the files .gitdist or .gitdist.default.  If --dist-extra-repos="", then the
+list of extra repos will be read from the file '.gitdist' in the current
+working directory.  If the file '.gitdist' does not exist, then the list of
+extra repos will be read from the file '.gitdist.default in' the current
+working directory.  The format of this files '.gitdist' and '.gitdist.default'
+is to have one repo directory/name per line as in:
+
+  ExtraRepo1
+  ExtraRepo2
+  ...
+
+where each repo is the relative path to the repo under the base git repo
+(e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
+to the base git repo so that gitdist is ready to use right away.
+
+If an extra repository does not exist, then it will be ignored.  Therefore, be
+careful to manually verify that the script recognizes the repositories that
+you list.  The best way to do that is to type 'gitdist status'.
+
+This script has no dependencies other than standard python 2.4 packages so it
+can be copied to anywhere and used.
 
 TIPS:
+
+ - To see the status of all repos in a compact way, use the speical
+   'dist-repo-status' command (see below).
+
+ - To process only changed repos w.r.t. their tracking branch, run
+   'gitdist --dist-mod-only [git arguments]'.  For example, to see
+   the status of only changed repos use 'gitdist --dist-mod-only status'.
 
  - Use 'gitdist --no-pager <command> ...' to get the full output from
    all extra repos in one contiguous stream which can then be piped
@@ -48,8 +76,37 @@ TIPS:
 
  - To exclude processing either the base git repo and/or other git repos
    listed in .gitdist, pass in --dist-not-base-repo and/or
-   --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
-   what git repos the given command is run on.
+   --dist-not-extra-repos=RepoX,RepoZ,...  This provides complete control over
+   what git repos the given git command is run.
+
+SUMMARY OF REPO STATUS:
+
+This script supports the special command 'dist-repo-status' which prints a
+nice table showing the current status of all the repos.  For example, for the
+repos shown above:
+
+  $ gitdist dist-repo-status
+
+prints a table like:
+
+  ----------------------------------------------------------------
+  | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
+  |----|-----------------|--------|-----------------|---|----|---|
+  |  0 | BaseRepo (Base) | dummy  |                 |   |    |   |
+  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 |   |
+  |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
+  ----------------------------------------------------------------
+
+If the option --dist-legend is passed in, it will print the legend:
+
+Legend:
+* ID: Repository ID, zero based (order git commands are run)
+* Repo Dir: Relative to base repo (base repo shown first with '(Base)')
+* Branch: current branch (or detached HEAD)
+* Tracking Branch: Tracking branch (or empty if no tracking branch)
+* C: number local commits w.r.t. tracking branch (empty if zero)
+* M: number of tracked modified (uncommitted) files (empty if zero)
+* ?: number of untracked, non-ignored files (empty if zero)
 
 REPO VERSION FILES:
 
@@ -61,7 +118,7 @@ a compatible set of versions of the repos.
 The format of these repo version files is a follows:
 
 -----------------------------------------------------
-*** Base Git Repo: SomeBaseRepo
+*** Base Git Repo: BaseRepo
 e102e27 [Mon Sep 23 11:34:59 2013 -0400] <author1@someurl.com>
 First summary message
 *** Git Repo: ExtraRepo1
@@ -77,12 +134,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
+  $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
+  $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
 
 using two lines per repo in the output file.
@@ -119,8 +176,40 @@ super-set of those processed by this script or an error will occur and the
 script will stop.
 
 Note that this Python script only depends on the Python 2.4+ standard modules
-'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
-compatible version of 'git' at the very minimum as well of course.
+'sys', 'os', 'subprocess', and 're'. Also, it requires some compatible version
+of 'git' at the very minimum as well of course.
+
+COMPARISONS TO GIT SUBMODULE:
+
+The purpose and functioning of gitdist has a lot in common with the build-in
+git submodule command.  While git submodule is well suited for pulling in
+externally developed git repos, git submodules are not well suited for
+managing the co-development of multiple git repos.  A more detailed discussion
+of different approaches to managing the development and integration of
+multiple git repos, see the TriBITS Developers Guide.
+
+USEFUL ALIASES:
+
+Two very useful Linux/Unix aliases are:
+
+  $ alias gitdist-status="gitdist dist-repo-status"
+  $ alias gitdist-mod="gitdist --dist-mod-only"
+
+This avoids lot of typing as these arguments are used a lot when working with
+many git repos.  For example, to see the status of all your repos, do:
+
+  $ gitdist-status | less
+
+To see the changes in the repos use:
+
+  $ gitdist-mod log --name-status HEAD ^origin/master
+
+or
+
+  $ gitdist-mod local-stat
+
+(where 'local-stat' is a useful git alias defined in the script
+'git-config-alias.sh').
 
 
 Options:
@@ -150,3 +239,18 @@ Options:
   --dist-debug          If set, then debugging info is printed.
   --dist-no-opt         If set, then no git commands will be run but instead
                         will just be printed.
+  --dist-mod-only       If set, then the listed git command will be only be
+                        run and output for the repo will only be produced if
+                        the command 'git diff --name-only ^<tracking-branch>'
+                        returns non-empty output where <tracking-branch> is
+                        returned from 'rev-parse --abbrev-ref --symbolic-full-
+                        name @{u}'.  In order words, if a git repo is
+                        unchanged w.r.t. its tracking branch, then the git
+                        command is skipped for that repo.  If a repo does not
+                        have a tracking branch, then the repo will be skipped
+                        as well.  Therefore, be careful to first run with
+                        dist-local-stat to see the status of each local repo
+                        to know which repos don't have tracking branches.
+  --dist-legend         If set, then a legend will be printed below the repo
+                        summary table for the special dist-repo-status
+                        command.  Only applicable with dist-repo-status.

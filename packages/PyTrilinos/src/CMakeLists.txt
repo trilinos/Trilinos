@@ -1,30 +1,44 @@
 # -*- cmake -*-
 # @HEADER
-# ************************************************************************
+# ***********************************************************************
 #
-#                PyTrilinos: Python Interface to Trilinos
-#                   Copyright (2009) Sandia Corporation
+#          PyTrilinos: Python Interfaces to Trilinos Packages
+#                 Copyright (2014) Sandia Corporation
 #
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia
+# Corporation, the U.S. Government retains certain rights in this
+# software.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-# USA
-# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
 #
-# ************************************************************************
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+#
+# ***********************************************************************
 # @HEADER
 
 
@@ -50,6 +64,10 @@ IF(NOX_ENABLE_EpetraExt)
   SET(HAVE_NOX_EPETRAEXT ON)
 ENDIF(NOX_ENABLE_EpetraExt)
 
+IF(NOX_ENABLE_PETSC)
+  SET(HAVE_NOX_PETSC ON)
+ENDIF(NOX_ENABLE_PETSC)
+
 IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
   IF(Mpi4Py_FOUND)
@@ -72,8 +90,8 @@ ENDIF(APPLE)
 
 #
 # Add the current binary and source directories, the python include
-# path, the NumPy include path, and the Mpi4Py include path to the
-# include directories
+# path, the NumPy include path, the Mpi4Py include path, and the
+# PETSc4Py include path to the include directories
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
@@ -83,6 +101,9 @@ IF(TPL_ENABLE_MPI)
     INCLUDE_DIRECTORIES(${Mpi4Py_INCLUDE_DIR})
   ENDIF(Mpi4Py_FOUND)
 ENDIF(TPL_ENABLE_MPI)
+IF(NOX_ENABLE_PETSC)
+  INCLUDE_DIRECTORIES(${PETSC4PY_INCLUDES})
+ENDIF(NOX_ENABLE_PETSC)
 
 #
 # Copy the pyfragments.swg file to the build directory
@@ -100,19 +121,21 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 LIST(APPEND HEADERS
+  PyTrilinos_PythonException.hpp
+  PyTrilinos_FILEstream.hpp
+  PyTrilinos_Util.hpp
   numpy_include.hpp
   PyTrilinos_NumPyImporter.hpp
-  PyTrilinos_PythonException.hpp
-  PyTrilinos_Util.hpp
-  PyTrilinos_FILEstream.hpp
+  PyTrilinos_NumPy_Util.hpp
   PyTrilinos_DAP.hpp
   )
 
 LIST(APPEND SOURCES
-  PyTrilinos_NumPyImporter.cpp
   PyTrilinos_PythonException.cpp
-  PyTrilinos_Util.cpp
   PyTrilinos_FILEstream.cpp
+  PyTrilinos_Util.cpp
+  PyTrilinos_NumPyImporter.cpp
+  PyTrilinos_NumPy_Util.cpp
   PyTrilinos_DAP.cpp
   )
 
@@ -177,6 +200,20 @@ IF(PyTrilinos_ENABLE_EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 #
+# PyTrilinos + Domi headers and sources
+IF(PyTrilinos_ENABLE_Domi)
+
+  LIST(APPEND HEADERS
+    PyTrilinos_Domi_Util.hpp
+    )
+
+  LIST(APPEND SOURCES
+    PyTrilinos_Domi_Util.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 
@@ -185,20 +222,6 @@ IF(PyTrilinos_ENABLE_ML)
     )
 
 ENDIF(PyTrilinos_ENABLE_ML)
-
-#
-# PyTrilinos + Domi headers and sources
-# IF(PyTrilinos_ENABLE_Domi)
-
-#   LIST(APPEND HEADERS
-#     PyTrilinos_Domi_Util.hpp
-#     )
-
-#   LIST(APPEND SOURCES
-#     PyTrilinos_Domi_Util.cpp
-#     )
-
-# ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
 # Define the target for the swig runtime header
@@ -307,6 +330,21 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.NOX.PETSc
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/PETSc")
+    SET(TRILINOS_LIBS ${NOXPETSC_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/PETSc/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/PETSc/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/PETSc/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/PETSc/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/PETSc)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/PETSc)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/PETSc/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")

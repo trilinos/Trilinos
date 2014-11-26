@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
-<meta name="date" content="2014-11-03" />
+<meta name="date" content="2014-11-22" />
 <style type="text/css">
 
 /*
@@ -315,9 +315,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-11-03</td></tr>
+<td>2014-11-22</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-11-03</td></tr>
+<td>TriBITS Development at 2014-11-22</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1919,10 +1919,11 @@ this file exists, then it defines extra CPack-related options that are
 specific to this TriBITS Repository.  This file must define the macro
 <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_PACKAGING()</tt> which is called by TriBITS.  This
 file is processed as the top project-level scope so any local variables set
-have project-wide effect.  This file is processed before the project's
-<a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> file so any options
-defined in this can be overridden by the project.  This file typically just
-sets extra excludes to remove files from the tarball.  The file:</p>
+have project-wide effect.  This file is processed after the project's
+<a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> file so any project
+CPACK varaibles are defined for the repository-level options and commands are
+created.  This file typically just sets extra excludes to remove files from
+the tarball.  The file:</p>
 <blockquote>
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">cmake/CallbackDefineRepositoryPackaging.cmake</tt></blockquote>
 <p>provides a good example which is:</p>
@@ -2846,14 +2847,14 @@ through the call to <a class="reference internal" href="#id2">TRIBITS_PROJECT()<
 <div class="line">* <tt class="docutils literal">ADD_SUBDIRECTORY(</tt> <a class="reference internal" href="#packagedir-spkgdir-cmakelists-txt">&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</a> <tt class="docutils literal">)</tt></div>
 </div>
 </div>
-<div class="line">15) For each <tt class="docutils literal">&lt;repoDir&gt;</tt> in all defined TriBITS repositories:</div>
+<div class="line">16) <tt class="docutils literal">INCLUDE(</tt> <a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> <tt class="docutils literal">)</tt></div>
+<div class="line-block">
+<div class="line">* Call <tt class="docutils literal">TRIBITS_PROJECT_DEFINE_PACKAGING()</tt></div>
+</div>
+<div class="line">16) For each <tt class="docutils literal">&lt;repoDir&gt;</tt> in all defined TriBITS repositories:</div>
 <div class="line-block">
 <div class="line">* <tt class="docutils literal">INCLUDE(</tt> <a class="reference internal" href="#repodir-cmake-callbackdefinerepositorypackaging-cmake">&lt;repoDir&gt;/cmake/CallbackDefineRepositoryPackaging.cmake</a> <tt class="docutils literal">)</tt></div>
 <div class="line">* Call <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_PACKAGING()</tt></div>
-</div>
-<div class="line">17) <tt class="docutils literal">INCLUDE(</tt> <a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> <tt class="docutils literal">)</tt></div>
-<div class="line-block">
-<div class="line">* Call <tt class="docutils literal">TRIBITS_PROJECT_DEFINE_PACKAGING()</tt></div>
 </div>
 </div>
 </div>
@@ -2982,8 +2983,8 @@ $ cmake \
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/tests/CMakeLists.txt
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/CMakeLists.txt
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/tests/CMakeLists.txt
--- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 -- File Trace: PROJECT    INCLUDE    [...]/cmake/CallbackDefineProjectPackaging.cmake
+-- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 </pre>
 <p>However, every file that TriBITS processes is not printed in this file trace
 if it should be obvious that the file is being processed.  For example, the
@@ -7734,6 +7735,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   [KEYWORDS &lt;keyword1&gt; &lt;keyword2&gt; ...]
   [COMM [serial] [mpi]]
   [OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;]
+  [OVERALL_NUM_TOTAL_CORES_USED &lt;overallNumTotalCoresUsed&gt;]
   [CATEGORIES &lt;category0&gt; &lt;category1&gt; ...]
   [HOST &lt;host0&gt; &lt;host1&gt; ...]
   [XHOST &lt;host0&gt; &lt;host1&gt; ...]
@@ -7765,6 +7767,7 @@ TEST_&lt;idx&gt;
    [MESSAGE &quot;&lt;message&gt;&quot;]
    [WORKING_DIRECTORY &lt;workingDir&gt;]
    [NUM_MPI_PROCS &lt;numProcs&gt;]
+   [NUM_TOTAL_CORES_USED &lt;numTotalCoresUsed&gt;]
    [OUTPUT_FILE &lt;outputFile&gt;]
    [NO_ECHO_OUTPUT]]
    [PASS_ANY
@@ -7834,18 +7837,22 @@ mode.  See the <tt class="docutils literal">COMM</tt> argument in the script
 <p><tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt></p>
 <blockquote>
 If specified, gives the default number of MPI processes that each
-executable command runs on.  If <tt class="docutils literal">&lt;numProcs&gt;</tt> is greater than
+executable command runs on.  If <tt class="docutils literal">&lt;overallNumProcs&gt;</tt> is greater than
 <tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt> then the test will be excluded.  If not
 specified, then the default number of processes for an MPI build will be
 <tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt>.  For serial builds, this argument is
-ignored.  This also results in the test property <tt class="docutils literal">PROCESSORS</tt> being
-set to <tt class="docutils literal">&lt;overallNumProcs&gt;</tt> (see <a class="reference internal" href="#running-multiple-tests-at-the-same-time-tribits-add-advanced-test">Running multiple tests at the same
-time (TRIBITS_ADD_ADVANCED_TEST())</a>).  <strong>WARNING!</strong> If just running a
-serial script or other command, then the property <tt class="docutils literal">PROCESSORS</tt> will
-still get set to <tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt> so in order to avoid
-CTest unnecessarily resolving <tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt> processes
-for a serial non-MPI test, then one must explicitly pass in
-<tt class="docutils literal">MPI_EXEC_DEFAULT_NUMPROCS 1</tt>!</blockquote>
+ignored.  For MPI builds with all <tt class="docutils literal">TEST_&lt;IDX&gt; CMND</tt> blocks,
+<tt class="docutils literal">&lt;overallNumProcs&gt;</tt> is used to set the property <tt class="docutils literal">PROCESSORS</tt>. (see
+<a class="reference internal" href="#running-multiple-tests-at-the-same-time-tribits-add-advanced-test">Running multiple tests at the same time
+(TRIBITS_ADD_ADVANCED_TEST())</a>).  <strong>WARNING!</strong> If just running a serial
+script or other command, then the property <tt class="docutils literal">PROCESSORS</tt> will still get
+set to <tt class="docutils literal">${OVERALL_NUM_MPI_PROCS}</tt> so in order to avoid CTest
+unnecessarily reserving <tt class="docutils literal">${OVERALL_NUM_MPI_PROCS}</tt> processes for a
+serial non-MPI test, then one must leave off <tt class="docutils literal">OVERALL_NUM_MPI_PROCS</tt>
+or explicitly pass in <tt class="docutils literal">MPI_EXEC_DEFAULT_NUMPROCS 1</tt>!</blockquote>
+<p><tt class="docutils literal">OVERALL_NUM_TOTAL_CORES_USED &lt;overallNumTotalCoresUsed&gt;</tt></p>
+<blockquote>
+Used for <tt class="docutils literal">NUM_TOTAL_CORES_USED</tt> if missing in a <tt class="docutils literal">TEST_&lt;IDX&gt;</tt> block.</blockquote>
 <p><tt class="docutils literal">CATEGORIES &lt;category0&gt; &lt;category1&gt; ...</tt></p>
 <blockquote>
 Gives the <a class="reference internal" href="#test-test-categories">Test Test Categories</a> for which this test will be added.
@@ -7898,7 +7905,7 @@ executable name and path is determined in exactly the same way it is in
 the <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> function (see <a class="reference internal" href="#determining-the-executable-or-command-to-run-tribits-add-test">Determining the Executable or
 Command to Run (TRIBITS_ADD_TEST())</a>).  If this is an MPI build, then
 the executable will be run with MPI using <tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt>
-or <tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt> (if <tt class="docutils literal">NUM_MPI_PROCS</tt> is
+(or <tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt> if <tt class="docutils literal">NUM_MPI_PROCS</tt> is
 not set for this test case).  If the maximum number of MPI processes
 allowed is less than this number of MPI processes, then the test will
 <em>not</em> be run.  Note that <tt class="docutils literal">EXEC &lt;exeRootName&gt;</tt> when <tt class="docutils literal">NOEXEPREFIX</tt> and
@@ -7962,6 +7969,22 @@ test case.  This would be useful if a single
 If specified, then <tt class="docutils literal">&lt;numProcs&gt;</tt> is the number of processors used for
 MPI executables.  If not specified, this will default to
 <tt class="docutils literal">&lt;overallNumProcs&gt;</tt> from <tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt>.</blockquote>
+<p><tt class="docutils literal">NUM_TOTAL_CORES_USED &lt;numTotalCoresUsed&gt;</tt></p>
+<blockquote>
+If specified, gives the total number of processes used by this
+command/executable.  If this is missing, but <tt class="docutils literal">NUM_MPI_PROCS
+&lt;numProcs&gt;</tt> is specified, then <tt class="docutils literal">&lt;numProcs&gt;</tt> is used instead.  If
+<tt class="docutils literal">NUM_TOTAL_CORES_USED</tt> is missing BUT <tt class="docutils literal">OVERALL_NUM_TOTAL_CORES_USED
+&lt;overallNumTotalCoresUsed&gt;</tt> is, then <tt class="docutils literal">&lt;overallNumTotalCoresUsed&gt;</tt> is
+used for <tt class="docutils literal">&lt;numTotalCoresUsed&gt;</tt>.  This argument is used for test
+scripts/executables that use more cores than MPI processes
+(i.e. <tt class="docutils literal">&lt;numProcs&gt;</tt>) and its only purpose is to inform CTest and
+TriBITS of the maximum number of cores that are used by the underlying
+test executable/script.  When <tt class="docutils literal">&lt;numTotalCoresUsed&gt;</tt> is greater than
+<tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt>, then the test will not be added.
+Otherwise, the CTest property <tt class="docutils literal">PROCESSORS</tt> is set to the max over all
+<tt class="docutils literal">&lt;numTotalCoresUsed&gt;</tt> so that CTest knows how to best schedule the
+test w.r.t. other tests on a given number of available processes.</blockquote>
 <p><tt class="docutils literal">OUTPUT_FILE &lt;outputFile&gt;</tt></p>
 <blockquote>
 <p>If specified, then stdout and stderr for the test case will be sent to
@@ -8100,20 +8123,23 @@ ENDIF()
 CDash also.</p>
 <p id="running-multiple-tests-at-the-same-time-tribits-add-advanced-test"><strong>Runnning multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>Just as with <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>, setting <tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> or
-<tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;numOverallProcs&gt;</tt> will set the <tt class="docutils literal">PROCESSORS</tt>
-CTest property to allow CTest to schedule and run mutiple tests at the same
-time when <tt class="docutils literal">'ctest <span class="pre">-j&lt;N&gt;'</span></tt> is used (see <a class="reference internal" href="#running-multiple-tests-at-the-same-time-tribits-add-test">Running multiple tests at the same
-time (TRIBITS_ADD_TEST())</a>).</p>
+<tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;numOverallProcs&gt;</tt> or <tt class="docutils literal">NUM_TOTAL_CORES_USED
+&lt;numTotalCoresUsed&gt;</tt> or <tt class="docutils literal">OVERALL_NUM_TOTAL_CORES_USED
+&lt;overallNumTotalCoresUsed&gt;</tt> will set the <tt class="docutils literal">PROCESSORS</tt> CTest property to
+allow CTest to schedule and run mutiple tests at the same time when <tt class="docutils literal">'ctest
+<span class="pre">-j&lt;N&gt;'</span></tt> is used (see <a class="reference internal" href="#running-multiple-tests-at-the-same-time-tribits-add-test">Running multiple tests at the same time
+(TRIBITS_ADD_TEST())</a>).</p>
 <p id="disabling-tests-externally-tribits-add-advanced-test"><strong>Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
 <tt class="docutils literal">&lt;testName&gt;_DISABLE=TRUE</tt>.  This allows tests to be disabled on a
 case-by-case basis.  The name <tt class="docutils literal">&lt;testName&gt;</tt> must be the <em>exact</em> name
 that shows up in <tt class="docutils literal">ctest <span class="pre">-N</span></tt> when running the test.</p>
 <p id="debugging-and-examining-test-generation-tribits-add-advanced-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
-<p>In order to see if the test gets added and to debug some issues in test
-creation, one can set the cache variable
-<tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt>.  This will result in the printout
-of some information about the test getting added or not.</p>
+<p>In order to see what tests get added and if not then why, configure with
+<tt class="docutils literal">${PROJECT_NAME}_TRACE_ADD_TEST=ON</tt>.  That will print one line per show
+that the test got added and if not then why the test was not added (i.e. due
+to <tt class="docutils literal">COMM</tt>, <tt class="docutils literal">OVERALL_NUM_MPI_PROCS</tt>, <tt class="docutils literal">NUM_MPI_PROCS</tt>, <tt class="docutils literal">CATEGORIES</tt>,
+<tt class="docutils literal">HOST</tt>, <tt class="docutils literal">XHOST</tt>, <tt class="docutils literal">HOSTTYPE</tt>, or <tt class="docutils literal">XHOSTTYPE</tt>).</p>
 <p>Likely the best way to debugging test generation using this function is to
 examine the generated file <tt class="docutils literal"><span class="pre">&lt;testName&gt;.cmake</span></tt> in the current binary
 directory (see <a class="reference internal" href="#implementation-details-tribits-add-advanced-test">Implementation Details (TRIBITS_ADD_ADVANCED_TEST())</a>) and
@@ -8635,6 +8661,7 @@ TRIBITS_ADD_TEST(
       POSTFIX_AND_ARGS_1 ... ]
   [COMM [serial] [mpi]]
   [NUM_MPI_PROCS &lt;numProcs&gt;]
+  [NUM_TOTAL_CORES_USED &lt;numTotalCoresUsed&gt;]
   [CATEGORIES &lt;category0&gt;  &lt;category1&gt; ...]
   [HOST &lt;host0&gt; &lt;host1&gt; ...]
   [XHOST &lt;host0&gt; &lt;host1&gt; ...]
@@ -8770,8 +8797,23 @@ not specified, then the default number of processes for an MPI build
 (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=ON</tt>) will be <tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt>.
 For serial builds (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>), this argument is
 ignored.  This will also be set as the built-in test property
-<tt class="docutils literal">PROCESSORS</tt> to tell CTest how many processes this test will use (see
-<a class="reference internal" href="#running-multiple-tests-at-the-same-time-tribits-add-test">Running multiple tests at the same time (TRIBITS_ADD_TEST())</a>).</blockquote>
+<tt class="docutils literal">PROCESSORS</tt> if <tt class="docutils literal">NUM_TOTAL_CORES_USED</tt> is not specified.</blockquote>
+<p><tt class="docutils literal">NUM_TOTAL_CORES_USED &lt;numTotalCoresUsed&gt;</tt></p>
+<blockquote>
+If specified, gives the total number of processes or cores that is
+reported to CTest as the built-in CTest <tt class="docutils literal">PROCESSORS</tt> property.  If
+this is not specified, then <tt class="docutils literal">PROCESSORS</tt> is specified by the argument
+<tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt>.  This argument is used for test
+scripts/executables that use more cores than MPI processes
+(i.e. <tt class="docutils literal">&lt;numProcs&gt;</tt>) and its only purpose is to inform CTest and
+TriBITS of the maximum number of processes or cores that are used by the
+underlying test executable/script.  When specified, if
+<tt class="docutils literal">&lt;numTotalCoresUsed&gt;</tt> is greater than <tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt>,
+then the test will not be added.  Otherwise, the CTest property
+<tt class="docutils literal">PROCESSORS</tt> is set to <tt class="docutils literal">&lt;numTotalCoresUsed&gt;</tt> so that CTest knows how
+to best schedule the test w.r.t. other tests on a given number of
+available processes.  See <a class="reference internal" href="#running-multiple-tests-at-the-same-time-tribits-add-test">Running multiple tests at the same time
+(TRIBITS_ADD_TEST())</a>.</blockquote>
 <p><tt class="docutils literal">CATEGORIES &lt;category0&gt; &lt;category1&gt; ...</tt></p>
 <blockquote>
 If specified, gives the specific categories of the test.  Valid test
@@ -9011,7 +9053,7 @@ can have additional properties set and changed using
 directly supported and passed through this wrapper function can be set in
 the outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
 <p>If tests are added, then the names of those tests will be returned in the
-varible <tt class="docutils literal">ADDED_TESTS_NAMES_OUT &lt;testsNames&gt;</tt>.  This can be used, for
+variable <tt class="docutils literal">ADDED_TESTS_NAMES_OUT &lt;testsNames&gt;</tt>.  This can be used, for
 example, to override the <tt class="docutils literal">PROCESSORS</tt> property for the tests with:</p>
 <pre class="literal-block">
 TRIBITS_ADD_TEST( someTest ...
@@ -9024,7 +9066,7 @@ ENDIF()
 </pre>
 <p>where the test writes a log file <tt class="docutils literal">someTest.log</tt> that we want to submit to
 CDash also.</p>
-<p>This appraoch will work no matter what TriBITS names the individual test(s)
+<p>This approach will work no matter what TriBITS names the individual test(s)
 or whether the test(s) are added or not (depending on other arguments like
 <tt class="docutils literal">COMM</tt>, <tt class="docutils literal">XHOST</tt>, etc.).</p>
 <p>There are many other test properties that one may want to set also and this
@@ -9038,9 +9080,10 @@ make usage of 10 processes.  If all of the defined tests only used one
 process (which is assumed by default except for MPI tests), then CTest will
 run 10 tests at the same time and will launch new tests as running tests
 finish.  One can also define tests using <tt class="docutils literal">ADD_TEST()</tt> that use more than
-one process such as for MPI tests.  When passing in <tt class="docutils literal">NUM_MPI_PROCS
-&lt;numProcs&gt;</tt> (see above), this TriBITS function will set the built-in CTest
-property <tt class="docutils literal">PROCESSORS</tt> to <tt class="docutils literal">&lt;numProcs&gt;</tt> using:</p>
+one process or use more cores than the number of MPI processes.  When
+passing in <tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> (see above), this TriBITS function
+will set the built-in CTest property <tt class="docutils literal">PROCESSORS</tt> to <tt class="docutils literal">&lt;numProcs&gt;</tt>
+using:</p>
 <pre class="literal-block">
 SET_TESTS_PROPERTIES(&lt;fullTestName&gt; PROPERTIES PROCESSORS &lt;numProcs&gt;)
 </pre>
@@ -9050,6 +9093,21 @@ For example, if several <tt class="docutils literal">NUM_MPI_PROCS 3</tt> tests 
 run with <tt class="docutils literal">'ctest <span class="pre">-j12'</span></tt>, then CTest would schedule and run 4 of these
 tests at a time (to make use of 12 processes), starting new ones as running
 tests finish, until all of the tests have been run.</p>
+<p>There are some situations where a test will use more processes/cores than
+specified by <tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> such as when the underlying
+executable fires off more processes in parallel to do processing.  Also, an
+MPI program may use threading and therefore use overall more cores than the
+number of MPI processes. For these cases, it is critical to set
+<tt class="docutils literal">NUM_TOTAL_CORES_USED &lt;numTotalCoresUsed&gt;</tt> to tell TriBITS and CTest how
+many cores will be used.  This is needed to exclude the test if there are
+too many processes/cores needed to run the test than are available.  If the
+test is added, then this is needed to set the built-in CTest <tt class="docutils literal">PROCESSORS</tt>
+property.  That is critical so that CTest can avoid overloading the machine.
+For an MPI executable running on 4 processes that uses 10 threads per
+process would set:</p>
+<pre class="literal-block">
+NUM_MPI_PROCS 4 NUM_TOTAL_CORES_USED 40
+</pre>
 <p>When the number of processes a test uses does not cleanly divide into the
 requested CTest parallel level, it is not clear how CTest schedules the
 tests (hard to find documentation on this but one could always inspect the
@@ -9060,41 +9118,17 @@ size of the <tt class="docutils literal">PROCESSORS</tt> property or the value o
 <tt class="docutils literal">PROCESSORS</tt> is set to 20 but <tt class="docutils literal">`ctest <span class="pre">-j10'</span></tt> is run, then CTest will
 still run those tests (using 20 processes) one at a time but will not
 schedule any other tests while the parallel level is exceeded.</p>
-<p>For single-thread MPI tests, the behavior built into TriBITS does exactly
-the right thing.  Defining the test with <tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt> will
-call <tt class="docutils literal">${MPI_EXEC}</tt> with <tt class="docutils literal">&lt;numProcs&gt;</tt> and it will set the CTest property
-<tt class="docutils literal">PROCESSORS</tt> to <tt class="docutils literal">&lt;numProcs&gt;</tt>.  However, if the MPI processes use more
-than one thread, then CTest could easily oversubscribe the machine.  For
-example, consider the case where one is on a machine that only has 16 cores
-and one defines MPI tests with <tt class="docutils literal">NUM_MPI_PROCS 4</tt> but each MPI process
-launches 6 threads.  In this case, running these tests with <tt class="docutils literal">'ctest <span class="pre">-j8'</span></tt>,
-CTest would schedule 2 of these 4-process tests to run at a time but would
-in actuality be using <tt class="docutils literal">2*4*6 = 48</tt> cores and would overload 32 core
-machine.  The other case that is not automatically handled by TriBITS is
-when a test script (not MPI) launches multiple processes simultaneously
-internally.</p>
-<p>Therefore, in cases where the executable or script uses multiple processes,
-then one must manually override the <tt class="docutils literal">PROCESSORS</tt> property.  To do, this
-after the <tt class="docutils literal">TRIBITS_ADD_TEST()</tt> (or <a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a>)
-function returns, one can reset the <tt class="docutils literal">PROCESSORS</tt> property` with:</p>
-<pre class="literal-block">
-SET_TESTS_PROPERTIES(&lt;fullTestName&gt; PROPERTIES PROCESSORS &lt;fullNumProces&gt;)
-</pre>
-<p>For example, if one runs an MPI program that uses 4 processes and 6 threads
-per process, one would call:</p>
-<pre class="literal-block">
-TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...
-  ADDED_TESTS_NAMES_OUT  myProg_TEST_NAME)
-
-IF (myProg_TEST_NAME)
-  SET_TESTS_PROPERTIES(${myProg_TEST_NAME} PROPERTIES PROCESSORS 12)
-ENDIF()
-</pre>
+<p>NOTE: <strong>Never</strong> manually override the <tt class="docutils literal">PROCESSORS</tt> property.  Instead,
+always using <tt class="docutils literal">NUM_TOTAL_CORES_USED &lt;numTotalCoresUsed&gt;</tt> to set this.  This
+is important becaues TriBITS needs to know how many processes/cores are
+required in order to be able disable a test with too many cores/processes
+for a given machine or imposed budget of processes to be used.</p>
 <p id="debugging-and-examining-test-generation-tribits-add-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_TEST())</strong></p>
-<p>In order to see what tests are getting added and to debug some issues in
-test creation, one can set the cache variable
-<tt class="docutils literal">${PROJECT_NAME}_VERBOSE_CONFIGURE=ON</tt>.  This will result in the printout
-of some information about the test getting added or not.</p>
+<p>In order to see what tests get added and if not then why, configure with
+<tt class="docutils literal">${PROJECT_NAME}_TRACE_ADD_TEST=ON</tt>.  That will print one line per show
+that the test got added and if not then why the test was not added (i.e. due
+to <tt class="docutils literal">COMM</tt>, <tt class="docutils literal">NUM_MPI_PROCS</tt>, <tt class="docutils literal">CATEGORIES</tt>, <tt class="docutils literal">HOST</tt>, <tt class="docutils literal">XHOST</tt>,
+<tt class="docutils literal">HOSTTYPE</tt>, or <tt class="docutils literal">XHOSTTYPE</tt>).</p>
 <p>Also, CMake writes a file <tt class="docutils literal">CTestTestfile.cmake</tt> in the current binary
 directory which contains all of the added tests and test properties that are
 set.  This is the file that is read by <tt class="docutils literal">ctest</tt> when it runs to determine
@@ -11072,7 +11106,9 @@ example.</p>
 run the <tt class="docutils literal">date</tt> command.  Therefore, it only works on Unix/Linux and other
 systems that have a standard <tt class="docutils literal">date</tt> command.  Since this uses
 <tt class="docutils literal">EXECUTE_PROCESS()</tt>, this function should only be used to time very
-course-grained operations (i.e. that take longer than a second).</p>
+course-grained operations (i.e. that take longer than a second).  If the
+<cite>date</cite> command does not exist, then ${&lt;rawSecondsVar&gt;} will be empty on
+output!</p>
 </div>
 <div class="section" id="timer-get-rel-seconds">
 <h3><a class="toc-backref" href="#id176">TIMER_GET_REL_SECONDS()</a></h3>
@@ -12190,41 +12226,69 @@ Options:
 the usage of <tt class="docutils literal">gitdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
 Development Workflow</a>.</p>
 <pre class="literal-block">
-Usage: gitdist [gitdist options] [OPTIONS]
+Usage: gitdist [gitdist arguments] [git arguments]
+       gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over extra repos
+Run git recursively over extra repos and some extra tools for multi-repository
+git projects.
 
-Instead of typing
+Instead of typing:
 
-   $ git [OPTIONS]
+  $ git [git arguments]
 
 type:
 
-  $ gitdist [gitdist options] [OPTIONS]
+  $ gitdist [gitdist options] [git arguments]
 
-This will distribute git options across all git repos listed, including the
+This will distribute git commands across all git repos listed, including the
 base git repo.  The options in [gitdist options] are prefixed with '--dist-'
-and are are pulled out before running git on the underlying executable.  See
---help to see the gitdist options.
+and are are pulled out off before passing the remaining arguments in [git
+arguments] to all the git repos.  See --help to see the [gitdist options].
 
-If --dist-extra-repos=&quot;&quot;, then the list of extra repos will be read from the
-file .gitdist.  The format of this file is to have one repo name per line as
-in:
+For example, consider the following git repos with other git repos cloned
+under it:
 
-   Repo1
-   Repo2
-   Repo3
-   ...
+  BaseRepo/
+    .git/
+    ExtraRepo1/
+      .git/
+    ExtraRep2/
+      .git/
 
-NOTE: If any extra repository does not exist, then it will be ignored and no
-output will be produced.  Therefore, be careful to manually verify that the
-script recognizes the repositories that you list.  The best way to do that is
-to type 'gitdist status'.
+The gitdist command is run in the base git repo 'BaseRepo' and the git
+commands are run on it as well as the git repos 'ExtraRepo1' and 'ExtraRepo2'.
 
-NOTE: This script has no dependencies other than standard linux packagse so it
-can be copied and moved anywhere and used.
+The set of repos processed is determined by the argument --dist-extra-repos or
+the files .gitdist or .gitdist.default.  If --dist-extra-repos=&quot;&quot;, then the
+list of extra repos will be read from the file '.gitdist' in the current
+working directory.  If the file '.gitdist' does not exist, then the list of
+extra repos will be read from the file '.gitdist.default in' the current
+working directory.  The format of this files '.gitdist' and '.gitdist.default'
+is to have one repo directory/name per line as in:
+
+  ExtraRepo1
+  ExtraRepo2
+  ...
+
+where each repo is the relative path to the repo under the base git repo
+(e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
+to the base git repo so that gitdist is ready to use right away.
+
+If an extra repository does not exist, then it will be ignored.  Therefore, be
+careful to manually verify that the script recognizes the repositories that
+you list.  The best way to do that is to type 'gitdist status'.
+
+This script has no dependencies other than standard python 2.4 packages so it
+can be copied to anywhere and used.
 
 TIPS:
+
+ - To see the status of all repos in a compact way, use the speical
+   'dist-repo-status' command (see below).
+
+ - To process only changed repos w.r.t. their tracking branch, run
+   'gitdist --dist-mod-only [git arguments]'.  For example, to see
+   the status of only changed repos use 'gitdist --dist-mod-only status'.
 
  - Use 'gitdist --no-pager &lt;command&gt; ...' to get the full output from
    all extra repos in one contiguous stream which can then be piped
@@ -12240,8 +12304,37 @@ TIPS:
 
  - To exclude processing either the base git repo and/or other git repos
    listed in .gitdist, pass in --dist-not-base-repo and/or
-   --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
-   what git repos the given command is run on.
+   --dist-not-extra-repos=RepoX,RepoZ,...  This provides complete control over
+   what git repos the given git command is run.
+
+SUMMARY OF REPO STATUS:
+
+This script supports the special command 'dist-repo-status' which prints a
+nice table showing the current status of all the repos.  For example, for the
+repos shown above:
+
+  $ gitdist dist-repo-status
+
+prints a table like:
+
+  ----------------------------------------------------------------
+  | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
+  |----|-----------------|--------|-----------------|---|----|---|
+  |  0 | BaseRepo (Base) | dummy  |                 |   |    |   |
+  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 |   |
+  |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
+  ----------------------------------------------------------------
+
+If the option --dist-legend is passed in, it will print the legend:
+
+Legend:
+* ID: Repository ID, zero based (order git commands are run)
+* Repo Dir: Relative to base repo (base repo shown first with '(Base)')
+* Branch: current branch (or detached HEAD)
+* Tracking Branch: Tracking branch (or empty if no tracking branch)
+* C: number local commits w.r.t. tracking branch (empty if zero)
+* M: number of tracked modified (uncommitted) files (empty if zero)
+* ?: number of untracked, non-ignored files (empty if zero)
 
 REPO VERSION FILES:
 
@@ -12253,7 +12346,7 @@ a compatible set of versions of the repos.
 The format of these repo version files is a follows:
 
 -----------------------------------------------------
-*** Base Git Repo: SomeBaseRepo
+*** Base Git Repo: BaseRepo
 e102e27 [Mon Sep 23 11:34:59 2013 -0400] &lt;author1&#64;someurl.com&gt;
 First summary message
 *** Git Repo: ExtraRepo1
@@ -12269,12 +12362,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
+  $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
+  $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using two lines per repo in the output file.
@@ -12311,8 +12404,40 @@ super-set of those processed by this script or an error will occur and the
 script will stop.
 
 Note that this Python script only depends on the Python 2.4+ standard modules
-'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
-compatible version of 'git' at the very minimum as well of course.
+'sys', 'os', 'subprocess', and 're'. Also, it requires some compatible version
+of 'git' at the very minimum as well of course.
+
+COMPARISONS TO GIT SUBMODULE:
+
+The purpose and functioning of gitdist has a lot in common with the build-in
+git submodule command.  While git submodule is well suited for pulling in
+externally developed git repos, git submodules are not well suited for
+managing the co-development of multiple git repos.  A more detailed discussion
+of different approaches to managing the development and integration of
+multiple git repos, see the TriBITS Developers Guide.
+
+USEFUL ALIASES:
+
+Two very useful Linux/Unix aliases are:
+
+  $ alias gitdist-status=&quot;gitdist dist-repo-status&quot;
+  $ alias gitdist-mod=&quot;gitdist --dist-mod-only&quot;
+
+This avoids lot of typing as these arguments are used a lot when working with
+many git repos.  For example, to see the status of all your repos, do:
+
+  $ gitdist-status | less
+
+To see the changes in the repos use:
+
+  $ gitdist-mod log --name-status HEAD ^origin/master
+
+or
+
+  $ gitdist-mod local-stat
+
+(where 'local-stat' is a useful git alias defined in the script
+'git-config-alias.sh').
 
 
 Options:
@@ -12342,6 +12467,21 @@ Options:
   --dist-debug          If set, then debugging info is printed.
   --dist-no-opt         If set, then no git commands will be run but instead
                         will just be printed.
+  --dist-mod-only       If set, then the listed git command will be only be
+                        run and output for the repo will only be produced if
+                        the command 'git diff --name-only ^&lt;tracking-branch&gt;'
+                        returns non-empty output where &lt;tracking-branch&gt; is
+                        returned from 'rev-parse --abbrev-ref --symbolic-full-
+                        name &#64;{u}'.  In order words, if a git repo is
+                        unchanged w.r.t. its tracking branch, then the git
+                        command is skipped for that repo.  If a repo does not
+                        have a tracking branch, then the repo will be skipped
+                        as well.  Therefore, be careful to first run with
+                        dist-local-stat to see the status of each local repo
+                        to know which repos don't have tracking branches.
+  --dist-legend         If set, then a legend will be printed below the repo
+                        summary table for the special dist-repo-status
+                        command.  Only applicable with dist-repo-status.
 
 </pre>
 </div>

@@ -11,7 +11,6 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   LinAlg                linalg            EX       OPTIONAL
   Example               example           EX       OPTIONAL
   MpiComm               mpicomm           EX       OPTIONAL
-  Task                  task              EX       OPTIONAL
   TSQR                  TSQR              PS       OPTIONAL
   )
 

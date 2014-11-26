@@ -723,7 +723,9 @@ NOTE: This function runs an external process with ``EXECUTE_PROCESS()`` to
 run the ``date`` command.  Therefore, it only works on Unix/Linux and other
 systems that have a standard ``date`` command.  Since this uses
 ``EXECUTE_PROCESS()``, this function should only be used to time very
-course-grained operations (i.e. that take longer than a second).
+course-grained operations (i.e. that take longer than a second).  If the
+`date` command does not exist, then ${<rawSecondsVar>} will be empty on
+output!
 
 TIMER_GET_REL_SECONDS()
 +++++++++++++++++++++++

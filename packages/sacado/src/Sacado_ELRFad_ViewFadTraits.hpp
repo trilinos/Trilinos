@@ -61,33 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct Promote< ELRFad::ViewFad<ValueT,Size,Stride>,
-                  ELRFad::ViewFad<ValueT,Size,Stride> > {
-    typedef ELRFad::ViewFad<ValueT,Size,Stride> type;
-  };
-
-  //! Specialization of %Promote to ViewFad types
-  template <typename ValueT, typename R, unsigned Size, unsigned Stride>
-  struct Promote< ELRFad::ViewFad<ValueT,Size,Stride>, R > {
-    typedef typename ValueType< ELRFad::ViewFad<ValueT,Size,Stride> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ELRFad::ViewFad<value_type,Size,Stride> type;
-  };
-
-  //! Specialization of %Promote to ViewFad types
-  template <typename L, typename ValueT, unsigned Size, unsigned Stride>
-  struct Promote< L, ELRFad::ViewFad<ValueT,Size,Stride> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< ELRFad::ViewFad<ValueT,Size,Stride> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ELRFad::ViewFad<value_type,Size,Stride> type;
-  };
+  SACADO_VFAD_PROMOTE_SPEC( ELRFad )
 
   //! Specialization of %ScalarType to ViewFad types
   template <typename ValueT, unsigned Size, unsigned Stride>

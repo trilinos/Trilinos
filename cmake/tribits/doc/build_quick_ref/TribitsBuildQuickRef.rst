@@ -1180,6 +1180,19 @@ where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 ``-E`` argument.
 
 
+Trace test addition or exclusion
+--------------------------------
+
+To see what tests get added and see those that don't get added for various
+reasons, configure with::
+
+  -D <Project>_TRACE_ADD_TEST=ON
+
+That will print one line per show that the test got added and if not then why
+the test was not added (i.e. due to the test's ``COMM``, ``NUM_MPI_PROCS``,
+``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
+arguments).
+
 Setting test timeouts at configure time
 ---------------------------------------
 

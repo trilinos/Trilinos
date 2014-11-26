@@ -194,6 +194,133 @@ public:
     this->plus(x);
   }
 
+
+  /** \brief Return dual representation of \f$\mathtt{*this}\f$, for example,
+             the result of applying a Riesz map, or change of basis, or
+             change of memory layout.
+
+             @return         A const reference to dual representation.
+
+             By default, returns the current object.
+             Please overload if you need a dual representation.
+
+             ---
+  */
+  virtual const Vector & dual() const {
+    return *this;
+  }
+
+  /** \brief Verify vector-space methods.
+
+             @param[in]      x     is a vector.
+             @param[in]      y     is a vector.
+
+             Returns a vector of Reals, all of which should be close to zero.
+             They represent consistency errors in the vector space properties,
+             as follows:
+
+             - Commutativity of addition: \f$\mathtt{*this} + x = x + \mathtt{*this}\f$.
+             - Associativity of addition: \f$\mathtt{*this} + (x + y) = (\mathtt{*this} + x) + y\f$.
+             - Identity element of addition: \f$0 + x = x\f$.
+             - Inverse elements of addition: \f$\mathtt{*this} + (- \mathtt{*this}) = 0\f$.
+             - Identity element of scalar multiplication: \f$ 1 \cdot \mathtt{*this} = \mathtt{*this} \f$.
+             - Consistency of scalar multiplication with field multiplication: \f$a (b \cdot \mathtt{*this}) = (a b) \cdot \mathtt{*this}\f$.
+             - Distributivity of scalar multiplication with respect to field addition: \f$(a+b) \cdot \mathtt{*this} = a \cdot \mathtt{*this} + b \cdot \mathtt{*this}\f$.
+             - Distributivity of scalar multiplication with respect to vector addition: \f$a \cdot (\mathtt{*this} + x) = a \cdot \mathtt{*this} + a \cdot x\f$.
+             - Commutativity of dot (inner) product over the field of reals: \f$(\mathtt{*this}, x)  = (x, \mathtt{*this})\f$.
+             - Additivity of dot (inner) product: \f$(\mathtt{*this}, x+y)  = (\mathtt{*this}, x) + (\mathtt{*this}, y)\f$.
+             - Consistency of scalar multiplication and norm: \f$\|{\mathtt{*this}} / {\|\mathtt{*this}\|} \| = 1\f$.
+             - Reflexivity: \f$\mbox{dual}(\mbox{dual}(\mathtt{*this})) = \mathtt{*this}\f$ .
+
+             The consistency errors are defined as the norms or absolute values of the differences between the left-hand
+             side and the right-hand side terms in the above equalities.
+
+             ---
+  */
+  virtual std::vector<Real> checkVector( const Vector<Real> &x,
+                                         const Vector<Real> &y,
+                                         const bool printToStream = true,
+                                         std::ostream & outStream = std::cout ) const {
+    Real one  = 1.0;
+    Real a    =  1.234;
+    Real b    = -432.1;
+    std::vector<Real> vCheck;
+    int width = 94;
+
+    std::ios::fmtflags f( outStream.flags() );
+
+    Teuchos::RCP<Vector> v    = this->clone();
+    Teuchos::RCP<Vector> vtmp = this->clone();
+    Teuchos::RCP<Vector> xtmp = x.clone();
+    Teuchos::RCP<Vector> ytmp = y.clone();
+
+    // Commutativity of addition.
+    v->set(*this); xtmp->set(x); ytmp->set(y);
+    v->plus(x); xtmp->plus(*this); v->axpy(-one, *xtmp); vCheck.push_back(v->norm());
+    outStream << std::scientific << std::setprecision(12) << std::setfill('>');
+    outStream << "\n" << std::setw(width) << std::left << "Commutativity of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Associativity of addition.
+    v->set(*this); xtmp->set(x); ytmp->set(y);
+    ytmp->plus(x); v->plus(*ytmp); xtmp->plus(*this); xtmp->plus(y); v->axpy(-one, *xtmp); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Associativity of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Identity element of addition.
+    v->set(*this); xtmp->set(x); ytmp->set(y);
+    v->zero(); v->plus(x); v->axpy(-one, x); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Identity element of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Inverse elements of addition.
+    v->set(*this); xtmp->set(x); ytmp->set(y);
+    v->scale(-one); v->plus(*this); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Inverse elements of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Identity element of scalar multiplication.
+    v->set(*this); xtmp->set(x); ytmp->set(y);
+    v->scale(one); v->axpy(-one, *this); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Identity element of scalar multiplication. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Consistency of scalar multiplication with field multiplication.
+    v->set(*this); vtmp->set(*this);
+    v->scale(b); v->scale(a); vtmp->scale(a*b); v->axpy(-one, *vtmp); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Consistency of scalar multiplication with field multiplication. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Distributivity of scalar multiplication with respect to field addition.
+    v->set(*this); vtmp->set(*this);
+    v->scale(a+b); vtmp->scale(a); vtmp->axpy(b, *this); v->axpy(-one, *vtmp); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Distributivity of scalar multiplication with respect to field addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Distributivity of scalar multiplication with respect to vector addition.
+    v->set(*this); xtmp->set(x); ytmp->set(y);
+    v->plus(x); v->scale(a); xtmp->scale(a); xtmp->axpy(a, *this); v->axpy(-one, *xtmp); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Distributivity of scalar multiplication with respect to vector addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Commutativity of dot (inner) product over the field of reals.
+    vCheck.push_back(std::abs(this->dot(x) - x.dot(*this)));
+    outStream << std::setw(width) << std::left << "Commutativity of dot (inner) product over the field of reals. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Additivity of dot (inner) product.  
+    xtmp->set(x);
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - x.dot(*this) - y.dot(*this)));
+    outStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Consistency of scalar multiplication and norm.
+    v->set(*this);
+    v->scale(one/v->norm()); vCheck.push_back(std::abs(v->norm() - one));
+    outStream << std::setw(width) << std::left << "Consistency of scalar multiplication and norm. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    // Reflexivity.
+    v->set(*this);
+    xtmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(this->dual()));
+    ytmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(xtmp->dual()));
+    v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
+    outStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    outStream.flags( f );
+
+    return vCheck;
+  }
+
 }; // class Vector
 
 } // namespace ROL

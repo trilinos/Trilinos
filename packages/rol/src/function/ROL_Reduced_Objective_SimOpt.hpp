@@ -78,14 +78,14 @@ private:
   */
   void solve_state_equation(const ROL::Vector<Real> &x, Real &tol, bool flag = true, int iter = -1) { 
     // Solve state equation if not done already
-    if (!this->is_state_computed_ || !this->storage_) {
-      (this->con_)->solve(*(this->state_),x,tol);
+    if (!is_state_computed_ || !storage_) {
+      con_->solve(*state_,x,tol);
       // Update full objective function
-      (this->obj_)->update(*(this->state_),x,flag,iter);
+      obj_->update(*state_,x,flag,iter);
       // Update equality constraint
-      (this->con_)->update(*(this->state_),x,flag,iter);
+      con_->update(*state_,x,flag,iter);
       // Reset storage flags
-      this->is_state_computed_ = true;
+      is_state_computed_ = true;
     }
   }
 
@@ -95,17 +95,17 @@ private:
   */
   void solve_adjoint_equation(const ROL::Vector<Real> &x, Real &tol) { 
     // Solve state equation if not done already
-    this->solve_state_equation(x,tol);
+    solve_state_equation(x,tol);
     // Solve adjoint equation if not done already
-    if(!this->is_adjoint_computed_ || !this->storage_) {
+    if(!is_adjoint_computed_ || !storage_) {
       // Evaluate the full gradient wrt u
-      Teuchos::RCP<Vector<Real> > gu = (this->state_)->clone();
-      (this->obj_)->gradient_1(*gu,*(this->state_),x,tol);
+      Teuchos::RCP<Vector<Real> > gu = (state_->dual()).clone();
+      obj_->gradient_1(*gu,*state_,x,tol);
       // Solve adjoint equation
-      (this->con_)->applyInverseAdjointJacobian_1(*(this->adjoint_),*gu,*(this->state_),x,tol);
-      (this->adjoint_)->scale(-1.0);
+      con_->applyInverseAdjointJacobian_1(*adjoint_,*gu,*state_,x,tol);
+      adjoint_->scale(-1.0);
       // Reset storage flags
-      this->is_adjoint_computed_ = true;
+      is_adjoint_computed_ = true;
     }
   }
 
@@ -116,12 +116,12 @@ private:
   void solve_state_sensitivity(ROL::Vector<Real> &s, const ROL::Vector<Real> &v, 
                                const ROL::Vector<Real> &x, Real &tol) {
     // Solve state equation if not done already
-    this->solve_state_equation(x,tol);
+    solve_state_equation(x,tol);
     // Solve state sensitivity equation
-    Teuchos::RCP<Vector<Real> > Bv = (this->adjoint_)->clone();
-    (this->con_)->applyJacobian_2(*Bv,v,*(this->state_),x,tol);
+    Teuchos::RCP<Vector<Real> > Bv = (adjoint_->dual()).clone();
+    con_->applyJacobian_2(*Bv,v,*state_,x,tol);
     Bv->scale(-1.0);
-    (this->con_)->applyInverseJacobian_1(s,*Bv,*(this->state_),x,tol);
+    con_->applyInverseJacobian_1(s,*Bv,*state_,x,tol);
   }
 
   /** \brief Given \f$(u,z)\in\mathcal{U}\times\mathcal{Z}\f$, the adjoint variable 
@@ -134,27 +134,27 @@ private:
   void solve_adjoint_sensitivity(ROL::Vector<Real> &p, const ROL::Vector<Real> &s,
                                  const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
     // Solve state equation if not done already
-    this->solve_state_equation(x,tol);
+    solve_state_equation(x,tol);
     // Solve adjoint equation if not done already
-    this->solve_adjoint_equation(x,tol);
+    solve_adjoint_equation(x,tol);
     // Evaluate full hessVec in the direction (s,v)
-    Teuchos::RCP<Vector<Real> > hv11 = (this->state_)->clone();
-    (this->obj_)->hessVec_11(*hv11,s,*(this->state_),x,tol);
-    Teuchos::RCP<Vector<Real> > hv12 = (this->state_)->clone();
-    (this->obj_)->hessVec_12(*hv12,v,*(this->state_),x,tol);
+    Teuchos::RCP<Vector<Real> > hv11 = (state_->dual()).clone();
+    obj_->hessVec_11(*hv11,s,*state_,x,tol);
+    Teuchos::RCP<Vector<Real> > hv12 = (state_->dual()).clone();
+    obj_->hessVec_12(*hv12,v,*state_,x,tol);
     // Apply adjoint Hessian of constraint
-    Teuchos::RCP<Vector<Real> > hc11 = (this->state_)->clone();
-    (this->con_)->applyAdjointHessian_11(*hc11,*(this->adjoint_),s,*(this->state_),x,tol);
-    Teuchos::RCP<Vector<Real> > hc21 = (this->state_)->clone();
-    (this->con_)->applyAdjointHessian_21(*hc21,*(this->adjoint_),v,*(this->state_),x,tol);
+    Teuchos::RCP<Vector<Real> > hc11 = (state_->dual()).clone();
+    con_->applyAdjointHessian_11(*hc11,*adjoint_,s,*state_,x,tol);
+    Teuchos::RCP<Vector<Real> > hc21 = (state_->dual()).clone();
+    con_->applyAdjointHessian_21(*hc21,*adjoint_,v,*state_,x,tol);
     // Solve adjoint sensitivity equation
-    Teuchos::RCP<Vector<Real> > r = (this->state_)->clone();
+    Teuchos::RCP<Vector<Real> > r = (state_->dual()).clone();
     r->set(*hv11);
     r->plus(*hv12);
     r->plus(*hc11);
     r->plus(*hc21);
     r->scale(-1.0);
-    (this->con_)->applyInverseAdjointJacobian_1(p,*r,*(this->state_),x,tol);
+    con_->applyInverseAdjointJacobian_1(p,*r,*state_,x,tol);
   }
 
 public:
@@ -180,11 +180,13 @@ public:
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     // Reset storage flags
-    this->is_state_computed_ = false;
-    this->is_adjoint_computed_ = false;
+    is_state_computed_ = false;
+    is_adjoint_computed_ = false;
     // Solve state equation
-    Real tol = std::sqrt(ROL_EPSILON);
-    this->solve_state_equation(x,tol,flag,iter);
+    if ( storage_ ) {
+      Real tol = std::sqrt(ROL_EPSILON);
+      solve_state_equation(x,tol,flag,iter);
+    }
   }
 
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the objective function 
@@ -193,9 +195,9 @@ public:
   */
   Real value( const Vector<Real> &x, Real &tol ) {
     // Solve state equation
-    this->solve_state_equation(x,tol);
+    solve_state_equation(x,tol);
     // Get objective function value
-    return (this->obj_)->value(*(this->state_),x,tol);
+    return obj_->value(*state_,x,tol);
   }
 
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the gradient of the objective function 
@@ -205,14 +207,14 @@ public:
   */
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     // Solve state equation
-    this->solve_state_equation(x,tol);
+    solve_state_equation(x,tol);
     // Solve adjoint equation
-    this->solve_adjoint_equation(x,tol);
+    solve_adjoint_equation(x,tol);
     // Evaluate the full gradient wrt z
-    Teuchos::RCP<Vector<Real> > gz = x.clone();
-    (this->obj_)->gradient_2(*gz,*(this->state_),x,tol);
+    Teuchos::RCP<Vector<Real> > gz = g.clone();
+    obj_->gradient_2(*gz,*state_,x,tol);
     // Build gradient
-    (this->con_)->applyAdjointJacobian_2(g,*(this->adjoint_),*(this->state_),x,tol);
+    con_->applyAdjointJacobian_2(g,*adjoint_,*state_,x,tol);
     g.plus(*gz);
   }
 
@@ -220,30 +222,30 @@ public:
              \f$\nabla^2\widehat{J}(z)\f$ in the direction \f$v\in\mathcal{Z}\f$.
   */
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    if ( this->useFDhessVec_ ) {
+    if ( useFDhessVec_ ) {
       Objective<Real>::hessVec(hv,v,x,tol);
     }
     else {
       // Solve state equation
-      this->solve_state_equation(x,tol);
+      solve_state_equation(x,tol);
       // Solve adjoint equation
-      this->solve_adjoint_equation(x,tol);
+      solve_adjoint_equation(x,tol);
       // Solve state sensitivity equation
-      Teuchos::RCP<Vector<Real> > s = (this->state_)->clone();
-      this->solve_state_sensitivity(*s,v,x,tol);
+      Teuchos::RCP<Vector<Real> > s = state_->clone();
+      solve_state_sensitivity(*s,v,x,tol);
       // Solve adjoint sensitivity equation
-      Teuchos::RCP<Vector<Real> > p = (this->adjoint_)->clone();
-      this->solve_adjoint_sensitivity(*p,*s,v,x,tol);
+      Teuchos::RCP<Vector<Real> > p = adjoint_->clone();
+      solve_adjoint_sensitivity(*p,*s,v,x,tol);
       // Build hessVec
-      (this->con_)->applyAdjointJacobian_2(hv,*p,*(this->state_),x,tol);
-      Teuchos::RCP<Vector<Real> > tmp = x.clone();
-      (this->obj_)->hessVec_21(*tmp,*s,*(this->state_),x,tol);
+      con_->applyAdjointJacobian_2(hv,*p,*state_,x,tol);
+      Teuchos::RCP<Vector<Real> > tmp = hv.clone();
+      obj_->hessVec_21(*tmp,*s,*state_,x,tol);
       hv.plus(*tmp);
-      (this->obj_)->hessVec_22(*tmp,v,*(this->state_),x,tol);
+      obj_->hessVec_22(*tmp,v,*state_,x,tol);
       hv.plus(*tmp);
-      (this->con_)->applyAdjointHessian_12(*tmp,*(this->adjoint_),*s,*(this->state_),x,tol);
+      con_->applyAdjointHessian_12(*tmp,*adjoint_,*s,*state_,x,tol);
       hv.plus(*tmp);
-      (this->con_)->applyAdjointHessian_22(*tmp,*(this->adjoint_),v,*(this->state_),x,tol);
+      con_->applyAdjointHessian_22(*tmp,*adjoint_,v,*state_,x,tol);
       hv.plus(*tmp);
     }
   }
@@ -251,7 +253,7 @@ public:
   /** \brief Apply a reduced Hessian preconditioner.
   */
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Pv.set(v);
+    Pv.set(v.dual());
   }
 
 }; // class ROL::Reduced_Objective_SimOpt
