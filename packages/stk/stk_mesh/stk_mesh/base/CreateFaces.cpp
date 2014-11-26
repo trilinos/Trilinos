@@ -81,34 +81,6 @@ struct shared_face_type
     nodes.resize(my_topology.num_nodes());
   }
 
-  friend inline bool operator < (shared_face_type const& l, shared_face_type const& r)
-  {
-    if (l.topology < r.topology)   return true;
-    if (l.topology > r.topology)   return false;
-
-    int num_nodes = static_cast<int>(l.nodes.size());
-    for (int k = 0; k < num_nodes-1; ++k) {
-      if (l.nodes[k] < r.nodes[k]) return true;
-      if (l.nodes[k] > r.nodes[k]) return false;
-    }
-    const int j = num_nodes-1;
-    return l.nodes[j] < r.nodes[j];
-  }
-
-  friend inline bool operator == (shared_face_type const& l, shared_face_type const& r)
-	    {
-    bool equal = l.topology == r.topology;
-    int num_nodes = static_cast<int>(l.nodes.size());
-    for (int k = 0; k < num_nodes; ++k) {
-      bool node_found = false;
-      for (int j = 0; j < num_nodes; ++j) {
-        node_found = node_found || (l.nodes[k] == r.nodes[j]);
-      }
-      equal = equal && node_found;
-    }
-    return equal;
-	    }
-
   shared_face_type(const shared_face_type & a) :
     topology(a.topology),
     nodes(a.nodes),
