@@ -103,21 +103,88 @@ bool testADPromote() {
   return true;
 }
 
-template <typename fad_type, typename view_fad_type>
+template <typename view_type>
+bool testViewPromote() {
+  using Sacado::Promote;
+  using std::is_same;
+
+  typedef typename Sacado::ValueType<view_type>::type value_type;
+  typedef typename Sacado::ScalarType<view_type>::type scalar_type;
+  typedef typename view_type::base_fad_type base_fad_type;
+
+  // Get the type of the result of the expression 'view_type * view_type'
+  // The use of declval gets around actually instantiation objects of type
+  // view_type.
+  typedef decltype(std::declval<view_type>()*std::declval<view_type>()) expr_type;
+
+  static_assert(
+    is_same<typename Promote<view_type,view_type>::type, base_fad_type >::value,
+    "Promote<view_type,view_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_type,value_type>::type, base_fad_type >::value,
+    "Promote<view_type,value_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<value_type,view_type>::type, base_fad_type >::value,
+    "Promote<value_type,view_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_type,scalar_type>::type, base_fad_type >::value,
+    "Promote<view_type,scalar_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<scalar_type,view_type>::type, base_fad_type >::value,
+    "Promote<scalar_type,view_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<view_type,expr_type>::type, base_fad_type >::value,
+    "Promote<view_type,expr_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,view_type>::type, base_fad_type >::value,
+    "Promote<expr_type,view_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,value_type>::type, base_fad_type >::value,
+    "Promote<expr_type,value_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<value_type,expr_type>::type, base_fad_type >::value,
+    "Promote<value_type,expr_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,scalar_type>::type, base_fad_type >::value,
+    "Promote<expr_type,scalar_type>::type != base_fad_type");
+
+  static_assert(
+    is_same<typename Promote<scalar_type,expr_type>::type, base_fad_type >::value,
+    "Promote<scalar_type,expr_type>::type != base_fad_type");
+
+  // These tests are all compile-time tests, so if the test compiles,
+  // it passes...
+  return true;
+}
+
+template <typename fad_type>
 bool testFadPromote() {
   using Sacado::Promote;
   using std::is_same;
 
+  typedef typename Sacado::ViewFadType<fad_type,0,1>::type view_fad_type;
+
   typedef typename Sacado::mpl::apply< fad_type, fad_type >::type fad_fad_type;
-  typedef typename Sacado::mpl::apply< fad_type, view_fad_type >::type fad_view_type;
   typedef typename Sacado::mpl::apply< view_fad_type, fad_type >::type view_fad_fad_type;
   typedef typename Sacado::mpl::apply< view_fad_type, view_fad_type >::type view_view_fad_type;
 
+  typedef typename view_fad_type::base_fad_type base_fad_type;
+  typedef typename view_fad_fad_type::base_fad_type base_fad_fad_type;
+
   testADPromote<fad_type>();
   testADPromote<fad_fad_type>();
-  testADPromote<view_fad_type>();
-  testADPromote<view_fad_fad_type>();
-  testADPromote<view_view_fad_type>();
+  testViewPromote<view_fad_type>();
+  testViewPromote<view_fad_fad_type>();
+  testViewPromote<view_view_fad_type>();
 
   static_assert(
     is_same<typename Promote<view_fad_type,fad_type>::type, fad_type >::value,
@@ -139,12 +206,12 @@ bool testFadPromote() {
   typedef decltype(std::declval<view_fad_type>()*std::declval<view_fad_type>()) view_fad_expr_type;
 
   static_assert(
-    is_same<typename Promote<view_fad_type,fad_expr_type>::type, fad_type >::value,
-    "Promote<view_fad_type,fad_expr_type>::type != fad_type");
+    is_same<typename Promote<view_fad_type,fad_expr_type>::type, base_fad_type >::value,
+    "Promote<view_fad_type,fad_expr_type>::type != base_fad_type");
 
   static_assert(
-    is_same<typename Promote<fad_expr_type,view_fad_type>::type, fad_type >::value,
-    "Promote<fad_expr_type,view_fad_type>::type != fad_type");
+    is_same<typename Promote<fad_expr_type,view_fad_type>::type, base_fad_type >::value,
+    "Promote<fad_expr_type,view_fad_type>::type != base_fad_type");
 
   static_assert(
     is_same<typename Promote<fad_type,view_fad_expr_type>::type, fad_type >::value,
@@ -167,20 +234,20 @@ bool testFadPromote() {
     "Promote<fad_fad_expr_type,view_fad_type>::type != fad_fad_type");
 
   static_assert(
-    is_same<typename Promote<view_fad_type,view_fad_fad_expr_type>::type, view_fad_fad_type >::value,
-    "Promote<view_fad_type,view_fad_fad_expr_type>::type != view_fad_type");
+    is_same<typename Promote<view_fad_type,view_fad_fad_expr_type>::type, base_fad_fad_type >::value,
+    "Promote<view_fad_type,view_fad_fad_expr_type>::type != base_fad_fad_type");
 
   static_assert(
-    is_same<typename Promote<view_fad_fad_expr_type,view_fad_type>::type, view_fad_fad_type >::value,
-    "Promote<view_fad_fad_expr_type,view_fad_type>::type != view_fad_type");
+    is_same<typename Promote<view_fad_fad_expr_type,view_fad_type>::type, base_fad_fad_type >::value,
+    "Promote<view_fad_fad_expr_type,view_fad_type>::type != base_fad_fad_type");
 
   static_assert(
-    is_same<typename Promote<fad_type,view_view_fad_expr_type>::type, fad_view_type >::value,
-    "Promote<view_fad_type,view_fad_fad_expr_type>::type != view_fad_type");
+    is_same<typename Promote<fad_type,view_view_fad_expr_type>::type, base_fad_fad_type >::value,
+    "Promote<fad_type,view_fad_fad_expr_type>::type != base_fad_fad_type");
 
   static_assert(
-    is_same<typename Promote<view_view_fad_expr_type,fad_type>::type, fad_view_type >::value,
-    "Promote<view_fad_fad_expr_type,view_fad_type>::type != view_fad_type");
+    is_same<typename Promote<view_view_fad_expr_type,fad_type>::type, base_fad_fad_type >::value,
+    "Promote<view_fad_fad_expr_type,fad_type>::type != base_fad_fad_type");
 
   // These tests are all compile-time tests, so if the test compiles,
   // it passes...
@@ -199,9 +266,9 @@ bool testPromote() {
   return true;
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Promote, Fad, FAD, VIEWFAD )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Promote, Fad, FAD )
 {
-  success = testFadPromote<FAD,VIEWFAD>();
+  success = testFadPromote<FAD>();
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Promote, Other, AD )
@@ -216,40 +283,37 @@ typedef Sacado::Fad::SLFad<double,2*global_fad_size> Fad_SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
 typedef Sacado::Fad::DMFad<double> Fad_DMFadType;
 typedef Sacado::Fad::DVFad<double> Fad_DVFadType;
-typedef Sacado::Fad::SimpleFad<double> Fad_SimpleFadType;
-typedef Sacado::Fad::ViewFad<double,global_fad_size,1> Fad_VFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_DFadType, Fad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_SFadType, Fad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_SLFadType, Fad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_DMFadType, Fad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_DVFadType, Fad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, Fad_SimpleFadType, Fad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_DFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_SFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_SLFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_DMFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, Fad_DVFadType )
 
 typedef Sacado::ELRFad::DFad<double> ELRFad_DFadType;
 typedef Sacado::ELRFad::SLFad<double,2*global_fad_size> ELRFad_SLFadType;
 typedef Sacado::ELRFad::SFad<double,global_fad_size> ELRFad_SFadType;
-typedef Sacado::ELRFad::ViewFad<double,global_fad_size,1> ELRFad_VFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRFad_DFadType, ELRFad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRFad_SFadType, ELRFad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRFad_SLFadType, ELRFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRFad_DFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRFad_SFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRFad_SLFadType )
 
 typedef Sacado::CacheFad::DFad<double> CacheFad_DFadType;
 typedef Sacado::CacheFad::SLFad<double,2*global_fad_size> CacheFad_SLFadType;
 typedef Sacado::CacheFad::SFad<double,global_fad_size> CacheFad_SFadType;
-typedef Sacado::CacheFad::ViewFad<double,global_fad_size,1> CacheFad_VFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, CacheFad_DFadType, CacheFad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, CacheFad_SFadType, CacheFad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, CacheFad_SLFadType, CacheFad_VFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, CacheFad_DFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, CacheFad_SFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, CacheFad_SLFadType )
 
 typedef Sacado::ELRCacheFad::DFad<double> ELRCacheFad_DFadType;
 typedef Sacado::ELRCacheFad::SLFad<double,2*global_fad_size> ELRCacheFad_SLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheFad_SFadType;
-typedef Sacado::ELRCacheFad::ViewFad<double,global_fad_size,1> ELRCacheFad_VFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRCacheFad_DFadType, ELRCacheFad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRCacheFad_SFadType, ELRCacheFad_VFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Promote, Fad, ELRCacheFad_SLFadType, ELRCacheFad_VFadType )
+typedef Sacado::ELRCacheFad::ViewFad<double,global_fad_size,1,ELRCacheFad_DFadType> ELRCacheFad_VFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRCacheFad_DFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRCacheFad_SFadType )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRCacheFad_SLFadType )
 
+typedef Sacado::Fad::SimpleFad<double> SimpleFadType;
 typedef Sacado::LFad::LogicalSparse<double,bool> LFadType;
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, SimpleFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, LFadType )
 
 typedef Sacado::FlopCounterPack::ScalarFlopCounter<double> SFCType;

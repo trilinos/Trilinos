@@ -51,7 +51,9 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_dummy_arg.hpp"
+#include "Sacado_mpl_enable_if.hpp"
 #include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_convertible.hpp"
 #include "Sacado_mpl_is_same.hpp"
 #include <string>
 
@@ -68,17 +70,71 @@ namespace Sacado {
    */
   template <typename A, typename B, typename Enabled = void> struct Promote {};
 
+  //! Specialize this for a given type T to disable default Promote rules
+  template <typename T> struct OverrideDefaultPromote {
+    static const bool value = false;
+  };
+
   //! Specialization of %Promote for a single type
-  template <typename A> struct Promote<A,A> {
+  template <typename A>
+  struct Promote< A, A,
+                  typename mpl::enable_if_c< !OverrideDefaultPromote<A>::value >::type > {
     typedef A type;
   };
 
+  //! Specialization of %Promote when A is convertible to B but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                            !mpl::is_convertible<B,A>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef B type;
+  };
+
+  //! Specialization of %Promote when B is convertible to A but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<B,A>::value &&
+                                            !mpl::is_convertible<A,B>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef A type;
+  };
+
+  //! Determine whether a given type is a view
+  template <typename T>
+  struct IsView {
+    static const bool value = false;
+  };
+
+  //! Get the base Fad type from a view
+  template <typename T>
+  struct BaseFadType {
+    typedef T type;
+  };
+
+  //! Get view type for any Fad type
+  template <typename T,unsigned,unsigned> struct ViewFadType {};
+
+  //! Specialization of %Promote for View-types
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< IsView<A>::value ||
+                                             IsView<B>::value >::type > {
+    typedef typename BaseFadType<A>::type base_fad_type_A;
+    typedef typename BaseFadType<B>::type base_fad_type_B;
+    typedef typename Promote<base_fad_type_A,base_fad_type_B>::type type;
+  };
+
   //! Specialization of %Promote to builtin types
-#define SACADO_PROMOTE_SPECIALIZATION(type1,type2,type3) \
-  template <> struct Promote< type1, type2 > {             \
+#define SACADO_PROMOTE_SPECIALIZATION(type1,type2,type3)   \
+  template <> struct Promote< type1, type2, void > {       \
     typedef type3 type;                                    \
   };                                                       \
-  template <> struct Promote< type2, type1 > {             \
+  template <> struct Promote< type2, type1, void > {       \
     typedef type3 type;                                    \
   };
 
@@ -99,6 +155,89 @@ namespace Sacado {
 #endif // HAVE_SACADO_COMPLEX
 
 #undef SACADO_PROMOTE_SPECIALIZATION
+
+   // Macros for building proper Promote specialization for AD types
+
+#define SACADO_AD_PROMOTE_SPEC(NS, AD) /* */
+
+#define SACADO_AD_PROMOTE_SPEC2(NS, AD) /* */
+
+#define SACADO_FAD_PROMOTE_SPEC(NS, FAD) /* */
+
+#define SACADO_SFAD_PROMOTE_SPEC(NS, FAD) /* */
+
+#define SACADO_EXPR_PROMOTE_SPEC(NS)                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: Expr <T>, U,                                    \
+                  typename mpl::enable_if_c<                            \
+                    mpl::is_convertible< U,                             \
+                                         typename NS :: Expr <T>::value_type \
+                                         >::value &&                    \
+                   !IsView<U>::value >::type > {                        \
+    typedef typename NS :: Expr <T>::base_expr_type type;               \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< U, NS :: Expr <T>,                                    \
+                  typename mpl::enable_if_c<                            \
+                    mpl::is_convertible< U,                             \
+                                         typename NS :: Expr <T>::value_type \
+                                         >::value && \
+                  !IsView<U>::value >::type > {                         \
+    typedef typename NS :: Expr <T>::base_expr_type type;               \
+  };
+
+#define SACADO_VFAD_PROMOTE_SPEC(NS)                                    \
+  namespace NS {                                                        \
+    template <typename,unsigned,unsigned,typename> class ViewFad;       \
+  }                                                                     \
+  template <typename T, unsigned l, unsigned s, typename U>             \
+  struct OverrideDefaultPromote< NS :: ViewFad<T,l,s,U> > {             \
+    static const bool value = true;                                     \
+  };                                                                    \
+
+#define SACADO_RAD_PROMOTE_SPEC(NS)                                     \
+  namespace NS {                                                        \
+    template <typename> class ADvar;                                    \
+    template <typename> class ADvari;                                   \
+  }                                                                     \
+  template <typename T>                                                 \
+  struct OverrideDefaultPromote< NS :: ADvari <T>& > {                  \
+    static const bool value = true;                                     \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  typename NS :: ADvari <T>::value_type > {             \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename NS :: ADvari <T>::value_type,                \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  typename dummy< typename NS :: ADvari <T>::value_type, \
+                                  typename NS :: ADvari <T>::scalar_type \
+                                  >::type > {                           \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename dummy< typename NS :: ADvari <T>::value_type, \
+                                  typename NS :: ADvari <T>::scalar_type \
+                                  >::type,                              \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };
 
   //
   // We define defaults for all of the traits to make Sacado easier to use.
@@ -206,6 +345,18 @@ namespace Sacado {
     static const unsigned value = 0;
   };
 
+  //! Remove const from a type
+  template <typename T>
+  struct RemoveConst {
+    typedef T type;
+  };
+
+  //! Remove const from a type
+  template <typename T>
+  struct RemoveConst< const T > {
+    typedef T type;
+  };
+
   //! Specialization of above classes to builtin types
 #define SACADO_BUILTIN_SPECIALIZATION(t,NAME)             \
   template <> struct ScalarType< t > {                    \
@@ -255,505 +406,6 @@ namespace Sacado {
 #endif
 
 #undef SACADO_BUILTIN_SPECIALIZATION
-
-  template <typename T>
-  struct RemoveConst {
-    typedef T type;
-  };
-
-  template <typename T>
-  struct RemoveConst< const T > {
-    typedef T type;
-  };
-
-  // Macro for building proper Promote specialization for any AD type
-#define SACADO_AD_PROMOTE_SPEC(NS, AD)                                  \
-  template <typename T>                                                 \
-  struct Promote< NS :: AD <T>,                                         \
-                  NS :: AD <T> > {                                      \
-    typedef NS :: AD <T> type;                                          \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: AD <T>,                                         \
-                  NS :: AD <U>,                                         \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: AD <T>, \
-                                                            typename NS :: AD <U>::value_type >::value || \
-                                              mpl::is_same< NS :: AD <U>, \
-                                                            typename NS :: AD <T>::value_type >::value || \
-                                              mpl::is_same< T, U> ::value \
-                                              >::type > {               \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: AD <promote_type> type;                               \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: AD <T>,                                         \
-                  typename NS :: AD <T>::value_type > {                 \
-    typedef NS :: AD <T> type;                                          \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename NS :: AD <T>::value_type,                    \
-                  NS :: AD <T> > {                                      \
-    typedef NS :: AD <T> type;                                          \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: AD <T>,                                         \
-                  typename dummy< typename NS :: AD <T>::value_type,    \
-                                  typename NS :: AD <T>::scalar_type    \
-                                  >::type > {                           \
-    typedef NS :: AD <T> type;                                          \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename dummy< typename NS :: AD <T>::value_type,    \
-                                  typename NS :: AD <T>::scalar_type    \
-                                  >::type,                              \
-                  NS :: AD <T> > {                                      \
-    typedef NS :: AD <T> type;                                          \
-  };                                                                    \
-  namespace NS {                                                        \
-    template <typename> class Expr;                                     \
-  }                                                                     \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: AD <T>,                                         \
-                  NS :: Expr <U>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: AD <T>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: AD <T>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > {                                    \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< NS :: AD <T>, base_expr_type >::type type; \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: Expr <U>,                                       \
-                  NS :: AD <T>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: AD <T>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: AD <T>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > {                                      \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< base_expr_type, NS :: AD <T> >::type type; \
-  };
-
-  // Macro for building proper Promote specialization for any AD type with
-  // 2 template parameters
-#define SACADO_AD_PROMOTE_SPEC2(NS, AD)                                 \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: AD <T,U>,                                       \
-                  NS :: AD <T,U> > {                                    \
-    typedef NS :: AD <T,U> type;                                        \
-  };                                                                    \
-  template <typename T, typename U, typename V>                         \
-  struct Promote< NS :: AD <T,V>,                                       \
-                  NS :: AD <U,V>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: AD <T,V>, \
-                                                            typename NS :: AD <U,V>::value_type >::value || \
-                                              mpl::is_same< NS :: AD <U,V>, \
-                                                            typename NS :: AD <T,V>::value_type >::value || \
-                                              mpl::is_same< T, U> ::value \
-                                              >::type > {               \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: AD <promote_type,V> type;                             \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: AD <T,U>,                                       \
-                  typename NS :: AD <T,U>::value_type > {               \
-    typedef NS :: AD <T,U> type;                                        \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< typename NS :: AD <T,U>::value_type,                  \
-                  NS :: AD <T,U> > {                                    \
-    typedef NS :: AD <T,U> type;                                        \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: AD <T,U>,                                       \
-                  typename dummy< typename NS :: AD <T,U>::value_type,  \
-                                  typename NS :: AD <T,U>::scalar_type  \
-                                  >::type > {                           \
-    typedef NS :: AD <T,U> type;                                        \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< typename dummy< typename NS :: AD <T,U>::value_type,  \
-                                  typename NS :: AD <T,U>::scalar_type  \
-                                  >::type,                              \
-                  NS :: AD <T,U> > {                                    \
-    typedef NS :: AD <T,U> type;                                        \
-  };                                                                    \
-  namespace NS {                                                        \
-    template <typename> class Expr;                                     \
-  }                                                                     \
-  template <typename T, typename U, typename V>                         \
-  struct Promote< NS :: AD <T,U>,                                       \
-                  NS :: Expr <V>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: AD <T,U>, \
-                                                            typename NS :: Expr <V>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: AD <T,U>, \
-                                                            typename NS :: Expr <V>::value_type >::value >::type > {                                    \
-    typedef typename NS :: Expr <V>::base_expr_type base_expr_type;     \
-    typedef typename Promote< NS :: AD <T,U>, base_expr_type >::type type; \
-  };                                                                    \
-  template <typename T, typename U, typename V>                         \
-  struct Promote< NS :: Expr <V>,                                       \
-                  NS :: AD <T,U>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: AD <T,U>, \
-                                                            typename NS :: Expr <V>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: AD <T,U>, \
-                                                            typename NS :: Expr <V>::value_type >::value >::type > {                                    \
-    typedef typename NS :: Expr <V>::base_expr_type base_expr_type;     \
-    typedef typename Promote< base_expr_type, NS :: AD <T,U> >::type type; \
-  };
-
-  // Macro for building proper Promote specialization for any Fad type
-#define SACADO_FAD_PROMOTE_SPEC(NS, FAD)                                \
-  template <typename T>                                                 \
-  struct Promote< NS :: FAD <T>,                                        \
-                  NS :: FAD <T> > {                                     \
-    typedef NS :: FAD <T> type;                                         \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: FAD <T>,                                        \
-                  NS :: FAD <U>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: FAD <T>, \
-                                                            typename NS :: FAD <U>::value_type >::value || \
-                                              mpl::is_same< NS :: FAD <U>, \
-                                                            typename NS :: FAD <T>::value_type >::value || \
-                                              mpl::is_same< T, U> ::value \
-                                             >::type > {               \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: FAD <promote_type> type;                              \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: FAD <T>,                                        \
-                  typename NS :: FAD <T>::value_type > {                \
-    typedef NS :: FAD <T> type;                                         \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename NS :: FAD <T>::value_type,                  \
-                  NS :: FAD <T> > {                                     \
-    typedef NS :: FAD <T> type;                                         \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: FAD <T>,                                        \
-                  typename dummy< typename NS :: FAD <T>::value_type,   \
-                                  typename NS :: FAD <T>::scalar_type   \
-                                  >::type > {                           \
-    typedef NS :: FAD <T> type;                                         \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename dummy< typename NS :: FAD <T>::value_type,   \
-                                  typename NS :: FAD <T>::scalar_type   \
-                                  >::type,                              \
-                  NS :: FAD <T> > {                                     \
-    typedef NS :: FAD <T> type;                                         \
-  };                                                                    \
-  namespace NS {                                                        \
-    template <typename,unsigned,unsigned> class ViewFad;                \
-    template <typename> class Expr;                                     \
-  }                                                                     \
-  template <typename T, typename U, unsigned l, unsigned s>             \
-  struct Promote< NS :: FAD <T>,                                        \
-                  NS :: ViewFad <U,l,s>,                                \
-                  typename mpl::disable_if< mpl::is_same< NS :: FAD <T>, \
-                                                          typename NS :: ViewFad <U,l,s>::value_type > >::type > { \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: FAD <promote_type> type;                              \
-  };                                                                    \
-  template <typename T, typename U, unsigned l, unsigned s>             \
-  struct Promote< NS :: ViewFad <U,l,s>,                                \
-                  NS :: FAD <T>,                                        \
-                  typename mpl::disable_if< mpl::is_same< NS :: FAD <T>, \
-                                                          typename NS :: ViewFad <U,l,s>::value_type > >::type > { \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: FAD <promote_type> type;                              \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: FAD <T>,       \
-                  NS :: Expr <U>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: FAD <T>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: FAD <T>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > { \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< NS :: FAD <T>, base_expr_type >::type type; \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: Expr <U>,                                       \
-                  NS :: FAD <T>,       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: FAD <T>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: FAD <T>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > { \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< base_expr_type, NS :: FAD <T> >::type type; \
-  };
-
-// Macro for building proper Promote specialization for any SFad type
-#define SACADO_SFAD_PROMOTE_SPEC(NS, FAD)                                \
-  template <typename T, int N>                                          \
-  struct Promote< NS :: FAD <T,N>,                                      \
-                  NS :: FAD <T,N> > {                                   \
-    typedef NS :: FAD <T,N> type;                                       \
-  };                                                                    \
-  template <typename T, typename U, int N>                              \
-  struct Promote< NS :: FAD <T,N>,                                      \
-                  NS :: FAD <U,N>,                                      \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: FAD <T,N>, \
-                                                            typename NS :: FAD <U,N>::value_type >::value || \
-                                              mpl::is_same< NS :: FAD <U,N>, \
-                                                            typename NS :: FAD <T,N>::value_type >::value || \
-                                              mpl::is_same< T, U> ::value \
-                                             >::type > {               \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: FAD <promote_type,N> type;                            \
-  };                                                                    \
-  template <typename T, int N>                                          \
-  struct Promote< NS :: FAD <T,N>,                                      \
-                  typename NS :: FAD <T,N>::value_type > {              \
-    typedef NS :: FAD <T,N> type;                                       \
-  };                                                                    \
-  template <typename T, int N>                                          \
-  struct Promote< typename NS :: FAD <T,N>::value_type,                 \
-                  NS :: FAD <T,N> > {                                   \
-    typedef NS :: FAD <T,N> type;                                       \
-  };                                                                    \
-  template <typename T, int N>                                          \
-  struct Promote< NS :: FAD <T,N>,                                      \
-                  typename dummy< typename NS :: FAD <T,N>::value_type, \
-                                  typename NS :: FAD <T,N>::scalar_type \
-                                  >::type > {                           \
-    typedef NS :: FAD <T,N> type;                                       \
-  };                                                                    \
-  template <typename T, int N>                                          \
-  struct Promote< typename dummy< typename NS :: FAD <T,N>::value_type, \
-                                  typename NS :: FAD <T,N>::scalar_type \
-                                  >::type,                              \
-                  NS :: FAD <T,N> > {                                   \
-    typedef NS :: FAD <T,N> type;                                       \
-  };                                                                    \
-  namespace NS {                                                        \
-    template <typename,unsigned,unsigned> class ViewFad;                \
-    template <typename> class Expr;                                     \
-  }                                                                     \
-  template <typename T, int N, typename U, unsigned l, unsigned s>      \
-  struct Promote< NS :: FAD <T,N>,                                        \
-                  NS :: ViewFad <U,l,s>,                                \
-                  typename mpl::disable_if< mpl::is_same< NS :: FAD <T,N>, \
-                                                          typename NS :: ViewFad <U,l,s>::value_type > >::type > { \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: FAD <promote_type,N> type;                            \
-  };                                                                    \
-  template <typename T, int N, typename U, unsigned l, unsigned s>      \
-  struct Promote< NS :: ViewFad <U,l,s>,                                \
-                  NS :: FAD <T,N>,                                        \
-                  typename mpl::disable_if< mpl::is_same< NS :: FAD <T,N>, \
-                                                          typename NS :: ViewFad <U,l,s>::value_type > >::type > { \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: FAD <promote_type,N> type;                            \
-  };                                                                    \
-  template <typename T, int N, typename U>                              \
-  struct Promote< NS :: FAD <T,N>,       \
-                  NS :: Expr <U>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: FAD <T,N>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: FAD <T,N>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > { \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< NS :: FAD <T,N>, base_expr_type >::type type; \
-  };                                                                    \
-  template <typename T, int N, typename U>                              \
-  struct Promote< NS :: Expr <U>,                                       \
-                  NS :: FAD <T,N>,       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: FAD <T,N>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: FAD <T,N>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > { \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< base_expr_type, NS :: FAD <T,N> >::type type; \
-  };
-
-// Macro for building proper Promote specialization for any Fad type
-#define SACADO_EXPR_PROMOTE_SPEC(NS)                                    \
-  template <typename U>                                                 \
-  struct Promote< typename NS :: Expr <U>::base_expr_type,              \
-                  NS :: Expr <U> > {                                    \
-    typedef typename NS :: Expr <U>::base_expr_type type;               \
-  };                                                                    \
-  template <typename U>                                                 \
-  struct Promote< NS :: Expr <U>,                                       \
-                  typename NS :: Expr <U>::base_expr_type > {           \
-    typedef typename NS :: Expr <U>::base_expr_type type;               \
-  };                                                                    \
-  template <typename U>                                                 \
-  struct Promote< typename NS :: Expr <U>::value_type,                  \
-                  NS :: Expr <U> > {                                    \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename NS :: Expr <U>::value_type value_type;             \
-    typedef typename Promote< value_type, base_expr_type >::type type;  \
-  };                                                                    \
-  template <typename U>                                                 \
-  struct Promote< NS :: Expr <U>,                                       \
-                  typename NS :: Expr <U>::value_type > {               \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename NS :: Expr <U>::value_type value_type;             \
-    typedef typename Promote< base_expr_type, value_type >::type type;  \
-  };                                                                    \
-  template <typename U>                                                 \
-  struct Promote< typename dummy< typename NS :: Expr <U>::value_type,  \
-                                  typename NS :: Expr <U>::scalar_type  \
-                                >::type,                                \
-                  NS :: Expr <U> > {                                    \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename dummy< typename NS :: Expr <U>::value_type,        \
-                            typename NS :: Expr <U>::scalar_type        \
-                          >::type scalar_type;                          \
-    typedef typename Promote< scalar_type, base_expr_type >::type type; \
-  };                                                                    \
-  template <typename U>                                                 \
-  struct Promote< NS :: Expr <U>,                                       \
-                  typename dummy< typename NS :: Expr <U>::value_type,  \
-                                  typename NS :: Expr <U>::scalar_type  \
-                                >::type > {                             \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename dummy< typename NS :: Expr <U>::value_type,        \
-                            typename NS :: Expr <U>::scalar_type        \
-                          >::type scalar_type;                          \
-    typedef typename Promote< base_expr_type, scalar_type >::type type; \
-  };
-
-// Macro for building proper Promote specialization for any ViewFad type
-#define SACADO_VFAD_PROMOTE_SPEC(NS)                                    \
-  template <typename T, unsigned l, unsigned s>                         \
-  struct Promote< NS :: ViewFad <T,l,s>,                                \
-                  NS :: ViewFad <T,l,s> > {                             \
-    typedef NS :: ViewFad <T,l,s> type;                                 \
-  };                                                                    \
-  template <typename T, typename U, unsigned l, unsigned s>             \
-  struct Promote< NS :: ViewFad <T,l,s>,                                \
-                  NS :: ViewFad <U,l,s>,                                \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: ViewFad <T,l,s>, \
-                                                            typename NS :: ViewFad <U,l,s>::value_type >::value || \
-                                              mpl::is_same< NS :: ViewFad <U,l,s>, \
-                                                            typename NS :: ViewFad <T,l,s>::value_type >::value || \
-                                              mpl::is_same< T, U> ::value \
-                                              >::type > {               \
-    typedef typename Promote<T,U>::type promote_type;                   \
-    typedef NS :: ViewFad <promote_type,l,s> type;                      \
-  };                                                                    \
-  template <typename T, unsigned l, unsigned s>                         \
-  struct Promote< NS :: ViewFad <T,l,s>,                                \
-                  typename NS :: ViewFad <T,l,s>::value_type > {        \
-    typedef NS :: ViewFad <T,l,s> type;                                 \
-  };                                                                    \
-  template <typename T, unsigned l, unsigned s>                         \
-  struct Promote< typename NS :: ViewFad <T,l,s>::value_type,           \
-                  NS :: ViewFad <T,l,s> > {                             \
-    typedef NS :: ViewFad <T,l,s> type;                                 \
-  };                                                                    \
-  template <typename T, unsigned l, unsigned s>                         \
-  struct Promote< NS :: ViewFad <T,l,s>,                                \
-                  typename dummy< typename NS :: ViewFad <T,l,s>::value_type, \
-                                  typename NS :: ViewFad <T,l,s>::scalar_type \
-                                  >::type > {                           \
-    typedef NS :: ViewFad <T,l,s> type;                                 \
-  };                                                                    \
-  template <typename T, unsigned l, unsigned s>                         \
-  struct Promote< typename dummy< typename NS :: ViewFad <T,l,s>::value_type, \
-                                  typename NS :: ViewFad <T,l,s>::scalar_type \
-                                  >::type,                              \
-                  NS :: ViewFad <T,l,s> > {                             \
-    typedef NS :: ViewFad <T,l,s> type;                                 \
-  };                                                                    \
-  namespace NS {                                                        \
-    template <typename> class Expr;                                     \
-  }                                                                     \
-  template <typename T, unsigned l, unsigned s, typename U>             \
-  struct Promote< NS :: ViewFad <T,l,s>,                                \
-                  NS :: Expr <U>,                                       \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: ViewFad <T,l,s>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: ViewFad <T,l,s>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > { \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< NS :: ViewFad <T,l,s>, base_expr_type >::type type; \
-  };                                                                    \
-  template <typename T, unsigned l, unsigned s, typename U>             \
-  struct Promote< NS :: Expr <U>,                                       \
-                  NS :: ViewFad <T,l,s>,                                \
-                  typename mpl::disable_if_c< mpl::is_same< NS :: ViewFad <T,l,s>, \
-                                                            typename NS :: Expr <U>::base_expr_type >::value || \
-                                              mpl::is_same< NS :: ViewFad <T,l,s>, \
-                                                            typename NS :: Expr <U>::value_type >::value >::type > { \
-    typedef typename NS :: Expr <U>::base_expr_type base_expr_type;     \
-    typedef typename Promote< base_expr_type, NS :: ViewFad <T,l,s> >::type type; \
-  };
-
-   // Macro for building proper Promote specialization for any RAD type
-#define SACADO_RAD_PROMOTE_SPEC(NS)                                     \
-  namespace NS {                                                        \
-    template <typename> class ADvar;                                    \
-    template <typename> class ADvari;                                   \
-  }                                                                     \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvar <T>,                                      \
-                  NS :: ADvar <T> > {                                   \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvar <T>,                                      \
-                  typename NS :: ADvar <T>::value_type > {              \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename NS :: ADvar <T>::value_type,                 \
-                  NS :: ADvar <T> > {                                   \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvar <T>,                                      \
-                  typename dummy< typename NS :: ADvar <T>::value_type, \
-                                  typename NS :: ADvar <T>::scalar_type \
-                                  >::type > {                           \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename dummy< typename NS :: ADvar <T>::value_type, \
-                                  typename NS :: ADvar <T>::scalar_type \
-                                  >::type,                              \
-                  NS :: ADvar <T> > {                                   \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvar <T>,                                      \
-                  NS :: ADvari <T>& > {                                 \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvari <T>&,                                    \
-                  NS :: ADvar <T> > {                                   \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvari <T>&,                                    \
-                  typename NS :: ADvari <T>::value_type > {             \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename NS :: ADvari <T>::value_type,                \
-                  NS :: ADvari <T>& > {                                 \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< NS :: ADvari <T>&,                                    \
-                  typename dummy< typename NS :: ADvari <T>::value_type, \
-                                  typename NS :: ADvari <T>::scalar_type \
-                                  >::type > {                           \
-    typedef NS :: ADvar <T> type;                                       \
-  };                                                                    \
-  template <typename T>                                                 \
-  struct Promote< typename dummy< typename NS :: ADvari <T>::value_type, \
-                                  typename NS :: ADvari <T>::scalar_type \
-                                  >::type,                              \
-                  NS :: ADvari <T>& > {                                 \
-    typedef NS :: ADvar <T> type;                                       \
-  };
 
 } // namespace Sacado
 

@@ -34,24 +34,8 @@
 #include "Sacado_Fad_ViewFadTraits.hpp"
 #include "Sacado_Fad_ViewStorage.hpp"
 
-namespace Sacado {
-
-  namespace Fad {
-
-    /*!
-     * \brief Forward-mode AD class using dynamic memory allocation and
-     * expression templates.
-     */
-    /*!
-     * This is the user-level class for forward mode AD with dynamic
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is not known at compile time.  The user
-     * interface is provided by Sacado::Fad::GeneralFad.
-     */
+#define FAD_NS Fad
 #include "Sacado_Fad_ViewFad_tmpl.hpp"
-
-  } // namespace Fad
-
-} // namespace Sacado
+#undef FAD_NS
 
 #endif // SACADO_FAD_VIEWFAD_HPP

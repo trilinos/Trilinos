@@ -32,6 +32,7 @@
 
 #include "Sacado_ScalarFlopCounterTraits.hpp"
 #include "Sacado_Base.hpp"
+#include "Sacado_SFINAE_Macros.hpp"
 #include <cmath>
 #include <algorithm>    // for std::min and std::max
 #include <ostream>      // for std::ostream

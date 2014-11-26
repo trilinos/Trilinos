@@ -51,19 +51,15 @@
 
 #include "Sacado_ConfigDefs.h"
 
-#define SACADO_GENERALFAD_ENABLE_FUNC \
-  typename Sacado::mpl::enable_if< \
-    Sacado::mpl::is_same< \
-      typename Sacado::Fad::Expr<S>::value_type, \
-      typename Sacado::Fad::GeneralFad<T,Storage>::value_type\
-    >, \
-    Sacado::Fad::GeneralFad<T,Storage>& \
-  >::type
+namespace Sacado {
+namespace Fad {
+
+#define FAD GeneralFad<T,Storage>
 
 template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Sacado::Fad::GeneralFad<T,Storage>::
+GeneralFad<T,Storage>::
 GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DEF) :
   Storage(x.size(), T(0.)),
   update_val_(x.updateValue())
@@ -87,7 +83,7 @@ GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DEF) :
 template <typename T, typename Storage>
 KOKKOS_INLINE_FUNCTION
 void
-Sacado::Fad::GeneralFad<T,Storage>::
+GeneralFad<T,Storage>::
 diff(const int ith, const int n)
 {
   if (this->size() != n)
@@ -100,9 +96,9 @@ diff(const int ith, const int n)
 
 template <typename T, typename Storage>
 KOKKOS_INLINE_FUNCTION
-Sacado::Fad::GeneralFad<T,Storage>&
-Sacado::Fad::GeneralFad<T,Storage>::
-operator=(const Sacado::Fad::GeneralFad<T,Storage>& x)
+GeneralFad<T,Storage>&
+GeneralFad<T,Storage>::
+operator=(const GeneralFad<T,Storage>& x)
 {
   // Copy value & dx_
   Storage::operator=(x);
@@ -114,8 +110,8 @@ operator=(const Sacado::Fad::GeneralFad<T,Storage>& x)
 template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-SACADO_GENERALFAD_ENABLE_FUNC
-Sacado::Fad::GeneralFad<T,Storage>::
+SACADO_FAD_ENABLE_EXPR_FUNC
+GeneralFad<T,Storage>::
 operator=(const Expr<S>& x)
 {
   const int xsz = x.size();
@@ -148,9 +144,9 @@ operator=(const Expr<S>& x)
 
 template <typename T, typename Storage>
 KOKKOS_INLINE_FUNCTION
-Sacado::Fad::GeneralFad<T,Storage>&
-Sacado::Fad::GeneralFad<T,Storage>::
-operator += (const Sacado::Fad::GeneralFad<T,Storage>& x)
+GeneralFad<T,Storage>&
+GeneralFad<T,Storage>::
+operator += (const GeneralFad<T,Storage>& x)
 {
   const int xsz = x.size(), sz = this->size();
 
@@ -180,9 +176,9 @@ operator += (const Sacado::Fad::GeneralFad<T,Storage>& x)
 
 template <typename T, typename Storage>
 KOKKOS_INLINE_FUNCTION
-Sacado::Fad::GeneralFad<T,Storage>&
-Sacado::Fad::GeneralFad<T,Storage>::
-operator -= (const Sacado::Fad::GeneralFad<T,Storage>& x)
+GeneralFad<T,Storage>&
+GeneralFad<T,Storage>::
+operator -= (const GeneralFad<T,Storage>& x)
 {
   const int xsz = x.size(), sz = this->size();
 
@@ -213,9 +209,9 @@ operator -= (const Sacado::Fad::GeneralFad<T,Storage>& x)
 
 template <typename T, typename Storage>
 KOKKOS_INLINE_FUNCTION
-Sacado::Fad::GeneralFad<T,Storage>&
-Sacado::Fad::GeneralFad<T,Storage>::
-operator *= (const Sacado::Fad::GeneralFad<T,Storage>& x)
+GeneralFad<T,Storage>&
+GeneralFad<T,Storage>::
+operator *= (const GeneralFad<T,Storage>& x)
 {
   const int xsz = x.size(), sz = this->size();
   T xval = x.val();
@@ -253,9 +249,9 @@ operator *= (const Sacado::Fad::GeneralFad<T,Storage>& x)
 
 template <typename T, typename Storage>
 KOKKOS_INLINE_FUNCTION
-Sacado::Fad::GeneralFad<T,Storage>&
-Sacado::Fad::GeneralFad<T,Storage>::
-operator /= (const Sacado::Fad::GeneralFad<T,Storage>& x)
+GeneralFad<T,Storage>&
+GeneralFad<T,Storage>::
+operator /= (const GeneralFad<T,Storage>& x)
 {
   const int xsz = x.size(), sz = this->size();
   T xval = x.val();
@@ -295,9 +291,9 @@ operator /= (const Sacado::Fad::GeneralFad<T,Storage>& x)
 template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-SACADO_GENERALFAD_ENABLE_FUNC
-Sacado::Fad::GeneralFad<T,Storage>::
-operator += (const Sacado::Fad::Expr<S>& x)
+SACADO_FAD_ENABLE_EXPR_FUNC
+GeneralFad<T,Storage>::
+operator += (const Expr<S>& x)
 {
   const int xsz = x.size(), sz = this->size();
 
@@ -336,9 +332,9 @@ operator += (const Sacado::Fad::Expr<S>& x)
 template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-SACADO_GENERALFAD_ENABLE_FUNC
-Sacado::Fad::GeneralFad<T,Storage>::
-operator -= (const Sacado::Fad::Expr<S>& x)
+SACADO_FAD_ENABLE_EXPR_FUNC
+GeneralFad<T,Storage>::
+operator -= (const Expr<S>& x)
 {
   const int xsz = x.size(), sz = this->size();
 
@@ -378,9 +374,9 @@ operator -= (const Sacado::Fad::Expr<S>& x)
 template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-SACADO_GENERALFAD_ENABLE_FUNC
-Sacado::Fad::GeneralFad<T,Storage>::
-operator *= (const Sacado::Fad::Expr<S>& x)
+SACADO_FAD_ENABLE_EXPR_FUNC
+GeneralFad<T,Storage>::
+operator *= (const Expr<S>& x)
 {
   const int xsz = x.size(), sz = this->size();
   T xval = x.val();
@@ -427,9 +423,9 @@ operator *= (const Sacado::Fad::Expr<S>& x)
 template <typename T, typename Storage>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-SACADO_GENERALFAD_ENABLE_FUNC
-Sacado::Fad::GeneralFad<T,Storage>::
-operator /= (const Sacado::Fad::Expr<S>& x)
+SACADO_FAD_ENABLE_EXPR_FUNC
+GeneralFad<T,Storage>::
+operator /= (const Expr<S>& x)
 {
   const int xsz = x.size(), sz = this->size();
   T xval = x.val();
@@ -473,4 +469,7 @@ operator /= (const Sacado::Fad::Expr<S>& x)
   return *this;
 }
 
-#undef SACADO_GENERALFAD_ENABLE_FUNC
+#undef FAD
+
+} // namespace Fad
+} // namespace Sacado

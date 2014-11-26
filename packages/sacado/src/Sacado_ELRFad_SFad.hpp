@@ -417,130 +417,16 @@ namespace Sacado {
 
     }; // class Expr<SFadExprTag>
 
-    /*!
-     * Forward-mode AD class using static memory allocation and
-     * expression level reverse mode.
-     */
-    /*!
-     * This is the user-level class for forward mode AD with static
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is known at compile time.  The size
-     * of the derivative array is fixed by the template parameter \c Num.
-     */
-#include "Sacado_Fad_SFad_tmpl.hpp"
-
   } // namespace ELRFad
 
 } // namespace Sacado
 
+#define FAD_NS ELRFad
+#include "Sacado_Fad_SFad_tmpl.hpp"
+#undef FAD_NS
+
+#include "Sacado_ELRFad_ViewFad.hpp"
 #include "Sacado_ELRFad_SFadImp.hpp"
 #include "Sacado_ELRFad_Ops.hpp"
-
-//
-// Classes needed for Kokkos::View< SFad<...> ... > specializations
-//
-// Users can disable these view specializations either at configure time or
-// by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
-//
-
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#include "impl/Kokkos_AnalyzeShape.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
-#include "Sacado_ELRFad_ViewFad.hpp"
-
-namespace Kokkos {
-namespace Impl {
-
-// Forward declarations
-struct ViewSpecializeSacadoFad;
-template <typename T,unsigned,unsigned> struct ViewFadType;
-
-//! The View Fad type associated with this type
-template< class ValueType, int N, unsigned length, unsigned stride >
-struct ViewFadType< Sacado::ELRFad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::ELRFad::ViewFad<ValueType,length,stride> type;
-};
-
-//! The View Fad type associated with this type
-template< class ValueType, int N, unsigned length, unsigned stride >
-struct ViewFadType< const Sacado::ELRFad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::ELRFad::ViewFad<const ValueType,length,stride> type;
-};
-
-/** \brief  Analyze the array shape of a Sacado::ELRFad::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::ELRFad::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, int N >
-struct AnalyzeShape< Sacado::ELRFad::SFad< ValueType, N > >
-  : Shape< sizeof(Sacado::ELRFad::SFad< ValueType, N >) , 0 > // Treat as a scalar
-{
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef Shape< sizeof(Sacado::ELRFad::SFad< ValueType, N >) , 0 > shape ;
-
-  typedef       Sacado::ELRFad::SFad< ValueType, N >        array_intrinsic_type ;
-  typedef const Sacado::ELRFad::SFad< ValueType, N >  const_array_intrinsic_type ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  type ;
-  typedef const Sacado::ELRFad::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::ELRFad::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  non_const_value_type ;
-};
-
-/** \brief  Analyze the array shape of a Sacado::ELRFad::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::ELRFad::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, class Layout, int N >
-struct AnalyzeSacadoShape< Sacado::ELRFad::SFad< ValueType, N >, Layout >
-  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape , N+1 >::type
-{
-private:
-
-  typedef AnalyzeSacadoShape< ValueType, Layout > nested ;
-
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef typename ShapeInsert< typename nested::shape , N+1 >::type shape ;
-
-  typedef typename nested::array_intrinsic_type         array_intrinsic_type [N+1];
-  typedef typename nested::const_array_intrinsic_type   const_array_intrinsic_type [N+1] ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  type ;
-  typedef const Sacado::ELRFad::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::ELRFad::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::ELRFad::SFad< ValueType, N >  non_const_value_type ;
-
-  typedef typename nested::type           flat_array_type ;
-  typedef typename nested::const_type     const_flat_array_type ;
-  typedef typename nested::non_const_type non_const_flat_array_type ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif
 
 #endif // SACADO_ELRFAD_SFAD_HPP

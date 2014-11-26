@@ -94,23 +94,4 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #define KOKKOS_FORCEINLINE_FUNCTION  inline
 #endif
 
-#include "Sacado_mpl_enable_if.hpp"
-#include "Sacado_mpl_is_same.hpp"
-#include "Sacado_mpl_is_convertible.hpp"
-
-/* Define some macros useful for disabling template function overloads */
-#define SACADO_ENABLE_IF_SAME(TYPE1, TYPE2, RETURN_TYPE)              \
-  typename Sacado::mpl::enable_if<Sacado::mpl::is_same< TYPE1 , TYPE2 >, RETURN_TYPE >::type
-#define SACADO_ENABLE_EXPR_FUNC(RETURN_TYPE) \
-  SACADO_ENABLE_IF_SAME(typename Expr<S>::value_type, value_type, RETURN_TYPE)
-#define SACADO_ENABLE_EXPR_CTOR_DEF SACADO_ENABLE_EXPR_FUNC(void*)
-#define SACADO_ENABLE_EXPR_CTOR_DECL SACADO_ENABLE_EXPR_CTOR_DEF = 0
-
-#define SACADO_ENABLE_IF_CONVERTIBLE(TYPE1, TYPE2, RETURN_TYPE)              \
-  typename Sacado::mpl::enable_if<Sacado::mpl::is_convertible< TYPE1 , TYPE2 >, RETURN_TYPE >::type
-#define SACADO_ENABLE_VALUE_FUNC(RETURN_TYPE) \
-  SACADO_ENABLE_IF_CONVERTIBLE(S, value_type, RETURN_TYPE)
-#define SACADO_ENABLE_VALUE_CTOR_DEF SACADO_ENABLE_VALUE_FUNC(void*)
-#define SACADO_ENABLE_VALUE_CTOR_DECL SACADO_ENABLE_VALUE_CTOR_DEF = 0
-
 #endif /* SACADO_CONFIGDEFS_H */

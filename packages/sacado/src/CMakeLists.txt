@@ -270,6 +270,7 @@ SET(HEADERS ${HEADERS}
   Sacado_cmath.hpp
   Sacado_dummy_arg.hpp
   Sacado_Base.hpp
+  Sacado_SFINAE_Macros.hpp
   )
 
 #

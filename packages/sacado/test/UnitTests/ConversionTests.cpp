@@ -105,6 +105,9 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
 
   TEST_EQUALITY_CONST( is_ad_expr_ad, true );
   TEST_EQUALITY_CONST( is_val_expr_ad, true );
+
+  // typedef typename ad_expr_type::value_type ad_expr_value_type;
+  // std::cout << typeid(ad_expr_value_type).name() << std::endl;
 #endif
 
   return success;
@@ -154,6 +157,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Conversion, ViewConversions, AD )
   success = true;
   success = success && test_ad_conversions<ad_type>(out);
   success = success && test_ad_conversions<ad_ad_type>(out);
+
+  // ad_ad_type x;
+  // ad_ad_type y = x*x;
 }
 
 // Check various other conversions work as expected
@@ -175,7 +181,7 @@ typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
 typedef Sacado::Fad::DMFad<double> Fad_DMFadType;
 typedef Sacado::Fad::DVFad<double> Fad_DVFadType;
 typedef Sacado::Fad::SimpleFad<double> Fad_SimpleFadType;
-typedef Sacado::Fad::ViewFad<double,global_fad_size,1> Fad_VFadType;
+typedef Sacado::Fad::ViewFad<double,global_fad_size,1,Fad_DFadType> Fad_VFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SFadType )
@@ -187,7 +193,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ViewConversions, Fad_VFadType 
 typedef Sacado::ELRFad::DFad<double> ELRFad_DFadType;
 typedef Sacado::ELRFad::SLFad<double,global_fad_size> ELRFad_SLFadType;
 typedef Sacado::ELRFad::SFad<double,global_fad_size> ELRFad_SFadType;
-typedef Sacado::ELRFad::ViewFad<double,global_fad_size,1> ELRFad_VFadType;
+typedef Sacado::ELRFad::ViewFad<double,global_fad_size,1,ELRFad_DFadType> ELRFad_VFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, ELRFad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, ELRFad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, ELRFad_SFadType )
@@ -196,7 +202,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ViewConversions, ELRFad_VFadTy
 typedef Sacado::CacheFad::DFad<double> CacheFad_DFadType;
 typedef Sacado::CacheFad::SLFad<double,global_fad_size> CacheFad_SLFadType;
 typedef Sacado::CacheFad::SFad<double,global_fad_size> CacheFad_SFadType;
-typedef Sacado::CacheFad::ViewFad<double,global_fad_size,1> CacheFad_VFadType;
+typedef Sacado::CacheFad::ViewFad<double,global_fad_size,1,CacheFad_DFadType> CacheFad_VFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, CacheFad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, CacheFad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, CacheFad_SFadType )
@@ -205,7 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ViewConversions, CacheFad_VFad
 typedef Sacado::ELRCacheFad::DFad<double> ELRCacheFad_DFadType;
 typedef Sacado::ELRCacheFad::SLFad<double,global_fad_size> ELRCacheFad_SLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheFad_SFadType;
-typedef Sacado::ELRCacheFad::ViewFad<double,global_fad_size,1> ELRCacheFad_VFadType;
+typedef Sacado::ELRCacheFad::ViewFad<double,global_fad_size,1,ELRCacheFad_DFadType> ELRCacheFad_VFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, ELRCacheFad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, ELRCacheFad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, ELRCacheFad_SFadType )

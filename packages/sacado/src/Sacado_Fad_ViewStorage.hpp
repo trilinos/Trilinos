@@ -42,7 +42,7 @@ namespace Sacado {
      * memory allocation.  It does not provide proper value semantics and
      * thus should not be used in a general-purpose scalar type.
      */
-    template <typename T, unsigned static_length, unsigned static_stride>
+    template <typename T, unsigned static_length, unsigned static_stride, typename U>
     class ViewStorage {
 
     private:

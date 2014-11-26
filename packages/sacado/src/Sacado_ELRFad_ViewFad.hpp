@@ -34,24 +34,8 @@
 #include "Sacado_ELRFad_ViewFadTraits.hpp"
 #include "Sacado_Fad_ViewStorage.hpp"
 
-namespace Sacado {
-
-  namespace ELRFad {
-
-    /*!
-     * \brief Forward-mode AD class using dynamic memory allocation and
-     * expression templates.
-     */
-    /*!
-     * This is the user-level class for forward mode AD with dynamic
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is not known at compile time.  The user
-     * interface is provided by Sacado::ELRFad::GeneralFad.
-     */
+#define FAD_NS ELRFad
 #include "Sacado_Fad_ViewFad_tmpl.hpp"
-
-  } // namespace ELRFad
-
-} // namespace Sacado
+#undef FAD_NS
 
 #endif // SACADO_ELRFAD_VIEWFAD_HPP

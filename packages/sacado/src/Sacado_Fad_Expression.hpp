@@ -75,8 +75,27 @@ namespace Sacado {
      */
     template <typename ExprT> class Expr {};
 
+    //! Meta-function for determining nesting with an expression
+    /*!
+     * This determines the level of nesting within nested Fad types.
+     * The default implementation works for any type that isn't a Fad type
+     * or an expression of Fad types.
+     */
+    template <typename T>
+    struct ExprLevel {
+      static const unsigned value = 0;
+    };
+
+    template <typename T>
+    struct ExprLevel< Expr<T> > {
+      static const unsigned value =
+        ExprLevel< typename Expr<T>::value_type >::value + 1;
+    };
+
   } // namespace Fad
 
 } // namespace Sacado
+
+#include "Sacado_SFINAE_Macros.hpp"
 
 #endif // SACADO_FAD_EXPRESSION_HPP

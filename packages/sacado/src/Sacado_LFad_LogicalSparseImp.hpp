@@ -51,18 +51,14 @@
 
 #include "Sacado_ConfigDefs.h"
 
-#define SACADO_LFAD_ENABLE_FUNC \
-  typename Sacado::mpl::enable_if< \
-    Sacado::mpl::is_same< \
-      typename Sacado::LFad::Expr<S>::value_type, \
-      typename Sacado::LFad::LogicalSparseImp<ValT,LogT>::value_type\
-    >, \
-    Sacado::LFad::LogicalSparseImp<ValT,LogT>& \
-  >::type
+namespace Sacado {
+namespace LFad {
+
+#define FAD LogicalSparseImp<ValT,LogT>
 
 template <typename ValT, typename LogT>
 template <typename S>
-inline Sacado::LFad::LogicalSparseImp<ValT,LogT>::
+inline LogicalSparseImp<ValT,LogT>::
 LogicalSparseImp(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DEF) :
   Storage(value_type(0))
 {
@@ -86,7 +82,7 @@ LogicalSparseImp(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DEF) :
 
 template <typename ValT, typename LogT>
 inline void
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
+LogicalSparseImp<ValT,LogT>::
 diff(const int ith, const int n)
 {
   if (this->size() != n)
@@ -98,9 +94,9 @@ diff(const int ith, const int n)
 }
 
 template <typename ValT, typename LogT>
-inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator=(const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
+inline LogicalSparseImp<ValT,LogT>&
+LogicalSparseImp<ValT,LogT>::
+operator=(const LogicalSparseImp<ValT,LogT>& x)
 {
   // Copy value & dx_
   Storage::operator=(x);
@@ -110,8 +106,8 @@ operator=(const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
 
 template <typename ValT, typename LogT>
 template <typename S>
-inline SACADO_LFAD_ENABLE_FUNC
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
+inline SACADO_FAD_ENABLE_EXPR_FUNC
+LogicalSparseImp<ValT,LogT>::
 operator=(const Expr<S>& x)
 {
   int sz = x.size();
@@ -134,9 +130,9 @@ operator=(const Expr<S>& x)
 }
 
 template <typename ValT, typename LogT>
-inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator += (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
+inline LogicalSparseImp<ValT,LogT>&
+LogicalSparseImp<ValT,LogT>::
+operator += (const LogicalSparseImp<ValT,LogT>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -163,9 +159,9 @@ operator += (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
 }
 
 template <typename ValT, typename LogT>
-inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator -= (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
+inline LogicalSparseImp<ValT,LogT>&
+LogicalSparseImp<ValT,LogT>::
+operator -= (const LogicalSparseImp<ValT,LogT>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -193,9 +189,9 @@ operator -= (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
 }
 
 template <typename ValT, typename LogT>
-inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator *= (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
+inline LogicalSparseImp<ValT,LogT>&
+LogicalSparseImp<ValT,LogT>::
+operator *= (const LogicalSparseImp<ValT,LogT>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -222,9 +218,9 @@ operator *= (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
 }
 
 template <typename ValT, typename LogT>
-inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator /= (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
+inline LogicalSparseImp<ValT,LogT>&
+LogicalSparseImp<ValT,LogT>::
+operator /= (const LogicalSparseImp<ValT,LogT>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -252,9 +248,9 @@ operator /= (const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x)
 
 template <typename ValT, typename LogT>
 template <typename S>
-inline SACADO_LFAD_ENABLE_FUNC
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator += (const Sacado::LFad::Expr<S>& x)
+inline SACADO_FAD_ENABLE_EXPR_FUNC
+LogicalSparseImp<ValT,LogT>::
+operator += (const Expr<S>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -290,9 +286,9 @@ operator += (const Sacado::LFad::Expr<S>& x)
 
 template <typename ValT, typename LogT>
 template <typename S>
-inline SACADO_LFAD_ENABLE_FUNC
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator -= (const Sacado::LFad::Expr<S>& x)
+inline SACADO_FAD_ENABLE_EXPR_FUNC
+LogicalSparseImp<ValT,LogT>::
+operator -= (const Expr<S>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -329,9 +325,9 @@ operator -= (const Sacado::LFad::Expr<S>& x)
 
 template <typename ValT, typename LogT>
 template <typename S>
-inline SACADO_LFAD_ENABLE_FUNC
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator *= (const Sacado::LFad::Expr<S>& x)
+inline SACADO_FAD_ENABLE_EXPR_FUNC
+LogicalSparseImp<ValT,LogT>::
+operator *= (const Expr<S>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -367,9 +363,9 @@ operator *= (const Sacado::LFad::Expr<S>& x)
 
 template <typename ValT, typename LogT>
 template <typename S>
-inline SACADO_LFAD_ENABLE_FUNC
-Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator /= (const Sacado::LFad::Expr<S>& x)
+inline SACADO_FAD_ENABLE_EXPR_FUNC
+LogicalSparseImp<ValT,LogT>::
+operator /= (const Expr<S>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -403,4 +399,7 @@ operator /= (const Sacado::LFad::Expr<S>& x)
   return *this;
 }
 
-#undef SACADO_LFAD_ENABLE_FUNC
+#undef FAD
+
+} // namespace LFad
+} // namespace Sacado

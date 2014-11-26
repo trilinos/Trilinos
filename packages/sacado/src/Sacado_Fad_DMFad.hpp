@@ -244,7 +244,25 @@ namespace Sacado {
       typedef DMFad<T> type;
     };
 
+    template <typename T>
+    struct ExprLevel< DMFad<T> > {
+      static const unsigned value =
+        ExprLevel< typename DFad<T>::value_type >::value + 1;
+    };
+
   } // namespace Fad
+
+  //! The View Fad type associated with this type
+  template< class ValueType, unsigned length, unsigned stride >
+  struct ViewFadType< Sacado::Fad::DMFad< ValueType >, length, stride > {
+    typedef Sacado::Fad::ViewFad< ValueType,length,stride,Sacado::Fad::DMFad<ValueType> > type;
+  };
+
+  //! The View Fad type associated with this type
+  template< class ValueType, unsigned length, unsigned stride >
+  struct ViewFadType< const Sacado::Fad::DMFad< ValueType >, length, stride > {
+    typedef Sacado::Fad::ViewFad< const ValueType,length,stride,Sacado::Fad::DMFad<const ValueType> > type;
+  };
 
 } // namespace Sacado
 
