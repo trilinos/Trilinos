@@ -152,6 +152,7 @@ int main(int argc, char *argv[]) {
     int         maxLevels    = 2;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
     int         compare      = 0;              clp.setOption("compare",  &compare,       "compare block and point hierarchies");
     std::string type         = "structured";   clp.setOption("type",     &type,          "structured/unstructured");
+    std::string solveType    = "gmres";        clp.setOption("solver",   &solveType,     "solve type: (none | gmres)");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -321,68 +322,70 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // System solution (Ax = b) - I (block)
     // =========================================================================
-    RCP<Vector> X = VectorFactory::Build(fullMap);
-    RCP<Vector> B = VectorFactory::Build(fullMap);
-    {
-      // we set seed for reproducibility
-      Utils::SetRandomSeed(*comm);
-      X->randomize();
-      A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+    if (solveType != "none") {
+      RCP<Vector> X = VectorFactory::Build(fullMap);
+      RCP<Vector> B = VectorFactory::Build(fullMap);
+      {
+        // we set seed for reproducibility
+        Utils::SetRandomSeed(*comm);
+        X->randomize();
+        A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-      Teuchos::Array<STS::magnitudeType> norms(1);
-      B->norm2(norms);
-      B->scale(one/norms[0]);
-      X->putScalar(zero);
-    }
+        Teuchos::Array<STS::magnitudeType> norms(1);
+        B->norm2(norms);
+        B->scale(one/norms[0]);
+        X->putScalar(zero);
+      }
 
 #ifdef HAVE_MUELU_BELOS
-    // Operator and Multivector type that will be used with Belos
-    typedef MultiVector          MV;
-    typedef Belos::OperatorT<MV> OP;
+      // Operator and Multivector type that will be used with Belos
+      typedef MultiVector          MV;
+      typedef Belos::OperatorT<MV> OP;
 
-    // Define Belos Operator
-    Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+      // Define Belos Operator
+      Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
 
-    // Belos parameter list
-    int maxIts = 100;
-    Teuchos::ParameterList belosList;
-    belosList.set("Maximum Iterations",    maxIts);
-    belosList.set("Convergence Tolerance", 1e-12);
-    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList.set("Output Frequency",      1);
-    belosList.set("Output Style",          Belos::Brief);
+      // Belos parameter list
+      int maxIts = 100;
+      Teuchos::ParameterList belosList;
+      belosList.set("Maximum Iterations",    maxIts);
+      belosList.set("Convergence Tolerance", 1e-12);
+      belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList.set("Output Frequency",      1);
+      belosList.set("Output Style",          Belos::Brief);
 
-    for (int i = 0; i <= compare; i++) {
-      H[i]->IsPreconditioner(true);
+      for (int i = 0; i <= compare; i++) {
+        H[i]->IsPreconditioner(true);
 
-      // Define Belos Preconditioner
-      Teuchos::RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H[i])); // Turns a MueLu::Hierarchy object into a Belos operator
+        // Define Belos Preconditioner
+        Teuchos::RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H[i])); // Turns a MueLu::Hierarchy object into a Belos operator
 
-      // Construct a Belos LinearProblem object
-      RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-      belosProblem->setRightPrec(belosPrec);
+        // Construct a Belos LinearProblem object
+        RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+        belosProblem->setRightPrec(belosPrec);
 
-      bool set = belosProblem->setProblem();
-      if (!set)
-        throw "\nERROR:  Belos::LinearProblem failed to set up correctly!";
+        bool set = belosProblem->setProblem();
+        if (!set)
+          throw "\nERROR:  Belos::LinearProblem failed to set up correctly!";
 
-      // Create an iterative solver manager
-      // We use GMRES because it is a saddle point problem
-      RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        // Create an iterative solver manager
+        // We use GMRES because it is a saddle point problem
+        RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
 
-      // Perform solve
-      Belos::ReturnType ret = Belos::Unconverged;
-      ret = solver->solve();
+        // Perform solve
+        Belos::ReturnType ret = Belos::Unconverged;
+        ret = solver->solve();
 
-      // Get the number of iterations for this solve.
-      out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+        // Get the number of iterations for this solve.
+        out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
-      success = (ret == Belos::Converged);
-      // Check convergence
-      if (success)
-        out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-      else
-        out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+        success = (ret == Belos::Converged);
+        // Check convergence
+        if (success)
+          out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+        else
+          out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+      }
     }
 #endif
   }
