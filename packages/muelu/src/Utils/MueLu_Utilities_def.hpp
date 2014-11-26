@@ -430,7 +430,7 @@ namespace MueLu {
           totalNnz = minNnz;
         nnzPerRow = totalNnz / A.getGlobalNumRows();
 
-        fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+        fos << "Matrix product nnz per row estimate = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
       }
 
       if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
