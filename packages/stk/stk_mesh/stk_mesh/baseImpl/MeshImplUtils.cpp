@@ -230,10 +230,7 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
             {
                 if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
                 {
-                    EntityVector entity_nodes(num_nodes_on_entity);
-
                     Entity const * nodes = bucket.begin_nodes(entityIndex);
-                    entity_nodes.assign(nodes, nodes+num_nodes_on_entity);
 
                     //do we need to do some sorting operation here?
                     //sort entity nodes into lexicographical smallest permutation?
@@ -242,20 +239,20 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
                     bool shared_entity = true;
                     for(size_t n = 0; n < num_nodes_on_entity; ++n)
                     {
-                        Entity node = entity_nodes[n];
+                        Entity node = nodes[n];
                         shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.is_entity_marked(node) == BulkData::IS_SHARED));
                     }
 
                     if(shared_entity)
                     {
-                        std::sort(entity_nodes.begin(),entity_nodes.end(),EntityLess(mesh));
                         shared_entity_type sentity;
                         sentity.topology = topology;
                         sentity.nodes.resize(num_nodes_on_entity);
                         for(size_t n = 0; n < num_nodes_on_entity; ++n)
                         {
-                            sentity.nodes[n]=mesh.entity_key(entity_nodes[n]);
+                            sentity.nodes[n]=mesh.entity_key(nodes[n]);
                         }
+                        std::sort(sentity.nodes.begin(),sentity.nodes.end());
                         const EntityKey &entity_key = mesh.entity_key(entity);
                         sentity.local_key = entity_key;
                         sentity.global_key = entity_key;
@@ -269,10 +266,11 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
 }
 
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes)
+        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes)
 {
     // get node entity ids
-    std::vector<stk::mesh::EntityId> nodeIdsForEdge(2);
+    ThrowRequireMsg(numNodes==2,"connectEntityToEdge ERROR, numNodes must be 2 currently.");
+    std::vector<stk::mesh::EntityId> nodeIdsForEdge(numNodes);
     nodeIdsForEdge[0] = stkMeshBulkData.identifier(nodes[0]);
     nodeIdsForEdge[1] = stkMeshBulkData.identifier(nodes[1]);
 

@@ -1361,13 +1361,13 @@ void checkCommMapsAndListsAfterIRGMD(BulkDataTester& stkMeshBulkData)
 void connectElementToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element,
         stk::mesh::Entity edge, const std::vector<stk::mesh::EntityId>& nodeIdsForEdge)
 {
-    std::vector<stk::mesh::Entity> nodeIds(nodeIdsForEdge.size());
+    std::vector<stk::mesh::Entity> nodes(nodeIdsForEdge.size());
     for (size_t i=0;i<nodeIdsForEdge.size();i++)
     {
         stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeIdsForEdge[i]);
-        nodeIds[i] = stkMeshBulkData.get_entity(nodeKey);
+        nodes[i] = stkMeshBulkData.get_entity(nodeKey);
     }
-    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, nodeIds);
+    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, &nodes[0], nodes.size());
 }
 
 void create_edges(BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::EntityId>& edgeIds,
