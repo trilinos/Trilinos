@@ -86,7 +86,12 @@ TEUCHOS_UNIT_TEST( DefaultMultipliedLinearOp, defaultConstruct )
 
   TEST_ASSERT(is_null(M->range()));
   TEST_ASSERT(is_null(M->domain()));
-  
+  TEST_ASSERT(isFullyUninitialized(*M));
+  TEST_ASSERT(!isPartiallyInitialized(*M));
+  TEST_ASSERT(!isFullyInitialized(*M));
+
+#  if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
+
   const std::string M_description = M->description();
   TEST_EQUALITY_CONST(M_description,
     "Thyra::DefaultMultipliedLinearOp<double>{numOps=0,rangeDim=0,domainDim=0}");
@@ -117,6 +122,8 @@ TEUCHOS_UNIT_TEST( DefaultMultipliedLinearOp, defaultConstruct )
 
     TEST_EQUALITY_CONST( describe_msg.str(), expected_msg.str() );
   }
+
+#  endif // defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
  
 }
 
