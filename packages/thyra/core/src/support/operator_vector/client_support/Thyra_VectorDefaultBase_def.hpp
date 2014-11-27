@@ -177,8 +177,8 @@ VectorDefaultBase<Scalar>::clone_v() const
           <<Teuchos::ScalarTraits<Scalar>::name()
           <<">::clone_v() called!\n";
 #endif
-  RCP<VectorBase<Scalar> > copy = createMember(this->space());
-  assign(copy.ptr(), *this);
+  const RCP<VectorBase<Scalar> > copy = createMember(this->space());
+  ::Thyra::assign<Scalar>(copy.ptr(), *this);
   return copy;
 }
 
