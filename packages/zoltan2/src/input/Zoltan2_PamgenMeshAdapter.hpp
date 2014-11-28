@@ -238,7 +238,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const zgid_t *& adjacencyIds) const
+		      const lno_t *&offsets, const zgid_t *&adjacencyIds) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
       offsets = start_;
