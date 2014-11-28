@@ -72,7 +72,7 @@ MultiVectorDefaultBase<Scalar>::clone_mv() const
     &l_range = *this->range();
   RCP<MultiVectorBase<Scalar> >
     copy = createMembers(l_range,l_domain.dim());
-  assign( copy.ptr(), *this );
+  ::Thyra::assign<Scalar>(copy.ptr(), *this);
   return copy;
 }
 
