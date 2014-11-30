@@ -51,6 +51,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_DefaultColumnwiseMultiVector.hpp"
+#include "RTOpPack_TOpAssignScalar.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
@@ -71,7 +72,7 @@ MultiVectorDefaultBase<Scalar>::clone_mv() const
     &l_range = *this->range();
   RCP<MultiVectorBase<Scalar> >
     copy = createMembers(l_range,l_domain.dim());
-  assign( copy.ptr(), *this );
+  ::Thyra::assign<Scalar>(copy.ptr(), *this);
   return copy;
 }
 
@@ -80,6 +81,16 @@ MultiVectorDefaultBase<Scalar>::clone_mv() const
 
 
 // Overridden protected member functions from MultiVectorBase
+
+template<class Scalar>
+void MultiVectorDefaultBase<Scalar>::assignImpl(Scalar alpha)
+{
+  using Teuchos::tuple; using Teuchos::null;
+  RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
+  Thyra::applyOp<Scalar>(assign_scalar_op,
+    ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
+    tuple<Ptr<MultiVectorBase<Scalar> > >(ptr(this)), null);
+}
 
 
 template<class Scalar>

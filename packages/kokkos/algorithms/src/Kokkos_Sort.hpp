@@ -169,7 +169,7 @@ public:
 
     bin_count_atomic = Kokkos::View<int*, ExecutionSpace >("Kokkos::SortImpl::BinSortFunctor::bin_count",bin_op.max_bins());
     bin_count_const =  bin_count_atomic;
-    bin_offsets =      offset_type("Kokkos::SortImpl::BinSortFunctor::bin_offsets",keys.dimension_0());
+    bin_offsets =      offset_type("Kokkos::SortImpl::BinSortFunctor::bin_offsets",bin_op.max_bins());
     sort_order =       offset_type("PermutationVector",keys.dimension_0());
     sort_within_bins = sort_within_bins_;
   }
@@ -178,8 +178,10 @@ public:
   void create_permute_vector() {
     Kokkos::parallel_for (Kokkos::RangePolicy<ExecutionSpace,bin_count_tag>    (0,keys.dimension_0()),*this);
     Kokkos::parallel_scan(Kokkos::RangePolicy<ExecutionSpace,bin_offset_tag>   (0,bin_op.max_bins()) ,*this);
+
     Kokkos::deep_copy(bin_count_atomic,0);
     Kokkos::parallel_for (Kokkos::RangePolicy<ExecutionSpace,bin_binning_tag>  (0,keys.dimension_0()),*this);
+
     if(sort_within_bins)
       Kokkos::parallel_for (Kokkos::RangePolicy<ExecutionSpace,bin_sort_bins_tag>(0,bin_op.max_bins()) ,*this);
   }
@@ -234,7 +236,7 @@ public:
   void operator() (const bin_binning_tag& tag, const int& i)  const {
     const int bin = bin_op.bin(keys,i);
     const int count = bin_count_atomic(bin)++;
-    //if(bin_offsets(bin) + count == 15) printf("insert %i\n",i);
+
     sort_order(bin_offsets(bin) + count) = i;
   }
 
@@ -248,7 +250,8 @@ public:
       int new_idx;
       for(int k=bin_offsets(i)+1; k<upper_bound; k++) {
         new_idx = sort_order(k);
-        if(bin_op(keys_rnd,old_idx,new_idx)) {
+
+        if(!bin_op(keys_rnd,old_idx,new_idx)) {
           sort_order(k-1) = new_idx;
           sort_order(k) = old_idx;
           sorted = false;
@@ -273,7 +276,7 @@ struct DefaultBinOp1D {
   //Construct BinOp with number of bins, minimum value and maxuimum value
   DefaultBinOp1D(int max_bins, typename KeyViewType::const_value_type min,
                                typename KeyViewType::const_value_type max )
-     :max_bins_(max_bins),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
+     :max_bins_(max_bins+1),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
 
   //Determine bin index from key value
   template<class ViewType>
@@ -306,9 +309,9 @@ struct DefaultBinOp3D {
   DefaultBinOp3D(int max_bins[], typename KeyViewType::const_value_type min[],
                                typename KeyViewType::const_value_type max[] )
   {
-    max_bins_[0] = max_bins[0];
-    max_bins_[1] = max_bins[1];
-    max_bins_[2] = max_bins[2];
+    max_bins_[0] = max_bins[0]+1;
+    max_bins_[1] = max_bins[1]+1;
+    max_bins_[2] = max_bins[2]+1;
     mul_[0] = 1.0*max_bins[0]/(max[0]-min[0]);
     mul_[1] = 1.0*max_bins[1]/(max[1]-min[1]);
     mul_[2] = 1.0*max_bins[2]/(max[2]-min[2]);

@@ -146,12 +146,13 @@ int main(int argc, char *argv[]) {
 
     Xpetra::Parameters xpetraParameters(clp);
 
-    std::string xmlFileName  = "driver.xml";   clp.setOption("xml",      &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
+    std::string xmlFileName  = "driver.xml";   clp.setOption("xml",      &xmlFileName,   "read parameters from a file (only used for point hierarchy)");
     double      tol          = 1e-12;          clp.setOption("tol",      &tol,           "solver convergence tolerance");
     int         n            = 9;              clp.setOption("n",        &n,             "problem size (1D)");
     int         maxLevels    = 2;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
     int         compare      = 0;              clp.setOption("compare",  &compare,       "compare block and point hierarchies");
     std::string type         = "structured";   clp.setOption("type",     &type,          "structured/unstructured");
+    std::string solveType    = "gmres";        clp.setOption("solver",   &solveType,     "solve type: (none | gmres)");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -292,11 +293,14 @@ int main(int argc, char *argv[]) {
     std::string ifpackType = "SCHWARZ";
     RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
     M.SetFactory("Smoother",     rcp(new SmootherFactory(smootherPrototype)));
-    M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
+
+    RCP<Factory> coarseFact = rcp(new SmootherFactory(rcp(new BlockedDirectSolver()), Teuchos::null));
+    M.SetFactory("CoarseSolver", coarseFact);
 
 #ifdef HAVE_MUELU_DEBUG
     M.ResetDebugData();
 #endif
+    // Replace the filtered matrix with the original one
     H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
     H[0]->Setup(M, 0, H[0]->GetNumLevels());
 
@@ -318,68 +322,72 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // System solution (Ax = b) - I (block)
     // =========================================================================
-    RCP<Vector> X = VectorFactory::Build(fullMap);
-    RCP<Vector> B = VectorFactory::Build(fullMap);
-    {
-      // we set seed for reproducibility
-      Utils::SetRandomSeed(*comm);
-      X->randomize();
-      A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+    if (solveType != "none") {
+      RCP<Vector> X = VectorFactory::Build(fullMap);
+      RCP<Vector> B = VectorFactory::Build(fullMap);
+      {
+        // we set seed for reproducibility
+        Utils::SetRandomSeed(*comm);
+        X->randomize();
+        A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-      Teuchos::Array<STS::magnitudeType> norms(1);
-      B->norm2(norms);
-      B->scale(one/norms[0]);
-      X->putScalar(zero);
+        Teuchos::Array<STS::magnitudeType> norms(1);
+        B->norm2(norms);
+        B->scale(one/norms[0]);
+        X->putScalar(zero);
+      }
+
+#ifdef HAVE_MUELU_BELOS
+      // Operator and Multivector type that will be used with Belos
+      typedef MultiVector          MV;
+      typedef Belos::OperatorT<MV> OP;
+
+      // Define Belos Operator
+      Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+
+      // Belos parameter list
+      int maxIts = 100;
+      Teuchos::ParameterList belosList;
+      belosList.set("Maximum Iterations",    maxIts);
+      belosList.set("Convergence Tolerance", 1e-12);
+      belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList.set("Output Frequency",      1);
+      belosList.set("Output Style",          Belos::Brief);
+
+      for (int i = 0; i <= compare; i++) {
+        H[i]->IsPreconditioner(true);
+
+        // Define Belos Preconditioner
+        Teuchos::RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H[i])); // Turns a MueLu::Hierarchy object into a Belos operator
+
+        // Construct a Belos LinearProblem object
+        RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+        belosProblem->setRightPrec(belosPrec);
+
+        bool set = belosProblem->setProblem();
+        if (!set)
+          throw "\nERROR:  Belos::LinearProblem failed to set up correctly!";
+
+        // Create an iterative solver manager
+        // We use GMRES because it is a saddle point problem
+        RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+
+        // Perform solve
+        Belos::ReturnType ret = Belos::Unconverged;
+        ret = solver->solve();
+
+        // Get the number of iterations for this solve.
+        out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+
+        success = (ret == Belos::Converged);
+        // Check convergence
+        if (success)
+          out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+        else
+          out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+      }
     }
-
-    // Operator and Multivector type that will be used with Belos
-    typedef MultiVector          MV;
-    typedef Belos::OperatorT<MV> OP;
-
-    // Define Belos Operator
-    Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-
-    // Belos parameter list
-    int maxIts = 100;
-    Teuchos::ParameterList belosList;
-    belosList.set("Maximum Iterations",    maxIts);
-    belosList.set("Convergence Tolerance", 1e-12);
-    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList.set("Output Frequency",      1);
-    belosList.set("Output Style",          Belos::Brief);
-
-    for (int i = 0; i <= compare; i++) {
-      H[i]->IsPreconditioner(true);
-
-      // Define Belos Preconditioner
-      Teuchos::RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H[i])); // Turns a MueLu::Hierarchy object into a Belos operator
-
-      // Construct a Belos LinearProblem object
-      RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-      belosProblem->setRightPrec(belosPrec);
-
-      bool set = belosProblem->setProblem();
-      if (!set)
-        throw "\nERROR:  Belos::LinearProblem failed to set up correctly!";
-
-      // Create an iterative solver manager
-      // We use GMRES because it is a saddle point problem
-      RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-
-      // Perform solve
-      Belos::ReturnType ret = Belos::Unconverged;
-      ret = solver->solve();
-
-      // Get the number of iterations for this solve.
-      out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
-      success = (ret == Belos::Converged);
-      // Check convergence
-      if (success)
-        out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-      else
-        out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-    }
+#endif
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
@@ -456,16 +464,12 @@ namespace MueLuTests {
 
     M.SetFactory("Smoother",     Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
-
-    RCP<Factory> coarseFact = rcp(new SmootherFactory(rcp(new BlockedDirectSolver()), Teuchos::null));
-    // M.SetFactory("CoarseSolver", coarseFact);
-    M.SetFactory("CoarseSolver", Teuchos::null);
   }
 
   void SetBlockDependencyTree(FactoryManager& M, int row, int col, const std::string& mode) {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1PFactory;
+    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>  Q2Q1PFactory;
     typedef MueLu::Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1uPFactory;
 
     RCP<SubBlockAFactory> AFact = rcp(new SubBlockAFactory());
@@ -483,6 +487,7 @@ namespace MueLuTests {
       ParameterList q2q1ParamList = *(Q2Q1Fact->GetValidParameterList());
       q2q1ParamList.set("mode", mode);
       // q2q1ParamList.set("phase2", false);
+      q2q1ParamList.set("dump status", false);
       Q2Q1Fact->SetParameterList(q2q1ParamList);
     }
     Q2Q1Fact->SetFactory("A", AFact);

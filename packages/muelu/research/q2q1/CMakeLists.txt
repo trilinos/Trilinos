@@ -10,7 +10,7 @@ IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PA
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Q2Q1_cp
-      SOURCE_FILES driver.xml
+      SOURCE_FILES driver.xml status.py
       Q2Q1_9x9_A.dat   Q2Q1_9x9_B.dat
       Q2Q1_17x17_A.dat Q2Q1_17x17_B.dat
       )

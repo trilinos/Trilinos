@@ -55,6 +55,8 @@
 
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
+#cmakedefine HAVE_TEUCHOSCORE_CXX11
+
 #cmakedefine HAVE_TEUCHOSCORE_BOOST
 
 /* Deprecated */

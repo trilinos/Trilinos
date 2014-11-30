@@ -148,11 +148,11 @@ public:
     Real nominal_tol = parlist.get("Nominal SQP Optimality Solver Tolerance", 1e-3);
     lmhtol_  = nominal_tol;
     qntol_   = nominal_tol;
-    pgtol_   = nominal_tol;       
-    projtol_ = nominal_tol;     
+    pgtol_   = nominal_tol;
+    projtol_ = nominal_tol;
     tangtol_ = nominal_tol;
     tntmax_  = 2.0;
-    
+
     zeta_    = 0.8;
     Delta_   = 1e2;
     penalty_ = 1.0;
@@ -185,7 +185,7 @@ public:
   /** \brief Initialize step.
   */
   void initialize( Vector<Real> &x, Vector<Real> &g, Vector<Real> &l, Vector<Real> &c,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                   Objective<Real> &obj, EqualityConstraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
@@ -204,12 +204,12 @@ public:
     Real zerotol = 0.0;
 
     // Update objective and constraint.
-    obj.update(x,true,algo_state.iter);    
-    algo_state.value = obj.value(x, zerotol); 
+    obj.update(x,true,algo_state.iter);
+    algo_state.value = obj.value(x, zerotol);
     algo_state.nfval++;
     con.update(x,true,algo_state.iter);
-    con.value(c, x, zerotol);    
-    algo_state.cnorm = c.norm(); 
+    con.value(c, x, zerotol);
+    algo_state.cnorm = c.norm();
     algo_state.ncval++;
     obj.gradient(g, x, zerotol);
 
@@ -224,7 +224,7 @@ public:
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                Objective<Real> &obj, EqualityConstraint<Real> &con,
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Real zerotol = 0.0;
@@ -272,7 +272,7 @@ public:
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con, 
+               Objective<Real> &obj, EqualityConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
@@ -309,7 +309,7 @@ public:
       obj.update(x,false,algo_state.iter);
       con.update(x,false,algo_state.iter);
       flagAC_ = 0;
-    } // if (ratio >= eta) 
+    } // if (ratio >= eta)
 
     Real val = obj.value(x, zerotol);
     algo_state.nfval++;
@@ -337,12 +337,12 @@ public:
                         BoundConstraint<Real> &con,
                         AlgorithmState<Real> &algo_state ) {}
 
-  /** \brief Update step, for bound constraints; here only to satisfy the 
+  /** \brief Update step, for bound constraints; here only to satisfy the
              interface requirements, does nothing, needs refactoring.
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj,
                        BoundConstraint<Real> &con,
-                       AlgorithmState<Real> &algo_state ) {} 
+                       AlgorithmState<Real> &algo_state ) {}
 
   /** \brief Print iterate header.
   */
@@ -396,19 +396,19 @@ public:
       hist << "\n";
     }
     else {
-      hist << "  "; 
-      hist << std::setw(6)  << std::left << algo_state.iter;  
-      hist << std::setw(15) << std::left << algo_state.value; 
-      hist << std::setw(15) << std::left << algo_state.cnorm; 
-      hist << std::setw(15) << std::left << algo_state.gnorm; 
-      hist << std::setw(15) << std::left << algo_state.snorm; 
+      hist << "  ";
+      hist << std::setw(6)  << std::left << algo_state.iter;
+      hist << std::setw(15) << std::left << algo_state.value;
+      hist << std::setw(15) << std::left << algo_state.cnorm;
+      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << std::setw(15) << std::left << algo_state.snorm;
       hist << std::scientific << std::setprecision(2);
-      hist << std::setw(10) << std::left << Delta_; 
-      hist << std::setw(10) << std::left << nnorm_; 
-      hist << std::setw(10) << std::left << tnorm_; 
+      hist << std::setw(10) << std::left << Delta_;
+      hist << std::setw(10) << std::left << nnorm_;
+      hist << std::setw(10) << std::left << tnorm_;
       hist << std::scientific << std::setprecision(6);
-      hist << std::setw(8) << std::left << algo_state.nfval;              
-      hist << std::setw(8) << std::left << algo_state.ngrad;              
+      hist << std::setw(8) << std::left << algo_state.nfval;
+      hist << std::setw(8) << std::left << algo_state.ngrad;
       hist << std::setw(8) << std::left << iterCG_;
       hist << std::setw(8) << std::left << flagCG_;
       hist << std::setw(8) << std::left << flagAC_;
@@ -455,7 +455,7 @@ public:
     /* Declare left-hand side of augmented system. */
     Teuchos::RCP<Vector<Real> > v1 = xvec_->clone();
     Teuchos::RCP<Vector<Real> > v2 = lvec_->clone();
-    
+
     /* Compute linear solver tolerance. */
     Real b1norm  = b1->norm();
     Real tol = lmhtol_*b1norm;
@@ -471,7 +471,7 @@ public:
     l.plus(*v2);
 
   }  // computeLagrangeMultiplier
- 
+
 
   /** \brief Compute quasi-normal step by minimizing the norm of
              the linearized constraint.
@@ -523,7 +523,7 @@ public:
     if (normsquare_ctemp != zero) {
       nCP->scale( -(nCP->dot(*nCP))/normsquare_ctemp );
     }
-    
+
     /* If the  Cauchy step nCP is outside the trust region,
        return the scaled Cauchy step. */
     Real norm_nCP = nCP->norm();
@@ -817,7 +817,7 @@ public:
       Hp->plus(*gtemp);
       // "Preconditioning" step.
       (Hps[iterCG_-1])->set(Hp->dual());
-      
+
       pHp = (p[iterCG_-1])->dot(*(Hps[iterCG_-1]));
       // change rp  = (p[iterCG_-1])->dot(*r);
       rp  = (p[iterCG_-1])->dot(*(rs[iterCG_-1]));
@@ -925,7 +925,7 @@ public:
 
   } // solveTangentialSubproblem
 
-  
+
   /** \brief Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
   */
   void accept(Vector<Real> &s, Vector<Real> &n, Vector<Real> &t, Real f_new, Vector<Real> &c_new,
@@ -941,9 +941,9 @@ public:
                                            // false - if subsolver tolerances are adjusted in this routine, discard adjusted values
     Real tol_fdiff    = 1e-12;             // relative objective function difference for ared computation
     int ct_max        = 10;                // maximum number of globalization tries
-    int mintol        = 1e-16;             // smallest projection tolerance value
+    Real mintol       = 1e-16;             // smallest projection tolerance value
 
-    // Determines max value of |rpred|/pred. 
+    // Determines max value of |rpred|/pred.
     Real rpred_over_pred = 0.5*(1-eta_);
 
     if (infoAC_) {
@@ -1200,7 +1200,7 @@ public:
         hist <<   "         ||t_tilde||/||n+t|| = " << t_orig->norm() / snorm_ << "\n";
         hist <<   "         # projections       = " << num_proj << "\n";
         hist <<   "         penalty param       = " << penalty_ << "\n";
-       	hist <<   "         ared                = " << ared_ << "\n";
+        hist <<   "         ared                = " << ared_ << "\n";
         hist <<   "         pred                = " << pred_ << "\n";
         hist <<   "         ared/pred           = " << ared_/pred_ << "\n";
         std::cout << hist.str();

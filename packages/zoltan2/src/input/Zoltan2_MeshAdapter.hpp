@@ -253,8 +253,19 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      return false;
+      return true;
+    }
+  }
 
+
+  virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
+				    MeshEntityType through,
+				    const lno_t *&offsets,
+				    const zgid_t *&adjacencyIds) const
+  {
+    /* Find the adjacency for a nodal based decomposition */
+    size_t nadj = 0;
+    if (avail2ndAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -269,14 +280,14 @@ public:
 
       // Get node-element connectivity
 
-      lno_t const *offsets=NULL;
-      zgid_t const *adjacencyIds=NULL;
+      offsets=NULL;
+      adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
       zgid_t const *Ids=NULL;
-      getIDsViewOf(MESH_VERTEX, Ids);
+      getIDsViewOf(through, Ids);
 
-      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumIDs = getLocalNumOf(sourcetarget);
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       /***********************************************************************/
@@ -287,7 +298,7 @@ public:
       RCP<const map_type> adjsMapG;
 
       // count owned nodes
-      int LocalNumOfNodes = getLocalNumOf(MESH_VERTEX);
+      int LocalNumOfNodes = getLocalNumOf(through);
       
       // Build a list of the ADJS global ids...
       adjsGIDs.resize (LocalNumOfNodes);
@@ -295,7 +306,8 @@ public:
 	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
-      getIDsView(Ids);
+      delete [] Ids;
+      getIDsViewOf(sourcetarget, Ids);
 
       //Generate Map for nodes.
       adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
@@ -330,6 +342,9 @@ public:
 	  adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
 	}// *** node loop ***
       }// *** element loop ***
+
+      delete [] offsets;
+      delete [] adjacencyIds;
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete ();
@@ -387,7 +402,12 @@ public:
       Array<GO> Indices;
       Array<ST> Values;
 
+      /* Allocate memory necessary for the adjacency */
+      lno_t *start = new lno_t [LocalNumIDs+1];
+      std::vector<int> adj;
+
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	start[localElement] = nadj;
 	const GO globalRow = Ids[localElement];
 	size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
@@ -395,14 +415,29 @@ public:
 	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
 	for (size_t j = 0; j < NumEntries; ++j) {
-	  Indices[j];
+	  if(globalRow != Indices[j]) {
+	    adj.push_back(Indices[j]);
+	    nadj++;;
+	  }
 	}
       }
 
-      return false;
-    }
-  }
+      delete [] Ids;
+      Ids = NULL;
+      start[LocalNumIDs] = nadj;
 
+      zgid_t *adj_ = new zgid_t [nadj];
+
+      for (size_t i=0; i < nadj; i++) {
+	adj_[i] = adj[i];
+      }
+
+      offsets = start;
+      adjacencyIds = adj_;
+    }
+
+    return nadj;
+  }
 
   /*! \brief Returns the number of second adjacencies on this process.
    *
@@ -414,7 +449,13 @@ public:
     if (!avail2ndAdjs(sourcetarget, through))
       return 0;
     else {
-      return nadj_;
+      lno_t const *offsets;
+      zgid_t const *adjacencyIds;
+      size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
+				       adjacencyIds);
+      delete [] offsets;
+      delete [] adjacencyIds;
+      return nadj;
     }
   }
 
@@ -428,8 +469,8 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-// TODO:  Later may allow user to not implement second adjacencies and,
-// TODO:  if we want them, we compute A^T A, where A is matrix of first adjacencies.
+  // allow user to not implement second adjacencies and,
+  // if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
@@ -440,8 +481,7 @@ public:
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     } else {
-      offsets = start_;
-      adjacencyIds =  adj_;
+      get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
     }
   }
 
@@ -622,9 +662,6 @@ private:
   enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
                                                  // defining second-order
                                                  // adjacencies.
-  lno_t *start_;
-  zgid_t *adj_;
-  size_t nadj_;
 };
   
 }  //namespace Zoltan2

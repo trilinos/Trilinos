@@ -294,6 +294,7 @@ int main(int argc, char *argv[]) {
           run_sed("'s/Amesos\\([2]*\\)Smoother{type = .*}/Amesos\\1Smoother{type = <ignored>}/'", baseFile);
           run_sed("'s/SuperLU solver interface, direct solve/<Direct> solver interface/'", baseFile);
           run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
+          run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
 
           // Strip template args for some classes
           std::vector<std::string> classes;

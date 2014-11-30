@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -133,6 +133,19 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone() const
   return tpetraVectorSpace<Scalar>(tpetraMap_);
 }
 
+// Overridden from ScalarProdVectorSpaceBase, via SpmdVectorSpaceDefaultBase
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarProdsImpl(
+    const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y,
+    const ArrayView<Scalar> &scalarProds_out) const
+{
+  typedef TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node> TOVE;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMV;
+  RCP<const TpetraMV> tX = TOVE::getConstTpetraMultiVector(Teuchos::rcpFromRef(X)),
+                      tY = TOVE::getConstTpetraMultiVector(Teuchos::rcpFromRef(Y));
+  tX->dot(*tY, scalarProds_out);
+}
 
 // Overridden from SpmdVectorSpaceDefaultBase
 
@@ -150,7 +163,6 @@ Ordinal TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::localSubDim()
 {
   return localSubDim_;
 }
-
 
 // private
 

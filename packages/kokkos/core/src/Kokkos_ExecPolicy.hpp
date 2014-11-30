@@ -530,6 +530,54 @@ public:
 
 } // namespace Kokkos
 
+namespace Kokkos {
+
+namespace Impl {
+  template<typename iType, class TeamMemberType>
+  struct ThreadLoopBoundariesStruct {
+    typedef iType index_type;
+    const iType start;
+    const iType end;
+    enum {increment = 1};
+    const TeamMemberType& thread;
+
+    KOKKOS_INLINE_FUNCTION
+    ThreadLoopBoundariesStruct (const TeamMemberType& thread_, const iType& count):
+      start( ( (count + thread_.team_size()-1) / thread_.team_size() ) * thread_.team_rank() ),
+      end(   ( (count + thread_.team_size()-1) / thread_.team_size() ) * ( thread_.team_rank() + 1 ) <= count?
+             ( (count + thread_.team_size()-1) / thread_.team_size() ) * ( thread_.team_rank() + 1 ):count),
+      thread(thread_)
+    {}
+  };
+
+  template<typename iType, class TeamMemberType>
+  struct VectorLoopBoundariesStruct {
+    typedef iType index_type;
+    enum {start = 0};
+    const iType end;
+    enum {increment = 1};
+
+    KOKKOS_INLINE_FUNCTION
+    VectorLoopBoundariesStruct (const TeamMemberType& thread, const iType& count):
+      end( count )
+    {}
+  };
+
+} // namespace Impl
+
+/*template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadLoopBoundariesStruct<iType,TeamMemberType>
+  ThreadLoop(TeamMemberType thread, const iType count);
+
+template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::VectorLoopBoundariesStruct<iType,TeamMemberType>
+  VectorLoop(TeamMemberType thread, const iType count);*/
+
+
+} // namespace Kokkos
+
 #endif /* #define KOKKOS_EXECPOLICY_HPP */
 
 //----------------------------------------------------------------------------
