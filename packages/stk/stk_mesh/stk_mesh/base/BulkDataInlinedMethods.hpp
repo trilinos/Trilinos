@@ -818,9 +818,8 @@ inline unsigned BulkData::local_id(Entity entity) const
 }
 
 #ifdef SIERRA_MIGRATION
-inline BulkData::FmwkId BulkData::global_id(Entity entity) const
+inline BulkData::FmwkId BulkData::global_id(stk::mesh::Entity entity) const
 {
-  ThrowAssertMsg(m_add_fmwk_data, "BulkData::global_id() only works under Framework mode");
   entity_getter_debug_check(entity);
 
   return m_fmwk_global_ids[entity.local_offset()];
@@ -848,47 +847,11 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
   return *m_fmwk_aux_relations[entity.local_offset()];
 }
 
-inline const sierra::Fmwk::MeshObjSharedAttr* BulkData::get_shared_attr(Entity entity) const
+inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
 {
-  ThrowAssert(m_add_fmwk_data);
-  entity_getter_debug_check(entity);
-
-  return m_fmwk_shared_attrs[entity.local_offset()];
-}
-
-inline int BulkData::get_connect_count(Entity entity) const
-{
-  ThrowAssert(m_add_fmwk_data);
-  entity_getter_debug_check(entity);
-
-  return m_fmwk_connect_counts[entity.local_offset()];
-}
-
-inline void BulkData::set_global_id(Entity entity, int id)
-{
-  ThrowAssert(m_add_fmwk_data);
   entity_setter_debug_check(entity);
 
   m_fmwk_global_ids[entity.local_offset()] = id;
-}
-
-inline void BulkData::set_connect_count(Entity entity, int count)
-{
-  ThrowAssert(m_add_fmwk_data);
-  entity_setter_debug_check(entity);
-
-  m_fmwk_connect_counts[entity.local_offset()] = count;
-}
-
-inline void BulkData::set_fmwk_bulk_data(const sierra::Fmwk::MeshBulkData* fmwk_bulk_ptr)
-{
-  m_fmwk_bulk_ptr = fmwk_bulk_ptr;
-}
-
-//strictly a transition aid!!! don't add new usage of this!
-inline const sierra::Fmwk::MeshBulkData* BulkData::get_fmwk_bulk_data() const
-{
-  return m_fmwk_bulk_ptr;
 }
 
 inline RelationIterator BulkData::internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const
@@ -967,7 +930,7 @@ inline void BulkData::set_local_id(Entity entity, unsigned id)
   m_local_ids[entity.local_offset()] = id;
 }
 
-inline bool BulkData::set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
+inline bool BulkData::internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
 {
   TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);

@@ -294,6 +294,12 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_mark_entity(),
     m_add_node_sharing_called(false),
     m_closure_count(),
+    m_mesh_indexes(),
+#ifdef SIERRA_MIGRATION
+    m_add_fmwk_data(add_fmwk_data),
+    m_fmwk_global_ids(),
+    m_fmwk_aux_relations(),
+#endif
     m_parallel( parallel ),
     m_entity_repo(*this),
     m_entity_comm_list(),
@@ -305,19 +311,10 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_modification_begin_description("UNSET"),
     m_num_fields(-1), // meta data not necessarily committed yet
     m_keep_fields_updated(true),
-    m_mesh_indexes(),
     m_entity_keys(),
     m_entity_states(),
     m_entity_sync_counts(),
     m_local_ids(),
-#ifdef SIERRA_MIGRATION
-    m_add_fmwk_data(add_fmwk_data),
-    m_fmwk_bulk_ptr(NULL),
-    m_fmwk_aux_relations(),
-    m_fmwk_global_ids(),
-    m_fmwk_shared_attrs(),
-    m_fmwk_connect_counts(),
-#endif
     m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
     m_field_data_manager(field_data_manager),
     m_selector_to_buckets_map(),
@@ -1034,8 +1031,6 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
     if (m_add_fmwk_data) {
       m_fmwk_aux_relations.push_back(NULL);
       m_fmwk_global_ids.push_back(0);
-      m_fmwk_shared_attrs.push_back(NULL);
-      m_fmwk_connect_counts.push_back(0);
     }
 #endif
   }
@@ -1056,9 +1051,6 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
       delete m_fmwk_aux_relations[new_local_offset];
       m_fmwk_aux_relations[new_local_offset] = NULL;
       m_fmwk_global_ids[new_local_offset] = 0;
-      //don't delete shared-attr, it was allocated by fmwk.
-      m_fmwk_shared_attrs[new_local_offset] = NULL;
-      m_fmwk_connect_counts[new_local_offset] = 0;
     }
 #endif
   }
@@ -1088,8 +1080,6 @@ void BulkData::initialize_arrays()
   if (m_add_fmwk_data) {
     m_fmwk_aux_relations.push_back(NULL);
     m_fmwk_global_ids.push_back(0);
-    m_fmwk_shared_attrs.push_back(NULL);
-    m_fmwk_connect_counts.push_back(0);
   }
 #endif
 }
@@ -1190,7 +1180,7 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
   internal_verify_and_change_entity_parts( declared_entity , add , rem );
 
   if ( result.second ) {
-    this->set_parallel_owner_rank_but_not_comm_lists(declared_entity, parallel_rank());
+    this->internal_set_parallel_owner_rank_but_not_comm_lists(declared_entity, parallel_rank());
     set_synchronized_count(declared_entity, m_sync_count);
     DiagIfWatching(LOG_ENTITY, key, "new entity: " << entity_key(declared_entity));
   }
@@ -1420,7 +1410,7 @@ void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedInde
             internal_verify_and_change_entity_parts(new_entity, add, rem);
             requested_entities.push_back(new_entity);
 
-            this->set_parallel_owner_rank_but_not_comm_lists(new_entity, parallel_rank());
+            this->internal_set_parallel_owner_rank_but_not_comm_lists(new_entity, parallel_rank());
             set_synchronized_count(new_entity, m_sync_count);
         }
     }
@@ -1890,40 +1880,6 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         }
       }
 
-    }
-  }
-}
-
-void BulkData::set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation)
-{
-  const EntityRank from_rank = entity_rank(from);
-  const EntityRank to_rank   = entity_rank(to);
-
-  Entity const*              fwd_rels  = begin(from, to_rank);
-  ConnectivityOrdinal const* fwd_ords  = begin_ordinals(from, to_rank);
-  Permutation *              fwd_perms = const_cast<Permutation*>(begin_permutations(from, to_rank));
-  const int                  num_fwd   = num_connectivity(from, to_rank);
-
-  Entity const*              back_rels  = begin(to, from_rank);
-  ConnectivityOrdinal const* back_ords  = begin_ordinals(to, from_rank);
-  Permutation *              back_perms = const_cast<Permutation*>(begin_permutations(to, from_rank));
-  const int                  num_back   = num_connectivity(to,from_rank);
-
-  // Find and change fwd connectivity
-  for (int i = 0; i < num_fwd; ++i, ++fwd_rels, ++fwd_ords, ++fwd_perms) {
-    // Allow clients to make changes to orientation
-    // Orientations do not affect Relation ordering, so this is safe.
-    if (*fwd_rels == to && *fwd_ords == to_ord) {
-      *fwd_perms = static_cast<Permutation>(to_orientation);
-    }
-  }
-
-  // Find and change back connectivity
-  for (int i = 0; i < num_back; ++i, ++back_rels, ++back_ords, ++back_perms) {
-    // Allow clients to make changes to orientation
-    // Orientations do not affect Relation ordering, so this is safe.
-    if (*back_rels == from && *back_ords == to_ord) {
-      *back_perms = static_cast<Permutation>(to_orientation);
     }
   }
 }
@@ -3196,7 +3152,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
       internal_verify_and_change_entity_parts( entity , PartVector() , owned );
 
-      const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
+      const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
       if (changed) {
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
@@ -3205,7 +3161,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
       Entity entity = i->first;
-      const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
+      const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
       if (changed) {
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
@@ -3285,7 +3241,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
         log_created_parallel_copy( entity );
 
-        const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, owner );
+        const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists( entity, owner );
         if (changed) {
           internal_change_owner_in_comm_data(entity_key(entity), owner);
         }
@@ -3664,7 +3620,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
           if ( created ) {
             log_created_parallel_copy( entity );
-            this->set_parallel_owner_rank_but_not_comm_lists( entity, owner);
+            this->internal_set_parallel_owner_rank_but_not_comm_lists( entity, owner);
           }
 
           internal_declare_relation( entity , relations, ordinal_scratch, part_scratch );
@@ -4477,7 +4433,7 @@ void BulkData::internal_establish_new_owner(stk::mesh::Entity entity)
 {
     const int new_owner = determine_new_owner(entity);
 
-    const bool changed = this->set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
+    const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
     if(changed)
     {
         internal_change_owner_in_comm_data(entity_key(entity), new_owner);
@@ -4756,7 +4712,7 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
             Entity entity = get_entity( key );
 
             // Set owner, will correct part membership later
-            const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, receive_proc);
+            const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists( entity, receive_proc);
             if (changed) {
                 internal_change_owner_in_comm_data(key, receive_proc);
             }
@@ -4786,7 +4742,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
 
         const int new_owner = determine_new_owner( entity );
 
-        const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, new_owner);
+        const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists( entity, new_owner);
         if (changed) {
           internal_change_owner_in_comm_data(entity_key(entity), new_owner);
         }
@@ -6046,7 +6002,7 @@ void BulkData::internal_verify_and_change_entity_parts( Entity entity,
 // So, temporarily, don't test this assertion if SIERRA_MIGRATION is defined, and the bulk
 // data point is set.  (Any other use case will go ahead and test this assertion.)
 #ifdef SIERRA_MIGRATION
-  if (NULL == get_fmwk_bulk_data())
+  if (!m_add_fmwk_data)
     require_entity_owner( entity , parallel_rank() );
 #else
   require_entity_owner( entity , parallel_rank() );

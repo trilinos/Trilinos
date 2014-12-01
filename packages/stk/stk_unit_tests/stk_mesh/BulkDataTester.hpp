@@ -118,8 +118,14 @@ public:
         this->update_sharing_after_change_entity_owner();
     }
 
-    stk::mesh::impl::EntityRepository &my_get_entity_repository() {
+    stk::mesh::impl::EntityRepository &my_get_entity_repository()
+    {
         return get_entity_repository();
+    }
+
+    inline bool my_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
+    {
+        return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
     }
 };
 

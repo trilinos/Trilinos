@@ -3216,7 +3216,7 @@ TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
     mesh.modification_end();
     modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 1));
     int destProc = 12;
-    mesh.set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
+    mesh.my_set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
 
     EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, destProc));
     EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));

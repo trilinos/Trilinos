@@ -550,35 +550,15 @@ public:
   inline void set_local_id(Entity entity, unsigned id);
 
 #ifdef SIERRA_MIGRATION
-
-  //this typedef for FmwkId must use the same type as the typedef
-  //in the sierra-framework header framewk/mesh/Fmwk_Id.h
-  //In other words, if you change this one, make the same change to the
-  //one in Fmwk_Id.h.
   typedef int FmwkId; //must be a signed type -- fmwk uses negative values sometimes
-  inline FmwkId global_id(Entity entity) const;
+  inline FmwkId global_id(stk::mesh::Entity entity) const;
   inline const RelationVector& aux_relations(Entity entity) const;
   inline RelationVector& aux_relations(Entity entity);
-  inline const sierra::Fmwk::MeshObjSharedAttr* get_shared_attr(Entity entity) const;
-  inline int get_connect_count(Entity entity) const;
-  inline void set_global_id(Entity entity, int id);
-  template <typename SharedAttr>
-  void set_shared_attr(Entity entity, SharedAttr* attr)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    entity_setter_debug_check(entity);
+  inline void set_global_id(stk::mesh::Entity entity, int id);
+  void reserve_relation(stk::mesh::Entity entity, const unsigned num);
+  void erase_and_clear_if_empty(stk::mesh::Entity entity, RelationIterator rel_itr);
+  void internal_verify_initialization_invariant(stk::mesh::Entity entity);
 
-    m_fmwk_shared_attrs[entity.local_offset()] = attr;
-  }
-  inline void set_connect_count(Entity entity, int count);
-
-  void set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation);
-  void reserve_relation(Entity entity, const unsigned num);
-  void erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr);
-  void internal_verify_initialization_invariant(Entity entity);
-
-  inline void set_fmwk_bulk_data(const sierra::Fmwk::MeshBulkData* fmwk_bulk_ptr);
-  inline const sierra::Fmwk::MeshBulkData* get_fmwk_bulk_data() const;
   inline RelationIterator internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const;
   inline RelationIterator internal_end_relation(Entity entity, const Relation::RelationType relation_type) const;
   inline void compress_relation_capacity(Entity entity);
@@ -674,9 +654,6 @@ public:
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
 
-  // CLEANUP: move to protected and expose through StkTransitionBulkData
-  inline bool set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
-
   // Print all mesh info
   void dump_all_mesh_info(std::ostream& out = std::cout) const;
 
@@ -713,6 +690,7 @@ public:
   void allocate_field_data();
 
 protected: //functions
+  inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
   impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
 
@@ -840,22 +818,8 @@ protected: //functions
           const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
   void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities);
 
-
-
-private: //functions
-
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
-  size_t generate_next_local_offset(size_t preferred_offset = 0);
-
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
-  inline void set_entity_key(Entity entity, EntityKey key);
-  inline void set_synchronized_count(Entity entity, size_t sync_count);
-  void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
-
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
-  void internal_sync_comm_list_owners();
-
-  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
+  virtual size_t generate_next_local_offset(size_t preferred_offset = 0);
 
   void entity_setter_debug_check(Entity entity) const
   {
@@ -868,6 +832,19 @@ private: //functions
   {
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
+
+private: //functions
+
+
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+  inline void set_entity_key(Entity entity, EntityKey key);
+  inline void set_synchronized_count(Entity entity, size_t sync_count);
+  void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
+
+  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
+  void internal_sync_comm_list_owners();
+
+  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
@@ -1021,6 +998,13 @@ protected: //data
   std::vector<int> m_mark_entity;
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count;
+  std::vector<MeshIndex> m_mesh_indexes;
+
+#ifdef SIERRA_MIGRATION
+  bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
+  std::vector<FmwkId> m_fmwk_global_ids;
+  mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
+#endif
 
 private: // data
   Parallel m_parallel;
@@ -1034,20 +1018,10 @@ private: // data
   std::string m_modification_begin_description;
   int m_num_fields;
   bool m_keep_fields_updated;
-  std::vector<MeshIndex> m_mesh_indexes;
   std::vector<EntityKey> m_entity_keys;
   std::vector<uint16_t> m_entity_states;
   std::vector<size_t> m_entity_sync_counts;
   std::vector<unsigned> m_local_ids;
-
-#ifdef SIERRA_MIGRATION
-  bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
-  const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
-  mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
-  std::vector<FmwkId> m_fmwk_global_ids;
-  std::vector<const sierra::Fmwk::MeshObjSharedAttr*> m_fmwk_shared_attrs;
-  std::vector<unsigned short> m_fmwk_connect_counts;
-#endif
 
   //  ContiguousFieldDataManager m_default_field_data_manager;
   DefaultFieldDataManager m_default_field_data_manager;
