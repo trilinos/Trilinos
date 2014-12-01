@@ -256,7 +256,7 @@ template <typename scalar_t>
  *   \param offset  the offset at which calculation will begin.
  *   \param min  on return, min will hold the minimum of the values.
  *   \param max  on return, max will hold the maximum of the values.
- *   \param sum on return, max will hold the sum of the values.
+ *   \param sum on return, sum will hold the sum of the values.
  */
 template <typename scalar_t>
  void getStridedStats(const ArrayView<scalar_t> &v, int stride, 
