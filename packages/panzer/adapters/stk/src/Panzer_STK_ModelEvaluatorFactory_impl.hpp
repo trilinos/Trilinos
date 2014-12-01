@@ -1288,7 +1288,9 @@ namespace panzer_stk_classic {
     using Teuchos::ptrFromRef;
     using Teuchos::ptr_dynamic_cast;
     using panzer::DOFManager;
+#ifdef PANZER_HAVE_FEI
     using panzer::DOFManagerFEI;
+#endif
 
     // first standard dof manager
     {
@@ -1308,6 +1310,7 @@ namespace panzer_stk_classic {
       }
     }
 
+#ifdef PANZER_HAVE_FEI
     // now FEI dof manager
     {
       Ptr<const DOFManagerFEI<int,int> > dofManager = ptr_dynamic_cast<const DOFManagerFEI<int,int> >(ptrFromRef(globalIndexer));
@@ -1325,8 +1328,10 @@ namespace panzer_stk_classic {
         return;
       }
     }
+#endif
   }
 
+#ifdef PANZER_HAVE_FEI
   template<typename ScalarT>
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
@@ -1344,6 +1349,7 @@ namespace panzer_stk_classic {
               Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
      }
   }
+#endif
 
   template<typename ScalarT>
   template<typename GO>
@@ -1681,6 +1687,7 @@ namespace panzer_stk_classic {
     // loop over each field block
     const std::vector<RCP<panzer::UniqueGlobalIndexer<int,GO> > > & blk_dofMngrs = blkDofs.getFieldDOFManagers();
     for(std::size_t b=0;b<blk_dofMngrs.size();b++) {
+#ifdef PANZER_HAVE_FEI
       RCP<panzer::DOFManagerFEI<int,GO> > dofMngr = Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,GO> >(blk_dofMngrs[b],true);
 
       std::vector<std::string> eBlocks;
@@ -1694,9 +1701,13 @@ namespace panzer_stk_classic {
       // loop over each element block, write out topology
       for(std::size_t e=0;e<eBlocks.size();e++)
         writeTopology(*dofMngr,eBlocks[e],file);
+#else
+      TEUCHOS_ASSERT(false);
+#endif
     }
   }
 
+#ifdef PANZER_HAVE_FEI
   template<typename ScalarT>
   template <typename GO>
   void ModelEvaluatorFactory<ScalarT>::
@@ -1736,6 +1747,7 @@ namespace panzer_stk_classic {
       os << " ]" << std::endl;
     }
   }
+#endif
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::

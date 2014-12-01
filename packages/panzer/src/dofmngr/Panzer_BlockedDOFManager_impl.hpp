@@ -411,12 +411,14 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<Local
    ownedGIDHashTable_.clear(); 
    blockGIDOffset_.clear();
 
+#ifdef PANZER_HAVE_FEI
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
      Teuchos::RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofMngr 
          = Teuchos::rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers_[fbm]);
      if(dofMngr!=Teuchos::null)
        dofMngr->resetIndices();
    }
+#endif
 
    return connMngr;
 }
@@ -588,19 +590,28 @@ Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
 buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,MPI_Comm mpiComm) const
 {
+#ifdef PANZER_HAVE_FEI
   if(getUseDOFManagerFEI()) {
     Teuchos::RCP<panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>);
     dofManager->setConnManager(connManager,mpiComm);
 
     return dofManager;
   }
-  else {
+  else
+  {
     Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
     dofManager->enableTieBreak(useTieBreak_);
     dofManager->setConnManager(connManager,mpiComm);
 
     return dofManager;
   }
+#else
+  Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
+  dofManager->enableTieBreak(useTieBreak_);
+  dofManager->setConnManager(connManager,mpiComm);
+
+  return dofManager;
+#endif
 
 }
 
@@ -621,6 +632,7 @@ setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
     }
   }
 
+#ifdef PANZER_HAVE_FEI
   // now the FEI version
   {
     RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
@@ -630,6 +642,7 @@ setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
       return;
     }
   }
+#endif
 
   // you should never get here!
   TEUCHOS_ASSERT(false);
@@ -652,6 +665,7 @@ buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalO
     }
   }
 
+#ifdef PANZER_HAVE_FEI
   // now the FEI version
   {
     RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
@@ -661,6 +675,7 @@ buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalO
       return;
     }
   }
+#endif
 
   // you should never get here!
   TEUCHOS_ASSERT(false);
@@ -683,6 +698,7 @@ printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Globa
     }
   }
 
+#ifdef PANZER_HAVE_FEI
   // now the FEI version
   {
     RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
@@ -692,6 +708,7 @@ printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Globa
       return;
     }
   }
+#endif
 
   // you should never get here!
   TEUCHOS_ASSERT(false);
@@ -714,6 +731,7 @@ getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
       return dofManager->getElementBlockGIDCount(elementBlock);
   }
 
+#ifdef PANZER_HAVE_FEI
   // now the FEI version
   {
     RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
@@ -721,6 +739,7 @@ getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
     if(dofManager!=Teuchos::null)
       return dofManager->getElementBlockGIDCount(elementBlock);
   }
+#endif
 
   // you should never get here!
   TEUCHOS_ASSERT(false);
@@ -749,6 +768,7 @@ addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
     }
   }
 
+#ifdef PANZER_HAVE_FEI
   // now the FEI version
   {
     Ptr<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager_ptr = ptr_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(ugi_ptr);
@@ -758,11 +778,13 @@ addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
       return;
     }
   }
+#endif
 
   // you should never get here!
   TEUCHOS_ASSERT(false);
 }
 
+#ifdef PANZER_HAVE_FEI
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
 addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
@@ -799,6 +821,7 @@ addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
    // register added fields
    fieldBlockManager.registerFields();
 }
+#endif
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::

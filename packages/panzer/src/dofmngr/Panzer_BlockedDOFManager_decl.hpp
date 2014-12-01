@@ -201,7 +201,13 @@ public:
    /** \brief which DOF Manager is used internally?
      */ 
    bool getUseDOFManagerFEI() const
-   { return useDOFManagerFEI_; }
+   { 
+     #ifdef PANZER_HAVE_FEI
+     return useDOFManagerFEI_; 
+     #else
+     return false;
+     #endif
+   }
 
    /** \brief Set the connection manager and MPI_Comm objects.
      *
@@ -445,6 +451,7 @@ protected:
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
   
+   #ifdef PANZER_HAVE_FEI
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
      *
@@ -452,6 +459,7 @@ protected:
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
+   #endif
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
