@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file   example_01.cpp
+/** \file   example_01.cpp
     \brief  Minimize the Gross-Pitaevskii functional and demonstrate 
             the effect of choice of function space of the Gradient on
             convergence.
@@ -49,7 +49,7 @@
     \details Minimize the one-dimensional Gross-Pitaevskii (GP) energy 
              functional
              \f[ J[\psi] = \int \frac{1}{2} |\nabla\psi|^2 + V(x)|\psi|^2 
-                           +\frac{g}{2}|\psi|^4 \,\mathrm{d}x \f]
+                           +g|\psi|^4 \,\mathrm{d}x \f]
              Subject to the equality constraint that the particle density be
              normalized. 
              \f[ e(\psi) = \int |\psi|^2\,\mathrm{d}x - 1 = 0 \f]
@@ -82,12 +82,9 @@
 
 using namespace ROL;
 
-
-
-/* Define Objective Function class */  
 template<class Real>
 class Objective_GrossPitaevskii : public Objective<Real> {
- 
+
     // STL Vector
     typedef std::vector<Real> svec;
 
@@ -102,17 +99,28 @@ class Objective_GrossPitaevskii : public Objective<Real> {
   
 
     private:
-        Real g_;     // Coefficient \f$g\f$ appearing before quartic term in GP functional     
-        int  nx_;    // Number of interior nodes
-        Real dx_;    // Mesh spacing \f$ \Delta x = \frac{1}{n_x+1} \f$ 
-        
-        pcsv Vp_;    // Pointer to potential vector
 
+        /** \var Real g_ appearing before quartic term in GP functional    */ 
+        Real g_;    
+
+        /** \var int nx_ Number of interior nodes  */ 
+        int  nx_;     
+
+        /*! \var int nx_ Mesh spacing \f$ \Delta x = \frac{1}{n_x+1} \f$  */ 
+        Real dx_;     
+        
+        /*! \var ptr Vp_ Pointer to potential vector  */ 
+        pcsv Vp_;    
+
+        //! Apply finite difference operator 
+        /*! Compute \f$K\psi\f$, where \f$K\f$ is the finite difference approximation 
+            of \f$-D_x^2\f$ */
         void applyK(const Vector<Real> &v, Vector<Real> &kv) {
-            /** Pointer to direction vector */
+
+            // Pointer to direction vector 
             pcsv vp = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(v))).getVector();
 
-            /** Pointer to action of Hessian on direction vector */
+            // Pointer to action of Hessian on direction vector 
             psv kvp = Teuchos::rcp_const_cast<svec>((Teuchos::dyn_cast<rvec>(kv)).getVector());
 
             Real dx2 = dx_*dx_;
@@ -136,14 +144,17 @@ class Objective_GrossPitaevskii : public Objective<Real> {
             dx_ = (1.0/(1.0+nx_));
         }
            
-
-    /** Evaluate cost functional */
+    //! Evaluate \f$J[\psi]\f$
+    /*! \f[ J[\psi]=\frac{1}{2} \int\limits_0^1 |\psi'|^2 + 
+            V(x)|\psi|^2+g|\psi|^4\,\mathrm{d}x \f] 
+          where the integral is approximated with the trapezoidal rule and
+          the derivative is approximated using finite differences */
     Real value( const Vector<Real> &psi, Real &tol ) {
         
-        /** Pointer to opt vector */
+        // Pointer to opt vector 
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
 
-        /** Pointer to K applied to opt vector */
+        // Pointer to K applied to opt vector 
         psv kpsip = Teuchos::rcp( new svec(nx_, 0.0) );
         rvec kpsi(kpsip);
 
@@ -161,17 +172,17 @@ class Objective_GrossPitaevskii : public Objective<Real> {
         return J;
     }
 
-
-    /** Evaluate gradient */
+    //! Evaluate \f$\nabla J[\psi]\f$
+    /*! \f[ \nabla J[\psi] = -\psi'' + V(x)\psi+2g|\psi|^3 \f] */
     void gradient( Vector<Real> &g, const Vector<Real> &psi, Real &tol ) {
 
-        /** Pointer to opt vector */
+        // Pointer to opt vector 
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
 
-        /** Pointer to gradient vector */
+        // Pointer to gradient vector 
         psv gp = Teuchos::rcp_const_cast<svec>((Teuchos::dyn_cast<rvec>(g)).getVector());
 
-        /** Pointer to K applied to opt vector */
+        // Pointer to K applied to opt vector 
         psv kpsip = Teuchos::rcp( new svec(nx_, 0.0) );
         rvec kpsi(kpsip);
 
@@ -185,16 +196,17 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 
 
 
-    /** Compute the action of the Hessian evaluated at psi on a vector v */
+    //! Evaluate \f$\nabla^2 J[\psi] v\f$
+    /*! \f[ \nabla^2 J[\psi]v = -v'' + V(x)v+6g|\psi|^2 v \f] */
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &psi, Real &tol ) {
 
-        /** Pointer to opt vector */
+        // Pointer to opt vector 
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
 
-        /** Pointer to direction vector */
+        // Pointer to direction vector 
         pcsv vp = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(v))).getVector();
 
-        /** Pointer to action of Hessian on direction vector */
+        // Pointer to action of Hessian on direction vector 
         psv hvp = Teuchos::rcp_const_cast<svec>((Teuchos::dyn_cast<rvec>(hv)).getVector());
 
         this->applyK(v,hv);
@@ -209,7 +221,6 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 };
 
 
-/** Define class to enforce normalization condition*/  
 template<class Real>
 class Normalization_Constraint : public EqualityConstraint<Real> {
 
@@ -232,13 +243,17 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
     public:
     Normalization_Constraint(int n, Real dx) : nx_(n), dx_(dx) {}          
 
-
+    //! Evaluate \f$c[\psi]\f$
+    /*! \f[ c[\psi]= \int\limits_0^1 |\psi|^2\,\mathrm{d}x - 1 \f] 
+        where the integral is approximated with the trapezoidal rule and
+        the derivative is approximated using finite differences. 
+        This constraint is a scalar */
     void value(Vector<Real> &c, const Vector<Real> &psi, Real &tol){
 
-        /** Pointer to constraint vector (only one element)*/
+        // Pointer to constraint vector (only one element)
         psv cp = Teuchos::rcp_const_cast<svec>((Teuchos::dyn_cast<rvec>(c)).getVector());
 
-        /** Pointer to optimization vector */    
+        // Pointer to optimization vector     
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
 
         (*cp)[0] = -1.0;
@@ -247,16 +262,18 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         } 
     }
 
-
+    //! Evaluate \f$c'[\psi]v\f$
+    /*! \f[ c'[\psi]v= 2 \int\limits_0^1 \psi v\,\mathrm{d}x  \f]
+         The action of the Jacobian on a vector produces a scalar */
     void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &psi, Real &tol){
 
-        /** Pointer to action of Jacobian of constraint on direction vector (yields scalar)*/
+        // Pointer to action of Jacobian of constraint on direction vector (yields scalar)
         psv jvp = Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(jv)).getVector());
 
-        /** Pointer to direction vector */    
+        // Pointer to direction vector     
         pcsv vp = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(v))).getVector();
 
-        /** Pointer to optimization vector */    
+        // Pointer to optimization vector     
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
       
         (*jvp)[0] = 0;
@@ -265,16 +282,18 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         }
     }
 
-
+    //! Evaluate \f$(c'[\psi])^\ast v\f$
+    /*! \f[ (c'[\psi])^\ast v = 2 \int\limits_0^1 \psi v\,\mathrm{d}x  \f] 
+         The action of the Jacobian adjoint on a scalar produces a vector */
     void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &psi, Real &tol){
 
-        /** Pointer to action of adjoint of Jacobian of constraint on direction vector (yields vector)*/
+        // Pointer to action of adjoint of Jacobian of constraint on direction vector (yields vector)
         psv ajvp = Teuchos::rcp_const_cast<svec>((Teuchos::dyn_cast<rvec>(ajv)).getVector());
 
-        /** Pointer to direction vector */    
+        // Pointer to direction vector     
         pcsv vp = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(v))).getVector();
 
-        /** Pointer to optimization vector */    
+        // Pointer to optimization vector     
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
 
         for(int i=0;i<nx_;++i) {
@@ -282,19 +301,23 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         }
     }
 
+    //! Evaluate \f$((c''[\psi])^\ast v)u\f$
+    /*! \f[ ((c''[\psi])^\ast v)u = 2 v u   \f] 
+         The action of the Hessian adjoint on a on a vector v in a direction u produces a vector of
+         the same size as \f$\psi\f$ */
     void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, 
                              const Vector<Real> &psi, Real &tol){
 
-        /** The pointer to action of constraint Hessian in u,v inner product */
+        // The pointer to action of constraint Hessian in u,v inner product
         psv ahuvp = Teuchos::rcp_const_cast<svec>((Teuchos::dyn_cast<rvec>(ahuv)).getVector());
 
-        /** Pointer to direction vector u */    
+        // Pointer to direction vector u     
         pcsv up = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(u))).getVector();
 
-        /** Pointer to direction vector v */    
+        // Pointer to direction vector v     
         pcsv vp = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(v))).getVector();
 
-        /** Pointer to optimization vector */    
+        // Pointer to optimization vector     
         pcsv psip = (Teuchos::dyn_cast<rvec>(const_cast<Vector<Real> &>(psi))).getVector();
 
         
@@ -358,7 +381,7 @@ int main(int argc, char **argv) {
     Teuchos::RCP<std::vector<RealT> > psi_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
 
        
-    /** Set Initial Guess (normalized) */
+    // Set Initial Guess (normalized)
     double sqrt30 = sqrt(30);
 
     for (int i=0; i<nx; i++) {
@@ -367,22 +390,22 @@ int main(int argc, char **argv) {
 
     StdVector<RealT> psi(psi_rcp);
 
-    /** Equality constraint value (scalar) */  
+    // Equality constraint value (scalar)  
     Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
     StdVector<RealT> c(c_rcp);
 
-    /** Lagrange multiplier value (scalar) */  
+    // Lagrange multiplier value (scalar)   
     Teuchos::RCP<std::vector<RealT> > lam_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
     StdVector<RealT> lam(lam_rcp);
 
-    /** Gradient */  
+    // Gradient   
     Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
     StdVector<RealT> g(g_rcp);
 
-    /** Instantiate objective function */ 
+    // Instantiate objective function  
     Objective_GrossPitaevskii<RealT> obj(gnl,V);
     
-    /** Instantiate normalization constraint */
+    // Instantiate normalization constraint
     Normalization_Constraint<RealT> constr(nx,dx);
 
     Teuchos::ParameterList parlist;
