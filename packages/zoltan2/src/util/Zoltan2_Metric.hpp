@@ -471,7 +471,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
 
   if (numMetrics > 1){
 
-    scalar_t *wgt = localBuf + nparts; // single normed weight
+    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
     try{
       normedPartWeights<scalar_t, pnum_t, lno_t, part_t>(env, nparts, 
         part, vwgts, mcNorm, wgt);
