@@ -752,6 +752,15 @@ public:
     Impl::if_c< ! Impl::is_same< Kokkos::OpenMP , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;
 
+  //----------------------------------------
+
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return execution_space::thread_pool_size(1); }
+
+  //----------------------------------------
+
 private:
 
   int m_league_size ;
@@ -793,11 +802,6 @@ public:
 
   TeamPolicy( int league_size_request , int team_size_request )
     { init( league_size_request , team_size_request ); }
-
-  template< class FunctorType >
-  inline static
-  int team_size_max( const FunctorType & )
-    { return execution_space::thread_pool_size(1); }
 
   inline int team_alloc() const { return m_team_alloc ; }
   inline int team_iter()  const { return m_team_iter ; }

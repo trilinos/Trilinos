@@ -26,7 +26,7 @@ struct TestInsert
     , collisions(arg_collisions)
   {}
 
-  void apply( bool rehash_on_fail = true )
+  void testit( bool rehash_on_fail = true )
   {
     device_type::fence();
 
@@ -79,7 +79,7 @@ struct TestInsert
       , m_num_duplicates(num_duplicates)
     {}
 
-    void apply()
+    void testit()
     {
       device_type::fence();
       Kokkos::parallel_for(m_num_erase, *this);
@@ -118,7 +118,7 @@ struct TestInsert
       , m_max_key( ((num_inserts + num_duplicates) - 1)/num_duplicates )
     {}
 
-    void apply(value_type &errors)
+    void testit(value_type &errors)
     {
       device_type::execution_space::fence();
       Kokkos::parallel_reduce(m_map.capacity(), *this, errors);
@@ -164,11 +164,11 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
 
   if (near) {
     Impl::TestInsert<map_type,true> test_insert(map, num_inserts, num_duplicates);
-    test_insert.apply();
+    test_insert.testit();
   } else
   {
     Impl::TestInsert<map_type,false> test_insert(map, num_inserts, num_duplicates);
-    test_insert.apply();
+    test_insert.testit();
   }
 
   const bool print_list = false;
@@ -186,13 +186,13 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
     {
       uint32_t find_errors = 0;
       Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates);
-      test_find.apply(find_errors);
+      test_find.testit(find_errors);
       EXPECT_EQ( 0u, find_errors);
     }
 
     map.begin_erase();
     Impl::TestErase<map_type,false> test_erase(map, num_inserts, num_duplicates);
-    test_erase.apply();
+    test_erase.testit();
     map.end_erase();
     EXPECT_EQ(0u, map.size());
   }
@@ -205,7 +205,7 @@ void test_failed_insert( uint32_t num_nodes)
 
   map_type map(num_nodes);
   Impl::TestInsert<map_type> test_insert(map, 2u*num_nodes, 1u);
-  test_insert.apply(false /*don't rehash on fail*/);
+  test_insert.testit(false /*don't rehash on fail*/);
   Device::execution_space::fence();
 
   EXPECT_TRUE( map.failed_insert() );
@@ -227,13 +227,13 @@ void test_deep_copy( uint32_t num_nodes )
 
   {
     Impl::TestInsert<map_type> test_insert(map, num_nodes, 1);
-    test_insert.apply();
+    test_insert.testit();
     ASSERT_EQ( map.size(), num_nodes);
     ASSERT_FALSE( map.failed_insert() );
     {
       uint32_t find_errors = 0;
       Impl::TestFind<map_type> test_find(map, num_nodes, 1);
-      test_find.apply(find_errors);
+      test_find.testit(find_errors);
       EXPECT_EQ( find_errors, 0u);
     }
 
@@ -247,7 +247,7 @@ void test_deep_copy( uint32_t num_nodes )
   {
     uint32_t find_errors = 0;
     Impl::TestFind<host_map_type> test_find(hmap, num_nodes, 1);
-    test_find.apply(find_errors);
+    test_find.testit(find_errors);
     EXPECT_EQ( find_errors, 0u);
   }
 
@@ -261,7 +261,7 @@ void test_deep_copy( uint32_t num_nodes )
   {
     uint32_t find_errors = 0;
     Impl::TestFind<const_map_type> test_find(cmap, num_nodes, 1);
-    test_find.apply(find_errors);
+    test_find.testit(find_errors);
     EXPECT_EQ( find_errors, 0u);
   }
 

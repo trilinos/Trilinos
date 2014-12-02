@@ -59,11 +59,11 @@ namespace Example {
 
 //----------------------------------------------------------------------------
 
-template< class Device >
+template< class ExecSpace >
 struct SortView {
 
   template< typename ValueType >
-  SortView( const Kokkos::View<ValueType*,Device> v , int begin , int end )
+  SortView( const Kokkos::View<ValueType*,ExecSpace> v , int begin , int end )
     {
       std::sort( v.ptr_on_device() + begin , v.ptr_on_device() + end );
     }
@@ -85,17 +85,17 @@ struct SortView< Kokkos::Cuda > {
 
 //----------------------------------------------------------------------------
 
-template< class Device >
+template< class ExecSpace >
 struct GrowArrayFunctor {
 
-  typedef Device device_type ;
+  typedef ExecSpace  device_type ;
 
   enum { SHIFT = sizeof(int) == 8 ? 6 : 5 }; // 8 or 4 byte int
   enum { MASK  = ( 1 << SHIFT ) - 1 };
 
-  const Kokkos::View<int*,Device>  m_search_flags ; // bit flags for values to append
-  const Kokkos::View<int*,Device>  m_search_array ; // array to append values
-  const Kokkos::View<int,Device>   m_search_count ; // offset
+  const Kokkos::View<int*,ExecSpace>  m_search_flags ; // bit flags for values to append
+  const Kokkos::View<int*,ExecSpace>  m_search_array ; // array to append values
+  const Kokkos::View<int,ExecSpace>   m_search_count ; // offset
   const int m_search_total ;
   const int m_search_team_chunk ;
 
@@ -105,70 +105,7 @@ struct GrowArrayFunctor {
     , m_search_count( "count" )
     , m_search_total( search_length )
     , m_search_team_chunk( 2048 )
-    {
-      typename Kokkos::View<int,Device>::HostMirror  count = Kokkos::create_mirror_view( m_search_count );
-      typename Kokkos::View<int*,Device>::HostMirror flags = Kokkos::create_mirror_view( m_search_flags );
-
-      // Set at most 'array_length' random bits over the search length.
-      for ( int i = 0 ; i < array_length ; ++i ) {
-        // 'lrand48()' generates random number between [0..2^31]
-        // index = ( lrand48() * search_length ) / ( 2^31 )
-        const long int index = ( lrand48() * search_length ) >> 31 ;
-        // set the bit within the flags:
-        flags( index >> SHIFT ) |= ( 1 << ( index & MASK ) );
-      }
-
-      Kokkos::deep_copy( m_search_flags , flags );
-
-
-      // Each team works on 'm_search_team_chunk' span of the search_length
-      Kokkos::TeamPolicy< Device > work( /* #teams */ ( search_length + m_search_team_chunk - 1 ) / m_search_team_chunk
-                                       , /* threads/team */ Device::team_recommended() );
-
-      // Fill array:
-      Kokkos::parallel_for( work , *this );
-
-      // How much was filled:
-      Kokkos::deep_copy( count , m_search_count );
-
-      // Sort array:
-      SortView< device_type >( m_search_array , 0 , *count );
-
-      // Mirror the results:
-      typename Kokkos::View<int*,Device>::HostMirror results = Kokkos::create_mirror_view( m_search_array );
-      Kokkos::deep_copy( results , m_search_array );
-
-      // Verify results:
-      int result_error_count = 0 ;
-      int flags_error_count = 0 ;
-      for ( int i = 0 ; i < *count ; ++i ) {
-        const int index = results(i);
-        const int entry = index >> SHIFT ;
-        const int bit   = 1 << ( index & MASK );
-        const bool flag = 0 != ( flags( entry ) & bit );
-        if ( ! flag ) {
-          if ( print ) std::cerr << "result( " << i << " : " << index << " )";
-          ++result_error_count ;
-        }
-        flags( entry ) &= ~bit ; // Clear that verified bit
-      }
-
-      for ( int i = 0 ; i < int(flags.dimension_0()) ; ++i ) {
-        // If any uncleared bits then an error
-        if ( flags(i) ) {
-          if ( print ) std::cerr << "flags( " << i << " : " << flags(i) << " )" ;
-          ++flags_error_count ;
-        }
-      }
-
-      if ( result_error_count || flags_error_count ) {
-        std::cerr << std::endl << "Example::GrowArrayFunctor( " << array_length
-                  << " , " << search_length
-                  << " ) result_error_count( " << result_error_count << " )"
-                  << " ) flags_error_count( " << flags_error_count << " )"
-                  << std::endl ;
-      }
-    }
+    {}
 
   KOKKOS_INLINE_FUNCTION
   bool flag_is_set( const int index ) const
@@ -182,7 +119,7 @@ struct GrowArrayFunctor {
       return s ;
     }
 
-  typedef typename Kokkos::TeamPolicy<Device>::member_type team_member ;
+  typedef typename Kokkos::TeamPolicy<ExecSpace>::member_type team_member ;
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & member ) const
@@ -240,8 +177,76 @@ struct GrowArrayFunctor {
 };
 
 
+template< class ExecSpace >
+void grow_array( int array_length , int search_length , int print = 1 )
+{
+  typedef GrowArrayFunctor< ExecSpace > FunctorType ;
 
+  FunctorType functor( array_length , search_length , print );
 
+  typename Kokkos::View<int,ExecSpace>::HostMirror  count = Kokkos::create_mirror_view( functor.m_search_count );
+  typename Kokkos::View<int*,ExecSpace>::HostMirror flags = Kokkos::create_mirror_view( functor.m_search_flags );
+
+  // Set at most 'array_length' random bits over the search length.
+  for ( int i = 0 ; i < array_length ; ++i ) {
+    // 'lrand48()' generates random number between [0..2^31]
+    // index = ( lrand48() * search_length ) / ( 2^31 )
+    const long int index = ( lrand48() * search_length ) >> 31 ;
+    // set the bit within the flags:
+    flags( index >> FunctorType::SHIFT ) |= ( 1 << ( index & FunctorType::MASK ) );
+  }
+
+  Kokkos::deep_copy( functor.m_search_flags , flags );
+
+  // Each team works on 'functor.m_search_team_chunk' span of the search_length
+  Kokkos::TeamPolicy< ExecSpace >
+    work( /* #teams */ ( search_length + functor.m_search_team_chunk - 1 ) / functor.m_search_team_chunk
+        , /* threads/team */ Kokkos::TeamPolicy< ExecSpace >::team_size_max( functor ) );
+
+  // Fill array:
+  Kokkos::parallel_for( work , functor );
+
+  // How much was filled:
+  Kokkos::deep_copy( count , functor.m_search_count );
+
+  // Sort array:
+  SortView< ExecSpace >( functor.m_search_array , 0 , *count );
+
+  // Mirror the results:
+  typename Kokkos::View<int*,ExecSpace>::HostMirror results = Kokkos::create_mirror_view( functor.m_search_array );
+  Kokkos::deep_copy( results , functor.m_search_array );
+
+  // Verify results:
+  int result_error_count = 0 ;
+  int flags_error_count = 0 ;
+  for ( int i = 0 ; i < *count ; ++i ) {
+    const int index = results(i);
+    const int entry = index >> FunctorType::SHIFT ;
+    const int bit   = 1 << ( index & FunctorType::MASK );
+    const bool flag = 0 != ( flags( entry ) & bit );
+    if ( ! flag ) {
+      if ( print ) std::cerr << "result( " << i << " : " << index << " )";
+      ++result_error_count ;
+    }
+    flags( entry ) &= ~bit ; // Clear that verified bit
+  }
+
+  for ( int i = 0 ; i < int(flags.dimension_0()) ; ++i ) {
+    // If any uncleared bits then an error
+    if ( flags(i) ) {
+      if ( print ) std::cerr << "flags( " << i << " : " << flags(i) << " )" ;
+      ++flags_error_count ;
+    }
+  }
+
+  if ( result_error_count || flags_error_count ) {
+    std::cerr << std::endl << "Example::GrowArrayFunctor( " << array_length
+              << " , " << search_length
+              << " ) result_error_count( " << result_error_count << " )"
+              << " ) flags_error_count( " << flags_error_count << " )"
+              << std::endl ;
+  }
+}
 
 
 } // namespace Example

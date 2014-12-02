@@ -245,6 +245,7 @@ public:
   typedef ExecSpace   execution_space ;
   typedef WorkTag     work_tag ;
 
+  //----------------------------------------
   /** \brief  Query maximum team size for a given functor.
    *
    *  This size takes into account execution space concurrency limitations and
@@ -254,6 +255,7 @@ public:
   template< class FunctorType >
   static int team_size_max( const FunctorType & );
 
+  //----------------------------------------
   /** \brief  Construct policy with the given instance of the execution space */
   TeamPolicy( execution_space & , int league_size_request , int team_size_request );
 

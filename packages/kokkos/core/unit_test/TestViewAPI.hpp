@@ -81,7 +81,7 @@ struct TestViewOperator
     , v2( "v2" , N )
     {}
 
-  static void apply()
+  static void testit()
   {
     Kokkos::parallel_for( N , TestViewOperator() );
   }
@@ -165,7 +165,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -272,7 +272,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -367,7 +367,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -467,7 +467,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -564,7 +564,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -660,7 +660,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -759,7 +759,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -858,7 +858,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -919,15 +919,15 @@ public:
     run_test_subview_strided();
     run_test_vector();
 
-    TestViewOperator< T , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2] , device >::apply();
+    TestViewOperator< T , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2] , device >::testit();
   }
 
   static void run_test_mirror()

@@ -48,6 +48,7 @@
 
 #include <utility>
 #include <impl/Kokkos_spinwait.hpp>
+#include <impl/Kokkos_FunctorAdapter.hpp>
 
 #include <Kokkos_Atomic.hpp>
 
@@ -169,11 +170,12 @@ public:
   //------------------------------------
   // All-thread functions:
 
-  template< class Functor >
+  template< class FunctorType , class ArgTag >
   inline
-  void fan_in_reduce( const Functor & f ) const
+  void fan_in_reduce( const FunctorType & f ) const
     {
-      typedef ReduceAdapter< Functor > Reduce ;
+      typedef Kokkos::Impl::FunctorValueJoin< FunctorType , ArgTag > Join ;
+      typedef Kokkos::Impl::FunctorFinal<     FunctorType , ArgTag > Final ;
 
       const int rev_rank  = m_pool_size - ( m_pool_rank + 1 );
 
@@ -183,11 +185,11 @@ public:
 
         Impl::spinwait( fan.m_pool_state , ThreadsExec::Active );
 
-        Reduce::join( f , reduce_memory() , fan.reduce_memory() );
+        Join::join( f , reduce_memory() , fan.reduce_memory() );
       }
 
       if ( ! rev_rank ) {
-        Reduce::final( f , reduce_memory() );
+        Final::final( f , reduce_memory() );
       }
     }
 
@@ -201,7 +203,7 @@ public:
       }
     }
 
-  template< class FunctorType >
+  template< class FunctorType , class ArgTag >
   inline
   void scan_large( const FunctorType & f )
     {
@@ -212,11 +214,14 @@ public:
       //  3) Rendezvous         : All threads inclusive scan value are available
       //  4) ScanCompleted      : exclusive scan value copied
 
-      typedef ReduceAdapter< FunctorType > Reduce ;
-      typedef typename Reduce::scalar_type scalar_type ;
+      typedef Kokkos::Impl::FunctorValueTraits< FunctorType , ArgTag > Traits ;
+      typedef Kokkos::Impl::FunctorValueJoin<   FunctorType , ArgTag > Join ;
+      typedef Kokkos::Impl::FunctorValueInit<   FunctorType , ArgTag > Init ;
+
+      typedef typename Traits::value_type scalar_type ;
 
       const int      rev_rank = m_pool_size - ( m_pool_rank + 1 );
-      const unsigned count    = Reduce::value_count( f );
+      const unsigned count    = Traits::value_count( f );
 
       scalar_type * const work_value = (scalar_type *) reduce_memory();
 
@@ -227,7 +232,7 @@ public:
 
         // Wait: Active -> ReductionAvailable (or ScanAvailable)
         Impl::spinwait( fan.m_pool_state , ThreadsExec::Active );
-        Reduce::join( f , work_value , fan.reduce_memory() );
+        Join::join( f , work_value , fan.reduce_memory() );
       }
 
       // Copy reduction value to scan value before releasing from this phase.
@@ -247,7 +252,7 @@ public:
           Impl::spinwait( th.m_pool_state , ThreadsExec::Active );
           Impl::spinwait( th.m_pool_state , ThreadsExec::ReductionAvailable );
 
-          Reduce::join( f , work_value + count , ((scalar_type *)th.reduce_memory()) + count );
+          Join::join( f , work_value + count , ((scalar_type *)th.reduce_memory()) + count );
         }
 
         // This thread has completed inclusive scan
@@ -284,7 +289,7 @@ public:
         for ( unsigned j = 0 ; j < count ; ++j ) { work_value[j] = src_value[j]; }
       }
       else {
-        (void) Reduce::init( f , work_value );
+        (void) Init::init( f , work_value );
       }
 
       //--------------------------------
@@ -305,15 +310,18 @@ public:
       }
     }
 
-  template< class FunctorType >
+  template< class FunctorType , class ArgTag >
   inline
   void scan_small( const FunctorType & f )
     {
-      typedef ReduceAdapter< FunctorType > Reduce ;
-      typedef typename Reduce::scalar_type scalar_type ;
+      typedef Kokkos::Impl::FunctorValueTraits< FunctorType , ArgTag > Traits ;
+      typedef Kokkos::Impl::FunctorValueJoin<   FunctorType , ArgTag > Join ;
+      typedef Kokkos::Impl::FunctorValueInit<   FunctorType , ArgTag > Init ;
+
+      typedef typename Traits::value_type scalar_type ;
 
       const int      rev_rank = m_pool_size - ( m_pool_rank + 1 );
-      const unsigned count    = Reduce::value_count( f );
+      const unsigned count    = Traits::value_count( f );
 
       scalar_type * const work_value = (scalar_type *) reduce_memory();
 
@@ -340,10 +348,10 @@ public:
           scalar_type * const ptr = (scalar_type *) get_thread( rank )->reduce_memory();
           if ( rank ) {
             for ( unsigned i = 0 ; i < count ; ++i ) { ptr[i] = ptr_prev[ i + count ]; }
-            Reduce::join( f , ptr + count , ptr );
+            Join::join( f , ptr + count , ptr );
           }
           else {
-            (void) Reduce::init( f , ptr );
+            (void) Init::init( f , ptr );
           }
           ptr_prev = ptr ;
         }
@@ -360,13 +368,6 @@ public:
    *          Acquire the Threads device and start this functor.
    */
   static void start( void (*)( ThreadsExec & , const void * ) , const void * );
-
-/*
-  static unsigned team_max();
-  static unsigned team_recommended();
-  static unsigned hardware_thread_id();
-  static unsigned max_hardware_threads();
-*/
 
   static int  in_parallel();
   static void fence();
@@ -1115,6 +1116,15 @@ public:
     Impl::if_c< ! Impl::is_same< Kokkos::Threads , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;
 
+  //----------------------------------------
+
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return execution_space::thread_pool_size(1); }
+
+  //----------------------------------------
+
   inline int team_size() const { return m_team_size ; }
   inline int team_alloc() const { return m_team_alloc ; }
   inline int league_size() const { return m_league_size ; }
@@ -1131,11 +1141,6 @@ public:
     , m_team_size(0)
     , m_team_alloc(0)
     { init(league_size_request,team_size_request); }
-
-  template< class FunctorType >
-  inline static
-  int team_size_max( const FunctorType & )
-    { return execution_space::thread_pool_size(1); }
 
   typedef Impl::ThreadsExecTeamMember member_type ;
 

@@ -54,7 +54,7 @@
 
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_Traits.hpp>
-/* #include <impl/Kokkos_ReductionAdapter.hpp> */
+#include <impl/Kokkos_FunctorAdapter.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -128,26 +128,6 @@ struct FunctorPolicyExecutionSpace
 {
   typedef typename Functor::execution_space execution_space ;
 };
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType , class Enable = void >
-struct ReduceAdapterValueType ;
-
-template< class FunctorType >
-struct ReduceAdapterValueType< FunctorType , typename enable_if_type< typename FunctorType::value_type >::type >
-{
-  typedef typename FunctorType::value_type type ;
-};
-
-/// \class ReduceAdapter
-/// \brief Implementation detail of parallel_reduce.
-///
-/// This is an implementation detail of parallel_reduce.  Users should
-/// skip this and go directly to the nonmember function parallel_reduce.
-template< class FunctorType ,
-          class ValueType = typename ReduceAdapterValueType< FunctorType >::type >
-struct ReduceAdapter ;
 
 //----------------------------------------------------------------------------
 /// \class ParallelFor
@@ -288,11 +268,11 @@ void parallel_reduce( const size_t        work_count
 
   typedef RangePolicy< execution_space > policy ;
 
-  typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void >  ValueTraits ;
 
-  typedef typename Kokkos::Impl::if_c< (Reduce::StaticValueSize != 0)
-                                     , typename Reduce::scalar_type
-                                     , typename Reduce::pointer_type
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
                                      >::type value_type ;
 
   Kokkos::View< value_type
@@ -324,25 +304,26 @@ void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Impl::enable_if<
                       ( ! Impl::is_integral< ExecPolicy >::value )
-                      , typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type
+                      , typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type
                       >::type result_ref )
 {
-  typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , void >  ValueOps ;
 
   // Wrap the result output request in a view to inform the implementation
   // of the type and memory space.
 
-  typedef typename Kokkos::Impl::if_c< (Reduce::StaticValueSize != 0)
-                                     , typename Reduce::scalar_type
-                                     , typename Reduce::pointer_type
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
                                      >::type value_type ;
 
   Kokkos::View< value_type
               , HostSpace
               , Kokkos::MemoryUnmanaged
               >
-    result_view( Reduce::pointer( result_ref )
-               , Reduce::value_count( functor )
+    result_view( ValueOps::pointer( result_ref )
+               , ValueTraits::value_count( functor )
                );
 
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
@@ -370,30 +351,31 @@ template< class FunctorType >
 inline
 void parallel_reduce( const size_t        work_count ,
                       const FunctorType & functor ,
-                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
+                      typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type result )
 {
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , void >  ValueOps ;
+
   typedef typename
     Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
       execution_space ;
 
   typedef Kokkos::RangePolicy< execution_space > policy ;
 
-  typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
-
   // Wrap the result output request in a view to inform the implementation
   // of the type and memory space.
 
-  typedef typename Kokkos::Impl::if_c< (Reduce::StaticValueSize != 0)
-                                     , typename Reduce::scalar_type
-                                     , typename Reduce::pointer_type
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
                                      >::type value_type ;
 
   Kokkos::View< value_type
               , HostSpace
               , Kokkos::MemoryUnmanaged
               >
-    result_view( Reduce::pointer( result )
-               , Reduce::value_count( functor )
+    result_view( ValueOps::pointer( result )
+               , ValueTraits::value_count( functor )
                );
 
   (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
@@ -629,225 +611,6 @@ template< class FunctorType >
 struct FunctorTeamShmemSize< FunctorType , typename enable_if< sizeof( & FunctorType::shmem_size ) >::type >
 {
   static inline size_t value( const FunctorType & f , int team_size ) { return f.shmem_size( team_size ) ; }
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-#if defined( KOKKOS_HAVE_CXX11 )
-
-template< class FunctionPtr >
-struct ReduceAdapterFunctorOperatorArgType ;
-
-template< class Functor , class Arg0 , class Arg1 >
-struct ReduceAdapterFunctorOperatorArgType< void ( Functor::*)( Arg0 , Arg1 & ) const > {
-  typedef Arg1 type ;
-};
-
-template< class FunctionPtr >
-struct ScanAdapterFunctorOperatorArgType ;
-
-template< class Functor , class Arg0 , class Arg1 >
-struct ScanAdapterFunctorOperatorArgType< void ( Functor::*)( Arg0 , Arg1 & , bool ) const > {
-  typedef Arg1 type ;
-};
-
-// Functor does not have a 'typedef ... value_type' and C++11 is enabled.
-// Deduce the value type from the functor's argument list.
-template< class FunctorType , class Enable >
-struct ReduceAdapterValueType {
-private:
-  typedef decltype( & FunctorType::operator() ) function_pointer_type ;
-public:
-  typedef typename ReduceAdapterFunctorOperatorArgType< function_pointer_type >::type type ;
-};
-
-#endif /* #if defined( KOKKOS_HAVE_CXX11 ) */
-
-template< class FunctorType , class ScalarType >
-struct ReduceAdapter
-{
-  enum { StaticValueSize = sizeof(ScalarType) };
-
-  typedef ScalarType & reference_type  ;
-  typedef ScalarType * pointer_type  ;
-  typedef ScalarType   scalar_type  ;
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p ) { return *((ScalarType*) p); }
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)[i]; }
-
-  KOKKOS_INLINE_FUNCTION static
-  pointer_type pointer( reference_type p ) { return & p ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return 1 ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_size( const FunctorType & ) { return sizeof(ScalarType); }
-
-  KOKKOS_INLINE_FUNCTION static
-  void copy( const FunctorType & , void * const dst , const void * const src )
-    { *((scalar_type*)dst) = *((const scalar_type*)src); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void join( const F & f
-           , volatile void * update
-           , typename enable_if< is_same<F,FunctorType>::value &&
-                                 FunctorHasJoin<F>::value
-                               , volatile const void *
-                               >::type input )
-    { f.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void join( const F & f
-           , volatile void * update
-           , typename enable_if< is_same<F,FunctorType>::value &&
-                                 ! FunctorHasJoin<F>::value
-                               , volatile const void *
-                               >::type input )
-    { *((volatile ScalarType*)update) += *((volatile const ScalarType*)input); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  reference_type
-  init( const F & f ,
-        typename enable_if< ( is_same<F,FunctorType>::value &&
-                              FunctorHasInit<F>::value )
-                          >::type * p )
-    { f.init( *((ScalarType *) p ) );  return *((ScalarType *) p ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  reference_type
-  init( const F & ,
-        typename enable_if< ( is_same<F,FunctorType>::value &&
-                              ! FunctorHasInit<F>::value )
-                          >::type * p )
-    { return *( new(p) ScalarType() ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & f ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    FunctorHasFinal<F>::value )
-                                >::type * p )
-    { f.final( *((ScalarType *) p ) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    ! FunctorHasFinal<F>::value )
-                                >::type * )
-    {}
-};
-
-template< class FunctorType , class ScalarType >
-struct ReduceAdapter< FunctorType , ScalarType[] >
-{
-  enum { StaticValueSize = 0 };
-
-  typedef ScalarType * reference_type  ;
-  typedef ScalarType * pointer_type  ;
-  typedef ScalarType   scalar_type  ;
-
-  KOKKOS_INLINE_FUNCTION static
-  ScalarType * reference( void * p ) { return (ScalarType*) p ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)+i; }
-
-  KOKKOS_INLINE_FUNCTION static
-  pointer_type pointer( reference_type p ) { return p ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_count( const FunctorType & f ) { return f.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_size( const FunctorType & f ) { return f.value_count * sizeof(ScalarType); }
-
-  KOKKOS_INLINE_FUNCTION static
-  void copy( const FunctorType & f , void * const dst , const void * const src )
-    {
-      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
-        ((scalar_type*)dst)[i] = ((const scalar_type*)src)[i];
-      }
-    }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void join( const F & f
-           , volatile void * const update
-           , typename enable_if< is_same<F,FunctorType>::value &&
-                                 FunctorHasJoin<F>::value
-                               , volatile const void * const
-                               >::type input )
-    { f.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void join( const F & f
-           , volatile void * const update
-           , typename enable_if< is_same<F,FunctorType>::value &&
-                                 ! FunctorHasJoin<F>::value
-                               , volatile const void * const
-                               >::type input )
-    {
-      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
-        ((volatile ScalarType*)update)[i] += ((volatile const ScalarType*)input)[i] ;
-      }
-    }
-
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  reference_type
-  init( const F & f ,
-        typename enable_if< ( is_same<F,FunctorType>::value &&
-                              FunctorHasInit<F>::value )
-                          >::type * p )
-    { f.init( ((ScalarType *) p ) ); return (ScalarType*) p ; }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  reference_type
-  init( const F & f ,
-        typename enable_if< ( is_same<F,FunctorType>::value &&
-                              ! FunctorHasInit<F>::value )
-                          >::type * p )
-    {
-      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
-        new(((ScalarType*)p)+i) ScalarType();
-      }
-      return (ScalarType*)p ;
-    }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & f ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    FunctorHasFinal<F>::value )
-                                >::type * p )
-    { f.final( ((ScalarType *) p ) ); }
-
-  template< class F >
-  KOKKOS_INLINE_FUNCTION static
-  void final( const F & ,
-              typename enable_if< ( is_same<F,FunctorType>::value &&
-                                    ! FunctorHasFinal<F>::value )
-                                >::type * )
-    {}
 };
 
 } // namespace Impl

@@ -191,9 +191,6 @@ public:
    */
   static std::vector<unsigned> detect_device_arch();
 
-  static unsigned team_max();
-  static unsigned team_recommended();
-
   //@}
   //--------------------------------------------------------------------------
 };
