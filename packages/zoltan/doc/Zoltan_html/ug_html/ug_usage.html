@@ -389,8 +389,8 @@ build options that were used when Zoltan was built.
 Application query functions and application callable library functions
 use global and local identifiers (IDs) for objects. <i>All objects to be
 used in load balancing must have unique global IDs.</i> Zoltan stores an
-ID as an array of ZOLTAN_ID_TYPE.  The default for ZOLTAN_ID_TYPE, but 
-configuration parameters can select unsigned long or unsigned long long
+ID as an array of ZOLTAN_ID_TYPE.  The default for ZOLTAN_ID_TYPE is unsigned 
+int, but configuration parameters can select unsigned long or unsigned long long
 as the type; see above for the appropriate configuration flags for
 <a href="#Autotools">Autotools</a> and <a href="#CMake">CMake</a>.
 The number of entries in these arrays
