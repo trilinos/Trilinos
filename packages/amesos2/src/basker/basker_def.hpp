@@ -107,7 +107,7 @@ namespace Basker{
    Int *pattern, /* o/p */
    Int *top,       /* o/p */
    Int k,
-   Int *pinv,
+   Int *tpinv,
    Int *stack
   )
   {
@@ -126,7 +126,7 @@ namespace Basker{
 #ifdef BASKER_DEBUG
         //std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
 #endif
-        t = pinv [j] ;
+        t = tpinv [j] ;
         if (color[j] == 0)
           {
             /* Seeing this column for first time */
