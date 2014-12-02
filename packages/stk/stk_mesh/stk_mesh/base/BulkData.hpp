@@ -68,8 +68,6 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 
-namespace sierra { namespace Fmwk { class MeshBulkData; } }
-namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
