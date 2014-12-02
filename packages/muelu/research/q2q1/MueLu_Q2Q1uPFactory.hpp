@@ -1267,23 +1267,25 @@ namespace MueLu {
     Awrap->getCrsMatrix()->getAllValues(ia, ja, val);
   }
 
+  const std::string OUTPUT_DIR = "status/";
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
-    const std::string dirName = "status/";
+    const std::string dirName = OUTPUT_DIR;
 
     struct stat sb;
     if (stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode))
-      GetOStream(Errors) << "Please create a \"status/\" directory" << std::endl;
+      GetOStream(Errors) << "Please create a \"" << dirName << "\" directory" << std::endl;
 
     if (pressureMode) {
-      std::ofstream ofs(("status/" + filename).c_str());
+      std::ofstream ofs((dirName + filename).c_str());
       for (size_t i = 0; i < status.size(); i++)
         ofs << status[i] << std::endl;
 
     } else {
-      std::ofstream ofs1(("status/" + filename + ".1").c_str());
-      std::ofstream ofs2(("status/" + filename + ".2").c_str());
+      std::ofstream ofs1((dirName + filename + ".1").c_str());
+      std::ofstream ofs2((dirName + filename + ".2").c_str());
       for (size_t i = 0; i < status.size(); i += 2) {
         ofs1 << status[i+0] << std::endl;
         ofs2 << status[i+1] << std::endl;
@@ -1294,6 +1296,12 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DumpCoords(const MultiVector& coords, const std::string& filename) const {
+    const std::string dirName = OUTPUT_DIR;
+
+    struct stat sb;
+    if (stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode))
+      GetOStream(Errors) << "Please create a \"" << dirName << "\" directory" << std::endl;
+
     const int NDim = coords.getNumVectors();
     const int n    = coords.getLocalLength();
 
@@ -1301,7 +1309,7 @@ namespace MueLu {
     for (int k = 0; k < NDim; k++)
       coords1D[k] = coords.getData(k);
 
-    std::ofstream ofs(filename.c_str());
+    std::ofstream ofs((dirName + filename).c_str());
     for (int i = 0; i < n; i++) {
       for (int k = 0; k < NDim; k++)
         ofs << " " << coords1D[k][i];
