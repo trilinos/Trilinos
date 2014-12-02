@@ -598,10 +598,10 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   numParts = nparts;
   obj = sumBuf;               // # of objects
 
-  for (part_t p=nparts-1; p > 0; p--){
+  /*for (part_t p=nparts-1; p > 0; p--){
     if (obj[p] > 0) break;
     numParts--;
-  }
+    }*/
 
   numNonemptyParts = numParts; 
 
