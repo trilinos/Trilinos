@@ -142,10 +142,11 @@ public:
     flagAC_ = 0;
     iterCG_ = 0;
 
-    maxiterCG_ = 20;
-    tolCG_ = 1e-2;
-
     Real nominal_tol = parlist.get("Nominal SQP Optimality Solver Tolerance", 1e-3);
+ 
+    maxiterCG_  = parlist.get("Maximum Number of Krylov Iterations",20);
+    tolCG_      = parlist.get("Absolute Krylov Tolerance",1e-2);
+
     lmhtol_  = nominal_tol;
     qntol_   = nominal_tol;
     pgtol_   = nominal_tol;
