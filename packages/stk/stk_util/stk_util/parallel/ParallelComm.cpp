@@ -1002,7 +1002,6 @@ bool comm_sizes( ParallelMachine comm ,
                  bool local_flag )
 {
   static const char method[] = "stk::comm_unknown_sizes" ;
-  const size_t uzero = 0 ;
 
   static MPI_Op mpi_op = MPI_OP_NULL ;
 
@@ -1024,9 +1023,21 @@ bool comm_sizes( ParallelMachine comm ,
   size_t max_msg  = 0 ;
   bool     global_flag = false ;
 
+  MPI_Datatype size_t_type_ = MPI_LONG_LONG;
+  if (sizeof(int) == sizeof(size_t))
+    size_t_type_ = MPI_INT;
+  else if (sizeof(long) == sizeof(size_t))
+    size_t_type_ = MPI_LONG;
+  else if (sizeof(long long) == sizeof(size_t))
+    size_t_type_ = MPI_LONG_LONG;
+  else {
+    msg << method << " ERROR: No matching MPI type found for size_t argument";
+    throw std::runtime_error(msg.str());
+  }
+
   {
-    std::vector<size_t> send_buf( p_size + 2 , uzero );
-    std::vector<size_t> recv_buf( p_size + 2 , uzero );
+    std::vector<size_t> send_buf( p_size + 2 );
+    std::vector<size_t> recv_buf( p_size + 2 );
 
     size_t * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
     size_t * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
@@ -1041,8 +1052,7 @@ bool comm_sizes( ParallelMachine comm ,
     send_buf[p_size]   = max_msg ;
     send_buf[p_size+1] = local_flag ;
 
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(size_t));
-    result = MPI_Allreduce(p_send,p_recv,p_size,MPI_LONG_LONG,MPI_SUM,comm);
+    result = MPI_Allreduce(p_send,p_recv,p_size,size_t_type_,MPI_SUM,comm);
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
@@ -1050,7 +1060,7 @@ bool comm_sizes( ParallelMachine comm ,
       throw std::runtime_error( msg.str() );
     }
 
-    result = MPI_Allreduce(p_send+p_size,p_recv+p_size,2,MPI_LONG_LONG,MPI_MAX,comm);
+    result = MPI_Allreduce(p_send+p_size,p_recv+p_size,2,size_t_type_,MPI_MAX,comm);
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
@@ -1099,7 +1109,7 @@ bool comm_sizes( ParallelMachine comm ,
     for ( unsigned i = 0 ; i < num_recv ; ++i ) {
       size_t    * const p_buf     = & buf[i] ;
       MPI_Request * const p_request = & request[i] ;
-      result = MPI_Irecv( p_buf , 1 , MPI_LONG_LONG ,
+      result = MPI_Irecv( p_buf , 1 , size_t_type_,
                           MPI_ANY_SOURCE , mpi_tag , comm , p_request );
       if ( MPI_SUCCESS != result ) {
         // LOCAL ERROR
@@ -1115,7 +1125,7 @@ bool comm_sizes( ParallelMachine comm ,
       int      dst = ( i + p_rank ) % p_size ;
       size_t value = send_size[dst] ;
       if ( value ) {
-        result = MPI_Send( & value , 1 , MPI_LONG_LONG , dst , mpi_tag , comm );
+        result = MPI_Send( & value , 1 , size_t_type_, dst , mpi_tag , comm );
         if ( MPI_SUCCESS != result ) {
           // LOCAL ERROR
           msg << method << " ERROR: " << result << " == MPI_Send" ;
