@@ -563,7 +563,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = sumBuf + nparts;        // single normed weight
+    scalar_t *wgt = sumBuf + nparts;        // single normed weight or weight 1
   
     ArrayView<scalar_t> normedWVec(wgt, nparts);
     getStridedStats<scalar_t>(normedWVec, 1, 0, min, max, sum);
