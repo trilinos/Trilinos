@@ -736,6 +736,10 @@ public:
       return n ;
     }
 
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & functor )
+    { return team_size_max( functor ); }
+
   //----------------------------------------
 
   inline int team_size()   const { return m_team_size ; }

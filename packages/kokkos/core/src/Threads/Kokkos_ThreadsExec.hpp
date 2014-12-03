@@ -1123,6 +1123,10 @@ public:
   int team_size_max( const FunctorType & )
     { return execution_space::thread_pool_size(1); }
 
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & )
+    { return execution_space::thread_pool_size(2); }
+
   //----------------------------------------
 
   inline int team_size() const { return m_team_size ; }

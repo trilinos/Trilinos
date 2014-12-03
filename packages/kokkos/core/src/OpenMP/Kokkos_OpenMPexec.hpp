@@ -759,6 +759,11 @@ public:
   int team_size_max( const FunctorType & )
     { return execution_space::thread_pool_size(1); }
 
+  template< class FunctorType >
+  inline static
+  int team_size_recommended( const FunctorType & )
+    { return execution_space::thread_pool_size(2); }
+
   //----------------------------------------
 
 private:
@@ -878,6 +883,10 @@ public:
   inline static
   int team_size_max( const FunctorType & )
     { return execution_space::thread_pool_size(1); }
+
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & )
+    { return execution_space::thread_pool_size(2); }
 
   inline int team_alloc() const { return m_team_alloc ; }
   inline int team_iter()  const { return m_team_iter ; }

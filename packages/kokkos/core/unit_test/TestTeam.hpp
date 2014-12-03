@@ -227,7 +227,7 @@ public:
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    const unsigned team_size   = policy_type::team_size_max( functor_type(nwork) );
+    const unsigned team_size   = policy_type::team_size_recommended( functor_type(nwork) );
     const unsigned league_size = ( nwork + team_size - 1 ) / team_size ;
 
     policy_type team_exec( league_size , team_size );

@@ -534,6 +534,10 @@ public:
   int team_size_max( const FunctorType & )
     { return Qthread::instance().shepherd_worker_size(); }
 
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & f )
+    { return team_size_max( f ); }
+
   //----------------------------------------
 
   inline int team_size()   const { return m_team_size ; }

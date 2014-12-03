@@ -255,6 +255,15 @@ public:
   template< class FunctorType >
   static int team_size_max( const FunctorType & );
 
+  /** \brief  Query recommended team size for a given functor.
+   *
+   *  This size takes into account execution space concurrency limitations and
+   *  scratch memory space limitations for reductions, team reduce/scan, and
+   *  team shared memory.
+   */
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & );
+
   //----------------------------------------
   /** \brief  Construct policy with the given instance of the execution space */
   TeamPolicy( execution_space & , int league_size_request , int team_size_request );
