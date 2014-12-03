@@ -4113,4 +4113,130 @@ TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
   }
 }
 
+TEST(BulkData, STK_Deimprint)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int parallel_size = stk::parallel_machine_size(pm);
+
+  if (parallel_size != 1) return;
+
+  // This test will create a two-element mesh (quad4 elements)
+  // in 2 blocks in parallel.  Element 1 is in block_1, element 2
+  // is in block_2.  The part block_2 is a subset of a part that
+  // has no rank (and is therefore non-imprintable).  This test
+  // examines the behavior of the parts on the shared nodes when
+  // element 2 is destroyed.
+
+  unsigned spatialDim = 2;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData mesh(meta, pm);
+
+  stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_2_superset_with_rank = meta.declare_part("block_2_superset_with_rank", stk::topology::ELEMENT_RANK);
+  stk::mesh::Part& block_2_superset_without_rank = meta.declare_part("block_2_superset_without_rank");
+
+  meta.declare_part_subset(block_2_superset_with_rank, block_2);
+  meta.declare_part_subset(block_2_superset_without_rank, block_2);
+
+  stk::mesh::Selector all_nodes = meta.universal_part();
+
+  meta.commit();
+  mesh.modification_begin();
+
+  const size_t nodesPerElem = 4;
+
+  stk::mesh::EntityId elem_nodes0[] = {1, 2, 5, 6};
+  stk::mesh::EntityId elem_nodes1[] = {2, 3, 4, 5};
+  stk::mesh::EntityId * elem_nodes[] = { elem_nodes0, elem_nodes1 };
+
+  const size_t numElem = 2;
+
+  // Create nodes
+  for (size_t e=0; e<numElem; ++e)
+  {
+    for(size_t n=0; n<nodesPerElem; ++n)
+    {
+      stk::mesh::EntityId nodeGlobalId = elem_nodes[e][n];
+
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeGlobalId);
+      if (!mesh.is_valid(node))
+      {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeGlobalId);
+      }
+    }
+  }
+
+  stk::mesh::Entity node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
+  stk::mesh::Entity node5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
+
+  // Create elements
+  for (size_t e=0; e<numElem; ++e)
+  {
+    stk::mesh::Part& block = (e == 0) ? block_1 : block_2;
+    stk::mesh::declare_element(mesh, block, e+1, elem_nodes[e]);
+  }
+
+  stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
+  stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
+
+  mesh.modification_end();
+
+  EXPECT_TRUE(mesh.is_valid(node2));
+  EXPECT_TRUE(mesh.is_valid(node5));
+  EXPECT_TRUE(mesh.is_valid(element1));
+  EXPECT_TRUE(mesh.is_valid(element2));
+
+  // These two flags should definitely be the same. Otherwise, creation and deletion
+  // are not symmetric, and parts of lower rank entities will be corrupted by mesh modification.
+  // The code might be simpler and performance might be better if both were false.
+  const bool stk_induces_unranked_supersets = true;
+  const bool stk_deinduces_unranked_supersets = false;
+
+  // check block membership of shared nodes
+  EXPECT_TRUE(mesh.bucket(node2).member(block_1));
+  EXPECT_TRUE(mesh.bucket(node5).member(block_1));
+  EXPECT_TRUE(mesh.bucket(node2).member(block_2));
+  EXPECT_TRUE(mesh.bucket(node5).member(block_2));
+  EXPECT_TRUE(mesh.bucket(node2).member(block_2_superset_with_rank));
+  EXPECT_TRUE(mesh.bucket(node5).member(block_2_superset_with_rank));
+  if (stk_induces_unranked_supersets)
+  {
+    EXPECT_TRUE(mesh.bucket(node2).member(block_2_superset_without_rank));
+    EXPECT_TRUE(mesh.bucket(node5).member(block_2_superset_without_rank));
+  }
+  else
+  {
+    EXPECT_FALSE(mesh.bucket(node2).member(block_2_superset_without_rank));
+    EXPECT_FALSE(mesh.bucket(node5).member(block_2_superset_without_rank));
+  }
+
+  //
+  // now delete element 2
+  //
+  mesh.modification_begin();
+
+  mesh.destroy_entity(element2);
+
+  mesh.modification_end();
+
+  // check block membership of shared nodes
+  EXPECT_TRUE(mesh.bucket(node2).member(block_1));
+  EXPECT_TRUE(mesh.bucket(node5).member(block_1));
+  EXPECT_FALSE(mesh.bucket(node2).member(block_2));
+  EXPECT_FALSE(mesh.bucket(node5).member(block_2));
+  EXPECT_FALSE(mesh.bucket(node2).member(block_2_superset_with_rank));
+  EXPECT_FALSE(mesh.bucket(node5).member(block_2_superset_with_rank));
+  if (stk_induces_unranked_supersets && !stk_deinduces_unranked_supersets)
+  {
+    EXPECT_TRUE(mesh.bucket(node2).member(block_2_superset_without_rank));
+    EXPECT_TRUE(mesh.bucket(node5).member(block_2_superset_without_rank));
+  }
+  else
+  {
+    EXPECT_FALSE(mesh.bucket(node2).member(block_2_superset_without_rank));
+    EXPECT_FALSE(mesh.bucket(node5).member(block_2_superset_without_rank));
+  }
+}
+
 }  // empty namespace
