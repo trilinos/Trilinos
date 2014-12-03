@@ -56,7 +56,7 @@ struct hello_world {
   void operator() ( const team_member & thread, int& sum) const {
     sum+=1;
     // With each team run a parallel for with its threads
-    Kokkos::parallel_for(Kokkos::ThreadLoop(thread,31), [&] (const int& i) {
+    Kokkos::parallel_for(Kokkos::TeamThreadLoop(thread,31), [&] (const int& i) {
        printf("Hello World: (%i , %i) executed loop %i \n",thread.league_rank(),thread.team_rank(),i);
     });
   }
