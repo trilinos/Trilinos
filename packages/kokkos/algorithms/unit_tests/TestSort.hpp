@@ -137,7 +137,7 @@ void test_3D_sort(unsigned int n) {
   Kokkos::parallel_reduce(keys.dimension_0(),sum3D<ExecutionSpace, KeyType>(keys),sum_before);
 
   int bin_1d = 1;
-  while(bin_1d*bin_1d*bin_1d*4<keys.dimension_0()) bin_1d*=2;
+  while( bin_1d*bin_1d*bin_1d*4< (int) keys.dimension_0() ) bin_1d*=2;
   int bin_max[3] = {bin_1d,bin_1d,bin_1d};
   typename KeyViewType::value_type min[3] = {0,0,0};
   typename KeyViewType::value_type max[3] = {100,100,100};
@@ -156,7 +156,7 @@ void test_3D_sort(unsigned int n) {
   double epsilon = 1e-10;
   unsigned int equal_sum = (ratio > (1.0-epsilon)) && (ratio < (1.0+epsilon)) ? 1 : 0;
 
-  printf("3D Sort Sum: %lf %lf Fails: %u\n",sum_before,sum_after,sort_fails);
+  printf("3D Sort Sum: %f %f Fails: %u\n",sum_before,sum_after,sort_fails);
   ASSERT_EQ(sort_fails,0);
   ASSERT_EQ(equal_sum,1);
 }

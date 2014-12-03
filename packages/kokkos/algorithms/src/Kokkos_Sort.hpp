@@ -74,7 +74,7 @@ namespace Kokkos {
     KOKKOS_INLINE_FUNCTION
     static void copy(DstType& dst, size_t i_dst,
                      SrcType& src, size_t i_src ) {
-      for(int j = 0;j<dst.dimension_1(); j++)
+      for(int j = 0;j< (int) dst.dimension_1(); j++)
         dst(i_dst,j) = src(i_src,j);
     }
   };

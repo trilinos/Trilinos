@@ -186,7 +186,7 @@ struct functor_team_for {
               value += values(i);
             }
             if (test != value) {
-              printf ("FAILED vector_par_for %i %i %lf %lf\n",
+              printf ("FAILED vector_par_for %i %i %f %f\n",
                       team.league_rank (), team.team_rank (),
                       static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
@@ -222,7 +222,7 @@ struct functor_vec_single {
     },value2);
 
     if(value2!=(value*13)) {
-      printf("FAILED vector_single broadcast %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
+      printf("FAILED vector_single broadcast %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
       flag()=1;
     }
   }
@@ -246,7 +246,7 @@ struct functor_vec_for {
     shared_int values = shared_int(team.team_shmem(),team.team_size()*13);
 
     if (values.ptr_on_device () == NULL ||
-        values.dimension_0 () < team.team_size () * 13) {
+        values.dimension_0() < (unsigned) team.team_size() * 13) {
       printf ("FAILED to allocate memory of size %i\n",
               static_cast<int> (team.team_size () * 13));
       flag() = 1;
@@ -264,7 +264,7 @@ struct functor_vec_for {
             value += values(13*team.team_rank() + i);
           }
           if (test != value) {
-            printf ("FAILED vector_par_for %i %i %lf %lf\n",
+            printf ("FAILED vector_par_for %i %i %f %f\n",
                     team.league_rank (), team.team_rank (),
                     static_cast<double> (test), static_cast<double> (value));
             flag() = 1;
@@ -296,7 +296,7 @@ struct functor_vec_red {
         test+=i;
       }
       if(test!=value) {
-        printf("FAILED vector_par_reduce %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        printf("FAILED vector_par_reduce %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
         flag()=1;
       }
     });
@@ -327,7 +327,7 @@ struct functor_vec_red_join {
         test*=i+1;
       }
       if(test!=value) {
-        printf("FAILED vector_par_reduce_join %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        printf("FAILED vector_par_reduce_join %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
         flag()=1;
       }
     });
@@ -352,7 +352,7 @@ struct functor_vec_scan {
           test+=k;
         }
         if(test!=val) {
-          printf("FAILED vector_par_scan %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) val);
+          printf("FAILED vector_par_scan %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) val);
           flag()=1;
         }
       }
