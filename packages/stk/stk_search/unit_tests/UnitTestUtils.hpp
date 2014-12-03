@@ -53,8 +53,6 @@
 
 #include <optionParsing/getOption.h>
 
-#include <gtest/gtest.h>
-
 typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Point<double> Point;
 typedef stk::search::Sphere<double> Sphere;
@@ -66,6 +64,7 @@ typedef gtk::AxisAlignedBB GtkBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 typedef std::pair<GtkBox,Ident> BoxWithId;
 typedef std::vector< BoxWithId > GtkBoxVector;
+
 
 template<class VolumeType>
 VolumeType generateBoundingVolume(double x, double y, double z, double radius);

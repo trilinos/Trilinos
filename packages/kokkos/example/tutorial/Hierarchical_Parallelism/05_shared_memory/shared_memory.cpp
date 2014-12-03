@@ -131,7 +131,8 @@ int main(int narg, char* args[]) {
 
   srand(1231093);
 
-  for(int i = 0; i < data.dimension_0(); i++) {
+  const int n = data.dimension_0();
+  for(int i = 0; i < n ; i++) {
     data.h_view(i) = rand()%TEAM_SIZE;
   }
   data.modify<Kokkos::HostSpace>();

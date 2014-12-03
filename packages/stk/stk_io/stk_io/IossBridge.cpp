@@ -1922,10 +1922,11 @@ void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
   if ( check != my_role ) {
     if (*check != *my_role) {
       std::ostringstream msg ;
-	  msg << " FAILED in IossBridge -- set_field_role:"
-	      << " The role type had already been set to " << *check
-	      << ", so it is not possible to change it to " << *my_role;
-	  throw std::runtime_error( msg.str() );
+      msg << " FAILED in IossBridge -- set_field_role:"
+	  << " The role type had already been set to " << *check
+	  << ", so it is not possible to change it to " << *my_role;
+      delete my_role;
+      throw std::runtime_error( msg.str() );
     }
     delete my_role;
   }

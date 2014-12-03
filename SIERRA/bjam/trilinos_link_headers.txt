@@ -1,6 +1,6 @@
 .: ../SIERRA/bjam/config_headers[*.h *.hpp]
 amesos: src[*.h] src/SuiteSparse/AMD/Include[*.h] src/SuiteSparse/KLU/Include[*.h] src/SuiteSparse/UFconfig[*.h] src/SuiteSparse/BTF/Include[*.h] src/SuiteSparse/CAMD/Include[*.h] src/SuiteSparse/COLAMD/Include[*.h]
-amesos2: src[*.hpp] src/SuiteSparse/KLU2/Source[*.hpp]
+amesos2: src[*.hpp] src/basker[*.hpp] src/SuiteSparse/KLU2/Source[*.hpp] 
 anasazi: src[*.hpp] thyra/src[*.hpp] epetra/src[*.hpp]
 aztecoo: src[*.h]
 claps: src[*.hpp *.H] src/salinas[*.hpp *.H] /src/preconditioners[*.hpp]

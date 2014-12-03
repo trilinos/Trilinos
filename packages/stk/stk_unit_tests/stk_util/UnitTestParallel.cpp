@@ -67,7 +67,8 @@ TEST(UnitTestParallel, testCommAll)
   int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
   ASSERT_LT(mpi_rank, mpi_size);
 
-  stk::CommAll comm_all(MPI_COMM_WORLD);
+  bool propagate_local_error_flags = true;
+  stk::CommAll comm_all(MPI_COMM_WORLD, propagate_local_error_flags);
 
   ASSERT_EQ(comm_all.parallel_size(), mpi_size);
   ASSERT_EQ(comm_all.parallel_rank(), mpi_rank);

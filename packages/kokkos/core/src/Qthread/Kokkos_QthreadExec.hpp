@@ -145,11 +145,12 @@ public:
 
   //----------------------------------------
   /** Reduce across all workers participating in the 'exec_all' */
-  template< class FunctorType >
+  template< class FunctorType , class ArgTag >
   inline
   void exec_all_reduce( const FunctorType & func ) const
     {
-      typedef ReduceAdapter< FunctorType >  Reduce ;
+      typedef Kokkos::Impl::FunctorValueJoin< FunctorType , ArgTag > ValueJoin ;
+      typedef Kokkos::Impl::FunctorValueOps<  FunctorType , ArgTag > ValueOps ;
 
       const int rev_rank = m_worker_size - ( m_worker_rank + 1 );
 
@@ -160,7 +161,7 @@ public:
 
         Impl::spinwait( fan.m_worker_state , QthreadExec::Active );
 
-        Reduce::join( func , m_scratch_alloc , fan.m_scratch_alloc );
+        ValueJoin::join( func , m_scratch_alloc , fan.m_scratch_alloc );
       }
 
       if ( rev_rank ) {
@@ -175,11 +176,13 @@ public:
 
   //----------------------------------------
   /** Scall across all workers participating in the 'exec_all' */
-  template< class FunctorType >
+  template< class FunctorType , class ArgTag >
   inline
   void exec_all_scan( const FunctorType & func ) const
     {
-      typedef ReduceAdapter< FunctorType >  Reduce ;
+      typedef Kokkos::Impl::FunctorValueInit<   FunctorType , ArgTag > ValueInit ;
+      typedef Kokkos::Impl::FunctorValueJoin<   FunctorType , ArgTag > ValueJoin ;
+      typedef Kokkos::Impl::FunctorValueOps<    FunctorType , ArgTag > ValueOps ;
 
       const int rev_rank = m_worker_size - ( m_worker_rank + 1 );
 
@@ -200,17 +203,16 @@ public:
 
         // Copy from lower ranking to higher ranking worker.
         for ( int i = 1 ; i < n ; ++i ) {
-          Reduce::copy( func , m_worker_base[i-1]->m_scratch_alloc
-                             , m_worker_base[i]->m_scratch_alloc );
+          ValueOps::copy( func , m_worker_base[i-1]->m_scratch_alloc
+                           , m_worker_base[i]->m_scratch_alloc );
         }
 
-        Reduce::init( func , m_worker_base[n-1]->m_scratch_alloc );
+        ValueInit::init( func , m_worker_base[n-1]->m_scratch_alloc );
 
         // Join from lower ranking to higher ranking worker.
         // Value at m_worker_base[n-1] is zero so skip adding it to m_worker_base[n-2].
         for ( int i = n - 1 ; --i ; ) {
-          Reduce::join( func , m_worker_base[i-1]->m_scratch_alloc
-                             , m_worker_base[i]->m_scratch_alloc );
+          ValueJoin::join( func , m_worker_base[i-1]->m_scratch_alloc , m_worker_base[i]->m_scratch_alloc );
         }
       }
     
@@ -525,6 +527,15 @@ public:
     Impl::if_c< ! Impl::is_same< Kokkos::Qthread , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;
 
+  //----------------------------------------
+
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return Qthread::instance().shepherd_worker_size(); }
+
+  //----------------------------------------
+
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
 
@@ -550,11 +561,6 @@ public:
     , m_shepherd_iter( ( league_size + Qthread::instance().shepherd_size() - 1 ) / Qthread::instance().shepherd_size() )
     {
     }
-
-  template< class FunctorType >
-  inline static
-  int team_size_max( const FunctorType & )
-    { return Qthread::instance().shepherd_worker_size(); }
 
   typedef Impl::QthreadTeamPolicyMember member_type ;
 

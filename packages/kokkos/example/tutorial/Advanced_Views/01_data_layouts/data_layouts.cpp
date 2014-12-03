@@ -141,7 +141,7 @@ int main (int narg, char* arg[]) {
 
   // Kokkos' reductions are deterministic.
   // The results should always be equal.
-  printf("Result Left/Right %lf Right/Left %lf (equal result: %i)\n",sec1,sec2,sum2==sum1);
+  printf("Result Left/Right %f Right/Left %f (equal result: %i)\n",sec1,sec2,sum2==sum1);
 
   Kokkos::finalize();
 }

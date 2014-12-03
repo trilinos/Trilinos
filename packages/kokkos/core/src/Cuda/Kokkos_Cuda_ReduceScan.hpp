@@ -49,6 +49,7 @@
 #include <utility>
 
 #include <Kokkos_Parallel.hpp>
+#include <impl/Kokkos_FunctorAdapter.hpp>
 #include <impl/Kokkos_Error.hpp>
 
 //----------------------------------------------------------------------------
@@ -77,12 +78,14 @@ namespace Impl {
 template< bool DoScan , class FunctorType >
 __device__
 void cuda_intra_block_reduce_scan( const FunctorType & functor ,
-                                   const typename ReduceAdapter< FunctorType >::pointer_type base_data )
+                                   const typename FunctorValueTraits< FunctorType , void >::pointer_type base_data )
 {
-  typedef ReduceAdapter< FunctorType >   Reduce ;
-  typedef typename Reduce::pointer_type  pointer_type ;
+  typedef FunctorValueTraits< FunctorType , void >  ValueTraits ;
+  typedef FunctorValueJoin<   FunctorType , void >  ValueJoin ;
 
-  const unsigned value_count   = Reduce::value_count( functor );
+  typedef typename ValueTraits::pointer_type  pointer_type ;
+
+  const unsigned value_count   = ValueTraits::value_count( functor );
   const unsigned BlockSizeMask = blockDim.y - 1 ;
 
   // Must have power of two thread count
@@ -90,10 +93,10 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
   if ( BlockSizeMask & blockDim.y ) { cuda_abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
 
 #define BLOCK_REDUCE_STEP( R , TD , S )  \
-  if ( ! ( R & ((1<<(S+1))-1) ) ) { Reduce::join( functor , TD , (TD - (value_count<<S)) ); }
+  if ( ! ( R & ((1<<(S+1))-1) ) ) { ValueJoin::join( functor , TD , (TD - (value_count<<S)) ); }
 
 #define BLOCK_SCAN_STEP( TD , N , S )  \
-  if ( N == (1<<S) ) { Reduce::join( functor , TD , (TD - (value_count<<S))); }
+  if ( N == (1<<S) ) { ValueJoin::join( functor , TD , (TD - (value_count<<S))); }
 
   const unsigned     rtid_intra = threadIdx.y ^ BlockSizeMask ;
   const pointer_type tdata_intra = base_data + value_count * threadIdx.y ;
@@ -177,9 +180,13 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
                                           Cuda::size_type * const global_flags )
 {
   typedef Cuda::size_type                  size_type ;
-  typedef ReduceAdapter< FunctorType >     Reduce ;
-  typedef typename Reduce::pointer_type    pointer_type ;
-  typedef typename Reduce::reference_type  reference_type ;
+  typedef FunctorValueTraits< FunctorType , void >  ValueTraits ;
+  typedef FunctorValueJoin<   FunctorType , void >  ValueJoin ;
+  typedef FunctorValueInit<   FunctorType , void >  ValueInit ;
+  typedef FunctorValueOps<    FunctorType , void >  ValueOps ;
+
+  typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::reference_type  reference_type ;
 
   const unsigned BlockSizeMask  = blockDim.y - 1 ;
   const unsigned BlockSizeShift = power_of_two_if_valid( blockDim.y );
@@ -187,8 +194,8 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
   // Must have power of two thread count
   if ( BlockSizeMask & blockDim.y ) { cuda_abort("Cuda::cuda_single_inter_block_reduce_scan requires power-of-two blockDim"); }
 
-  const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
-    word_count( Reduce::value_size( functor ) / sizeof(size_type) );
+  const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
+    word_count( ValueTraits::value_size( functor ) / sizeof(size_type) );
 
   // Reduce the accumulation for the entire block.
   cuda_intra_block_reduce_scan<false>( functor , pointer_type(shared_data) );
@@ -214,10 +221,10 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
 
     {
       void * const shared_ptr = shared_data + word_count.value * threadIdx.y ;
-      reference_type shared_value = Reduce::init( functor , shared_ptr );
+      reference_type shared_value = ValueInit::init( functor , shared_ptr );
 
       for ( size_type i = b ; i < e ; ++i ) {
-        Reduce::join( functor , shared_ptr , global_data + word_count.value * i );
+        ValueJoin::join( functor , shared_ptr , global_data + word_count.value * i );
       }
     }
 
@@ -227,13 +234,13 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
 
       size_type * const shared_value = shared_data + word_count.value * ( threadIdx.y ? threadIdx.y - 1 : blockDim.y );
 
-      if ( ! threadIdx.y ) { Reduce::init( functor , shared_value ); }
+      if ( ! threadIdx.y ) { ValueInit::init( functor , shared_value ); }
 
       // Join previous inclusive scan value to each member
       for ( size_type i = b ; i < e ; ++i ) {
         size_type * const global_value = global_data + word_count.value * i ;
-        Reduce::join( functor , shared_value , global_value );
-        Reduce::copy( functor , global_value , shared_value );
+        ValueJoin::join( functor , shared_value , global_value );
+        ValueOps ::copy( functor , global_value , shared_value );
       }
     }
   }
@@ -242,11 +249,11 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
 }
 
 // Size in bytes required for inter block reduce or scan
-template< bool DoScan , class FunctorType >
+template< bool DoScan , class FunctorType , class ArgTag >
 inline
 unsigned cuda_single_inter_block_reduce_scan_shmem( const FunctorType & functor , const unsigned BlockSize )
 {
-  return ( BlockSize + 2 ) * ReduceAdapter< FunctorType >::value_size( functor );
+  return ( BlockSize + 2 ) * Impl::FunctorValueTraits< FunctorType , ArgTag >::value_size( functor );
 }
 
 } // namespace Impl

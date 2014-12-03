@@ -178,20 +178,13 @@ void Qthread::print_configuration( std::ostream & s , const bool detail )
 
 Qthread & Qthread::instance( int )
 {
-  static Impl::QthreadExec * e = 0 ;
-  static Qthread q( *e );
+  static Qthread q ;
   return q ;
 }
 
 void Qthread::fence()
 {
 }
-
-int Qthread::team_recommended()
-{ return Impl::s_number_workers_per_shepherd ; }
-
-int Qthread::team_max()
-{ return Impl::s_number_workers_per_shepherd ; }
 
 int Qthread::shepherd_size() const { return Impl::s_number_shepherds ; }
 int Qthread::shepherd_worker_size() const { return Impl::s_number_workers_per_shepherd ; }
@@ -353,9 +346,11 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
   s_active_function_arg = arg ;
 
   // Need to query which shepherd this main 'process' is running...
+ 
+  const int main_shep = qthread_shep();
 
   for ( int jshep = 0 , iwork = 0 ; jshep < s_number_shepherds ; ++jshep ) {
-  for ( int i = jshep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i , ++iwork ) {
+  for ( int i = jshep != main_shep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i , ++iwork ) {
 
     // Unit tests hang with this call:
     //

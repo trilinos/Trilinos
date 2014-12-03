@@ -712,10 +712,31 @@ public:
   //! Execution space of this execution policy
   typedef Kokkos::Cuda  execution_space ;
 
-
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::Cuda , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;
+
+  //----------------------------------------
+
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & functor )
+    {
+      int n = MAX_WARP * Impl::CudaTraits::WarpSize ;
+
+      for ( ; n ; n >>= 1 ) {
+        const int shmem_size =
+          /* for global reduce */ Impl::cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( functor , n )
+          /* for team   reduce */ + ( n + 2 ) * sizeof(double)
+          /* for team   shared */ + Impl::FunctorTeamShmemSize< FunctorType >::value( functor , n );
+
+        if ( shmem_size < Impl::CudaTraits::SharedMemoryCapacity ) break ;
+      }
+
+      return n ;
+    }
+
+  //----------------------------------------
 
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
@@ -730,24 +751,6 @@ public:
     : m_league_size( league_size )
     , m_team_size( std::min( team_size_request , int( MAX_WARP * Impl::CudaTraits::WarpSize ) ) )
     { }
-
-  template< class FunctorType >
-  inline static
-  int team_size_max( const FunctorType & functor )
-    {
-      int n = MAX_WARP * Impl::CudaTraits::WarpSize ;
-
-      for ( ; n ; n >>= 1 ) {
-        const int shmem_size =
-          /* for global reduce */ Impl::cuda_single_inter_block_reduce_scan_shmem<false>( functor , n )
-          /* for team   reduce */ + ( n + 2 ) * sizeof(double)
-          /* for team   shared */ + Impl::FunctorTeamShmemSize< FunctorType >::value( functor , n );
-
-        if ( shmem_size < Impl::CudaTraits::SharedMemoryCapacity ) break ;
-      }
-
-      return n ;
-    }
 
   typedef Kokkos::Impl::CudaTeamMember member_type ;
 };
@@ -796,7 +799,7 @@ public:
 
       for ( ; n ; n >>= 1 ) {
         const int shmem_size =
-          /* for global reduce */ Impl::cuda_single_inter_block_reduce_scan_shmem<false>( functor , n )
+          /* for global reduce */ Impl::cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( functor , n )
           /* for team   reduce */ + ( n + 2 ) * sizeof(double)
           /* for team   shared */ + Impl::FunctorTeamShmemSize< FunctorType >::value( functor , n );
 
@@ -1065,15 +1068,17 @@ class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Ko
 {
 private:
 
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda > Policy ;
-  typedef ReduceAdapter< FunctorType >        Reduce ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda >         Policy ;
+  typedef typename Policy::work_tag                                  work_tag ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag > ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag > ValueInit ;
 
 public:
 
-  typedef typename Reduce::pointer_type       pointer_type ;
-  typedef typename Reduce::reference_type     reference_type ;
-  typedef FunctorType                         functor_type ;
-  typedef Cuda::size_type                     size_type ;
+  typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::reference_type  reference_type ;
+  typedef FunctorType                           functor_type ;
+  typedef Cuda::size_type                       size_type ;
 
   // Algorithmic constraints: blockSize is a power of two AND blockDim.y == blockDim.z == 1
 
@@ -1088,7 +1093,7 @@ public:
   unsigned local_block_size( const FunctorType & f )
     {
       unsigned n = CudaTraits::WarpSize * 8 ;
-      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false>( f , n ) ) { n >>= 1 ; }
+      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( f , n ) ) { n >>= 1 ; }
       return n ;
     }
 
@@ -1113,12 +1118,12 @@ public:
   __device__ inline
   void operator()(void) const
   {
-    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
-      word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
+    const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
+      word_count( ValueTraits::value_size( m_functor ) / sizeof(size_type) );
 
     {
       reference_type value =
-        Reduce::init( m_functor , kokkos_impl_cuda_shared_memory<size_type>() + threadIdx.y * word_count.value );
+        ValueInit::init( m_functor , kokkos_impl_cuda_shared_memory<size_type>() + threadIdx.y * word_count.value );
 
       // Number of blocks is bounded so that the reduction can be limited to two passes.
       // Each thread block is given an approximately equal amount of work to perform.
@@ -1129,7 +1134,7 @@ public:
 
       for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
             iwork < iwork_end ; iwork += blockDim.y ) {
-        ParallelReduce::template driver< typename Policy::work_tag >( m_functor , iwork , value );
+        ParallelReduce::template driver< work_tag >( m_functor , iwork , value );
       }
     }
 
@@ -1143,7 +1148,9 @@ public:
       size_type * const shared = kokkos_impl_cuda_shared_memory<size_type>() + ( blockDim.y - 1 ) * word_count.value ;
       size_type * const global = m_unified_space ? m_unified_space : m_scratch_space ;
 
-      if ( threadIdx.y == 0 ) { Reduce::final( m_functor , shared ); }
+      if ( threadIdx.y == 0 ) {
+        Kokkos::Impl::FunctorFinal< FunctorType , work_tag >::final( m_functor , shared );
+      }
 
       if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); }
 
@@ -1167,13 +1174,13 @@ public:
                                     , ( int(policy.end() - policy.begin()) + block_size - 1 ) / block_size
                                     );
 
-    m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * block_count );
+    m_scratch_space = cuda_internal_scratch_space( ValueTraits::value_size( functor ) * block_count );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) );
-    m_unified_space = cuda_internal_scratch_unified( Reduce::value_size( functor ) );
+    m_unified_space = cuda_internal_scratch_unified( ValueTraits::value_size( functor ) );
 
     const dim3 grid( block_count , 1 , 1 );
-    const dim3 block( 1 , block_size , 1 );
-    const int shmem = cuda_single_inter_block_reduce_scan_shmem<false>( m_functor , block.y );
+    const dim3 block( 1 , block_size , 1 ); // REQUIRED DIMENSIONS ( 1 , N , 1 )
+    const int shmem = cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( m_functor , block.y );
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, shmem ); // copy to device and execute
 
@@ -1181,11 +1188,11 @@ public:
 
     if ( result.ptr_on_device() ) {
       if ( m_unified_space ) {
-        const int count = Reduce::value_count( m_functor );
+        const int count = ValueTraits::value_count( m_functor );
         for ( int i = 0 ; i < count ; ++i ) { result.ptr_on_device()[i] = pointer_type(m_unified_space)[i] ; }
       }
       else {
-        const int size = Reduce::value_size( m_functor );
+        const int size = ValueTraits::value_size( m_functor );
         DeepCopy<HostSpace,CudaSpace>( result.ptr_on_device() , m_scratch_space , size );
       }
     }
@@ -1197,10 +1204,12 @@ class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cu
 {
 private:
 
-  typedef Kokkos::TeamPolicy<Arg0,Arg1,Kokkos::Cuda>  Policy ;
-  typedef ReduceAdapter< FunctorType >                Reduce ;
-  typedef typename Reduce::pointer_type               pointer_type ;
-  typedef typename Reduce::reference_type             reference_type ;
+  typedef Kokkos::TeamPolicy<Arg0,Arg1,Kokkos::Cuda>                  Policy ;
+  typedef typename Policy::work_tag                                   work_tag ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag >  ValueInit ;
+  typedef typename ValueTraits::pointer_type                          pointer_type ;
+  typedef typename ValueTraits::reference_type                        reference_type ;
 
 public:
 
@@ -1245,11 +1254,11 @@ public:
   __device__ inline
   void operator()(void) const
   {
-    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
-      word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
+    const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
+      word_count( ValueTraits::value_size( m_functor ) / sizeof(size_type) );
 
     reference_type value =
-      Reduce::init( m_functor , kokkos_impl_cuda_shared_memory<size_type>() + threadIdx.y * word_count.value );
+      ValueInit::init( m_functor , kokkos_impl_cuda_shared_memory<size_type>() + threadIdx.y * word_count.value );
 
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
@@ -1273,7 +1282,9 @@ public:
       size_type * const shared = kokkos_impl_cuda_shared_memory<size_type>() + ( blockDim.y - 1 ) * word_count.value ;
       size_type * const global = m_unified_space ? m_unified_space : m_scratch_space ;
 
-      if ( threadIdx.y == 0 ) { Reduce::final( m_functor , shared ); }
+      if ( threadIdx.y == 0 ) {
+        Kokkos::Impl::FunctorFinal< FunctorType , work_tag >::final( m_functor , shared );
+      }
 
       if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); }
 
@@ -1291,7 +1302,7 @@ public:
   , m_scratch_space( 0 )
   , m_scratch_flags( 0 )
   , m_unified_space( 0 )
-  , m_team_begin( cuda_single_inter_block_reduce_scan_shmem<false>( functor , policy.team_size() ) )
+  , m_team_begin( cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( functor , policy.team_size() ) )
   , m_shmem_begin( sizeof(double) * ( policy.team_size() + 2 ) )
   , m_shmem_size( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
   , m_league_size( policy.league_size() )
@@ -1307,12 +1318,12 @@ public:
 
     const int block_count = std::min( policy.league_size() , policy.team_size() );
 
-    m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * block_count );
+    m_scratch_space = cuda_internal_scratch_space( ValueTraits::value_size( functor ) * block_count );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) );
-    m_unified_space = cuda_internal_scratch_unified( Reduce::value_size( functor ) );
+    m_unified_space = cuda_internal_scratch_unified( ValueTraits::value_size( functor ) );
 
     const dim3 grid( block_count , 1 , 1 );
-    const dim3 block( 1 , policy.team_size() , 1 );
+    const dim3 block( 1 , policy.team_size() , 1 ); // REQUIRED DIMENSIONS ( 1 , N , 1 )
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, shmem_size_total ); // copy to device and execute
 
@@ -1320,11 +1331,11 @@ public:
 
     if ( result.ptr_on_device() ) {
       if ( m_unified_space ) {
-        const int count = Reduce::value_count( m_functor );
+        const int count = ValueTraits::value_count( m_functor );
         for ( int i = 0 ; i < count ; ++i ) { result.ptr_on_device()[i] = pointer_type(m_unified_space)[i] ; }
       }
       else {
-        const int size = Reduce::value_size( m_functor );
+        const int size = ValueTraits::value_size( m_functor );
         DeepCopy<HostSpace,CudaSpace>( result.ptr_on_device() , m_scratch_space , size );
       }
     }
@@ -1345,14 +1356,17 @@ class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokk
 {
 private:
 
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda > Policy ;
-  typedef ReduceAdapter< FunctorType >        Reduce ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda >          Policy ;
+  typedef typename Policy::work_tag                                   work_tag ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag >  ValueInit ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , work_tag >  ValueOps ;
 
 public:
-  typedef typename Reduce::pointer_type       pointer_type ;
-  typedef typename Reduce::reference_type     reference_type ;
-  typedef FunctorType                         functor_type ;
-  typedef Cuda::size_type                     size_type ;
+  typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::reference_type  reference_type ;
+  typedef FunctorType                           functor_type ;
+  typedef Cuda::size_type                       size_type ;
 
   // Algorithmic constraints:
   //  (a) blockDim.y is a power of two
@@ -1370,7 +1384,7 @@ public:
       // 4 warps was 10% faster than 8 warps and 20% faster than 16 warps in unit testing
 
       unsigned n = CudaTraits::WarpSize * 4 ;
-      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false>( f , n ) ) { n >>= 1 ; }
+      while ( n && CudaTraits::SharedMemoryCapacity < cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( f , n ) ) { n >>= 1 ; }
       return n ;
     }
 
@@ -1405,12 +1419,12 @@ public:
   __device__ inline
   void initial(void) const
   {
-    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
-      word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
+    const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
+      word_count( ValueTraits::value_size( m_functor ) / sizeof(size_type) );
 
     size_type * const shared_value = kokkos_impl_cuda_shared_memory<size_type>() + word_count.value * threadIdx.y ;
 
-    Reduce::init( m_functor , shared_value );
+    ValueInit::init( m_functor , shared_value );
 
     // Number of blocks is bounded so that the reduction can be limited to two passes.
     // Each thread block is given an approximately equal amount of work to perform.
@@ -1422,7 +1436,7 @@ public:
     for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
           iwork < iwork_end ; iwork += blockDim.y ) {
       ParallelScan::template driver< typename Policy::work_tag >
-        ( m_functor , iwork , Reduce::reference( shared_value ) , false );
+        ( m_functor , iwork , ValueOps::reference( shared_value ) , false );
     }
 
     // Reduce and scan, writing out scan of blocks' totals and block-groups' totals.
@@ -1436,8 +1450,8 @@ public:
   __device__ inline
   void final(void) const
   {
-    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
-      word_count( Reduce::value_size( m_functor ) / sizeof(size_type) );
+    const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
+      word_count( ValueTraits::value_size( m_functor ) / sizeof(size_type) );
 
     // Use shared memory as an exclusive scan: { 0 , value[0] , value[1] , value[2] , ... }
     size_type * const shared_data   = kokkos_impl_cuda_shared_memory<size_type>();
@@ -1450,7 +1464,7 @@ public:
       for ( unsigned i = threadIdx.y ; i < word_count.value ; ++i ) { shared_accum[i] = block_total[i] ; }
     }
     else if ( 0 == threadIdx.y ) {
-      Reduce::init( m_functor , shared_accum );
+      ValueInit::init( m_functor , shared_accum );
     }
 
     const Policy range( m_policy , blockIdx.x , gridDim.x );
@@ -1461,7 +1475,7 @@ public:
 
       __syncthreads(); // Don't overwrite previous iteration values until they are used
 
-      Reduce::init( m_functor , shared_prefix + word_count.value );
+      ValueInit::init( m_functor , shared_prefix + word_count.value );
 
       // Copy previous block's accumulation total into thread[0] prefix and inclusive scan value of this block
       for ( unsigned i = threadIdx.y ; i < word_count.value ; ++i ) {
@@ -1473,11 +1487,11 @@ public:
       // Call functor to accumulate inclusive scan value for this work item
       if ( iwork < range.end() ) {
         ParallelScan::template driver< typename Policy::work_tag >
-          ( m_functor , iwork , Reduce::reference( shared_prefix + word_count.value ) , false );
+          ( m_functor , iwork , ValueOps::reference( shared_prefix + word_count.value ) , false );
       }
 
       // Scan block values into locations shared_data[1..blockDim.y]
-      cuda_intra_block_reduce_scan<true>( m_functor , Reduce::pointer_type(shared_data+word_count.value) );
+      cuda_intra_block_reduce_scan<true>( m_functor , ValueTraits::pointer_type(shared_data+word_count.value) );
 
       {
         size_type * const block_total = shared_data + word_count.value * blockDim.y ;
@@ -1487,7 +1501,7 @@ public:
       // Call functor with exclusive scan value
       if ( iwork < range.end() ) {
         ParallelScan::template driver< typename Policy::work_tag >
-          ( m_functor , iwork , Reduce::reference( shared_prefix ) , true );
+          ( m_functor , iwork , ValueOps::reference( shared_prefix ) , true );
       }
     }
   }
@@ -1529,10 +1543,10 @@ public:
 
     // How many block are really needed for this much work:
     const dim3 grid( ( nwork + work_per_block - 1 ) / work_per_block , 1 , 1 );
-    const dim3 block( 1 , block_size , 1 );
-    const int shmem = Reduce::value_size( functor ) * ( block_size + 2 );
+    const dim3 block( 1 , block_size , 1 ); // REQUIRED DIMENSIONS ( 1 , N , 1 )
+    const int shmem = ValueTraits::value_size( functor ) * ( block_size + 2 );
 
-    m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * grid.x );
+    m_scratch_space = cuda_internal_scratch_space( ValueTraits::value_size( functor ) * grid.x );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) * 1 );
 
     m_final = false ;

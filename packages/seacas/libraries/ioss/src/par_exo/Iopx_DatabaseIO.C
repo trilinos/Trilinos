@@ -141,7 +141,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Iopx_DatabaseIO.C 2014/05/08";}
+  const char *Version() {return "Iopx_DatabaseIO.C 2014/11/21";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -2942,7 +2942,8 @@ namespace Iopx {
           int64_t side_offset = Ioss::Utils::get_side_offset(fb);
 
 
-          if (fb->owner()->block_count() == 1) {
+	  if (fb->owner()->block_count() == 1 && number_sides == entity_count) {
+
             if (int_byte_size_api() == 4) {
               int     *element_side = static_cast<int*>(data);
               decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
@@ -3049,7 +3050,7 @@ namespace Iopx {
         // exist on the database as scalars with the appropriate
         // extensions.
 
-        if (fb->owner()->block_count() == 1) {
+	if (fb->owner()->block_count() == 1 && number_sides == entity_count) {
           num_to_get = read_transient_field(EX_SIDE_SET, m_variables[EX_SIDE_SET], field, fb, data);
         } else {
           // Need to read all values for the specified field and then
@@ -3491,7 +3492,8 @@ namespace Iopx {
       // 'number_sides' then the sideset is stored in a single sideblock
       // and all distribution factors on the database are transferred
       // 1-to-1 into 'dist_fact' array.
-      if (fb->owner()->block_count() == 1) {
+      int64_t entity_count = fb->get_property("entity_count").get_int();
+      if (fb->owner()->block_count() == 1 && number_sides == entity_count) {
         assert(number_sides == 0 || number_distribution_factors % number_sides == 0);
         assert(number_sides == 0 || number_distribution_factors / number_sides == nfnodes);
         std::string storage = "Real["+Ioss::Utils::to_string(nfnodes)+"]";

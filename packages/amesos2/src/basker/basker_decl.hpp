@@ -60,7 +60,7 @@ namespace Basker{
                    Int *pattern, /* o/p */
                    Int *top,       /* o/p */
                    Int k,
-                   Int *pinv,
+                   Int *tpinv,
                    Int *stack
                    );
     void free_factor();

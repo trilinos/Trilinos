@@ -132,11 +132,17 @@ public:
     {
       enum { check_type = ! Impl::is_same< ResultType , void >::value };
 
-      if ( check_type && t != 0 && t->m_verify != & TaskMember::template verify_type< ResultType > ) {
-        t = 0 ;
+      if ( check_type && t != 0 ) {
+
+        // Verify that t->m_verify is this function
+        const function_verify_type self = & TaskMember::template verify_type< ResultType > ;
+
+        if ( t->m_verify != self ) {
+          t = 0 ;
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-        throw_error_verify_type();
+          throw_error_verify_type();
 #endif
+        }
       }
       return t ;
     }
@@ -265,7 +271,7 @@ public:
 
       derived_type & m = * static_cast< derived_type * >( t );
 
-      Impl::FunctorApply< FunctorType >::apply( (FunctorType &) m , m.m_result );
+      Impl::FunctorApply< FunctorType , void , ResultType & >::apply( (FunctorType &) m , & m.m_result );
     }
 
   template< class FunctorType , class ResultType >
@@ -281,7 +287,7 @@ public:
 
       derived_type & m = * static_cast< derived_type * >( t );
 
-      Impl::FunctorApply< FunctorType >::apply( (FunctorType &) m );
+      Impl::FunctorApply< FunctorType , void , void >::apply( (FunctorType &) m );
     }
 };
 
@@ -473,7 +479,7 @@ private:
   inline
   void apply_policy( typename Impl::enable_if< Impl::is_same<Tag,void>::value , ResultType & >::type result ) const
     {
-      Impl::FunctorInit< functor_type >::init( *this , result );
+      Impl::FunctorValueInit< functor_type , Tag >::init( *this , & result );
       const typename policy_type::member_type e = m_policy.end();
       for ( typename policy_type::member_type i = m_policy.begin() ; i < e ; ++i ) {
         functor_type::operator()( i, result );
@@ -484,7 +490,7 @@ private:
   inline
   void apply_policy( typename Impl::enable_if< ! Impl::is_same<Tag,void>::value , ResultType & >::type result ) const
     {
-      Impl::FunctorInit< functor_type >::init( *this , result );
+      Impl::FunctorValueInit< functor_type , Tag >::init( *this , & result );
       const Tag tag ;
       const typename policy_type::member_type e = m_policy.end();
       for ( typename policy_type::member_type i = m_policy.begin() ; i < e ; ++i ) {

@@ -556,19 +556,11 @@ namespace Impl {
 
     template <class ViewType>
     void run_me(ViewType a, int max_length){
+      const int team_size = Policy::team_size_max( GrowTest<ViewType,execution_space>(a) );
+      const int nteams = max_length/team_size;
+
       reference = 0;
       result = 0;
-      int team_size = execution_space::team_max();
-#ifdef KOKKOS_HAVE_CUDA
-      if(Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value)
-        team_size = 128;
-      else
-#endif
-      if(team_size>4)
-        team_size = 4;
-
-
-      int nteams = max_length/team_size;
 
       Kokkos::parallel_reduce(Policy(nteams,team_size),GrowTest<ViewType,execution_space>(a),reference);
       Kokkos::fence();
@@ -638,17 +630,14 @@ void test_segmented_view(unsigned int size)
     typedef Kokkos::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> view_type;
     view_type a("A",128,size,7,3,2,3);
     double reference;
-    int team_size = ExecutionSpace::team_max();
-#ifdef KOKKOS_HAVE_CUDA
-    if(Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value)
-      team_size = 128;
-    else
-#endif
-    if(team_size>4)
-      team_size = 4;
-    int nteams = (size+team_size-1)/team_size;
+
     Impl::GrowTest<view_type,ExecutionSpace> f(a);
+
+    const int team_size = Kokkos::TeamPolicy<ExecutionSpace>::team_size_max( f );
+    const int nteams = (size+team_size-1)/team_size;
+
     Kokkos::parallel_reduce(Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),f,reference);
+
     size_t real_size = ((size+127)/128)*128;
 
     ASSERT_EQ(real_size,a.dimension_0());
