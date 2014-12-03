@@ -1165,6 +1165,7 @@ namespace ROL {
  *  <li>\link rol/example/poisson-inversion/example_01.cpp Poisson inversion\endlink</li>
  *  <li>\link rol/example/burgers-control/example_01.cpp Burgers control\endlink</li>
  *  <li>\link rol/example/gross-pitaevskii/example_01.cpp Minimizing the Gross-Pitaevskii functional \endlink</li>
+ *  <li>\link rol/example/gross-pitaevskii/example_02.cpp Gross-Pitaevskii functional with \f$H^1\f$ gradient \endlink</li>
  *  </ol>
  *  </ul> 
 */  
