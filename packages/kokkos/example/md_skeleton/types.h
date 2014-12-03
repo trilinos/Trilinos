@@ -53,6 +53,30 @@ typedef Kokkos::DefaultExecutionSpace device_type ;
 #if ! defined( KOKKOS_HAVE_CUDA )
   struct double2 {
     double x, y;
+    KOKKOS_INLINE_FUNCTION
+    double2(double xinit, double yinit) {
+      x = xinit;
+      y = yinit;
+    }
+    KOKKOS_INLINE_FUNCTION
+    double2() {
+      x = 0.0;
+      y = 0.0;
+    }
+    KOKKOS_INLINE_FUNCTION
+    double2& operator += (const double2& src) {
+      x+=src.x;
+      y+=src.y;
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    volatile double2& operator += (const volatile double2& src) volatile {
+      x+=src.x;
+      y+=src.y;
+      return *this;
+    }
+
   };
 #endif
 
