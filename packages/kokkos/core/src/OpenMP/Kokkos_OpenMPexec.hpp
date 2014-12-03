@@ -152,7 +152,7 @@ namespace Impl {
 class OpenMPexecTeamMember {
 private:
 
-  enum { TEAM_REDUCE_SIZE = 16 };
+  enum { TEAM_REDUCE_SIZE = 512 };
 
   /** \brief  Thread states for team synchronization */
   enum { Active = 0 , Rendezvous = 1 };
@@ -926,23 +926,23 @@ namespace Kokkos {
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>
-  ThreadLoop(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>
+  TeamThreadLoop(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
-  ThreadLoop(const Impl::OpenMPexecTeamVectorMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
+  TeamThreadLoop(const Impl::OpenMPexecTeamVectorMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
-  VectorLoop(Impl::OpenMPexecTeamVectorMember thread, const iType count) {
-  return Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >(thread,count);
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
+  ThreadVectorLoop(Impl::OpenMPexecTeamVectorMember thread, const iType count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >(thread,count);
 }
 
 } // namespace Kokkos
@@ -955,7 +955,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -966,7 +966,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecT
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
   result = ValueType();
@@ -977,7 +977,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ope
     result+=tmp;
   }
 
-  result = loop_boundaries.thread.team_reduce(result);
+  result = loop_boundaries.thread.team_reduce(result,Impl::JoinAdd<ValueType>());
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -989,7 +989,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ope
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1013,7 +1013,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -1024,7 +1024,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecT
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
   result = ValueType();
@@ -1035,7 +1035,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ope
     result+=tmp;
   }
 
-  result = loop_boundaries.thread.team_reduce(result);
+  result = loop_boundaries.thread.team_reduce(result, Impl::JoinAdd<ValueType>());
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -1047,7 +1047,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ope
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1058,7 +1058,7 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::OpenMPex
     join(result,tmp);
   }
 
-  init_result = loop_boundaries.thread.team_reduce(result,join);
+  init_result = loop_boundaries.thread.team_reduce(result,Impl::JoinLambdaAdapter<ValueType,JoinType>(join));
 }
 
 } //namespace Kokkos
@@ -1070,7 +1070,7 @@ namespace Kokkos {
  * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
+void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
     loop_boundaries, const Lambda& lambda) {
   #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
   #pragma ivdep
@@ -1085,7 +1085,7 @@ void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecT
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& result) {
   result = ValueType();
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -1107,7 +1107,7 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPex
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1134,9 +1134,9 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPex
  * This functionality requires C++11 support.*/
 template< typename iType, class FunctorType >
 KOKKOS_INLINE_FUNCTION
-void parallel_scan(const Impl::VectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
-      loop_boundaries, const FunctorType & lambda)
-{
+void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
+      loop_boundaries, const FunctorType & lambda) {
+
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
   typedef typename ValueTraits::value_type value_type ;
 

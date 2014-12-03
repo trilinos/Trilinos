@@ -211,6 +211,35 @@ void parallel_for( const size_t        work_count ,
 
 namespace Kokkos {
 
+namespace Impl {
+  template<typename ValueType, class JoinLambda>
+  struct JoinLambdaAdapter {
+    typedef ValueType value_type;
+    const JoinLambda& lambda;
+    KOKKOS_INLINE_FUNCTION
+    JoinLambdaAdapter(const JoinLambda& lambda_):lambda(lambda_) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile value_type& dst, const volatile value_type& src) const {
+      lambda(dst,src);
+    }
+  };
+
+  template<typename ValueType>
+  struct JoinAdd {
+    typedef ValueType value_type;
+
+    KOKKOS_INLINE_FUNCTION
+    JoinAdd() {}
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile value_type& dst, const volatile value_type& src) const {
+      dst+=src;
+    }
+  };
+
+}
+
 /** \brief  Parallel reduction
  *
  * Example of a parallel_reduce functor for a POD (plain old data) value type:

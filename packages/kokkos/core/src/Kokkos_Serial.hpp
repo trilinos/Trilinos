@@ -308,6 +308,7 @@ public:
   KOKKOS_INLINE_FUNCTION void team_barrier() const {}
 
   template< class JoinOp >
+  KOKKOS_INLINE_FUNCTION
   typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
                                          , const JoinOp & ) const
     { return value ; }
@@ -890,7 +891,7 @@ namespace Kokkos {
 
 namespace Impl {
   template<typename iType>
-  struct ThreadLoopBoundariesStruct<iType,SerialTeamMember> {
+  struct TeamThreadLoopBoundariesStruct<iType,SerialTeamMember> {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
@@ -898,14 +899,14 @@ namespace Impl {
     const SerialTeamMember& thread;
 
     KOKKOS_INLINE_FUNCTION
-    ThreadLoopBoundariesStruct (const SerialTeamMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const SerialTeamMember& thread_, const iType& count):
       end(count),
       thread(thread_)
     {}
   };
 
   template<typename iType>
-  struct ThreadLoopBoundariesStruct<iType,SerialTeamVectorMember> {
+  struct TeamThreadLoopBoundariesStruct<iType,SerialTeamVectorMember> {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
@@ -913,21 +914,21 @@ namespace Impl {
     const SerialTeamVectorMember& thread;
 
     KOKKOS_INLINE_FUNCTION
-    ThreadLoopBoundariesStruct (const SerialTeamVectorMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const SerialTeamVectorMember& thread_, const iType& count):
       end(count),
       thread(thread_)
     {}
   };
 
   template<typename iType>
-  struct VectorLoopBoundariesStruct<iType,SerialTeamVectorMember> {
+  struct ThreadVectorLoopBoundariesStruct<iType,SerialTeamVectorMember> {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
     enum {increment = 1};
 
     KOKKOS_INLINE_FUNCTION
-    VectorLoopBoundariesStruct (const SerialTeamVectorMember& thread, const iType& count):
+    ThreadVectorLoopBoundariesStruct (const SerialTeamVectorMember& thread, const iType& count):
       end( count )
     {}
   };
@@ -935,23 +936,23 @@ namespace Impl {
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>
-  ThreadLoop(const Impl::SerialTeamMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>
+  TeamThreadLoop(const Impl::SerialTeamMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
-  ThreadLoop(const Impl::SerialTeamVectorMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
+  TeamThreadLoop(const Impl::SerialTeamVectorMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
-  VectorLoop(Impl::SerialTeamVectorMember thread, const iType count) {
-  return Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
+  ThreadVectorLoop(Impl::SerialTeamVectorMember thread, const iType count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
 }
 
 } // namespace Kokkos
@@ -964,7 +965,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -975,7 +976,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamM
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
   result = ValueType();
@@ -986,7 +987,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
     result+=tmp;
   }
 
-  result = loop_boundaries.thread.team_reduce(result);
+  result = loop_boundaries.thread.team_reduce(result,Impl::JoinAdd<ValueType>());
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -998,7 +999,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1009,7 +1010,7 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTe
     join(result,tmp);
   }
 
-  init_result = loop_boundaries.thread.team_reduce(result,join);
+  init_result = loop_boundaries.thread.team_reduce(result,Impl::JoinLambdaAdapter<ValueType,JoinType>(join));
 }
 
 } //namespace Kokkos
@@ -1022,7 +1023,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -1033,7 +1034,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamV
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
   result = ValueType();
@@ -1044,7 +1045,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
     result+=tmp;
   }
 
-  result = loop_boundaries.thread.team_reduce(result);
+  result = loop_boundaries.thread.team_reduce(result,Impl::JoinAdd<ValueType>());
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -1056,7 +1057,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1067,7 +1068,7 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTe
     join(result,tmp);
   }
 
-  init_result = loop_boundaries.thread.team_reduce(result,join);
+  init_result = loop_boundaries.thread.team_reduce(result,Impl::JoinLambdaAdapter<ValueType,JoinType>(join));
 }
 
 } //namespace Kokkos
@@ -1079,7 +1080,7 @@ namespace Kokkos {
  * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
     loop_boundaries, const Lambda& lambda) {
   #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
   #pragma ivdep
@@ -1094,7 +1095,7 @@ void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamV
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& result) {
   result = ValueType();
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -1116,7 +1117,7 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTe
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1143,11 +1144,10 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTe
  * This functionality requires C++11 support.*/
 template< typename iType, class FunctorType >
 KOKKOS_INLINE_FUNCTION
-void parallel_scan(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
-      loop_boundaries, const FunctorType & lambda)
-{
-  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
+void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+      loop_boundaries, const FunctorType & lambda) {
 
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
   typedef typename ValueTraits::value_type value_type ;
 
   value_type scan_val = value_type();

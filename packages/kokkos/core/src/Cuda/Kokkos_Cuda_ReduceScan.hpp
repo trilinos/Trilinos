@@ -73,8 +73,52 @@ namespace Impl {
  *  Algorithmic constraints:
  *   (a) blockDim.y is a power of two
  *   (b) blockDim.y <= 512
- *   (c) blockDim.y == blockDim.z == 1
+ *   (c) blockDim.x == blockDim.z == 1
  */
+
+
+template< class ValueType , class JoinOp>
+__device__
+inline void cuda_intra_warp_reduction( ValueType& value, const JoinOp& join) {
+
+  unsigned shift = 1;
+  ValueType result = value;
+  while(blockDim.x * shift < 32 && shift<blockDim.y) {
+    const ValueType tmp = shfl_down(result, blockDim.x*shift,32);
+    join(result , tmp);
+    shift*=2;
+  }
+  value = shfl(result,0,32);
+}
+
+template< class ValueType , class JoinOp>
+__device__
+inline void cuda_inter_warp_reduction( ValueType& value, const JoinOp& join) {
+
+  __shared__ char sh_result[sizeof(ValueType)];
+  ValueType* result = (ValueType*) & sh_result;
+  const unsigned step = 32 / blockDim.x;
+  unsigned shift = step;
+  __syncthreads();
+
+  if(threadIdx.y == 0) {
+    *result = value;
+  }
+  __syncthreads();
+  while (shift<blockDim.y) {
+    if(shift==threadIdx.y && threadIdx.x==0) {
+      join(*result,value);
+    }
+    __syncthreads();
+    shift+=step;
+  }
+  __syncthreads();
+
+  value = *result;
+}
+
+
+
 template< bool DoScan , class FunctorType >
 __device__
 void cuda_intra_block_reduce_scan( const FunctorType & functor ,

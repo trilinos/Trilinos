@@ -394,28 +394,6 @@ public:
       op(_i);
   }
 
-  template< typename iType, class Operation, typename ValueType >
-  __device__ inline void team_par_reduce(const iType n, const Operation & op, ValueType& result
-  ) const {
-
-    ValueType val = ValueType();
-
-    for(int _i = threadIdx.y; _i < n; _i += team_size())
-      op(_i,val);
-
-    __shared__ ValueType sh_val[blockDim.y];
-
-    if( threadIdx.x == 0 ) sh_val[threadIdx.y] = val;
-    for(int _i = 1; _i < blockDim.y; _i*=2) {
-      if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
-        sh_val[threadIdx.y] += sh_val[threadIdx.y+_i];
-      }
-      __threadfence_block();
-    }
-
-    result = sh_val[0];
-  }
-
   template< typename iType, class Operation, typename ValueType, class JoinType >
   __device__ inline void team_par_reduce(const iType n, const Operation & op, ValueType& result, const JoinType & join
   ) const {
@@ -1574,7 +1552,7 @@ public:
 namespace Kokkos {
 namespace Impl {
   template<typename iType>
-  struct ThreadLoopBoundariesStruct<iType,CudaTeamMember> {
+  struct TeamThreadLoopBoundariesStruct<iType,CudaTeamMember> {
     typedef iType index_type;
     const iType start;
     const iType end;
@@ -1583,7 +1561,7 @@ namespace Impl {
 
 #ifdef __CUDA_ARCH__
     __device__ inline
-    ThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
       start( threadIdx.y ),
       end( count ),
       increment( blockDim.y ),
@@ -1591,7 +1569,7 @@ namespace Impl {
     {}
 #else
     KOKKOS_INLINE_FUNCTION
-    ThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
       start( 0 ),
       end( count ),
       increment( 1 ),
@@ -1601,7 +1579,7 @@ namespace Impl {
   };
 
   template<typename iType>
-  struct ThreadLoopBoundariesStruct<iType,CudaTeamVectorMember> {
+  struct TeamThreadLoopBoundariesStruct<iType,CudaTeamVectorMember> {
     typedef iType index_type;
     const iType start;
     const iType end;
@@ -1610,7 +1588,7 @@ namespace Impl {
 
 #ifdef __CUDA_ARCH__
     __device__ inline
-    ThreadLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
       start( threadIdx.y ),
       end( count ),
       increment( blockDim.y ),
@@ -1618,7 +1596,7 @@ namespace Impl {
     {}
 #else
     KOKKOS_INLINE_FUNCTION
-    ThreadLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
       start( 0 ),
       end( count ),
       increment( 1 ),
@@ -1628,7 +1606,7 @@ namespace Impl {
   };
 
   template<typename iType>
-  struct VectorLoopBoundariesStruct<iType,CudaTeamVectorMember> {
+  struct ThreadVectorLoopBoundariesStruct<iType,CudaTeamVectorMember> {
     typedef iType index_type;
     const iType start;
     const iType end;
@@ -1636,14 +1614,14 @@ namespace Impl {
 
 #ifdef __CUDA_ARCH__
     __device__ inline
-    VectorLoopBoundariesStruct (const CudaTeamVectorMember& thread, const iType& count):
+    ThreadVectorLoopBoundariesStruct (const CudaTeamVectorMember& thread, const iType& count):
     start( threadIdx.x ),
     end( count ),
     increment( blockDim.x )
     {}
 #else
     KOKKOS_INLINE_FUNCTION
-    VectorLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
+    ThreadVectorLoopBoundariesStruct (const CudaTeamVectorMember& thread_, const iType& count):
       start( 0 ),
       end( count ),
       increment( 1 )
@@ -1655,23 +1633,23 @@ namespace Impl {
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>
-  ThreadLoop(const Impl::CudaTeamMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>
+  TeamThreadLoop(const Impl::CudaTeamMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >
-  ThreadLoop(const Impl::CudaTeamVectorMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >
+  TeamThreadLoop(const Impl::CudaTeamVectorMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >
-  VectorLoop(Impl::CudaTeamVectorMember thread, const iType count) {
-  return Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >(thread,count);
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >
+  ThreadVectorLoop(Impl::CudaTeamVectorMember thread, const iType count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >(thread,count);
 }
 
 } // namespace Kokkos
@@ -1684,7 +1662,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -1695,7 +1673,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMem
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
 #ifdef __CUDA_ARCH__
@@ -1704,17 +1682,10 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Cud
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
     lambda(i,result);
   }
-  __shared__ ValueType sh_val[blockDim.y];
 
-  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
-  for(int _i = 1; _i < blockDim.y; _i*=2) {
-    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
-      sh_val[threadIdx.y] += sh_val[threadIdx.y+_i];
-    }
-    __threadfence_block();
-  }
+  Impl::cuda_intra_warp_reduction(result,[&] (ValueType& dst, const ValueType& src) { dst+=src; });
+  Impl::cuda_inter_warp_reduction(result,[&] (ValueType& dst, const ValueType& src) { dst+=src; });
 
-  result = sh_val[0];
 #endif
 }
 
@@ -1727,7 +1698,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Cud
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
 #ifdef __CUDA_ARCH__
@@ -1737,17 +1708,10 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeam
     lambda(i,result);
   }
 
-  __shared__ ValueType sh_val[blockDim.y];
+  Impl::cuda_intra_warp_reduction(result, join );
+  Impl::cuda_inter_warp_reduction(result, join );
 
-  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
-  for(int _i = 1; _i < blockDim.y; _i*=2) {
-    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
-      join(sh_val[threadIdx.y], sh_val[threadIdx.y+_i]);
-    }
-    __threadfence_block();
-  }
-
-  init_result = sh_val[0];
+  init_result = result;
 #endif
 }
 
@@ -1761,7 +1725,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
 
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
@@ -1773,7 +1737,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVec
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 #ifdef __CUDA_ARCH__
 
@@ -1782,17 +1746,9 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Cud
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
     lambda(i,result);
   }
-  __shared__ ValueType sh_val[blockDim.y];
+  Impl::cuda_intra_warp_reduction(result,[&] (ValueType& dst, const ValueType& src) { dst+=src; });
+  Impl::cuda_inter_warp_reduction(result,[&] (ValueType& dst, const ValueType& src) { dst+=src; });
 
-  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
-  for(int _i = 1; _i < blockDim.y; _i*=2) {
-    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
-      sh_val[threadIdx.y] += sh_val[threadIdx.y+_i];
-    }
-    __threadfence_block();
-  }
-
-  result = sh_val[0];
 #endif
 }
 
@@ -1805,7 +1761,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Cud
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
 #ifdef __CUDA_ARCH__
@@ -1815,17 +1771,10 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::CudaTeam
     lambda(i,result);
   }
 
-  __shared__ ValueType sh_val[blockDim.y];
+  Impl::cuda_intra_warp_reduction(result, join );
+  Impl::cuda_inter_warp_reduction(result, join );
 
-  if( threadIdx.x == 0 ) sh_val[threadIdx.y] = result;
-  for(int _i = 1; _i < blockDim.y; _i*=2) {
-    if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
-      join(sh_val[threadIdx.y], sh_val[threadIdx.y+_i]);
-    }
-    __threadfence_block();
-  }
-
-  init_result = sh_val[0];
+  init_result = result;
 #endif
 }
 
@@ -1838,7 +1787,7 @@ namespace Kokkos {
  * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
     loop_boundaries, const Lambda& lambda) {
 
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
@@ -1851,7 +1800,7 @@ void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVec
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& result) {
 #ifdef __CUDA_ARCH__
   ValueType val = ValueType();
@@ -1886,7 +1835,7 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeam
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
 #ifdef __CUDA_ARCH__
@@ -1923,7 +1872,7 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeam
  * This functionality requires C++11 support.*/
 template< typename iType, class Lambda >
 KOKKOS_INLINE_FUNCTION
-void parallel_scan(const Impl::VectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
+void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
       loop_boundaries, const Lambda & lambda) {
 
 #ifdef __CUDA_ARCH__

@@ -70,6 +70,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestMemorySpaceTracking.hpp>
 #include <TestTeamVector.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -323,6 +324,12 @@ TEST_F( cuda , team_scan )
 
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( cuda , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Cuda >();
+}
 
 //----------------------------------------------------------------------------
 
@@ -330,7 +337,7 @@ TEST_F( cuda , team_scan )
 
 namespace Test {
 
-TEST_F( cuda , cxx11_team_vector )
+TEST_F( cuda , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(1) ) );
@@ -338,6 +345,11 @@ TEST_F( cuda , cxx11_team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(4) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(10) ) );
 }
 
 }

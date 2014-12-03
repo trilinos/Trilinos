@@ -65,6 +65,7 @@
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -267,6 +268,13 @@ TEST_F( openmp , memory_space )
 
 //----------------------------------------------------------------------------
 
+TEST_F( openmp , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::OpenMP >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 TEST_F( openmp , cxx11 )
 {
@@ -288,6 +296,11 @@ TEST_F( openmp , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(10) ) );
 }
 #endif
 } // namespace test
