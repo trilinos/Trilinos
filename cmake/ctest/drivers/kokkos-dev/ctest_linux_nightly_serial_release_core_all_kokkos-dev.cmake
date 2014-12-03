@@ -82,8 +82,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
 #Turning qthreads off until where/how it will be installed can be determined
   "TPL_ENABLE_QTHREAD:BOOL=OFF"
-  "QTHREAD_INCLUDE_DIRS:FILEPATH=<path to qthread>/include"
-  "QTHREAD_LIBRARY_DIRS:FILEPATH=<path to qthread>/lib"
+  "QTHREAD_INCLUDE_DIRS:FILEPATH=path_to_qthread/include"
+  "QTHREAD_LIBRARY_DIRS:FILEPATH=path_to_qthread/lib"
 
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
     
