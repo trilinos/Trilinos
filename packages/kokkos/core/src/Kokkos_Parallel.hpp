@@ -575,27 +575,6 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Enable = void >
-struct FunctorHasInit : public false_type {};
-
-template< class FunctorType >
-struct FunctorHasInit< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::init ) >::type >
-  : public true_type {};
-
-template< class FunctorType , class Enable = void >
-struct FunctorHasJoin : public false_type {};
-
-template< class FunctorType >
-struct FunctorHasJoin< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::join ) >::type >
-  : public true_type {};
-
-template< class FunctorType , class Enable = void >
-struct FunctorHasFinal : public false_type {};
-
-template< class FunctorType >
-struct FunctorHasFinal< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
-  : public true_type {};
-
-template< class FunctorType , class Enable = void >
 struct FunctorTeamShmemSize
 {
   static inline size_t value( const FunctorType & , int ) { return 0 ; }
