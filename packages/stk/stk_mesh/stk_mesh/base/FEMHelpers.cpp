@@ -164,12 +164,20 @@ Entity declare_element_side(
 
   mesh.declare_relation( elem , side , local_side_id, perm, ordinal_scratch, part_scratch );
 
-  Entity const *elem_nodes = mesh.begin_nodes(elem);
-
-  for ( unsigned i = 0 ; i < side_top.num_nodes() ; ++i )
+  const unsigned num_side_nodes = mesh.count_valid_connectivity(side, stk::topology::NODE_RANK);
+  if (0 == num_side_nodes)
   {
-    Entity node = elem_nodes[ side_node_map[i] ];
-    mesh.declare_relation( side , node , i, perm, ordinal_scratch, part_scratch );
+    Entity const *elem_nodes = mesh.begin_nodes(elem);
+    for ( unsigned i = 0 ; i < side_top.num_nodes() ; ++i )
+    {
+      Entity node = elem_nodes[ side_node_map[i] ];
+      mesh.declare_relation( side , node , i, perm, ordinal_scratch, part_scratch );
+    }
+  }
+  else
+  {
+    ThrowAssert(num_side_nodes == side_top.num_nodes());
+    // Should the existing node relations be verified?
   }
 
   return side ;

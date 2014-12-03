@@ -208,6 +208,7 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
+  bool modification_end_for_percept( modification_optimization opt = MOD_END_SORT);
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
   /** \brief  Give away ownership of entities to other parallel processes.
@@ -687,6 +688,13 @@ public:
    */
   void allocate_field_data();
 
+  void fix_up_ownership(stk::mesh::Entity entity, int new_owner)
+  {
+      stk::mesh::EntityKey key = entity_key(entity);
+      this->internal_change_owner_in_comm_data(key, new_owner);
+      this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
+  }
+
 protected: //functions
   inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
@@ -755,8 +763,8 @@ protected: //functions
 
   void internal_resolve_ghosted_modify_delete();
   void internal_resolve_shared_membership();
-  void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
-  void internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new );
+  void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
+  virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified);
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
@@ -767,6 +775,8 @@ protected: //functions
   bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+  void fixup_ghosted_to_shared_nodes();
+  void find_ghosted_nodes_that_need_to_be_shared(stk::mesh::EntityVector& ghosted_nodes_that_are_now_shared);
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
