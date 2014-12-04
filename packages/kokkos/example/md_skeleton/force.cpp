@@ -152,7 +152,7 @@ struct ForceFunctor {
     f(i, 1) += fiy;
     f(i, 2) += fiz;
 
-    double2 energy_virial = {4.0 * energy, 0.5 * virial};
+    double2 energy_virial(4.0 * energy, 0.5 * virial);
     return energy_virial;
   }
 
@@ -178,7 +178,7 @@ double2 force(System &s,int evflag) {
 
   ForceFunctor f(s);
 
-  double2 ev = {0,0};
+  double2 ev(0,0);
   if(!evflag)
     Kokkos::parallel_for(s.nlocal,f);
   else
