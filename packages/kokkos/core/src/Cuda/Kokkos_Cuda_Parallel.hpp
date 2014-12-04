@@ -1870,14 +1870,14 @@ void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::Cu
  * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
  * to the final sum value over all vector lanes.
  * This functionality requires C++11 support.*/
-template< typename iType, class Lambda >
+template< typename iType, class FunctorType >
 KOKKOS_INLINE_FUNCTION
 void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamVectorMember >&
-      loop_boundaries, const Lambda & lambda) {
+      loop_boundaries, const FunctorType & lambda) {
 
 #ifdef __CUDA_ARCH__
-  typedef decltype( & Lambda::operator() ) function_pointer_type ;
-  typedef typename Impl::ScanAdapterFunctorOperatorArgType< function_pointer_type >::type value_type ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
+  typedef typename ValueTraits::value_type value_type ;
 
   value_type scan_val = value_type();
   const int VectorLength = blockDim.x;
