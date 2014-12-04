@@ -170,7 +170,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     }
 
     if (mesh.has_no_relations(new_entity)) {
-     mesh.destroy_entity(new_entity);
+      mesh.destroy_entity(new_entity);
     }
   }
 }
@@ -239,78 +239,6 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 
 } // empty namespace
 
-void get_nodes_that_are_kept_from_other_proc(stk::mesh::BulkData &mesh, stk::mesh::EntityVector &new_nodes, stk::mesh::EntityVector& sharedNodes)
-{
-    stk::CommAll commAll(mesh.parallel());
-
-    int otherProc = 1 - mesh.parallel_rank();
-
-    for(int phase = 0; phase < 2; ++phase)
-    {
-        for(size_t i = 0; i < new_nodes.size(); ++i)
-        {
-            if(mesh.state(new_nodes[i]) != stk::mesh::Deleted && mesh.is_valid(new_nodes[i]))
-            {
-                commAll.send_buffer(otherProc).pack<stk::mesh::EntityKey>(mesh.entity_key(new_nodes[i]));
-            }
-        }
-
-        if(phase == 0)
-        {
-            commAll.allocate_buffers(mesh.parallel_size() / 4);
-        }
-        else
-        {
-            commAll.communicate();
-        }
-    }
-
-    while(commAll.recv_buffer(otherProc).remaining())
-    {
-        stk::mesh::EntityKey key;
-        commAll.recv_buffer(otherProc).unpack<stk::mesh::EntityKey>(key);
-
-        stk::mesh::Entity node = mesh.get_entity(key);
-        if(mesh.is_valid(node) && mesh.state(node) != stk::mesh::Deleted)
-        {
-            sharedNodes.push_back(node);
-        }
-    }
-}
-
-void add_sharing_info_for_kept_nodes(stk::mesh::BulkData &mesh, stk::mesh::EntityVector &sharedNodes)
-{
-    stk::CommAll commSecondStage(mesh.parallel());
-    int otherProc = 1 - mesh.parallel_rank();
-
-    for(int phase = 0; phase < 2; ++phase)
-    {
-        for(size_t i = 0; i < sharedNodes.size(); ++i)
-        {
-            mesh.add_node_sharing(sharedNodes[i], otherProc);
-            commSecondStage.send_buffer(otherProc).pack<stk::mesh::EntityKey>(mesh.entity_key(sharedNodes[i]));
-        }
-
-        if(phase == 0)
-        {
-            commSecondStage.allocate_buffers(mesh.parallel_size() / 4);
-        }
-        else
-        {
-            commSecondStage.communicate();
-        }
-    }
-
-    while(commSecondStage.recv_buffer(otherProc).remaining())
-    {
-        stk::mesh::EntityKey key;
-        commSecondStage.recv_buffer(otherProc).unpack<stk::mesh::EntityKey>(key);
-
-        stk::mesh::Entity node = mesh.get_entity(key);
-        mesh.add_node_sharing(node, otherProc);
-    }
-}
-
 void separate_and_skin_mesh(
     stk::mesh::MetaData & fem_meta,
     stk::mesh::BulkData & mesh,
@@ -319,56 +247,47 @@ void separate_and_skin_mesh(
     const stk::mesh::EntityRank rank_of_element
     )
 {
-    stk::mesh::EntityVector entities_to_separate;
+  stk::mesh::EntityVector entities_to_separate;
 
-    //select the entity only if the current process in the owner
-    for(std::vector<stk::mesh::EntityId>::const_iterator itr = elements_to_separate.begin();
-            itr != elements_to_separate.end(); ++itr)
-            {
-        stk::mesh::Entity element = mesh.get_entity(rank_of_element, *itr);
-        if(mesh.is_valid(element) && mesh.parallel_owner_rank(element) == mesh.parallel_rank())
-        {
-            entities_to_separate.push_back(element);
-        }
+  //select the entity only if the current process in the owner
+  for (std::vector< stk::mesh::EntityId>::const_iterator itr = elements_to_separate.begin();
+      itr != elements_to_separate.end(); ++itr)
+  {
+    stk::mesh::Entity element = mesh.get_entity(rank_of_element, *itr);
+    if (mesh.is_valid(element) && mesh.parallel_owner_rank(element) == mesh.parallel_rank()) {
+      entities_to_separate.push_back(element);
     }
+  }
 
-    stk::mesh::EntityVector entities_closure;
-    stk::mesh::find_closure(mesh, entities_to_separate, entities_closure);
+  stk::mesh::EntityVector entities_closure;
+  stk::mesh::find_closure(mesh,
+      entities_to_separate,
+      entities_closure);
 
-    stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
+  stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
 
-    stk::mesh::EntityVector nodes;
-    find_owned_nodes_with_relations_outside_closure(mesh, entities_closure, select_owned, nodes);
+  stk::mesh::EntityVector nodes;
+  find_owned_nodes_with_relations_outside_closure(mesh, entities_closure, select_owned, nodes);
 
-    //ask for new nodes to represent the copies
-    std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
-    requests[NODE_RANK] = nodes.size();
+  //ask for new nodes to represent the copies
+  std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
+  requests[NODE_RANK] = nodes.size();
 
-    mesh.modification_begin();
+  mesh.modification_begin();
 
-    // generate_new_entities creates new blank entities of the requested ranks
-    stk::mesh::EntityVector new_nodes;
-    mesh.generate_new_entities(requests, new_nodes);
+  // generate_new_entities creates new blank entities of the requested ranks
+  stk::mesh::EntityVector new_nodes;
+  mesh.generate_new_entities(requests, new_nodes);
 
-    //communicate and create new nodes everywhere the old node is shared
-    communicate_and_create_shared_nodes(mesh, nodes, new_nodes);
-    copy_nodes_and_break_relations(mesh, entities_closure, nodes, new_nodes);
+  //communicate and create new nodes everywhere the old node is shared
+  communicate_and_create_shared_nodes(mesh, nodes, new_nodes);
 
-    // Manoj's Algorithm to establish node sharing is
-    //      if I (this proc) am keeping any of the new_nodes, i should let the other proc know
-    //      if I (other proc), after finding out which nodes the other proc kept, determine that I also kept that new node, well, then it's shared!
-    //      Step 1: communicate which nodes of the new_nodes are kept
-    //      Step 2: after unpacking new nodes that are kept, determine which ones were kept on this proc
-    //      Step 3: if both procs kept certain nodes, they are shared!
+  copy_nodes_and_break_relations(mesh, entities_closure, nodes, new_nodes);
 
-    stk::mesh::EntityVector sharedNodes;
-    get_nodes_that_are_kept_from_other_proc(mesh, new_nodes, sharedNodes);
-    add_sharing_info_for_kept_nodes(mesh, sharedNodes);
+  mesh.modification_end();
 
-    mesh.modification_end();
+  stk::mesh::PartVector add_parts(1,&skin_part);
+  stk::mesh::skin_mesh(mesh, add_parts);
 
-    stk::mesh::PartVector add_parts(1, &skin_part);
-    stk::mesh::skin_mesh(mesh, add_parts);
-
-    return;
+  return;
 }

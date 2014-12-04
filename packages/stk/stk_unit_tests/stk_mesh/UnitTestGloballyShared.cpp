@@ -51,7 +51,7 @@ using stk::mesh::EntityRank;
 using stk::mesh::EntityId;
 
 
-TEST( UnitTestGloballyShared, DISABLED_keyhole_3x1 )
+TEST( UnitTestGloballyShared, keyhole_3x1 )
 {
   // layout:
   // [ e_1, e_2, e_3 ] elements
