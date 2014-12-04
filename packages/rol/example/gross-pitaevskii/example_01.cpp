@@ -332,9 +332,6 @@ typedef double RealT;
 
 int main(int argc, char **argv) {
 
-    // Output file
-    std::ofstream outfile ("output.csv");
-
     // Set up MPI
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -347,18 +344,15 @@ int main(int argc, char **argv) {
     else
         outStream = Teuchos::rcp(&bhs, false);
 
-    // Number of interior grid points \f$n_x\f$
-    int nx = 10;
-    if(argc > 1) {
-        nx = atoi( argv[1] );
-    }
+    int errorFlag = 0;
+
+    Teuchos::ParameterList parlist;
+    std::string paramfile = "parameters.xml";
+    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
  
-    // Coefficient of quartic term
-    RealT gnl = 10.0;
-    if(argc > 2) {
-        gnl = atof( argv[2] );
-    }
-    
+    int nx     = parlist.get("Interior Grid Points",100);
+    double gnl = parlist.get("Nonlinearity Coefficient g",50.0);
+
     // Grid spacing
     RealT dx = 1.0/(nx+1);
 
@@ -408,8 +402,6 @@ int main(int argc, char **argv) {
     // Instantiate normalization constraint
     Normalization_Constraint<RealT> constr(nx,dx);
 
-    Teuchos::ParameterList parlist;
-
     // Define Step
     parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
     parlist.set("Maximum Number of Krylov Iterations",80);
@@ -435,14 +427,17 @@ int main(int argc, char **argv) {
       *outStream << output[i];
     }
 
-    // Write x,psi(x) to file
-    outfile << 0 << "," << 0 << std::endl;
 
-    for(int i=0;i<nx;++i) {
-        outfile << (*xi_rcp)[i] << "," << (*psi_rcp)[i] << std::endl ;
+   if(algo.getState()->gnorm>1e-6) {
+        errorFlag += 1; 
     }
 
-    outfile << 1 << "," << 0 << std::endl;
+    if (errorFlag != 0)
+        std::cout << "End Result: TEST FAILED\n";
+    else
+        std::cout << "End Result: TEST PASSED\n";
+
+
 
     return 0;
 

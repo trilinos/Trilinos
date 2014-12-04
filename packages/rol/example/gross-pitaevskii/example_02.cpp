@@ -186,8 +186,7 @@ int dimension() const {return std_vec_->size();}
 
 //! Modify the dual of vector u to be \f$\tilde u = -\ddot u\f$
 const Vector<Real> & dual() const {
-//  dual_vec_ = Teuchos::rcp( new OptDualStdVector<Real>( Teuchos::rcp( new std::vector<Element>(*std_vec_) ), fd_ ) );
-  Teuchos::RCP<std::vector<Element> > dual_vecp = Teuchos::rcp(new std::vector<Element>(*std_vec_));// = new std::vector<Element>(*std_vec_); 
+  Teuchos::RCP<std::vector<Element> > dual_vecp = Teuchos::rcp(new std::vector<Element>(*std_vec_));
   dual_vec_ = Teuchos::rcp( new OptDualStdVector<Real>( dual_vecp, fd_ ) );
   this->fd_->apply(dual_vecp); 
   return *dual_vec_;
@@ -263,7 +262,6 @@ Teuchos::RCP<Vector<Real> > basis( const int i ) const {
 int dimension() const {return std_vec_->size();}
 
 const Vector<Real> & dual() const {
-//  dual_vec_ = Teuchos::rcp( new OptStdVector<Real>( Teuchos::rcp( new std::vector<Element>(*std_vec_)),fd_ ) );
     Teuchos::RCP<std::vector<Element> > dual_vecp = Teuchos::rcp(new std::vector<Element>(*std_vec_));// = new std::vector<Element>(*std_vec_); 
     dual_vec_ = Teuchos::rcp( new OptStdVector<Real>( dual_vecp, fd_ ) );
     
@@ -465,8 +463,8 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 
     public: 
 
-        Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V) : g_(g),  
-            Vp_((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(V))).getVector())  {
+        Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V, FiniteDifference<Real> *fd) : g_(g),  
+            Vp_((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(V))).getVector()), fd_(fd)  {
 
             nx_ = Vp_->size(); 
             dx_ = (1.0/(1.0+nx_));
@@ -563,9 +561,11 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
     private:     
     int nx_;
     Real dx_;
+    
+    FiniteDifference<Real> *fd_;
 
     public:
-    Normalization_Constraint(int n, Real dx) : nx_(n), dx_(dx) {}          
+    Normalization_Constraint(int n, Real dx, FiniteDifference<Real> *fd) : nx_(n), dx_(dx), fd_(fd) {}          
 
     //! Evaluate \f$c[\psi]\f$
     /*! \f[ c[\psi]= \int\limits_0^1 |\psi|^2\,\mathrm{d}x - 1 \f] 
@@ -659,6 +659,50 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
             (*ahuvp)[i] = 2.0*dx_*(*vp)[i]*(*up)[0];        
         }  
     }
+     
+    //! Solve the system \f[ \begin{\pmatrix} K & c'^\ast(\psi)\\ c'(\psi) & 0 \end{pmatrix}\begin{pmatrix} v_1\\v_2 \end{pmatrix}=\begin{pmatrix} b_1\\b_2\end{pmatrix}\f]
+    /*! In this example, \f$K\f$ is the finite difference Laplacian the constraint is a scalar and the Jacobian is a vector
+     */
+   std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, const Vector<Real> &b2, const Vector<Real> &psi, Real &tol) {
+      Teuchos::RCP<std::vector<Real> > v1p =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XPrim>(v1)).getVector());    
+      Teuchos::RCP<std::vector<Real> > v2p =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<CDual>(v2)).getVector());
+      Teuchos::RCP<const std::vector<Real> > b1p =
+        (Teuchos::dyn_cast<XDual>(const_cast<Vector<Real> &>(b1))).getVector();
+      Teuchos::RCP<const std::vector<Real> > b2p =
+        (Teuchos::dyn_cast<CPrim>(const_cast<Vector<Real> &>(b2))).getVector();
+      Teuchos::RCP<const std::vector<Real> > psip =
+        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
+      
+    Teuchos::RCP<std::vector<Real> > jacp = Teuchos::rcp( new std::vector<Real> (nx_, 0.0) );
+    Teuchos::RCP<std::vector<Real> > b1dp = Teuchos::rcp( new std::vector<Real> (nx_, 0.0) );
+    
+    for(int i=0;i<nx_;++i) {
+        (*jacp)[i] = (*psip)[i];
+        (*b1dp)[i] = (*b1p)[i];
+    }
+     
+    // The Jacobian of the constraint is \f$c'(\psi)=2dx\psi\f$
+    XDual jac(jacp,fd_);
+    jac.scale(2.0*dx_);
+
+    // A Dual-in-name-only version of b1, so we can compute the desired inner products involving inv(K) 
+    XDual b1d(b1dp,fd_);
+    
+    // \f$ (c'K^{-1}*c'^\ast)^{-1} \f$ 
+    Real d = 1.0/jac.dot(jac);
+    Real p = jac.dot(b1d);
+
+    (*v2p)[0] = d*(p-(*b2p)[0]);
+ 
+    v1.set(jac.dual());
+    v1.scale(-(*v2p)[0]);
+    v1.plus(b1d.dual());  
+
+         
+        return std::vector<Real>(0);
+    }
 };
 
 
@@ -666,9 +710,7 @@ typedef double RealT;
 
 int main(int argc, char **argv) {
 
-    // Output file
-    std::ofstream outfile ("output.csv");
-
+    
     // Set up MPI
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -681,18 +723,16 @@ int main(int argc, char **argv) {
     else
         outStream = Teuchos::rcp(&bhs, false);
 
-    // Number of interior grid points \f$n_x\f$
-    int nx = 10;
-    if(argc > 1) {
-        nx = atoi( argv[1] );
-    }
+    int errorFlag = 0;
  
-    // Coefficient of quartic term
-    RealT gnl = 10.0;
-    if(argc > 2) {
-        gnl = atof( argv[2] );
-    }
-    
+
+    Teuchos::ParameterList parlist;
+    std::string paramfile = "parameters.xml";
+    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
+       
+    int nx     = parlist.get("Interior Grid Points",100);
+    double gnl = parlist.get("Nonlinearity Coefficient g",50.0);
+
     // Grid spacing
     RealT dx = 1.0/(nx+1);
 
@@ -739,13 +779,13 @@ int main(int argc, char **argv) {
     OptDualStdVector<RealT> g(g_rcp,fd);
 
     // Instantiate objective function  
-    Objective_GrossPitaevskii<RealT,OptStdVector<RealT>,OptDualStdVector<RealT> > obj(gnl,V);
+    Objective_GrossPitaevskii<RealT,OptStdVector<RealT>,OptDualStdVector<RealT> > obj(gnl,V,fd);
     
     // Instantiate normalization constraint
     Normalization_Constraint<RealT,OptStdVector<RealT>,OptDualStdVector<RealT>, 
-             ConStdVector<RealT>,ConDualStdVector<RealT> > constr(nx,dx);
+             ConStdVector<RealT>,ConDualStdVector<RealT> > constr(nx,dx,fd);
 
-    Teuchos::ParameterList parlist;
+
 
     // Define Step
     parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
@@ -767,19 +807,19 @@ int main(int argc, char **argv) {
 
     // Run Algorithm
     std::vector<std::string> output = algo.run(psi, g, lam, c, obj, constr, false);
-
+  
     for ( unsigned i = 0; i < output.size(); i++ ) {
       *outStream << output[i];
     }
 
-    // Write x,psi(x) to file
-    outfile << 0 << "," << 0 << std::endl;
-
-    for(int i=0;i<nx;++i) {
-        outfile << (*xi_rcp)[i] << "," << (*psi_rcp)[i] << std::endl ;
+    if(algo.getState()->gnorm>1e-6) {
+        errorFlag += 1; 
     }
 
-    outfile << 1 << "," << 0 << std::endl;
+    if (errorFlag != 0)
+        std::cout << "End Result: TEST FAILED\n";
+    else
+        std::cout << "End Result: TEST PASSED\n";
 
     delete fd;
 
