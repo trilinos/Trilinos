@@ -15,7 +15,8 @@ namespace pike_test {
     bool supportsType(const std::string& type) const;
 
     Teuchos::RCP<pike::Solver> 
-    buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const;
+    buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p,
+		const std::string& solverSublistName = "") const;
 
   private:
 

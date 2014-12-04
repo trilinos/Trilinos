@@ -39,6 +39,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  vanderpol
+  SOURCES vanderpol.cpp ${UNIT_TEST_DRIVER}
+  TESTONLYLIBS pike-test-apps
+  NUM_MPI_PROCS 2
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(core_tests
   SOURCE_FILES solver_factory_test_params.xml
   EXEDEPS solvers

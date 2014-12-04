@@ -51,6 +51,7 @@ namespace pike {
     // Test the reset on solver and status tests
     solver->reset();
     TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::UNCHECKED);
     TEST_EQUALITY(maxIters->getStatus(), pike::UNCHECKED);
   }
 
@@ -98,6 +99,7 @@ namespace pike {
     // Test the reset on solver and status tests
     solver->reset();
     TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::UNCHECKED);
     TEST_EQUALITY(tests->getStatus(), pike::UNCHECKED);
   }
 
@@ -143,6 +145,7 @@ namespace pike {
     // Test the reset on solver and status tests
     solver->reset();
     TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::UNCHECKED);
     TEST_EQUALITY(tests->getStatus(), pike::UNCHECKED);
   }
 
@@ -188,6 +191,7 @@ namespace pike {
     // Test the reset on solver and status tests
     solver->reset();
     TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::UNCHECKED);
     TEST_EQUALITY(tests->getStatus(), pike::UNCHECKED);
   }
 
@@ -222,6 +226,7 @@ namespace pike {
     solver->solve();
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),5);
 
     // Test the reset on solver and status tests
@@ -280,6 +285,7 @@ namespace pike {
 
     // Test solver and status test reset
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::CONVERGED);
     solver->reset();
     TEST_EQUALITY(converged->getStatus(),pike::UNCHECKED);
   }
@@ -329,6 +335,7 @@ namespace pike {
     solver->solve();
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),5);
 
     // Test solver and status test reset
@@ -393,6 +400,7 @@ namespace pike {
     solver->solve();
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::FAILED);
     TEST_EQUALITY(solver->getNumberOfIterations(),6); 
 
     // Test solver and status test reset
@@ -458,6 +466,7 @@ namespace pike {
     solver->solve();
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::FAILED);
     TEST_EQUALITY(solver->getNumberOfIterations(),6);
   }
 
@@ -527,6 +536,7 @@ namespace pike {
     solver->solve();
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::FAILED);
     TEST_EQUALITY(solver->getNumberOfIterations(),6);
   }
 

@@ -73,14 +73,14 @@ namespace pike {
     for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
        os << "  " << (*m)->name() << std::endl;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the ModelEvaluator named \"" << meName << "\" in the solver.  Valid models are:\n" << os.str() << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"pike::SolverDefaultBase::getModelEvaluator(): Failed to find the ModelEvaluator named \"" << meName << "\" in the solver.  Valid models are:\n" << os.str() << std::endl);
     return Teuchos::null;
   }
 
   const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > SolverDefaultBase::getModelEvaluators() const
   {
     std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > constModels(models_.size());
-    std::copy(models_.begin(),models_.end(),constModels.begin());
+    constModels.assign(models_.begin(),models_.end());
     return constModels;
   }
 
@@ -96,7 +96,7 @@ namespace pike {
 
   const std::vector<Teuchos::RCP<const pike::DataTransfer> > SolverDefaultBase::getDataTransfers() const
   { std::vector<Teuchos::RCP<const pike::DataTransfer> > constTransfers;
-    std::copy(transfers_.begin(),transfers_.end(),constTransfers.begin());
+    constTransfers.assign(transfers_.begin(),transfers_.end());
     return constTransfers;
   }
 

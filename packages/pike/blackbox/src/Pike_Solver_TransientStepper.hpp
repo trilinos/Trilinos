@@ -52,12 +52,26 @@ namespace pike {
     int maxTimeSteps_;
     double beginTime_;
     double endTime_;
+    double currentTime_;
     double initialStepSize_;
+    double currentStepSize_;
     double minStepSize_;
     double maxStepSize_;
     double stepGrowthFactor_;
     double stepDecreaseFactor_;
-    Teuchos::Array<double> checkPoints_;
+    Teuchos::Array<double> checkPointsVec_;
+    std::list<double> checkPoints_;
+    bool printTimeStepSummary_;
+    bool printTimeStepDetails_;
+    int numConvergedTimeStepsBeforeGrowth_;
+
+    pike::SolveStatus overallStatus_;
+    pike::SolveStatus timeStepStatus_;
+    std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> > transientModels_;
+
+    int totalNumFailedSteps_;
+    int numConsecutiveFailedTimeSteps_;
+    int numConsecutiveConvergedTimeSteps_;
 
     Teuchos::RCP<pike::Solver> solver_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;

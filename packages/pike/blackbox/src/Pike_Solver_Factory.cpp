@@ -1,12 +1,11 @@
+#include "Pike_BlackBox_config.hpp"
 #include "Pike_Solver_Factory.hpp"
 #include "Teuchos_Assert.hpp"
 
 // Pike solvers
 #include "Pike_Solver_BlockGaussSeidel.hpp"
 #include "Pike_Solver_BlockJacobi.hpp"
-#ifdef HAVE_PIKE_EXPERIMENTAL
 #include "Pike_Solver_TransientStepper.hpp"
-#endif
 
 #include <algorithm>
 
@@ -29,13 +28,17 @@ namespace pike {
   }
 
   Teuchos::RCP<pike::Solver> 
-  SolverFactory::buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const
+  SolverFactory::buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p,
+			     const std::string& inSolverSublistName) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(!p->isType<std::string>("Solver Sublist Name"), std::logic_error,
-			       "The \"Solver Sublist Name\" must be specified but is missing!");
-    
-    std::string solverSublistName = p->get<std::string>("Solver Sublist Name");
-    
+    std::string solverSublistName = inSolverSublistName;
+    if (solverSublistName == "") {
+      TEUCHOS_TEST_FOR_EXCEPTION(!p->isType<std::string>("Solver Sublist Name"), std::logic_error,
+				 "The \"Solver Sublist Name\" must be specified but is missing!");
+      
+      solverSublistName = p->get<std::string>("Solver Sublist Name");
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION(!p->isSublist(solverSublistName), std::logic_error,
 			       "Error the requested \"Solver Sublist Name\" with value \"" 
 			       << solverSublistName << "\" is not valid!");
@@ -60,20 +63,17 @@ namespace pike {
       jacobi->setParameterList(solverSublist);
       solver = jacobi;
     }
-#ifdef HAVE_PIKE_EXPERIMENTAL
     else if (type == "Transient Stepper") {
       Teuchos::RCP<pike::TransientStepper> trans = Teuchos::rcp(new pike::TransientStepper);
       trans->setParameterList(solverSublist);
       
-      Teuchos::RCP<Teuchos::ParameterList> internalSolverSublist = 
-	Teuchos::sublist(p,solverSublist->get<std::string>("Internal Solver Sublist"),true);
+      std::string internalSolverSublistName = solverSublist->get<std::string>("Internal Solver Sublist");
 
-      Teuchos::RCP<pike::Solver> internalSolver = this->buildSolver(internalSolverSublist);
+      Teuchos::RCP<pike::Solver> internalSolver = this->buildSolver(p,internalSolverSublistName);
       trans->setSolver(internalSolver);
 
       solver = trans;
     }
-#endif
     else {
       for (std::vector<Teuchos::RCP<pike::SolverAbstractFactory> >::const_iterator i=userFactories_.begin();
 	   i != userFactories_.end(); ++i) {

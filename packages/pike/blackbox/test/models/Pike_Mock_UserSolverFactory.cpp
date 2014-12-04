@@ -14,13 +14,17 @@ namespace pike_test {
   }
 
   Teuchos::RCP<pike::Solver> 
-  UserSolverFactory::buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const
+  UserSolverFactory::buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p,
+				 const std::string& inSolverSublistName) const
   {
     // for real classes there should be safety checks on the
     // parameter list access.  Since this is a mock object for unit
     // testing, not going to bother writing the safety checks.
     
-    std::string solverSublistName = p->get<std::string>("Solver Sublist Name");
+    std::string solverSublistName = inSolverSublistName;
+    if (solverSublistName == "")
+      solverSublistName = p->get<std::string>("Solver Sublist Name");
+
     std::string type = p->sublist(solverSublistName).get<std::string>("Type");
     
     Teuchos::RCP<pike::Solver> solver;

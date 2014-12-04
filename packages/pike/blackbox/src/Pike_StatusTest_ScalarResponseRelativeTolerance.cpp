@@ -70,7 +70,7 @@ namespace pike {
     previousIteration_ = -1;
     currentIteration_ = 0;
     previousValue_ = 0.0;
-    currentValue_ = (application_->getResponse(responseIndex_))[0];
+    currentValue_ = 0.0;
     status_ = pike::UNCHECKED;
   }
   

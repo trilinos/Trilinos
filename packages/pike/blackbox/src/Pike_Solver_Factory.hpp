@@ -19,7 +19,8 @@ namespace pike {
 
     virtual
     Teuchos::RCP<pike::Solver> 
-    buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p) const;
+    buildSolver(const Teuchos::RCP<Teuchos::ParameterList>& p,
+		const std::string& solverSublistName = "") const;
 
   private:
 

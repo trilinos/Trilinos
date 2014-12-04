@@ -14,6 +14,10 @@ APPEND_SET(NOINSTALLHEADERS
   Pike_LinearHeatConduction_DataTransfer.hpp
   Pike_Mock_UserSolverFactory.hpp
   Pike_Mock_UserStatusTestFactory.hpp
+  Pike_VanderPol_ModelEvaluator_Eq1.hpp
+  Pike_VanderPol_ModelEvaluator_Eq2.hpp
+  Pike_VanderPol_DataTransfer_Eq1ToEq2.hpp
+  Pike_VanderPol_DataTransfer_Eq2ToEq1.hpp
   )
 
 APPEND_SET(SOURCES
@@ -23,6 +27,10 @@ APPEND_SET(SOURCES
   Pike_LinearHeatConduction_DataTransfer.cpp
   Pike_Mock_UserSolverFactory.cpp
   Pike_Mock_UserStatusTestFactory.cpp
+  Pike_VanderPol_ModelEvaluator_Eq1.cpp
+  Pike_VanderPol_ModelEvaluator_Eq2.cpp
+  Pike_VanderPol_DataTransfer_Eq1ToEq2.cpp
+  Pike_VanderPol_DataTransfer_Eq2ToEq1.cpp
   )
 
 TRIBITS_ADD_LIBRARY(

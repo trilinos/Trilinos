@@ -98,7 +98,12 @@ namespace pike {
   { return status_; }
   
   void Composite::reset()
-  { status_ = pike::UNCHECKED; }
+  {    
+    for (TestIterator test = tests_.begin(); test != tests_.end(); ++test)
+      (*test)->reset();
+
+    status_ = pike::UNCHECKED;
+  }
     
   void Composite::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
   {
