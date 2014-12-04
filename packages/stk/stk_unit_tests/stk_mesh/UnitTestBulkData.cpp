@@ -4081,6 +4081,7 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
     }
 }
 
+
 TEST(BulkData, show_how_one_could_add_a_shared_node)
 {
     unsigned spatialDim = 3;
@@ -4189,7 +4190,7 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
             {
                owner = std::min(owner, procs[j]);
             }
-            bulk.fix_up_ownership(shared_modified[i], owner);
+            bulk.my_fix_up_ownership(shared_modified[i], owner);
         }
 
         ASSERT_NO_THROW(bulk.modification_end());

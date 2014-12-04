@@ -688,13 +688,6 @@ public:
    */
   void allocate_field_data();
 
-  void fix_up_ownership(stk::mesh::Entity entity, int new_owner)
-  {
-      stk::mesh::EntityKey key = entity_key(entity);
-      this->internal_change_owner_in_comm_data(key, new_owner);
-      this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
-  }
-
 protected: //functions
   inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
@@ -839,6 +832,13 @@ protected: //functions
   void entity_getter_debug_check(Entity entity) const
   {
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
+  }
+
+  void fix_up_ownership(stk::mesh::Entity entity, int new_owner)
+  {
+      stk::mesh::EntityKey key = entity_key(entity);
+      this->internal_change_owner_in_comm_data(key, new_owner);
+      this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
   }
 
 private: //functions

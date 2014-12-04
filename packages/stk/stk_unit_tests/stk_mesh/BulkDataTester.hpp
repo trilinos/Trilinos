@@ -138,6 +138,10 @@ public:
         return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
     }
 
+    void my_fix_up_ownership(stk::mesh::Entity entity, int new_owner)
+    {
+        this->fix_up_ownership(entity, new_owner);
+    }
 };
 
 
