@@ -66,7 +66,7 @@ INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
 # required by tribits is defined in this include which has some simple code. I
 # believe that it is reasonable to assume any version of cmake can handle IF
 # though.
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsConstants.cmake)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/core/package_arch/TribitsConstants.cmake)
 
 # CMake requires this be in the top file and not in an include file :-(
 CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED} FATAL_ERROR)

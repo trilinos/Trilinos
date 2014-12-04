@@ -111,7 +111,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    SS
+  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    SS
   CUSPARSE        "cmake/TPLs/"    SS
   Thrust          "cmake/TPLs/"    SS
   Cusp            "cmake/TPLs/"    SS
@@ -122,7 +122,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   BinUtils        "cmake/TPLs/"    SS
   ARPREC          "cmake/TPLs/"    SS
   QD              "cmake/TPLs/"    SS
-  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    PS
+  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    PS
   BLAS            "cmake/TPLs/"    PS
   LAPACK          "cmake/TPLs/"    PS
   Boost           "cmake/TPLs/"    SS
@@ -154,7 +154,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   AMD             "cmake/TPLs/"    TS
   CSparse         "cmake/TPLs/"    EX
   HYPRE           "cmake/TPLs/"    EX
-  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"   SS
+  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
   BLACS           "cmake/TPLs/"    SS
   SCALAPACK       "cmake/TPLs/"    SS
   MUMPS           "cmake/TPLs/"    SS

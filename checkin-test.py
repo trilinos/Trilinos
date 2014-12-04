@@ -1,1 +1,1 @@
-cmake/tribits/checkin-test.py
+cmake/tribits/ci_support/checkin-test.py
