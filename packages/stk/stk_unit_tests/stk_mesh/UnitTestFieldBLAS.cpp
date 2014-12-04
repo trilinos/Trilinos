@@ -94,9 +94,10 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3, const i
 
     MPI_Comm my_comm = MPI_COMM_WORLD;
 
-    const double bucket_fraction_to_no_part = 1.2;
-    const double bucket_fraction_to_part_A  = 1.1;
-    const double bucket_fraction_to_part_B  = 0.2;
+    const double scaleFactor = 0.0625;
+    const double bucket_fraction_to_no_part = 1.2 * scaleFactor;
+    const double bucket_fraction_to_part_A  = 1.1 * scaleFactor;
+    const double bucket_fraction_to_part_B  = 0.2 * scaleFactor;
 
     int MeshSize = MeshSize_x;
     if (MeshSize==0) {
@@ -231,7 +232,7 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3, const i
     stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartAEntitiesOwned,&numPartAEntitiesGlobal,1u);
     stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartBEntitiesOwned,&numPartBEntitiesGlobal,1u);
     EXPECT_EQ(numEntitiesGlobal,(unsigned int)pow(MeshSize+1,3));
-    EXPECT_GT(numEntitiesGlobal,bucketCapacity);
+//    EXPECT_GT(numEntitiesGlobal,bucketCapacity);
 }
 
 template<class A>
