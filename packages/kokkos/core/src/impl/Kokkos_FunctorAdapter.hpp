@@ -157,10 +157,12 @@ struct FunctorValueTraits< FunctorType
 {
 private:
 
+  struct VOID {};
+
   // parallel_for operator without a tag:
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static void deduce( void (FunctorType::*)( ArgMember ) const ) {}
+  static VOID deduce( void (FunctorType::*)( ArgMember ) const ) {}
 
   // parallel_reduce operator without a tag:
   template< class ArgMember , class T >
@@ -172,30 +174,31 @@ private:
   KOKKOS_INLINE_FUNCTION
   static T deduce( void (FunctorType::*)( ArgMember , T & , bool ) const ) {}
 
-
   typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
+
+  enum { IS_VOID = Impl::is_same<VOID,ValueType>::value };
 
 public:
 
-  enum { StaticValueSize = sizeof(ValueType) };
+  typedef typename Impl::if_c< IS_VOID , void , ValueType >::type                 value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile >::type        volatile_value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile >::type  const_volatile_value_type ;
 
-  typedef ValueType                  value_type ;
-  typedef ValueType volatile         volatile_value_type ;
-  typedef ValueType const volatile   const_volatile_value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type                 pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile * >::type        volatile_pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile * >::type  const_volatile_pointer_type ;
 
-  typedef ValueType                * pointer_type ;
-  typedef ValueType                & reference_type ;
-  typedef ValueType volatile       * volatile_pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type                 reference_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile & >::type        volatile_reference_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile & >::type  const_volatile_reference_type ;
 
-  typedef ValueType volatile       & volatile_reference_type ;
-  typedef ValueType const volatile * const_volatile_pointer_type ;
-  typedef ValueType const volatile & const_volatile_reference_type ;
+  enum { StaticValueSize = IS_VOID ? 0 : sizeof(ValueType) };
 
   KOKKOS_FORCEINLINE_FUNCTION static
   unsigned value_size( const FunctorType & ) { return StaticValueSize ; }
 
   KOKKOS_FORCEINLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return 1 ; }
+  unsigned value_count( const FunctorType & ) { return IS_VOID ? 0 : 1 ; }
 };
 
 
@@ -210,13 +213,15 @@ private:
   //----------------------------------------
   // parallel_for operator with a tag:
 
-  template< class ArgMember >
-  KOKKOS_INLINE_FUNCTION
-  static void deduce( void (FunctorType::*)( ArgTag , ArgMember ) const ) {}
+  struct VOID {}; // to allow valid sizeof(ValueType)
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static void deduce( void (FunctorType::*)( const ArgTag & , ArgMember ) const ) {}
+  static VOID deduce( void (FunctorType::*)( ArgTag , ArgMember ) const ) {}
+
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOID deduce( void (FunctorType::*)( const ArgTag & , ArgMember ) const ) {}
 
   //----------------------------------------
   // parallel_reduce operator with a tag:
@@ -244,27 +249,29 @@ private:
 
   typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
 
+  enum { IS_VOID = Impl::is_same<VOID,ValueType>::value };
+
 public:
 
-  enum { StaticValueSize = sizeof(ValueType) };
+  typedef typename Impl::if_c< IS_VOID , void , ValueType >::type                 value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile >::type        volatile_value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile >::type  const_volatile_value_type ;
 
-  typedef ValueType                  value_type ;
-  typedef ValueType volatile         volatile_value_type ;
-  typedef ValueType const volatile   const_volatile_value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type                 pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile * >::type        volatile_pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile * >::type  const_volatile_pointer_type ;
 
-  typedef ValueType                * pointer_type ;
-  typedef ValueType                & reference_type ;
-  typedef ValueType volatile       * volatile_pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type                 reference_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile & >::type        volatile_reference_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile & >::type  const_volatile_reference_type ;
 
-  typedef ValueType volatile       & volatile_reference_type ;
-  typedef ValueType const volatile * const_volatile_pointer_type ;
-  typedef ValueType const volatile & const_volatile_reference_type ;
+  enum { StaticValueSize = IS_VOID ? 0 : sizeof(ValueType) };
 
   KOKKOS_FORCEINLINE_FUNCTION static
   unsigned value_size( const FunctorType & ) { return StaticValueSize ; }
 
   KOKKOS_FORCEINLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return 1 ; }
+  unsigned value_count( const FunctorType & ) { return IS_VOID ? 0 : 1 ; }
 };
 
 #endif /* #if defined( KOKKOS_HAVE_CXX11 ) */
