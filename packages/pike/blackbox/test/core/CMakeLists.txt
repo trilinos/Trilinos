@@ -40,8 +40,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  vanderpol
-  SOURCES vanderpol.cpp ${UNIT_TEST_DRIVER}
+  transient_stepper
+  SOURCES transient_stepper.cpp ${UNIT_TEST_DRIVER}
   TESTONLYLIBS pike-test-apps
   NUM_MPI_PROCS 2
   )

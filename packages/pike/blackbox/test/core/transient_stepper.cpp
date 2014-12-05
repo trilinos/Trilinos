@@ -22,7 +22,7 @@
 
 namespace pike_test {
 
-  TEUCHOS_UNIT_TEST(VanDerPol, ConvergedSolve)
+  TEUCHOS_UNIT_TEST(TransientStepper, VanDerPol)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
