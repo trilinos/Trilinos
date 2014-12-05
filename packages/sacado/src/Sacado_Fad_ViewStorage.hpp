@@ -103,12 +103,21 @@ namespace Sacado {
       int length() const { return sz_.value; }
 
       //! Resize the derivative array to sz
+      /*!
+       * Since we can't actually resize, we check for resizes to zero,
+       * which signify assigning a constant.  Thus we zero out the derivative
+       * components.
+       */
       KOKKOS_INLINE_FUNCTION
-      void resize(int sz) {}
+      void resize(int sz) {
+        if (sz == 0) ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
+      }
 
       //! Resize the derivative array to sz
       KOKKOS_INLINE_FUNCTION
-      void resizeAndZero(int sz) {}
+      void resizeAndZero(int sz) {
+        ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
+      }
 
       //! Expand derivative array to size sz
       KOKKOS_INLINE_FUNCTION
@@ -117,7 +126,7 @@ namespace Sacado {
       //! Zero out derivative array
       KOKKOS_INLINE_FUNCTION
       void zero() {
-        ds_array<T>::zero(dx_, sz_.value);
+        ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
       }
 
       //! Returns value
