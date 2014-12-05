@@ -15,6 +15,7 @@ doxygen_objdb_*.tmp
 .cproject
 
 # Trilinos extra repos
+/TriBITS/
 /preCopyrightTrilinos/
 /DrekarBase/
 /DrekarResearch/

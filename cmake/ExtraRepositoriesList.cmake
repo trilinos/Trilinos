@@ -104,6 +104,7 @@
 #
 
 SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+  TriBITS  ""  GIT  https://github.com/TriBITSPub/TriBITS  ""  Continuous
   preCopyrightTrilinos  ""  GIT  software.sandia.gov:/space/git/preCopyrightTrilinos  ""  Continuous
   TerminalApplication  ""  GIT  software.sandia.gov:/space/git/TerminalApplication  ""   EX 
   )

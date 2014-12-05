@@ -115,13 +115,8 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
     stk::topology element_topology = b.topology();
     if (!isTopologySupportedForSkinning(element_topology))
     {
-        static std::map<stk::topology, bool> warningReported;
-        if ( warningReported.find(element_topology) == warningReported.end() )
-        {
-            std::cerr << "Skinning " << element_topology << " is currently not supported." << std::endl;
-            warningReported[element_topology] = true;
-        }
-        continue;
+      std::cerr << "Skinning " << element_topology << " is currently not supported." << std::endl;
+      continue;
     }
     const unsigned num_sides = element_topology.num_sides();
 

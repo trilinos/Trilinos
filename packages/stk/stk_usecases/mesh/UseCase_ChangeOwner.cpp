@@ -316,20 +316,13 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     bulk_data.modification_begin();
 
-    if ( p_rank==0 )
-    {
-        stk::mesh::Entity n10 = bulk_data.get_entity( NODE_RANK, 10 );
-        bulk_data.add_node_sharing(n10, 1);
-    }
-    else if ( p_rank==1 )
+    if ( p_rank==1 )
     {
       // create constraint
 
       stk::mesh::Entity n10 = bulk_data.get_entity( NODE_RANK, 10 );
       stk::mesh::Entity n11 = bulk_data.get_entity( NODE_RANK, 11 );
       stk::mesh::Entity n12 = bulk_data.get_entity( NODE_RANK, 12 );
-
-      bulk_data.add_node_sharing(n10, 0);
 
       stk::mesh::PartVector add;
       add.push_back( &owned_part );
