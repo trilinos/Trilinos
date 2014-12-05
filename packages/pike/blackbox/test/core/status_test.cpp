@@ -288,6 +288,9 @@ namespace pike {
     TEST_EQUALITY(solver->getStatusTests()->getStatus(), pike::CONVERGED);
     solver->reset();
     TEST_EQUALITY(converged->getStatus(),pike::UNCHECKED);
+    const Teuchos::RCP<const Teuchos::ParameterList> pl = converged->getValidParameters();
+    TEST_EQUALITY(pl->get<std::string>("Type"),"Composite OR");
+    converged->checkStatus(*solver,pike::NONE);
   }
 
   TEUCHOS_UNIT_TEST(status_test, Composite_OR)

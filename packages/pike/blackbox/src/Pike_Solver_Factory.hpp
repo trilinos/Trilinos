@@ -24,8 +24,6 @@ namespace pike {
 
   private:
 
-    void validateParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p);
-
     std::vector<Teuchos::RCP<pike::SolverAbstractFactory> > userFactories_;
 
     std::vector<std::string> supportedTypes_;

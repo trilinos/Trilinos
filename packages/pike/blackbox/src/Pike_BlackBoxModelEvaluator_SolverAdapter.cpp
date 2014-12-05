@@ -17,6 +17,20 @@ namespace pike {
     parameterIndexToModelIndices_.clear();
     for (std::size_t m = 0; m < models.size(); ++m) {
       for (int p=0; p < models[m]->getNumberOfParameters(); ++p) {
+
+	// Make sure that different model evaluators don't have the
+	// same parameter, otherwise the name to index map will point
+	// to only the last parameter. We could change this to support
+	// same parameter names in the future, but this is dangerous
+	// and possibly not what the user intended.
+	std::map<std::string,int>::const_iterator check = parameterNameToIndex_.find(models[m]->getParameterName(p));
+	TEUCHOS_TEST_FOR_EXCEPTION(check != parameterNameToIndex_.end(), std::runtime_error,
+				   "Error: pike::SolverAdapterModelEvaluator::setSolver() - In the solver adapter \"" 
+				   << this->name()
+				   << "\", the parameter \"" 
+				   << models[m]->getParameterName(p) 
+				   << "\" already exists in another model evaluator.  You currently can not have the same parameter name in multiple model evaluators that are both registered to the same SolverAdapterModelEvaluator object!");
+	
 	parameterNameToIndex_[models[m]->getParameterName(p)] = parameterNames_.size();
 	parameterNames_.push_back(models[m]->getParameterName(p));
 	parameterIndexToModelIndices_.push_back(std::make_pair(m,p));
@@ -28,6 +42,16 @@ namespace pike {
     responseIndexToModelIndices_.clear();
     for (std::size_t m = 0; m < models.size(); ++m) {
       for (int r=0; r < models[m]->getNumberOfResponses(); ++r) {
+
+	// Make sure that multiple model evaluators do not have the same response
+	std::map<std::string,int>::const_iterator check = responseNameToIndex_.find(models[m]->getResponseName(r));
+	TEUCHOS_TEST_FOR_EXCEPTION(check != responseNameToIndex_.end(), std::runtime_error,
+				   "Error: pike::SolverAdapterModelEvaluator::setSolver() - In the solver adapter \"" 
+				   << this->name()
+				   << "\", the response \"" 
+				   << models[m]->getResponseName(r) 
+				   << "\" already exists in another model evaluator.  You can not have the same response name in multiple model evaluators that are both registered to the same SolverAdapterModelEvaluator object!");
+	
 	responseNameToIndex_[models[m]->getResponseName(r)] = responseNames_.size();
 	responseNames_.push_back(models[m]->getResponseName(r));
 	responseIndexToModelIndices_.push_back(std::make_pair(m,r));

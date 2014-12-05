@@ -47,21 +47,20 @@ namespace pike_test {
     //@{ BlackBoxModelEvaluator derived methods
     
     std::string name() const;
-
     void solve();
-
     bool isLocallyConverged() const;
-
     bool isGloballyConverged() const;
 
+    virtual bool supportsParameter(const std::string& pName) const;
+    virtual int getNumberOfParameters() const;
+    virtual std::string getParameterName(const int l) const;
+    virtual int getParameterIndex(const std::string& pName) const;
+    virtual void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
+
     Teuchos::ArrayView<const double> getResponse(const int i) const;
-
     int getResponseIndex(const std::string& rName) const;
-
     std::string getResponseName(const int i) const;
-
     bool supportsResponse(const std::string& rName) const;
-
     int getNumberOfResponses() const;
 
     //@}
@@ -88,6 +87,9 @@ namespace pike_test {
     double T_left_;
     double T_right_;
     
+    std::map<std::string,int> parameterMap_;
+    std::vector<std::string> parameterNames_;
+
     std::map<std::string,int> responseMap_;
     std::vector<std::string> responseNames_;
     std::vector<std::vector<double> > responseValues_;

@@ -356,6 +356,19 @@ namespace pike_test {
 
     TEST_EQUALITY(solver->getNumberOfIterations(),18);
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+
+    // for coverage testing
+    TEST_ASSERT(factory.supportsType("Block Jacobi"));
+    TEST_ASSERT(factory.supportsType("My Super-Special Solver"));
+    TEST_ASSERT(factory.supportsType("My Other Super-Special Solver"));
+    TEST_ASSERT(!factory.supportsType("My Vaporware Solver"));
+    { // build a block jacobi solver
+      Teuchos::RCP<Teuchos::ParameterList> jpl = Teuchos::parameterList("Test Block Jacobi");
+      jpl->set("Solver Sublist Name","My Block Jacobi Solver");
+      jpl->sublist("My Block Jacobi Solver").set("Type","Block Jacobi");
+      Teuchos::RCP<pike::Solver> js = factory.buildSolver(jpl);
+      TEST_ASSERT(nonnull(js));
+    }
   }
 
   TEUCHOS_UNIT_TEST(solvers, hierarchic)
@@ -544,6 +557,26 @@ namespace pike_test {
 
     TEST_EQUALITY(outerSolver->getNumberOfIterations(),6);
     TEST_EQUALITY(outerSolver->getStatus(),pike::CONVERGED);
+
+    // Coverage testing extra checks
+    TEST_ASSERT(nonnull(Teuchos::rcp_dynamic_cast<const pike::SolverAdapterModelEvaluator>(outerSolver->getModelEvaluator("Inner Solver"))->getSolver()));
+    TEST_ASSERT(nonnull(Teuchos::rcp_dynamic_cast<const pike::SolverAdapterModelEvaluator>(outerSolver->getModelEvaluator("Inner Solver"))->getNonconstSolver()));
+    Teuchos::RCP<const pike::BlackBoxModelEvaluator> testInnerSolver =  outerSolver->getModelEvaluator("Inner Solver");
+    TEST_ASSERT(testInnerSolver->isLocallyConverged());
+    TEST_ASSERT(testInnerSolver->isGloballyConverged());
+    TEST_EQUALITY(testInnerSolver->getNumberOfParameters(),2);
+    TEST_ASSERT(testInnerSolver->supportsParameter("q"));
+    TEST_EQUALITY(testInnerSolver->getParameterIndex("q"),0);
+    TEST_EQUALITY(testInnerSolver->getParameterName(0),"q");
+    Teuchos::Array<double> val(1);
+    val[0] = 1.0;
+    Teuchos::rcp_const_cast<pike::BlackBoxModelEvaluator>(testInnerSolver)->setParameter(0,val);
+    TEST_EQUALITY(testInnerSolver->getNumberOfResponses(),2);
+    TEST_ASSERT(testInnerSolver->supportsResponse("T_right"));
+    TEST_EQUALITY(testInnerSolver->getResponseName(0),"T_right");
+    TEST_EQUALITY(testInnerSolver->getResponseIndex("T_right"),0);
+    double tol = 1.0e-2;
+    TEST_FLOATING_EQUALITY(testInnerSolver->getResponse(0)[0],3.24,tol);
   }
 
 }

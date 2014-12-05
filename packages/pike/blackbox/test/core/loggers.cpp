@@ -111,7 +111,7 @@ namespace pike {
     for (std::vector<std::string>::const_iterator l=log->begin(); l != log->end(); ++l)
       out << *l << std::endl;
 
-    // Test extra logger functions for overage testing.  These are
+    // Test extra logger functions for coverage testing.  These are
     // just pass through functions to the underlying ME
     Teuchos::RCP<std::vector<std::string> > logRCP = app1Logged->getNonConstLog();
     Teuchos::RCP<const std::vector<std::string> > nonconstLogRCP = app1Logged->getLog();
@@ -134,6 +134,12 @@ namespace pike {
     TEST_EQUALITY(app1Logged->getMaxTimeStepSize(), 1.0);
     app1Logged->setNextTimeStepSize(1.0);
     app1Logged->acceptTimeStep();
+    // data transfer logger
+    trans1To2Logged->getLog();
+    trans1To2Logged->getNonConstLog();
+    TEST_ASSERT(trans1To2Logged->transferSucceeded());
+    TEST_EQUALITY(*(trans1To2Logged->getSourceModelNames().begin()), "app1");
+    TEST_EQUALITY(*(trans1To2Logged->getTargetModelNames().begin()), "app2");
   }
 
 }

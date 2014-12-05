@@ -24,7 +24,16 @@ namespace pike {
   
   bool SolverFactory::supportsType(const std::string& type) const
   {
-    return (std::find(supportedTypes_.begin(),supportedTypes_.end(),type) != supportedTypes_.end());
+    if (std::find(supportedTypes_.begin(),supportedTypes_.end(),type) != supportedTypes_.end())
+      return true;
+
+    for (std::vector<Teuchos::RCP<pike::SolverAbstractFactory> >::const_iterator i=userFactories_.begin();
+	 i != userFactories_.end(); ++i) {
+      if ( (*i)->supportsType(type) )
+	return true;
+    }
+
+    return false;
   }
 
   Teuchos::RCP<pike::Solver> 
@@ -88,26 +97,5 @@ namespace pike {
 
     return solver;
   }
-  
-  void validateParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
-  {
-    for (Teuchos::ParameterList::ConstIterator entry = p->begin(); entry != p->end(); ++entry) {
 
-      if ( entry->first == "Solver Sublist Name" ) {
-	// OK: valid param
-      }
-      else if ( entry->first == "Status Test Sublist Name" )  {
-	// OK: valid param
-      }
-      else if ( entry->second.isList() ) {
-	// OK: valid param
-      }
-      else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-				   "Error the top level Pike parameter list is not valid.  All entries in the top level must be sublists or one of the two keys: \"Solver Sublist Name\" or \"Status Test Sublist Name\"!");
-      }
-
-    }
-
-  }
 }
