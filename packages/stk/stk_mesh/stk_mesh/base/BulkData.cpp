@@ -3797,6 +3797,8 @@ void BulkData::internal_change_ghosting(
   // Remove the ghost entities that will not remain.
   // If the last reference to the receive ghost entity then delete it.
 
+  PartVector addParts;
+  PartVector removeParts(1, m_ghost_parts[ghosting.ordinal()]);
   bool removed = false ;
 
   for ( EntityCommListInfoVector::reverse_iterator
@@ -3824,6 +3826,7 @@ void BulkData::internal_change_ghosting(
     }
     else if ( remove_recv ) {
         entity_comm_map_erase(i->key, ghosting);
+        internal_change_entity_parts(i->entity, addParts, removeParts);
     }
 
     if ( entity_comm_map(i->key).empty() ) {
