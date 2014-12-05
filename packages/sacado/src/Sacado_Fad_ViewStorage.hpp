@@ -114,10 +114,13 @@ namespace Sacado {
       }
 
       //! Resize the derivative array to sz
+      /*!
+       * We don't do anything here as this is used in the context of resizing
+       * the derivative array to zero and then back to some size > 0.  Instead
+       * we zero out components when it is resized to zero above.
+       */
       KOKKOS_INLINE_FUNCTION
-      void resizeAndZero(int sz) {
-        ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
-      }
+      void resizeAndZero(int sz) {}
 
       //! Expand derivative array to size sz
       KOKKOS_INLINE_FUNCTION
