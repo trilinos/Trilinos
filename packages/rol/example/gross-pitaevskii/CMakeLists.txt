@@ -12,8 +12,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_02
-    SOURCES example_02.cpp
-    ARGS PrintItAll
+    SOURCES example_02.cpp 
+    ARGS "default" "exactsolve" 
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
