@@ -1,5 +1,9 @@
 # Example of a simple project that uses TriBITS
 
+# To be safe, define your minimum CMake version.  This may be newer than the
+# min required by TriBITS.
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+
 # Make CMake set WIN32 with CYGWIN for older CMake versions.  CMake requires
 # this to be in the top-level CMakeLists.txt file and not an include file :-(
 SET(CMAKE_LEGACY_CYGWIN_WIN32 1 CACHE BOOL "" FORCE)
