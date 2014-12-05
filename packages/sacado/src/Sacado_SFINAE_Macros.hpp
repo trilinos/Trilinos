@@ -31,8 +31,10 @@
 #define SACADO_SFINAE_MACROS_H
 
 #include "Sacado_mpl_enable_if.hpp"
+#include "Sacado_mpl_disable_if.hpp"
 #include "Sacado_mpl_is_same.hpp"
 #include "Sacado_mpl_is_convertible.hpp"
+#include "Sacado_mpl_type_wrap.hpp"
 
 /* Define some macros useful for disabling template function overloads */
 #define SACADO_ENABLE_IF_SAME(TYPE1, TYPE2, RETURN_TYPE)              \
@@ -50,5 +52,15 @@
   SACADO_ENABLE_IF_CONVERTIBLE(S, value_type, RETURN_TYPE)
 #define SACADO_ENABLE_VALUE_CTOR_DEF SACADO_ENABLE_VALUE_FUNC(void*)
 #define SACADO_ENABLE_VALUE_CTOR_DECL SACADO_ENABLE_VALUE_CTOR_DEF = 0
+
+#define SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                              \
+  typename mpl::enable_if_c< IsExpr<T1>::value && IsExpr<T2>::value &&  \
+                             ExprLevel<T1>::value == ExprLevel<T2>::value, \
+                             Expr< OP< T1, T2 > >                       \
+                           >::type
+#define SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                            \
+  typename mpl::disable_if<mpl::is_same< typename Expr<T>::value_type, typename Expr<T>::scalar_type>, Expr< OP< ConstExpr<typename Expr<T>::scalar_type>, Expr<T> > > >::type
+#define SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                            \
+  typename mpl::disable_if<mpl::is_same< typename Expr<T>::value_type, typename Expr<T>::scalar_type>, Expr< OP< Expr<T>, ConstExpr<typename Expr<T>::scalar_type> > > >::type
 
 #endif // SACADO_SFINAE_MACROS_H

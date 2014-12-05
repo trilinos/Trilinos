@@ -137,6 +137,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Conversion, ADConversions, AD )
       TEST_EQUALITY_CONST( y.dx(i).dx(j), 0.0 );
   }
 
+  // Check mixed value-type/Fad expression with nested fad-fad works
+  ad_ad_type z = (x + x) + y;
+  TEST_EQUALITY_CONST( z.val().val(), 6.0 );
+  for (int i=0; i<global_fad_size; ++i) {
+    TEST_EQUALITY_CONST( z.val().dx(i), 8.0 );
+    TEST_EQUALITY_CONST( z.dx(i).val(), 0.0 );
+    for (int j=0; j<global_fad_size; ++j)
+      TEST_EQUALITY_CONST( z.dx(i).dx(j), 0.0 );
+  }
+
   // Check mix-arithmetic with int's works
   y += 1;
   TEST_EQUALITY_CONST( y.val().val(), 4.0 );

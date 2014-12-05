@@ -92,6 +92,50 @@ namespace Sacado {
         ExprLevel< typename Expr<T>::value_type >::value + 1;
     };
 
+    //! Determine whether a given type is an expression
+    template <typename T>
+    struct IsExpr {
+      static const bool value = false;
+    };
+
+    template <typename T>
+    struct IsExpr< Expr<T> > {
+      static const bool value = true;
+    };
+
+    //! Constant expression template
+    /*!
+     * This template class represents a constant expression.
+     */
+    template <typename ConstT>
+    class ConstExpr {
+
+    public:
+
+      //! Typename of argument values
+      typedef ConstT value_type;
+
+      //! Typename of scalar's (which may be different from ConstT)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Typename of base-expressions
+      typedef ConstT base_expr_type;
+
+      //! Constructor
+      KOKKOS_INLINE_FUNCTION
+      ConstExpr(const ConstT& constant) : constant_(constant) {}
+
+      //! Return value of operation
+      KOKKOS_INLINE_FUNCTION
+      const ConstT& val() const { return constant_; }
+
+    protected:
+
+      //! The constant
+      const ConstT& constant_;
+
+    }; // class ConstExpr
+
   } // namespace Fad
 
 } // namespace Sacado

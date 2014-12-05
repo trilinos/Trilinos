@@ -256,6 +256,11 @@ namespace Sacado {
         ExprLevel< typename SFad<T,N>::value_type >::value + 1;
     };
 
+    template <typename T, int N>
+    struct IsExpr< SFad<T,N> > {
+      static const bool value = true;
+    };
+
   } // namespace Fad
 
   template <typename T,unsigned,unsigned> struct ViewFadType;

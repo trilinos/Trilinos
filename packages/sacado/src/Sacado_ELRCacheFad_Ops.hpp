@@ -3483,10 +3483,10 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T1>, Expr<T2> > >                                    \
-    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)               \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                                  \
+    OPNAME (const T1& expr1, const T2& expr2)                           \
     {                                                                   \
-      typedef OP< Expr<T1>, Expr<T2> > expr_t;                          \
+      typedef OP< T1, T2 > expr_t;                                      \
                                                                         \
       return Expr<expr_t>(expr1, expr2);                                \
     }                                                                   \
@@ -3529,12 +3529,7 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    typename                                                            \
-    mpl::disable_if<mpl::is_same<typename Expr<T>::value_type,          \
-                                 typename Expr<T>::scalar_type>,        \
-                    Expr< OP< ConstExpr<typename Expr<T>::scalar_type>, \
-                              Expr<T> > >                               \
-                    >::type                                             \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                                \
     OPNAME (const typename Expr<T>::scalar_type& c,                     \
             const Expr<T>& expr)                                        \
     {                                                                   \
@@ -3546,12 +3541,7 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    typename                                                            \
-    mpl::disable_if<mpl::is_same<typename Expr<T>::value_type,          \
-                                 typename Expr<T>::scalar_type>,        \
-                    Expr< OP< Expr<T>,                                  \
-                              ConstExpr<typename Expr<T>::scalar_type> > > \
-                    >::type                                             \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                                \
     OPNAME (const Expr<T>& expr,                                        \
             const typename Expr<T>::scalar_type& c)                     \
     {                                                                   \

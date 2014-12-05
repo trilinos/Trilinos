@@ -34,6 +34,7 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Base.hpp"
+#include "Sacado_SFINAE_Macros.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
@@ -137,11 +138,13 @@ namespace Sacado {                                                      \
   namespace Fad {                                                       \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
-                                                                        \
+    template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsExpr;                                \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -150,13 +153,23 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< typename Expr<T>::value_type, Expr<T> > >              \
+    Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T>, typename Expr<T>::value_type > >              \
+    Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
                                                                         \
     template <typename T> class SimpleFad;                              \
     template <typename T>                                               \
@@ -178,10 +191,12 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsExpr;                                \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -197,16 +212,28 @@ namespace Sacado {                                                      \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
   }                                                                     \
                                                                         \
   namespace CacheFad {                                                  \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsExpr;                                \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -222,16 +249,28 @@ namespace Sacado {                                                      \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
   }                                                                     \
                                                                         \
   namespace ELRCacheFad {                                               \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsExpr;                                \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -247,6 +286,16 @@ namespace Sacado {                                                      \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
   }                                                                     \
                                                                         \
   namespace LFad {                                                      \

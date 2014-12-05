@@ -697,10 +697,10 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T1>, Expr<T2> > >                                    \
-    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)               \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                                  \
+    OPNAME (const T1& expr1, const T2& expr2)                           \
     {                                                                   \
-      typedef OP< Expr<T1>, Expr<T2> > expr_t;                          \
+      typedef OP< T1, T2 > expr_t;                                      \
                                                                         \
       return Expr<expr_t>(expr1, expr2);                                \
     }                                                                   \
@@ -736,6 +736,30 @@ namespace Sacado {                                                      \
             const typename Expr<T>::value_type& c)                      \
     {                                                                   \
       typedef ConstExpr<typename Expr<T>::value_type> ConstT;           \
+      typedef OP< Expr<T>, ConstT > expr_t;                             \
+                                                                        \
+      return Expr<expr_t>(expr, ConstT(c));                             \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                                \
+    OPNAME (const typename Expr<T>::scalar_type& c,                     \
+            const Expr<T>& expr)                                        \
+    {                                                                   \
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
+      typedef OP< ConstT, Expr<T> > expr_t;                             \
+                                                                        \
+      return Expr<expr_t>(ConstT(c), expr);                             \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                                \
+    OPNAME (const Expr<T>& expr,                                        \
+            const typename Expr<T>::scalar_type& c)                     \
+    {                                                                   \
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
       typedef OP< Expr<T>, ConstT > expr_t;                             \
                                                                         \
       return Expr<expr_t>(expr, ConstT(c));                             \

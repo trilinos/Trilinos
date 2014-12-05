@@ -250,6 +250,11 @@ namespace Sacado {
         ExprLevel< typename DFad<T>::value_type >::value + 1;
     };
 
+    template <typename T>
+    struct IsExpr< DMFad<T> > {
+      static const bool value = true;
+    };
+
   } // namespace Fad
 
   //! The View Fad type associated with this type

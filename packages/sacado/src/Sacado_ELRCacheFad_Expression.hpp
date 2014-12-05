@@ -93,6 +93,17 @@ namespace Sacado {
         ExprLevel< typename Expr<T>::value_type >::value + 1;
     };
 
+    //! Determine whether a given type is an expression
+    template <typename T>
+    struct IsExpr {
+      static const bool value = false;
+    };
+
+    template <typename T>
+    struct IsExpr< Expr<T> > {
+      static const bool value = true;
+    };
+
     //! Constant expression template
     /*!
      * This template class represents a constant expression.
