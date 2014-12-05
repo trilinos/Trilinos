@@ -64,7 +64,7 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
 bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes);
+        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes);
 
 void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               const std::vector<EntityProc> & local_change ,

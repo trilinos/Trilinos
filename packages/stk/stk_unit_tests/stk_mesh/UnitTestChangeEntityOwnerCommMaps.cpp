@@ -70,6 +70,7 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include "BulkDataTester.hpp"
 
 namespace stk
 {
@@ -182,20 +183,20 @@ private:
     stk::mesh::Field<double> *m_auraCommMapElementField;
 };
 
-void testSubMesh(stk::mesh::BulkData &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
-void createSerialSubMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::BulkData& oldBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::mesh::BulkData &newBulkData);
+void testSubMesh(BulkDataTester &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
+void createSerialSubMesh(const stk::mesh::MetaData &oldMeta, BulkDataTester& oldBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, BulkDataTester &newBulkData);
 
-void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
+void checkCommMaps(std::string message, BulkDataTester &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
             int numNodes, bool ownerOfNode[], bool isNodeInSharedCommMap[], bool isNodeInAuraCommMap[], bool isNodeValid[]);
-void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr);
+void putCommInfoDataOnFields(BulkDataTester &bulkData, FieldMgr &fieldMgr);
 
-void writeCommInfoFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr, const std::string& filename, double time);
+void writeCommInfoFields(BulkDataTester &bulkData, FieldMgr &fieldMgr, const std::string& filename, double time);
 
 //////////////////////////////////////////////////
-void moveElements2And3ToProc2(stk::mesh::BulkData &stkMeshBulkData);
-void runProc0(stk::mesh::BulkData &stkMeshBulkData);
-void runProc1(stk::mesh::BulkData &stkMeshBulkData);
-void runProc2(stk::mesh::BulkData &stkMeshBulkData);
+void moveElements2And3ToProc2(BulkDataTester &stkMeshBulkData);
+void runProc0(BulkDataTester &stkMeshBulkData);
+void runProc1(BulkDataTester &stkMeshBulkData);
+void runProc2(BulkDataTester &stkMeshBulkData);
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,7 +211,7 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
         std::string exodusFileName = "generated:1x1x6";
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, comm);
+        BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
 
         stk::io::StkMeshIoBroker exodusFileReader(comm);
 
@@ -233,7 +234,7 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
 
         {
             stk::mesh::MetaData newMetaData(3);
-            stk::mesh::BulkData nBulkData(newMetaData, MPI_COMM_SELF);
+            BulkDataTester nBulkData(newMetaData, MPI_COMM_SELF);
 
             createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
 
@@ -259,7 +260,7 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
 
         {
             stk::mesh::MetaData newMetaData(3);
-            stk::mesh::BulkData nBulkData(newMetaData, MPI_COMM_SELF);
+            BulkDataTester nBulkData(newMetaData, MPI_COMM_SELF);
 
             createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
 
@@ -299,7 +300,7 @@ TEST(UnitTestChangeEntityOwner, testCreateSubMesh)
         std::string exodusFileName = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, comm);
+        BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
 
         stk::io::StkMeshIoBroker exodusFileReader(comm);
 
@@ -348,7 +349,7 @@ TEST(UnitTestChangeEntityOwner, testCreateSubMesh)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void writeCommInfoFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr, const std::string& filename, double time)
+void writeCommInfoFields(BulkDataTester &bulkData, FieldMgr &fieldMgr, const std::string& filename, double time)
 {
     stk::io::StkMeshIoBroker ioBroker(bulkData.parallel());
     ioBroker.set_bulk_data(bulkData);
@@ -366,7 +367,7 @@ void writeCommInfoFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr, cons
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void runProc0(stk::mesh::BulkData &stkMeshBulkData)
+void runProc0(BulkDataTester &stkMeshBulkData)
 {
     {
         int numElements = 6;
@@ -482,7 +483,7 @@ void runProc0(stk::mesh::BulkData &stkMeshBulkData)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void runProc1(stk::mesh::BulkData &stkMeshBulkData)
+void runProc1(BulkDataTester &stkMeshBulkData)
 {
     {
         int numElements = 6;
@@ -598,7 +599,7 @@ void runProc1(stk::mesh::BulkData &stkMeshBulkData)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void runProc2(stk::mesh::BulkData &stkMeshBulkData)
+void runProc2(BulkDataTester &stkMeshBulkData)
 {
     {
         int numElements = 6;
@@ -709,7 +710,7 @@ void runProc2(stk::mesh::BulkData &stkMeshBulkData)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void moveElements2And3ToProc2(stk::mesh::BulkData &stkMeshBulkData)
+void moveElements2And3ToProc2(BulkDataTester &stkMeshBulkData)
 {
     if ( stkMeshBulkData.parallel_rank() == 0 )
     {
@@ -776,11 +777,11 @@ void copyFieldsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData
     }
 }
 
-void copySelectedEntitiesToNewMesh(const stk::mesh::BulkData& oldBulkData,
+void copySelectedEntitiesToNewMesh(const BulkDataTester& oldBulkData,
                                    const stk::mesh::Selector subMeshSelector,
                                    std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
                                    stk::mesh::MetaData &newMeta,
-                                   stk::mesh::BulkData &newBulkData)
+                                   BulkDataTester &newBulkData)
 {
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
@@ -803,10 +804,10 @@ void copySelectedEntitiesToNewMesh(const stk::mesh::BulkData& oldBulkData,
     }
 }
 
-void copyRelationsToNewMesh(const stk::mesh::BulkData& oldBulkData,
+void copyRelationsToNewMesh(const BulkDataTester& oldBulkData,
                             const stk::mesh::Selector subMeshSelector,
                             const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                            stk::mesh::BulkData &newBulkData)
+                            BulkDataTester &newBulkData)
 {
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
@@ -833,7 +834,7 @@ void copyRelationsToNewMesh(const stk::mesh::BulkData& oldBulkData,
 }
 
 void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
-                            const stk::mesh::BulkData& oldBulkData,
+                            const BulkDataTester& oldBulkData,
                             const stk::mesh::Selector subMeshSelector,
                             const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
                             stk::mesh::MetaData &newMeta)
@@ -865,10 +866,10 @@ void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
 }
 
 void createSerialSubMesh(const stk::mesh::MetaData &oldMeta,
-                         stk::mesh::BulkData& oldBulkData,
+                         BulkDataTester& oldBulkData,
                          stk::mesh::Selector subMeshSelector,
                          stk::mesh::MetaData &newMeta,
-                         stk::mesh::BulkData &newBulkData)
+                         BulkDataTester &newBulkData)
 {
     copyPartsToNewMesh(oldMeta, newMeta);
     copyFieldsToNewMesh(oldMeta, newMeta);
@@ -887,11 +888,11 @@ void createSerialSubMesh(const stk::mesh::MetaData &oldMeta,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void testSubMesh(stk::mesh::BulkData &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr)
+void testSubMesh(BulkDataTester &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr)
 {
     const stk::mesh::MetaData &oldMetaData = oldBulkData.mesh_meta_data();
     stk::mesh::MetaData newMetaData(oldMetaData.spatial_dimension());
-    stk::mesh::BulkData newBulkData(newMetaData, MPI_COMM_SELF);
+    BulkDataTester newBulkData(newMetaData, MPI_COMM_SELF);
 
     createSerialSubMesh(oldMetaData, oldBulkData, select, newMetaData, newBulkData);
 
@@ -957,7 +958,7 @@ void testSubMesh(stk::mesh::BulkData &oldBulkData, stk::mesh::Selector select, i
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
+void checkCommMaps(std::string message, BulkDataTester &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
             int numNodes, bool ownerOfNode[], bool isNodeInSharedCommMap[], bool isNodeInAuraCommMap[], bool isNodeValid[])
 {
     for (int i=0;i<numElements;i++)
@@ -968,7 +969,7 @@ void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, in
         {
             bool amIOwner = ( stkMeshBulkData.parallel_owner_rank(element) == stkMeshBulkData.parallel_rank() );
             EXPECT_EQ(ownerOfElement[i], amIOwner) << message << " for element " << i+1;
-            EXPECT_EQ(isElementInAuraCommMap[i], CEOUtils::isEntityInGhostingCommMap(stkMeshBulkData, element)) << message << " for element " << i+1;
+            EXPECT_EQ(isElementInAuraCommMap[i], stkMeshBulkData.is_entity_in_ghosting_comm_map(element)) << message << " for element " << i+1;
         }
     }
 
@@ -980,15 +981,15 @@ void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, in
         {
             bool amIOwner = ( stkMeshBulkData.parallel_owner_rank(node) == stkMeshBulkData.parallel_rank() );
             EXPECT_EQ(ownerOfNode[i], amIOwner) << message << " for node " << i+1;
-            EXPECT_EQ(isNodeInSharedCommMap[i], CEOUtils::isEntityInSharingCommMap(stkMeshBulkData, node)) << message << " for node " << i+1;
-            EXPECT_EQ(isNodeInAuraCommMap[i], CEOUtils::isEntityInGhostingCommMap(stkMeshBulkData, node)) << message << " for node " << i+1;
+            EXPECT_EQ(isNodeInSharedCommMap[i], stkMeshBulkData.my_is_entity_in_sharing_comm_map(node)) << message << " for node " << i+1;
+            EXPECT_EQ(isNodeInAuraCommMap[i], stkMeshBulkData.is_entity_in_ghosting_comm_map(node)) << message << " for node " << i+1;
         }
     }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
+void putCommInfoDataOnFields(BulkDataTester &bulkData, FieldMgr &fieldMgr)
 {
     const stk::mesh::BucketVector &nodeBuckets = bulkData.buckets(stk::topology::NODE_RANK);
 
@@ -1014,7 +1015,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                 // 1: ghosted else where
                 // 2: ghosted here
 
-                if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
+                if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
                 {
                     if ( bucket.in_aura() )
                     {
@@ -1030,11 +1031,11 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                     *auraCommMapNode = 0;
                 }
 
-                if(CEOUtils::isEntityInSharingCommMap(bulkData, bucket[j]))
+                if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
                 {
                     if ( bucket.owned() )
                     {
-                        if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
+                        if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
                         {
                             *sharedCommMapNode = ownedAndSharedAndGhostedValue;
                         }
@@ -1048,7 +1049,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                         *sharedCommMapNode = sharedToThisProcValue;
                     }
                 }
-                else if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
+                else if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
                 {
                     if (bucket.in_aura() )
                     {
@@ -1091,7 +1092,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                 // 1: ghosted to other proc
                 // 2: ghosted here from another proc
 
-                if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
+                if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
                 {
                     if ( bucket.in_aura() )
                     {

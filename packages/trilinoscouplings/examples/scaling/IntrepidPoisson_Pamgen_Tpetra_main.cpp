@@ -193,6 +193,13 @@ main (int argc, char *argv[])
                     ", dump the matrix resp. row Map to their respective files "
                     "before exiting.");
 
+    // Option to exit after building the preconditioner
+    bool exitAfterPrecond = false;
+    cmdp.setOption ("exitAfterPrecond", "dontExitAfterPrecond",
+                    &exitAfterPrecond, "If true, exit after building the "
+                    "preconditioner.");
+
+
      // If matrixFilename is nonempty, dump the matrix to that file
     // in MatrixMarket format.
     int numMueluRebuilds=0;
@@ -309,6 +316,14 @@ main (int argc, char *argv[])
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
         }
       } // setup preconditioner
+
+
+      // exit if we only wanted the preconditioner
+      if(exitAfterPrecond) {
+        Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+        return EXIT_SUCCESS;
+      }
+
 
       // Get the convergence tolerance for each linear solve.
       // If the user provided a nonnegative value at the command

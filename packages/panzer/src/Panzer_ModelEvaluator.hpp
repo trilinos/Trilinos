@@ -102,6 +102,12 @@ public:
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
 
   /** \brief . */
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int i) const;
+
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
+
+  /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
 
   /** \brief . */
@@ -117,7 +123,59 @@ public:
 
   //@}
 
- 
+  /** Add a simple (i.e. nondistributed) parameter to the model evaluator.
+
+      Note that these parameters will automatically use the parameter library
+      passed into the model evaluator object through the GlobalData.
+
+      \param[in]  name Name of the parameter
+
+      \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
+      \note The implementation for this is a call to the Array version of <code>addParameter</code>
+  */
+  int addParameter(const std::string & name);
+
+  /** Add a simple (i.e. nondistributed) parameter to the model evaluator.
+
+      Note that these parameters will automatically use the parameter library
+      passed into the model evaluator object through the GlobalData.
+
+      \param[in]  names Names of the parameter
+
+      \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
+  */
+  int addParameter(const Teuchos::Array<std::string> & names);
+
+  /** Add a distributed parameter to the model evaluator
+
+      Distributed parameters are special in that they most likely
+      will require a global to ghost call before being used in the
+      evaluator.  This function registers the parameter and any
+      needed machinery to perform the global to ghost call.
+
+      NOTE: We can't use the LinearObjFactory and
+      LinearObjContainers here because those objects require a
+      unique global indexer to build.  In general, the distributed
+      parameters may NOT be coming from an object that has an
+      associated unique global indexer.  An example of this is
+      multiphysics coupling.  The parameters will be coming form
+      another code that may not have a PDE discretization.
+      Generalizing this function to hide the linear algebra type may
+      not be possible unless we refactor the linear object support
+      or write new wrapper objects.  Also note that Thyra has no
+      concept of an import/export object so we can't use Thyra here
+      to abstract the objects.
+
+      \param[in]  name Name of the distributed parameter
+      \param[ged] ged Global evaluation data object that handles ghosting
+
+      \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
+  */
+  int addDistributedParameter(const std::string & name,
+                              const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
+                              const Teuchos::RCP<GlobalEvaluationData> & ged,
+                              const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial);
+
   /** Add a global evaluation data object that will be filled as a side
     * effect when evalModel is called. This is useful for building things
     * like auxiliary operators used in block preconditioning. This will not
@@ -161,10 +219,13 @@ public:
        const bool write_graphviz_file=false,
        const std::string& graphviz_file_prefix="")
   { responseLibrary_->buildResponseEvaluators(physicsBlocks,eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+    require_in_args_refresh_ = true;
+    require_out_args_refresh_ = true;
+
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.set_Np_Ng(p_init_.size(), g_space_.size());
+    outArgs.set_Np_Ng(parameters_.names.size(), g_space_.size());
     outArgs.setSupports(MEB::OUT_ARG_f);
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
@@ -180,10 +241,13 @@ public:
        const bool write_graphviz_file=false,
        const std::string& graphviz_file_prefix="")
   { responseLibrary_->buildResponseEvaluators(physicsBlocks,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+    require_in_args_refresh_ = true;
+    require_out_args_refresh_ = true;
+
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.set_Np_Ng(p_init_.size(), g_space_.size());
+    outArgs.set_Np_Ng(parameters_.names.size(), g_space_.size());
     outArgs.setSupports(MEB::OUT_ARG_f);
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
@@ -215,19 +279,43 @@ private:
   void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
+  //@}
+
   //! Evaluate a simple model, meaning a residual and a jacobian, no fancy stochastic galerkin or multipoint
   void evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                            const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Construct a simple response dicatated by this set of out args
-  void evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
+  void evalModelImpl_basic_g(panzer::AssemblyEngineInArgs ae_inargs,
                              const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  /** handles evaluation of responses dgdx
+    *
+    * \note This method should (basically) be a no-op if <code>required_basic_dgdx(outArgs)==false</code>.
+    *       However, for efficiency this is not checked.
+    */
+  void evalModelImpl_basic_dgdx(AssemblyEngineInArgs ae_inargs,
+                                const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  /** handles evaluation of dfdp
+    *
+    * \note This method should (basically) be a no-op if <code>required_basic_dfdp(outArgs)==false</code>.
+    *       However, for efficiency this is not checked.
+    */
+  void evalModelImpl_basic_dfdp(AssemblyEngineInArgs ae_inargs,
+                                const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Does this set of out args require a simple response?
   bool required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  //@}
+  //! Are their required responses in the out args? DgDx 
+  bool required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
+  bool required_basic_dfdp(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
 private: // data members
 
@@ -236,25 +324,34 @@ private: // data members
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
+  mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
   Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
   mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
-  std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
 
   // parameters
-  std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > p_space_;
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > p_init_;
+  mutable struct { 
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > names;
+    std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > spaces;
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > initial_values;
+    std::vector<bool> are_distributed;
+
+    // for interaction with the panzer::ParamLib
+    std::vector<int> scalar_index;
+    mutable std::vector<panzer::ParamVec> scalar_values;
+  } parameters_;
+
+  mutable bool require_in_args_refresh_;
+  mutable bool require_out_args_refresh_;
 
   // responses
   mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
   std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > g_space_;
   std::vector<std::string> g_names_;
 
-  mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
   Teuchos::RCP<panzer::GlobalData> global_data_;
   bool build_transient_support_;
 
@@ -265,6 +362,7 @@ private: // data members
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory_;
 
   GlobalEvaluationDataContainer nonParamGlobalEvaluationData_;
+  GlobalEvaluationDataContainer distrParamGlobalEvaluationData_;
 
   mutable bool oneTimeDirichletBeta_on_;
   mutable Scalar oneTimeDirichletBeta_;
@@ -280,7 +378,7 @@ addResponse(const std::string & responseName,
 {
    // see if the response evaluators have been constucted yet
    TEUCHOS_TEST_FOR_EXCEPTION(responseLibrary_->responseEvaluatorsBuilt(),std::logic_error,
-                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                              "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
                               "cannot be added to the model evaluator because evalModel has already been called!");
 
    // add the response, and then push back its name for safe keeping
@@ -288,28 +386,53 @@ addResponse(const std::string & responseName,
 
    // check that the response can be found
    TEUCHOS_TEST_FOR_EXCEPTION(std::find(g_names_.begin(),g_names_.end(),responseName)!=g_names_.end(),std::logic_error,
-                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                              "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
                               "has already been added to the model evaluator!");
 
-   // check that at least there is a response value
-   Teuchos::RCP<panzer::ResponseBase> respBase = responseLibrary_->getResponse<panzer::Traits::Residual>(responseName);
-   TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
-                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
-                              "has no residual type! Not sure what is going on!");
+   // handle panzer::Traits::Residual
+   {
+      // check that at least there is a response value
+      Teuchos::RCP<panzer::ResponseBase> respBase = responseLibrary_->getResponse<panzer::Traits::Residual>(responseName);
+      TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
+                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
+                                 "has no residual type! Not sure what is going on!");
+   
+      // check that the response supports interactions with the model evaluator
+      Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = 
+          Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
+      TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
+                                 "resulted in bad cast to panzer::ResponseMESupportBase, the type of the response is incompatible!");
 
-   // check that the response supports interactions with the model evaluator
-   Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
-   TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
-                              "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
-                              "resulted in bad cast to panzer::ResponseMESupportBase, the type of the response is incompatible!");
+      // set the response in the model evaluator
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = resp->getVectorSpace();
+      g_space_.push_back(vs);
 
-   // set the response in the model evaluator
-   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = resp->getVectorSpace();
-   g_space_.push_back(vs);
+      // lets be cautious and set a vector on the response
+      resp->setVector(Thyra::createMember(vs));
+   }
+
+   // handle panzer::Traits::Jacobian (do a quick safety check, response is null or appropriate for jacobian)
+   Teuchos::RCP<panzer::ResponseBase> respJacBase = responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName);
+   if(respJacBase!=Teuchos::null) {
+      typedef panzer::Traits::Jacobian RespEvalT;
+
+      // check that the response supports interactions with the model evaluator
+      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = 
+          Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+      TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
+                                 "resulted in bad cast to panzer::ResponseMESupportBase<Jacobian>, the type of the response is incompatible!");
+
+      // setup the vector (register response as epetra)
+      if(resp->supportsDerivative())
+         resp->setDerivative(resp->buildEpetraDerivative());
+   }
+
    g_names_.push_back(responseName);
 
-   // lets be cautious and set a vector on the response
-   resp->setVector(Thyra::createMember(vs));
+   require_in_args_refresh_ = true;
+   require_out_args_refresh_ = true;
 
    return g_names_.size()-1;
 }
@@ -317,6 +440,6 @@ addResponse(const std::string & responseName,
 
 }
 
-#include "Panzer_ModelEvaluator_impl.hpp"
+// #include "Panzer_ModelEvaluator_impl.hpp"
 
 #endif 

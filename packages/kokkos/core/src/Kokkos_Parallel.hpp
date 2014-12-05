@@ -650,6 +650,14 @@ struct ReduceAdapterFunctorOperatorArgType< void ( Functor::*)( Arg0 , Arg1 & ) 
   typedef Arg1 type ;
 };
 
+template< class FunctionPtr >
+struct ScanAdapterFunctorOperatorArgType ;
+
+template< class Functor , class Arg0 , class Arg1 >
+struct ScanAdapterFunctorOperatorArgType< void ( Functor::*)( Arg0 , Arg1 & , bool ) const > {
+  typedef Arg1 type ;
+};
+
 // Functor does not have a 'typedef ... value_type' and C++11 is enabled.
 // Deduce the value type from the functor's argument list.
 template< class FunctorType , class Enable >

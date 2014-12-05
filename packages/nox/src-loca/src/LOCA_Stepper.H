@@ -182,13 +182,6 @@ namespace LOCA {
     virtual double
     getContinuationParameter() const;
 
-    //! Tell Stepper that caller is responsible for indicating when to call
-    //! printSolution(). (False by default.)
-    void setCallerWillCallPrintSolution(bool will_call);
-    
-    //! Wrapper to let the caller call printSolution().
-    void callPrintSolution();
-
   protected:
 
     //! Initialize iterator
@@ -359,10 +352,6 @@ namespace LOCA {
 
     //! Flag indicating whether to return failed upon reaching max steps
     bool return_failed_on_max_steps;
-
-    //! Flag indicating whether to call printSolution() internally, or rather
-    //! whether to let the caller indicate when.
-    bool call_printSolution;
   };
 } // end namespace LOCA
 

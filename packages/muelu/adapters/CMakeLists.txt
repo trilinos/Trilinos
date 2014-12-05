@@ -79,14 +79,14 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos/src)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
 
   APPEND_SET(HEADERS
-    stratimikos/src/Thyra_MueLuPreconditionerFactory.hpp
+    stratimikos/Thyra_MueLuPreconditionerFactory.hpp
     )
 
   APPEND_SET(SOURCES
-    stratimikos/src/Thyra_MueLuPreconditionerFactory.cpp
+    stratimikos/Thyra_MueLuPreconditionerFactory.cpp
     )
 
 ENDIF()

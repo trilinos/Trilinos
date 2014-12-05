@@ -140,9 +140,9 @@ public:
         this->move_entities_to_proper_part_ownership( shared_modified );
     }
 
-    void my_update_comm_list( std::vector<stk::mesh::Entity> &shared_modified )
+    void my_add_comm_list_entries_for_entities( std::vector<stk::mesh::Entity> &shared_modified )
     {
-        this->update_comm_list( shared_modified );
+        this->add_comm_list_entries_for_entities( shared_modified );
     }
 
     void my_fillLocallyCreatedOrModifiedEntities(stk::parallel::DistributedIndex::KeyTypeVector &local_created_or_modified)
@@ -170,6 +170,11 @@ public:
         return !entity_comm_map(key, aura_ghosting()).empty();
     }
 
+    void my_set_state(stk::mesh::Entity entity, stk::mesh::EntityState entity_state)
+    {
+        set_state(entity,entity_state);
+    }
+
 };
 
 void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm communicator, stk::mesh::BulkData& bulkData);
@@ -180,7 +185,7 @@ void checkStatesOfEntities(std::vector<std::vector<stk::mesh::EntityState> > &no
         bool (&areNodesValid)[2][20], bool (&areElementsValid)[2][4],
         stk::mesh::BulkData &stkMeshBulkData);
 void checkThatMeshIsParallelConsistent(stk::mesh::BulkData& stkMeshBulkData);
-void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData);
+void mark_element3_as_modified(BulkDataTester& stkMeshBulkData);
 void makeSureEntityIsValidOnCommListAndBulkData(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &entityKey);
 void makeSureEntityIsValidOnCommListAndBut_NOT_BulkData(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::EntityKey &entityKey);
 void getMeshLineByLine(const stk::mesh::BulkData &stkMeshBulkData, std::vector<std::string> &output);
@@ -535,7 +540,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_pieces_of_internal_modific
             EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) ;
         }
 
-        stkMeshBulkData.my_update_comm_list( shared_new );
+        stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
         for (size_t i=0;i<edgeEntities.size();i++)
         {
@@ -689,7 +694,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
             EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) ;
         }
 
-        stkMeshBulkData.my_update_comm_list( shared_new );
+        stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
         for (size_t i=0;i<edgeEntities.size();i++)
         {
@@ -797,7 +802,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_and_test_internal_modificati
 
         stkMeshBulkData.my_move_entities_to_proper_part_ownership( shared_new );
 
-        stkMeshBulkData.my_update_comm_list( shared_new );
+        stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
         stkMeshBulkData.my_internal_resolve_shared_membership();
 
@@ -1063,7 +1068,7 @@ void checkStatesOfEntities(std::vector<std::vector<stk::mesh::EntityState> > &no
     }
 }
 
-void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData)
+void mark_element3_as_modified(BulkDataTester& stkMeshBulkData)
 {
     int elementToModify = 3;
     stk::mesh::EntityKey elementToModifyKey(stk::topology::ELEMENT_RANK, elementToModify);
@@ -1071,7 +1076,7 @@ void mark_element3_as_modified(stk::mesh::BulkData& stkMeshBulkData)
 
     if ( stkMeshBulkData.parallel_rank() == 1 )
     {
-        stkMeshBulkData.set_state(entity, stk::mesh::Modified);
+        stkMeshBulkData.my_set_state(entity, stk::mesh::Modified);
     }
 }
 
@@ -1356,13 +1361,13 @@ void checkCommMapsAndListsAfterIRGMD(BulkDataTester& stkMeshBulkData)
 void connectElementToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element,
         stk::mesh::Entity edge, const std::vector<stk::mesh::EntityId>& nodeIdsForEdge)
 {
-    std::vector<stk::mesh::Entity> nodeIds(nodeIdsForEdge.size());
+    std::vector<stk::mesh::Entity> nodes(nodeIdsForEdge.size());
     for (size_t i=0;i<nodeIdsForEdge.size();i++)
     {
         stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeIdsForEdge[i]);
-        nodeIds[i] = stkMeshBulkData.get_entity(nodeKey);
+        nodes[i] = stkMeshBulkData.get_entity(nodeKey);
     }
-    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, nodeIds);
+    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, &nodes[0], nodes.size());
 }
 
 void create_edges(BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::EntityId>& edgeIds,

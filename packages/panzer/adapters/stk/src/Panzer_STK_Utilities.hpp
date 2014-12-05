@@ -50,7 +50,9 @@
 
 namespace panzer {
    template <typename LO,typename GO> class UniqueGlobalIndexer;
+#ifdef PANZER_HAVE_FEI
    template <typename LO,typename GO> class DOFManagerFEI;
+#endif
 }
 
 namespace panzer_stk_classic { 
@@ -68,8 +70,10 @@ void write_cell_data(panzer_stk_classic::STK_Interface & mesh,const std::vector<
 void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
 void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
 
+#ifdef PANZER_HAVE_FEI
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_MultiVector & x);
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_Vector & x);
+#endif
 
 /** Using a container, compute the sorted permutation vector
   * do not modifiy the original container.

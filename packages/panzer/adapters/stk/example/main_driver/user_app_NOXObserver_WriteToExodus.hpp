@@ -57,6 +57,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_dyn_cast.hpp"

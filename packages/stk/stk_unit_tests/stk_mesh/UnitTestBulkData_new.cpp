@@ -893,7 +893,8 @@ TEST ( UnitTestBulkData_new , testEntityComm )
 
   //Start of CommAll section:
   {
-    stk::CommAll comm( MPI_COMM_WORLD );
+    bool propagate_local_error_flags = true;
+    stk::CommAll comm( MPI_COMM_WORLD, propagate_local_error_flags );
 
     for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {

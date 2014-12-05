@@ -46,6 +46,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <TestRandom.hpp>
+#include <TestSort.hpp>
 #include <iomanip>
 
 
@@ -92,11 +93,19 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::Threads> >(num_draws);                                   \
   }
 
+#define THREADS_SORT_UNSIGNED( size )                                \
+  TEST_F( threads, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::Threads, double >(size);                                   \
+  }
+
+
 THREADS_RANDOM_XORSHIFT64( 10240000 )
 THREADS_RANDOM_XORSHIFT1024( 10130144 )
+THREADS_SORT_UNSIGNED(171)
 
 #undef THREADS_RANDOM_XORSHIFT64
 #undef THREADS_RANDOM_XORSHIFT1024
+#undef THREADS_SORT_UNSIGNED
 
 #endif
 } // namespace Test

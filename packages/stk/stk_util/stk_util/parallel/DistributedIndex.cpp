@@ -166,7 +166,6 @@ DistributedIndex::DistributedIndex (
 
 #if defined( STK_HAS_MPI )
   if (m_comm_size > 1) {
-    // BABBLE_STK_PARALLEL_COMM(comm, "    calling MPI_Bcast from DistributedIndex");
     MPI_Bcast( info , 2 , MPI_UNSIGNED , 0 , comm );
   }
 
@@ -176,7 +175,6 @@ DistributedIndex::DistributedIndex (
       m_key_span.assign(partition_bounds.begin(),partition_bounds.end());
     }
     if (m_comm_size > 1) {
-      // BABBLE_STK_PARALLEL_COMM(comm, "    calling MPI_Bcast from DistributedIndex");
       MPI_Bcast( (m_key_span.empty() ? NULL : & m_key_span[0]), info[0] * sizeof(KeySpan), MPI_BYTE, 0, comm );
     }
   }
@@ -280,12 +278,10 @@ void DistributedIndex::query( const KeyProcVector & request , KeyProcVector & sh
 
   query_pack( m_key_usage , request , all ); // Sizing
 
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          query calling allocate_buffers")
   all.allocate_buffers( m_comm_size / 4 , false );
 
   query_pack( m_key_usage , request , all ); // Packing
 
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          query calling communicate")
   all.communicate();
 
   unpack_recv_buffer(all, m_comm_size, sharing_of_keys);
@@ -319,7 +315,6 @@ void DistributedIndex::query( const KeyTypeVector & keys , KeyProcVector & shari
     }
 
     // Error condition becomes global:
-    BABBLE_STK_PARALLEL_COMM(m_comm, "          query calling allocate_buffers")
     bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
 
     if ( bad_key ) {
@@ -331,7 +326,6 @@ void DistributedIndex::query( const KeyTypeVector & keys , KeyProcVector & shari
       all.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
     }
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "          query calling communicate")
     all.communicate();
 
     unpack_with_proc_recv_buffer(all, m_comm_size, request);
@@ -344,7 +338,6 @@ void DistributedIndex::query( const KeyTypeVector & keys , KeyProcVector & shari
 
 void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVector & sharing_keys ) const
 {
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          enter query_to_usage");
   KeyTypeVector request ;
 
   {
@@ -365,7 +358,6 @@ void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVect
 
     // Error condition becomes global:
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "          query_to_usage calling allocate_buffers")
     bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
 
     if ( bad_key ) {
@@ -377,7 +369,6 @@ void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVect
       all.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
     }
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "          query_to_usage calling communicate")
     all.communicate();
 
     unpack_recv_buffer(all, m_comm_size, request);
@@ -390,19 +381,16 @@ void DistributedIndex::query_to_usage( const KeyTypeVector & keys ,  KeyProcVect
 
     query_pack_to_usage( m_key_usage , request , all ); // Sizing
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "          query_to_usage calling allocate_buffers")
     all.allocate_buffers( m_comm_size / 4 , false );
 
     query_pack_to_usage( m_key_usage , request , all ); // Packing
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "          query_to_usage calling communicate")
     all.communicate();
 
     unpack_recv_buffer(all, m_comm_size, sharing_keys);
 
     std::sort( sharing_keys.begin() , sharing_keys.end() );
   }
-  // BABBLE_STK_PARALLEL_COMM(m_comm, "        exit query_to_usage");
 }
 
 //----------------------------------------------------------------------
@@ -526,7 +514,6 @@ void DistributedIndex::update_keys(
   const bool symmetry_flag = false ;
   const bool error_flag = 0 < local_bad_input ;
 
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          update keys calling allocate_buffers");
   bool global_bad_input =
     all.allocate_buffers( m_comm_size / 4, symmetry_flag , error_flag );
 
@@ -571,7 +558,6 @@ void DistributedIndex::update_keys(
     }
   }
 
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          update keys calling communicate");
   // Communicate keys
   all.communicate();
 
@@ -694,7 +680,6 @@ void DistributedIndex::generate_new_global_key_upper_bound(
 
 #if defined( STK_HAS_MPI )
   if (m_comm_size > 1) {
-    BABBLE_STK_PARALLEL_COMM(m_comm, "    calling MPI_Allreduce from generate_new_global_key_upper_bound");
     MPI_Allreduce( (local_counts.empty() ? NULL : & local_counts[0]) , (global_counts.empty() ? NULL : & global_counts[0]) ,
                    m_span_count + 1 , MPI_UNSIGNED_LONG ,
                    MPI_SUM , m_comm );
@@ -853,7 +838,6 @@ void DistributedIndex::generate_new_keys_global_planning(
         void * recv_buf = (new_request_global.empty() ? NULL : & new_request_global[0]) ;
         for (int root = 0; root < m_comm_size; ++root)
           {
-            BABBLE_STK_PARALLEL_COMM(m_comm, "    calling MPI_Gather from generate_new_keys_global_planning");
             MPI_Gather( send_buf , m_span_count , MPI_LONG ,
                         recv_buf , m_span_count , MPI_LONG , root, m_comm );
           }
@@ -863,7 +847,6 @@ void DistributedIndex::generate_new_keys_global_planning(
         // MPI doesn't do 'const' in its interface, but the send buffer is const
         void * send_buf = const_cast<long int*>( (new_request.empty() ? NULL : & new_request[0]) );
         void * recv_buf = (new_request_global.empty() ? NULL : & new_request_global[0]) ;
-        BABBLE_STK_PARALLEL_COMM(m_comm, "    calling MPI_Allgather from generate_new_keys_global_planning");
         MPI_Allgather( send_buf , m_span_count , MPI_LONG,
                        recv_buf , m_span_count , MPI_LONG , m_comm );
       }
@@ -1010,7 +993,6 @@ void DistributedIndex::generate_new_keys(
     }
   }
 
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          generate_new_keys calling allocate_buffers")
   all.allocate_buffers( m_comm_size / 4 , false );
 
   // Packing
@@ -1032,7 +1014,6 @@ void DistributedIndex::generate_new_keys(
 
   std::sort( m_key_usage.begin() , m_key_usage.end() );
 
-  BABBLE_STK_PARALLEL_COMM(m_comm, "          generate_new_keys calling communicate")
   all.communicate();
 
   // Unpacking

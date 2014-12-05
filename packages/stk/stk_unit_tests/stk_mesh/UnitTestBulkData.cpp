@@ -1972,22 +1972,6 @@ TEST(BulkData, testParallelSideCreation)
    }
 }
 
-TEST(BulkData, test_final_modification_end)
-{
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-    const unsigned spatial_dim = 2;
-    MetaData meta_data(spatial_dim);
-    meta_data.commit();
-
-    BulkData mesh(meta_data, pm);
-
-    mesh.modification_begin();
-    mesh.final_modification_end();
-
-    ASSERT_THROW(mesh.modification_begin(), std::logic_error);
-}
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Testing of field_data_footprint(.)
@@ -3232,7 +3216,7 @@ TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
     mesh.modification_end();
     modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 1));
     int destProc = 12;
-    mesh.set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
+    mesh.my_set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
 
     EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, destProc));
     EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));

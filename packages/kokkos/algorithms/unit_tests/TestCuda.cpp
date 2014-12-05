@@ -52,6 +52,7 @@
 #ifdef KOKKOS_HAVE_CUDA
 
 #include <TestRandom.hpp>
+#include <TestSort.hpp>
 
 namespace Test {
 
@@ -91,11 +92,18 @@ void cuda_test_random_xorshift1024( int num_draws  )
   cuda_test_random_xorshift1024(num_draws);                                   \
   }
 
+#define CUDA_SORT_UNSIGNED( size )                                \
+  TEST_F( cuda, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::Cuda, unsigned >(size);                                   \
+  }
+
 CUDA_RANDOM_XORSHIFT64(  132141141 )
 CUDA_RANDOM_XORSHIFT1024( 52428813 )
+CUDA_SORT_UNSIGNED(171)
 
 #undef CUDA_RANDOM_XORSHIFT64
 #undef CUDA_RANDOM_XORSHIFT1024
+#undef CUDA_SORT_UNSIGNED
 }
 
 #endif  /* #ifdef KOKKOS_HAVE_CUDA */

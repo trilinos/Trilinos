@@ -81,34 +81,6 @@ struct shared_face_type
     nodes.resize(my_topology.num_nodes());
   }
 
-  friend inline bool operator < (shared_face_type const& l, shared_face_type const& r)
-  {
-    if (l.topology < r.topology)   return true;
-    if (l.topology > r.topology)   return false;
-
-    int num_nodes = static_cast<int>(l.nodes.size());
-    for (int k = 0; k < num_nodes-1; ++k) {
-      if (l.nodes[k] < r.nodes[k]) return true;
-      if (l.nodes[k] > r.nodes[k]) return false;
-    }
-    const int j = num_nodes-1;
-    return l.nodes[j] < r.nodes[j];
-  }
-
-  friend inline bool operator == (shared_face_type const& l, shared_face_type const& r)
-	    {
-    bool equal = l.topology == r.topology;
-    int num_nodes = static_cast<int>(l.nodes.size());
-    for (int k = 0; k < num_nodes; ++k) {
-      bool node_found = false;
-      for (int j = 0; j < num_nodes; ++j) {
-        node_found = node_found || (l.nodes[k] == r.nodes[j]);
-      }
-      equal = equal && node_found;
-    }
-    return equal;
-	    }
-
   shared_face_type(const shared_face_type & a) :
     topology(a.topology),
     nodes(a.nodes),
@@ -244,91 +216,6 @@ struct create_face_impl
   Bucket                & m_bucket;
 };
 
-void update_shared_faces_global_ids( BulkData & mesh, shared_face_map_type & shared_face_map)
-{
-  //sort the faces for ease of lookup
-  std::sort(shared_face_map.begin(), shared_face_map.end());
-
-  std::vector< shared_face_map_type >  shared_faces( mesh.parallel_size());
-
-  for (shared_face_map_type::const_iterator itr = shared_face_map.begin(),
-      end = shared_face_map.end(); itr != end; ++itr ) {
-    //find process that share this face;
-
-    PairIterEntityComm left_shared = mesh.entity_comm_map_shared(itr->nodes[0]);
-
-    EntityCommInfoVector shared_processes(left_shared.first, left_shared.second);
-
-    for (int i = 1; i < static_cast<int>(itr->nodes.size()); ++i) {
-      PairIterEntityComm right_shared = mesh.entity_comm_map_shared( itr->nodes[i] );
-
-      std::set_intersection( shared_processes.begin(), shared_processes.end(),
-          right_shared.first, right_shared.second,
-          shared_processes.begin()
-      );
-
-    }
-
-    for (EntityCommInfoVector::const_iterator comm_itr = shared_processes.begin(),
-        comm_end = shared_processes.end(); comm_itr != comm_end; ++comm_itr ) {
-      if (comm_itr->proc > mesh.parallel_rank()) {
-        shared_faces[comm_itr->proc].push_back(*itr);
-      }
-    }
-  }
-
-  CommAll comm( mesh.parallel() );
-
-  //pack send buffers
-  for (int allocation_pass=0; allocation_pass<2; ++allocation_pass) {
-    if (allocation_pass >= 1) {
-      comm.allocate_buffers( mesh.parallel_size() /4, 0);
-    }
-
-    for (int proc=mesh.parallel_rank()+1, parallel_size = mesh.parallel_size(); proc<parallel_size; ++proc) {
-      for (size_t e=0, num_shared = shared_faces[proc].size(); e < num_shared; ++e) {
-        shared_face_type const & sface = shared_faces[proc][e];
-        CommBuffer & commbuff = comm.send_buffer(proc).pack<stk::topology::topology_t>(sface.topology);
-        for (int i = 0; i < static_cast<int>(sface.nodes.size()); ++i) {
-          commbuff.pack<EntityKey>(sface.nodes[i]);
-        }
-        commbuff.pack<EntityKey>(sface.local_key);
-      }
-    }
-  }
-
-  comm.communicate();
-
-  for ( unsigned ip = mesh.parallel_rank() ; ip > 0 ; ) {
-    --ip;
-    CommBuffer & buf = comm.recv_buffer( ip );
-    while ( buf.remaining() ) {
-      stk::topology::topology_t topology;
-      buf.unpack<stk::topology::topology_t>(topology);
-      shared_face_type sface(topology);
-      for (int i = 0; i < static_cast<int>(sface.nodes.size()); ++i) {
-        buf.unpack<EntityKey>(sface.nodes[i]);
-      }
-
-      buf.unpack<EntityKey>(sface.global_key);
-
-      shared_face_map_type::iterator shared_itr = std::lower_bound(shared_face_map.begin(), shared_face_map.end(), sface);
-
-      //update the global global_key
-      if (shared_itr != shared_face_map.end() && *shared_itr == sface) {
-        shared_itr->global_key = sface.global_key;
-      }
-    }
-  }
-
-  //update the entity keys
-  for (size_t i=0, e=shared_face_map.size(); i<e; ++i) {
-    if (shared_face_map[i].global_key != shared_face_map[i].local_key) {
-      mesh.internal_change_entity_key(shared_face_map[i].local_key, shared_face_map[i].global_key, mesh.get_entity(shared_face_map[i].local_key));
-    }
-  }
-}
-
 } //namespace
 
 void create_faces( BulkData & mesh )
@@ -381,9 +268,6 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
     stk::topology::apply_functor< create_face_impl > apply(functor);
     apply( b.topology() );
   }
-
-  //update global ids of shared faces
-  update_shared_faces_global_ids( mesh, shared_face_map );
 
   if (i_started) {
     bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
