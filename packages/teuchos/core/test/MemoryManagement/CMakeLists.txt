@@ -248,7 +248,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 # RCP Beginners Guide example code
 #
-IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+SET(EXAMPLE_RAW_CPP_POINTERS_CPP
+  ${Trilinos_SOURCE_DIR}/doc/RefCountPtr/example/example_raw_cpp_pointers.cpp)
+IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE AND EXISTS ${EXAMPLE_RAW_CPP_POINTERS_CPP})
   # The raw pointer version should build but is supposed to segfault so we will
   # not bother running it.  The problem is that even if we put WILL_FAIL onto
   # it, CTest will intercept signall 11 (segfault) and mark it as failed, even
@@ -267,10 +269,6 @@ IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
     NUM_MPI_PROCS 1
     )
 ENDIF()
-
-
-
-
 
 
 #############################

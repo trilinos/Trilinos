@@ -40,8 +40,8 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 # Set the base Trilinos directory in order to find Trilinos_version.h
-ASSERT_DEFINED(Trilinos_BINARY_DIR)
-INCLUDE_DIRECTORIES(${Trilinos_BINARY_DIR})
+ASSERT_DEFINED(${${PACKAGE_NAME}_PARENT_REPOSITORY}_BINARY_DIR)
+INCLUDE_DIRECTORIES(${${${PACKAGE_NAME}_PARENT_REPOSITORY}_BINARY_DIR})
 
 # Set headers (for IDEs and installing)
 
