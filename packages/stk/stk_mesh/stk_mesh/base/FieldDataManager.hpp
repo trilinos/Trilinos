@@ -44,13 +44,44 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace stk {
 namespace mesh {
 
+class AllocatorAdaptorInterface {
+public:
+  virtual ~AllocatorAdaptorInterface() {}
+
+  typedef unsigned char* pointer;
+
+  virtual pointer allocate(size_t num, const void* = 0) = 0;
+  virtual void deallocate(pointer p, size_t num) = 0;
+};
+
+template<class AllocatorType>
+class AllocatorAdaptor : public AllocatorAdaptorInterface {
+public:
+  AllocatorAdaptor(){}
+  virtual ~AllocatorAdaptor(){}
+
+  pointer allocate(size_t num, const void* = 0) {
+    return AllocatorType().allocate(num);
+  }
+
+  void deallocate(pointer p, size_t num) {
+    AllocatorType().deallocate(p, num);
+  }
+};
+
 
 class FieldDataManager
 {
 public:
-    typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
+    //derived classes need to set these two members at construction
+    AllocatorAdaptorInterface* field_data_allocator;
+    size_t alignment_increment_bytes;
 
-    FieldDataManager() {}
+    FieldDataManager() :
+        field_data_allocator(NULL),
+        alignment_increment_bytes(4)
+    {}
+
     virtual ~FieldDataManager() {}
     virtual void allocate_bucket_field_data(const EntityRank rank,
             const std::vector< FieldBase * > & field_set, const PartVector& superset_parts, const size_t capacity) = 0;
@@ -68,11 +99,35 @@ public:
 class DefaultFieldDataManager : public FieldDataManager
 {
 public:
-    DefaultFieldDataManager(const size_t num_ranks) :
-        m_field_raw_data(num_ranks), m_num_bytes_allocated_per_field()
+    DefaultFieldDataManager(const size_t num_ranks)
+    : FieldDataManager(),
+      m_default_allocator(),
+      m_default_alignment_increment_bytes(4),
+      m_user_specified_allocator(NULL),
+      m_field_raw_data(num_ranks),
+      m_num_bytes_allocated_per_field()
     {
+      //set base-class members
+      field_data_allocator = &m_default_allocator;
+      alignment_increment_bytes = m_default_alignment_increment_bytes;
     }
-    ~DefaultFieldDataManager() {}
+
+    DefaultFieldDataManager(const size_t num_ranks,
+                            AllocatorAdaptorInterface* user_specified_allocator_adaptor,
+                            size_t user_specified_alignment_increment_bytes)
+    : FieldDataManager(),
+      m_default_allocator(),
+      m_default_alignment_increment_bytes(user_specified_alignment_increment_bytes),
+      m_user_specified_allocator(user_specified_allocator_adaptor),
+      m_field_raw_data(num_ranks),
+      m_num_bytes_allocated_per_field()
+    {
+      //set base-class members
+      field_data_allocator = user_specified_allocator_adaptor;
+      alignment_increment_bytes = user_specified_alignment_increment_bytes;
+    }
+
+    virtual ~DefaultFieldDataManager() {}
     void allocate_bucket_field_data(const EntityRank rank,
             const std::vector< FieldBase * > & field_set, const PartVector& superset_parts, const size_t capacity);
     void deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
@@ -86,6 +141,9 @@ public:
     void swap_fields(const int field1, const int field2) { }
 
 private:
+    AllocatorAdaptor<page_aligned_allocator<unsigned char, FieldDataTag> > m_default_allocator;
+    size_t m_default_alignment_increment_bytes;
+    AllocatorAdaptorInterface* m_user_specified_allocator;
     std::vector<std::vector<unsigned char*> > m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
 };
@@ -93,8 +151,23 @@ private:
 class ContiguousFieldDataManager : public FieldDataManager
 {
 public:
-    ContiguousFieldDataManager() : m_field_raw_data(), m_num_bytes_allocated_per_field(), m_extra_capacity(8192), m_num_bytes_used_per_field(), m_num_entities_in_field_for_bucket() {}
-    ~ContiguousFieldDataManager();
+    ContiguousFieldDataManager()
+    :
+        FieldDataManager(),
+        m_default_allocator(),
+        m_default_alignment_increment_bytes(4),
+        m_user_specified_allocator(NULL),
+        m_field_raw_data(),
+        m_num_bytes_allocated_per_field(),
+        m_extra_capacity(8192),
+        m_num_bytes_used_per_field(),
+        m_num_entities_in_field_for_bucket()
+    {
+        //set base-class members
+        field_data_allocator = &m_default_allocator;
+        alignment_increment_bytes = m_default_alignment_increment_bytes;
+    }
+    virtual ~ContiguousFieldDataManager();
     void allocate_bucket_field_data(const EntityRank rank,
             const std::vector< FieldBase * > & field_set, const PartVector& superset_parts, const size_t capacity);
     void deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
@@ -115,6 +188,9 @@ public:
 private:
     void clear_bucket_field_data(const EntityRank rm_rank, const unsigned rm_bucket_id, const std::vector<FieldBase*>  &all_fields);
 
+    AllocatorAdaptor<page_aligned_allocator<unsigned char, FieldDataTag> > m_default_allocator;
+    size_t m_default_alignment_increment_bytes;
+    AllocatorAdaptorInterface* m_user_specified_allocator;
     std::vector<unsigned char*> m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
     size_t m_extra_capacity;
