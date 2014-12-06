@@ -13,6 +13,8 @@ IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PA
       SOURCE_FILES driver.xml status.py
       Q2Q1_9x9_A.dat   Q2Q1_9x9_B.dat
       Q2Q1_17x17_A.dat Q2Q1_17x17_B.dat
+      BigA9x9.mm  Q2Q1_9x9_A.mm  Q2Q1_9x9_Bt.mm
+      p2vMap9x9.mm PresCoords9x9.mm  Q2Q1_9x9_B.mm  VelCoords9x9.mm
       )
 
 ENDIF()
