@@ -119,13 +119,13 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Pthread         "cmake/TPLs/"    SS
   HWLOC           "cmake/TPLs/"    SS
   QTHREAD         "cmake/TPLs/"    SS
-  BinUtils        "cmake/TPLs/"    SS
+  BinUtils        "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    SS
   ARPREC          "cmake/TPLs/"    SS
   QD              "cmake/TPLs/"    SS
-  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    PS
-  BLAS            "cmake/TPLs/"    PS
-  LAPACK          "cmake/TPLs/"    PS
-  Boost           "cmake/TPLs/"    SS
+  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PS
+  BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
+  LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
+  Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
   Scotch          "cmake/TPLs/"    SS
   OVIS            "cmake/TPLs/"    SS
   gpcd            "cmake/TPLs/"    SS
