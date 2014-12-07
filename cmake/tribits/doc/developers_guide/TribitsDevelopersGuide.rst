@@ -3419,6 +3419,8 @@ In more detail, these rules/behaviors are:
     example, see `Explicit enable of a package and downstream packages and
     tests`_.
 
+.. _${PROJECT_NAME}_ENABLE_ALL_PACKAGES:
+
 .. _<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages:
 
 18) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:

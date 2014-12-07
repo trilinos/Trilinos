@@ -4,11 +4,11 @@
 distRepoStatusLegend = r"""Legend:
 * ID: Repository ID, zero based (order git commands are run)
 * Repo Dir: Relative to base repo (base repo shown first with '(Base)')
-* Branch: current branch (or detached HEAD)
+* Branch: Current branch (or detached HEAD)
 * Tracking Branch: Tracking branch (or empty if no tracking branch)
-* C: number local commits w.r.t. tracking branch (empty if zero)
-* M: number of tracked modified (uncommitted) files (empty if zero)
-* ?: number of untracked, non-ignored files (empty if zero)
+* C: Number local commits w.r.t. tracking branch (empty if zero)
+* M: Number of tracked modified (uncommitted) files (empty if zero)
+* ?: Number of untracked, non-ignored files (empty if zero)
 """
 
 usageHelp = r"""gitdist [gitdist arguments] [git arguments]
@@ -724,6 +724,10 @@ def getNumModifiedAndUntracked(options):
     numUntracked = 0
     for line in rawStatusOutput.split("\n"):
       if line.find(" M ") == 0 or line.find("M  ") == 0:
+        numModified += 1
+      elif line.find(" D ") == 0 or line.find("D  ") == 0:
+        numModified += 1
+      elif line.find(" T ") == 0 or line.find("T  ") == 0:
         numModified += 1
       elif line.find("??") == 0:
         numUntracked += 1
