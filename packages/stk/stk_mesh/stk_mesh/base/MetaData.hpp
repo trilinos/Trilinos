@@ -169,7 +169,7 @@ public:
   /** \brief  Destroy the meta data manager and
    *          all of the parts and fields that it owns.
    */
-  ~MetaData();
+  virtual ~MetaData();
 
   /** Standard usage associates just one BulkData with a MetaData.
    * An error is thrown if this method is called with a non-NULL BulkData while another
