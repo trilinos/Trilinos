@@ -55,7 +55,7 @@
 #include <Cuda/Kokkos_CudaExec.hpp>
 #include <Cuda/Kokkos_Cuda_ReduceScan.hpp>
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
-
+#include <Kokkos_Vectorization.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -1058,6 +1058,7 @@ private:
 public:
 
   typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::value_type      value_type ;
   typedef typename ValueTraits::reference_type  reference_type ;
   typedef FunctorType                           functor_type ;
   typedef Cuda::size_type                       size_type ;
@@ -1097,6 +1098,7 @@ public:
              , reference_type value )
     { functor( Tag() , iwork , value ); }
 
+#ifndef KOKKOS_EXPERIMENTAL_CUDA_SHFL_REDUCTION
   __device__ inline
   void operator()(void) const
   {
@@ -1139,7 +1141,38 @@ public:
       for ( unsigned i = threadIdx.y ; i < word_count.value ; i += blockDim.y ) { global[i] = shared[i]; }
     }
   }
+#else
+  __device__ inline
+   void operator()(void) const
+   {
 
+     value_type value = 0;
+
+     // Number of blocks is bounded so that the reduction can be limited to two passes.
+     // Each thread block is given an approximately equal amount of work to perform.
+     // Accumulate the values for this block.
+     // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
+
+     const Policy range( m_policy , blockIdx.x , gridDim.x );
+
+     for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
+           iwork < iwork_end ; iwork += blockDim.y ) {
+       ParallelReduce::template driver< work_tag >( m_functor , iwork , value );
+     }
+
+     pointer_type const result = (pointer_type) (m_unified_space ? m_unified_space : m_scratch_space) ;
+     int max_active_thread = range.end()-range.begin() < blockDim.y ? range.end() - range.begin():blockDim.y;
+     max_active_thread = max_active_thread == 0?blockDim.y:max_active_thread;
+     if(Impl::cuda_inter_block_reduction<FunctorType,Impl::JoinAdd<value_type> >
+            (value,Impl::JoinAdd<value_type>(),m_scratch_space,result,m_scratch_flags,max_active_thread)) {
+       const unsigned id = threadIdx.y*blockDim.x + threadIdx.x;
+       if(id==0) {
+         Kokkos::Impl::FunctorFinal< FunctorType , work_tag >::final( m_functor , (void*) &value );
+         *result = value;
+       }
+     }
+   }
+#endif
   template< class HostViewType >
   ParallelReduce( const FunctorType  & functor 
                 , const Policy       & policy 
@@ -1162,7 +1195,11 @@ public:
 
     const dim3 grid( block_count , 1 , 1 );
     const dim3 block( 1 , block_size , 1 ); // REQUIRED DIMENSIONS ( 1 , N , 1 )
+#ifdef KOKKOS_EXPERIMENTAL_CUDA_SHFL_REDUCTION
+    const int shmem = 0;
+#else
     const int shmem = cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( m_functor , block.y );
+#endif
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, shmem ); // copy to device and execute
 
