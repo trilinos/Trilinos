@@ -54,11 +54,11 @@ void analytic_deriv(double a, double b, double c,
                     double& drda, double& drdb,
                     double& d2rda2, double& d2rdb2, double& d2rdadb)
 {
-  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2))*std::cos(a);
+  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2.))*std::cos(a);
   drdb = c / ((b+1.)*std::sin(a));
-  d2rda2 = c*std::log(b+1.)/std::sin(a) + 2.*(c*std::log(b+1.)/std::pow(std::sin(a),3))*std::pow(std::cos(a),2);
-  d2rdb2 = -c / (std::pow(b+1.,2)*std::sin(a));
-  d2rdadb = -c / ((b+1.)*std::pow(std::sin(a),2))*std::cos(a);
+  d2rda2 = c*std::log(b+1.)/std::sin(a) + 2.*(c*std::log(b+1.)/std::pow(std::sin(a),3.))*std::pow(std::cos(a),2.);
+  d2rdb2 = -c / (std::pow(b+1.,2.)*std::sin(a));
+  d2rdadb = -c / ((b+1.)*std::pow(std::sin(a),2.))*std::cos(a);
 }
 
 // Function that computes func and its first derivative w.r.t a & b using
