@@ -1,4 +1,17 @@
 #
+# Teuchos is both a package and can be configured and built as it own TriBITS
+# project!
+#
+
+
+IF (TRIBITS_PROCESSING_PACKAGE)
+
+
+#
+# Processing TriBITS package!
+#
+
+#
 # A) Forward delcare the package so that certain options are also defined for
 # subpackages
 #
@@ -255,3 +268,25 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
+
+
+ELSE(TRIBITS_PROCESSING_PACKAGE)
+
+
+#
+# Processing as a TriBITS project
+#
+
+# This CMakeLists.txt file is being processed as the TriBITS projects's base
+# CMakeLists.txt file!  (See comments at bottom of this file.)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
+PROJECT(${PROJECT_NAME} NONE)
+SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/tribits"
+  CACHE PATH "By default assume Teuchos is in Trilinos")
+INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+SET(TEUCHOS_STANDALONE_PACKAGE TRUE)
+TRIBITS_PROJECT_ENABLE_ALL()
+
+
+ENDIF(TRIBITS_PROCESSING_PACKAGE)

@@ -19,9 +19,20 @@ _SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
 _TRIBITS_BASE_DIR=$_SCRIPT_DIR/..
 echo "Copy from: $_TRIBITS_BASE_DIR"
 
+function copy_over_readonly {
+  from_dir=$1
+  file=$2
+  to_dir=$3
+  if [ -e $to_dir/$file ] ; then
+    #echo "$to_dir/$file"
+    chmod u+w $to_dir/$file
+  fi
+  cp -u -v $from_dir/$file $to_dir/$file
+}
+
 _DEST_BASE_DIR=$1
 echo "Copy to: $_DEST_BASE_DIR" 
-cp -u -v developers_guide/TribitsDevelopersGuide.html $_DEST_BASE_DIR/
-cp -u -v developers_guide/TribitsDevelopersGuide.pdf $_DEST_BASE_DIR/
-cp -u -v build_quick_ref/TribitsBuildQuickRef.html $_DEST_BASE_DIR/
-cp -u -v build_quick_ref/TribitsBuildQuickRef.pdf $_DEST_BASE_DIR/
+copy_over_readonly  developers_guide  TribitsDevelopersGuide.html  $_DEST_BASE_DIR
+copy_over_readonly  developers_guide  TribitsDevelopersGuide.pdf  $_DEST_BASE_DIR
+copy_over_readonly  build_quick_ref  TribitsBuildQuickRef.html  $_DEST_BASE_DIR
+copy_over_readonly  build_quick_ref  TribitsBuildQuickRef.pdf  $_DEST_BASE_DIR
