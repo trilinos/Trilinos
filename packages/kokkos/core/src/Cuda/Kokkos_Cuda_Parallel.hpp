@@ -1981,6 +1981,180 @@ void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::Cuda
 
 #endif // KOKKOS_HAVE_CXX11
 
+namespace Kokkos {
+template<int N>
+struct Vectorization<Cuda,N> {
+  typedef Kokkos::TeamPolicy< Cuda >         team_policy ;
+  typedef typename team_policy::member_type  team_member ;
+  enum {increment = N};
+
+#ifdef __CUDA_ARCH__
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int begin() { return threadIdx.y%N;}
+#else
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int begin() { return 0;}
+#endif
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int thread_rank(const team_member &dev) {
+    return dev.team_rank()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int team_rank(const team_member &dev) {
+    return dev.team_rank()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int team_size(const team_member &dev) {
+    return dev.team_size()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int global_thread_rank(const team_member &dev) {
+    return (dev.league_rank()*dev.team_size()+dev.team_rank())/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static bool is_lane_0(const team_member &dev) {
+    return (dev.team_rank()%increment)==0;
+  }
+
+  template<class Scalar>
+  KOKKOS_INLINE_FUNCTION
+  static Scalar reduce(const Scalar& val) {
+    #ifdef __CUDA_ARCH__
+    __shared__ Scalar result[256];
+    Scalar myresult;
+    for(int k=0;k<blockDim.y;k+=256) {
+      const int tid = threadIdx.y - k;
+      if(tid > 0 && tid<256) {
+        result[tid] = val;
+        if ( (N > 1) && (tid%2==0) )
+          result[tid] += result[tid+1];
+        if ( (N > 2) && (tid%4==0) )
+          result[tid] += result[tid+2];
+        if ( (N > 4) && (tid%8==0) )
+          result[tid] += result[tid+4];
+        if ( (N > 8) && (tid%16==0) )
+          result[tid] += result[tid+8];
+        if ( (N > 16) && (tid%32==0) )
+          result[tid] += result[tid+16];
+        myresult = result[tid];
+      }
+      if(blockDim.y>256)
+        __syncthreads();
+    }
+    return myresult;
+    #else
+    return val;
+    #endif
+  }
+
+#ifdef __CUDA_ARCH__
+  #if (__CUDA_ARCH__ >= 300)
+  KOKKOS_INLINE_FUNCTION
+  static int reduce(const int& val) {
+    int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static unsigned int reduce(const unsigned int& val) {
+    unsigned int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static long int reduce(const long int& val) {
+    long int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static unsigned long int reduce(const unsigned long int& val) {
+    unsigned long int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static float reduce(const float& val) {
+    float result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static double reduce(const double& val) {
+    double result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+  #endif
+#endif
+
+};
+}
+
 #endif /* defined( __CUDACC__ ) */
 
 #endif /* #ifndef KOKKOS_CUDA_PARALLEL_HPP */

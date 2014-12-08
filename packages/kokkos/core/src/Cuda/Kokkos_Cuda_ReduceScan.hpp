@@ -51,7 +51,7 @@
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_FunctorAdapter.hpp>
 #include <impl/Kokkos_Error.hpp>
-#include <Kokkos_Vectorization.hpp>
+#include <Cuda/Kokkos_Cuda_Vectorization.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
