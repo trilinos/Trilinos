@@ -208,8 +208,11 @@ change.
     \begin{tabular}{p{3.0cm} p{12cm}}
       \toprule
       \verb!none!   & No reuse \\
-      \verb!RP!     & Reuse smoothed prolongator and restrictor. This also reuses matrix graphs during the construction
-                      of the Galerkin product. Smoothers are recomputed. \\
+      \verb!RP!     & Reuse smoothed prolongator and restrictor. Smoothers are
+                      recomputed.  \ding{42} \verb!RP! should reuse matrix graphs for
+                      matrix-matrix product, but currently that is disabled as only \epetra{}
+                      supports it. \\
+
       % \verb!tP!     & Reuse tentative prolongator. The graphs of smoothed prolongator and matrices in Galerkin product are reused only
                       % if filtering is not being used ({\it i.e.}, either \verb!sa: use filtered matrix! or \verb!aggregation: drop tol! is
                       % false) \\
