@@ -132,12 +132,16 @@ void insert_part_and_supersets(OrdinalVector& induced_parts,
   if (include_supersets) {
     const PartVector & supersets = part.supersets();
     for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
-      insert_ordinal( induced_parts, (*itr)->mesh_meta_data_ordinal() );
+        const bool skip_induction = ((*itr)->primary_entity_rank() == stk::topology::INVALID_RANK) || (*itr)->force_no_induce();
+        if (skip_induction) {
+            continue;
+        }
+        insert_ordinal( induced_parts, (*itr)->mesh_meta_data_ordinal() );
     }
   }
 }
 
-}
+} // namespace
 
 void get_entities_through_relations(
   const BulkData &mesh,

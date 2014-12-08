@@ -4419,7 +4419,7 @@ TEST(BulkData, STK_Deimprint)
   // These two flags should definitely be the same. Otherwise, creation and deletion
   // are not symmetric, and parts of lower rank entities will be corrupted by mesh modification.
   // The code might be simpler and performance might be better if both were false.
-  const bool stk_induces_unranked_supersets = true;
+  const bool stk_induces_unranked_supersets = false;
   const bool stk_deinduces_unranked_supersets = false;
 
   // check block membership of shared nodes
