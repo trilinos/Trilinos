@@ -760,26 +760,25 @@ pull in the TriBITS system::
 With the ``TriBITS.cmake`` file included, the configuration of the project
 using TriBITS occurs with a single call to `TRIBITS_PROJECT()`_.
 
-Some projects, like Trilinos, actually snapshot the ``tribits`` directory into
-their source tree `<projectDir>/cmake/tribits/`_ and therefore don't need to
-have this variable set.  In Trilinos, the include line is just::
+Some projects, like Trilinos, actually snapshot the `TriBITS/tribits/`_
+directory into their source tree `<projectDir>/cmake/tribits/`_ and therefore
+don't need to have this variable set.  In Trilinos, the include line is just::
 
   INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/TriBITS.cmake)
 
 The minimum CMake version must also be declared in the top-level
 ``CMakeLists.txt`` file as shown.  Explicitly setting the minimum CMake
 version avoids strange errors that can occur when someone tries to build the
-project using a version of CMake that is too old.  If the given project
-requires a version of CMake newer than what is required by TriBITS itself (as
-defined in the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` which was set when
-the ``TriBITS.cmake`` file was included), then that version can be passed
-instead of using ``${TRIBITS_CMAKE_MINIMUM_REQUIRED}`` (the current minimum
-version of CMake required by TriBITS is given at in `Getting set up to use
-CMake`_) .  For example, the ``VERA/CMakeLists.txt`` file lists as its first
-line::
+project using a version of CMake that is too old.  The project should set the
+minimum CMake version based on the CMake features used in that project's own
+CMake files.  The minimum CMake version required by TriBITS is defined in in
+the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` (the current minimum version
+of CMake required by TriBITS is given at in `Getting set up to use CMake`_) .
+For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
   SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.11)
-  CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED})
+  CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED}
+    FATAL_ERROR)
 
 .. _<projectDir>/CTestConfig.cmake:
 
@@ -977,7 +976,7 @@ Source Distributions` for more details.
 .. _<projectDir>/cmake/tribits/:
 
 **<projectDir>/cmake/tribits/**: [Optional] This is the typical location of
-the ``tribits`` source tree for projects that choose to snapshot or checkout
+the `TriBITS/tribits/`_ source tree for projects that choose to snapshot
 TriBITS into their source tree.  In fact, TriBITS assumes this is the default
 location for the TriBITS source tree if ``${PROJECT_NAME}_TRIBITS_DIR`` is not
 otherwise specified.  Trilinos, for example, currently snapshots the TriBITS
@@ -2429,8 +2428,6 @@ required `upstream`_ TriBITS package dependencies and minimal TPL dependencies
 (or only uses `Standard TriBITS TPLs`_ already defined in the
 ``tribits/tpls/`` directory), then creating a stand-alone project build of a
 single TriBITS package requires fairly little extra overhead or duplication.
-However, as mentioned above, one cannot use the same name for the package and
-the project.
 
 
 Standard TriBITS TPLs
@@ -2736,9 +2733,8 @@ This TriBITS project is not a full TriBITS project (i.e. it does not build
 anything).  Instead, it is primarily used to test the TriBITS system using
 tests defined in the `The TriBITS Test Package`_.  The ``MockTrilinos``
 project is actually given the name ``PROJECT_NAME = Trilinos`` and contains a
-subset of Trilinos packages with slightly modified dependencies from a
-snapshot of the real Trilinos project from May 2009.  The list of packages
-in::
+subset of Trilinos packages with slightly modified dependencies from a real
+version of the Trilinos project from May 2009.  The list of packages in::
 
   tribits/examples/MockTrilinos/PackagesList.cmake
 
@@ -2840,31 +2836,21 @@ The TriBITS Test Package
 ------------------------
 
 The last TriBITS example mentioned here is the TriBITS test package named
-(appropriately) ``TriBITS`` itself.  The directory for the ``TriBITS`` test
-package is the base TriBITS source directory ``tribits``.  This allows any
-TriBITS project to add testing for the TriBITS system by just listing this
-package and its directory in its repository's `<repoDir>/PackagesList.cmake`_
-file.  For example, the Trilinos repository which currently snapshots the
-TriBITS source tree lists the ``TriBITS`` package with::
+(appropriately) ``TriBITS`` itself defined in the ``TriBITS`` repository.  The
+directory for the ``TriBITS`` test package is the base TriBITS source
+directory ``tribits``.  This allows any TriBITS project to add testing for the
+TriBITS system by just listing the TriBITS repository in its
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  Trilinos lists the
+TriBITS repository in its ``ExtraRepositoriesList.cmake`` file as:
 
-  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-    TriBITS   cmake/tribits  PT   # Only tests, no libraries/capabilities!
+  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+    TriBITS  ""  GIT  https://github.com/TriBITSPub/TriBITS  ""  Continuous
     ...
     )
 
-No `downstream`_ packages list a dependency on ``TriBITS`` in their
-`<packageDir>/cmake/Dependencies.cmake`_ files.  Listing the ``TriBITS``
-package in only done in the ``PackagesList.cmake`` file for testing TriBITS.
-
-Other TriBITS projects/repositories that don't snapshot TriBITS but also want
-to test TriBITS (perhaps just to mine its tests for examples) can do so by
-including the ``TriBITS`` test package in their ``PackagesList.cmake`` file
-using::
-
-  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-    TriBITS   ${${PROJECT_NAME}_TRIBITS_DIR}   PT
-    ...
-    )
+No `downstream`_ TriBITS packages list a dependency on ``TriBITS`` in their
+`<packageDir>/cmake/Dependencies.cmake`_ files.  Defining the ``TriBITS``
+TriBITS package in only done for running the TriBITS tests.
 
 Once the ``TriBITS`` test package is added to the list of project/repository
 packages, it can be enabled just like any other package by adding the
@@ -3419,6 +3405,8 @@ In more detail, these rules/behaviors are:
     example, see `Explicit enable of a package and downstream packages and
     tests`_.
 
+.. _${PROJECT_NAME}_ENABLE_ALL_PACKAGES:
+
 .. _<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages:
 
 18) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:
@@ -3934,13 +3922,13 @@ packages from the `MockTrilinos`_ project is shown below::
 This XML file contains the names, directories, testing groups (``type``),
 CDash email address, and all of the SE package and TPL dependencies for every
 SE package in the TriBITS project.  There are several python tools under
-``tribits/python/`` that read in this file and use the created data-structure
-for various tasks.  A TriBITS project configure can create this file as a
-byproduct (see ???), or the CMake -P script ``TribitsDumpDepsXmlScript.cmake``
-can be used to create this file on the fly without having to configure a
-TriBITS project (see the ``checkin-test.out`` log file generated by
-`checkin-test.py`_ for an example of how to run this script to generate the
-``<Project>Dependencies.xml`` file).
+``tribits/ci_support/`` that read in this file and use the created
+data-structure for various tasks.  A TriBITS project configure can create this
+file as a byproduct (see ???), or the CMake -P script
+``TribitsDumpDepsXmlScript.cmake`` can be used to create this file on the fly
+without having to configure a TriBITS project (see the ``checkin-test.out``
+log file generated by `checkin-test.py`_ for an example of how to run this
+script to generate the ``<Project>Dependencies.xml`` file).
 
 
 TriBITS Automated Testing
@@ -5404,24 +5392,43 @@ discussed.  These features and topics are either not considered primary
 features of TriBITS (but can be very useful in many situations) or don't neatly
 fit into one of the other sections.
 
+TriBITS Repository Contents
+---------------------------
+
+The TriBITS git repository is organized as a `TriBITS Project`_, `TriBITS
+Repository`_, and `TriBITS Package`_ all in the same base directory.  The base
+contents are described in the file::
+
+   TriBITS/README.DIRECTORY_CONTENTS.rst
+
+The part of TriBITS that is installed or snapshotted in contained in the
+subdirectory `TriBITS/tribits/`_ and is described in the following section.
+
+.. include:: TriBITS.README.DIRECTORY_CONTENTS.rst
+
+.. _TriBITS/tribits/:
+
+.. include:: ../../README.DIRECTORY_CONTENTS.rst
+
 
 TriBITS System Project Dependencies
 -----------------------------------
 
-The basic TriBITS system itself which is used to configure, built, test,
-create tarballs, and install software has no dependencies other than a basic
-installation of CMake (which typically includes the executables ``cmake``,
-``ctest``, and ``cpack``).  Great effort has been expended to implement all of
-the core functionality of TriBITS just using raw CMake.  That means that
-anyone who needs to configure, build, and install software that uses TriBITS
-just needs a compatible CMake implementation.  CMake is becoming iniquitous
-enough that many clients will already have a current-enough version of CMake
-installed by default on their systems and will therefore not need to download
-or install any extra software when building and installing a project that uses
-TriBITS (assuming the necessary compilers etc. required by the project are
-also installed).  If a current-enough version of CMake is not installed on a
-given system, it is easy to download the source code and all it needs is a
-basic C++ compiler to build and install.
+The core TriBITS system itself (see ``tribts/core/`` in `TriBITS/tribits/`_)
+which is used to configure, built, test, create tarballs, and install software
+has no dependencies other than a basic installation of CMake (which typically
+includes the executables ``cmake``, ``ctest``, and ``cpack``).  Great effort
+has been expended to implement all of this core functionality of TriBITS just
+using raw CMake.  That means that anyone who needs to configure, build, and
+install software that uses TriBITS just needs a compatible CMake
+implementation.  CMake is becoming iniquitous enough that many machines will
+already have a current-enough version of CMake installed by default on their
+systems and therefore no one will need to download or install any extra
+software when building and installing a project that uses TriBITS (assuming
+the necessary compilers etc. required by the project are also installed).  If
+a current-enough version of CMake is not installed on a given system, it is
+easy to download the source code and all it needs is a basic C++ compiler to
+build and install.
 
 However, note that a specific TriBITS project is free to use any newer CMake
 features it wants and therefore these projects will require newer versions of
@@ -6595,32 +6602,33 @@ package in one or more CTest tests.
 TriBITS directory snapshotting
 ------------------------------
 
-Some TriBITS projects choose to snapshot the ``TriBITS`` directory source tree
-into their project's source tree, typically under
-`<projectDir>/cmake/tribits/`_.  The independent ``TriBITS`` source tree
-contains a symbolic link to the tool `snapshot-dir.py`_ that allows one to
-update the snapshot of the TriBITS source tree as simply as::
+Some TriBITS projects choose to snapshot the `TriBITS/tribits/`_ directory
+source tree into their project's source tree, typically under
+`<projectDir>/cmake/tribits/`_.  The independent ``TriBITS/tribts/`` source
+tree contains the script ``snapshot_tribits.py`` (calls `snapshot-dir.py`_)
+that allows one to update the snapshot of the TriBITS source tree as simply
+as::
 
   $ cd <projectDir>/cmake/tribits/
-  $ <some-base-dir>/TriBITS/snapshot-dir.py
+  $ <some-base-dir>/TriBITS/tribits/snapshot_tribits.py
 
 This will create a git commit in the local ``<projectDir>/`` git repo that
 looks like::
 
-    Automatic snapshot commit from TriBITS at 983d4f4
+    Automatic snapshot commit from tribits at f8c1682
     
-    Origin repo remote tracking branch: 'origin/master'
-    Origin repo remote repo URL: 'origin = git@github.com:TriBITSPub/TriBITS'
+    Origin repo remote tracking branch: 'casl-dev-collab/tribits_reorg_26'
+    Origin repo remote repo URL: 'casl-dev-collab = git@casl-dev:collaboration/TriBITS'
     
     At commit:
     
-    983d4f4 Adding all checkin-test.py defaults to config file and removing checkin-test.py (Trilinos #6218)
+    f8c1682 Assert TriBITS min CMake version in TriBITS itself
     Author: Roscoe A. Bartlett <bartlettra@ornl.gov>
-    Date: Tue Sep 9 11:31:02 2014 -0400
+    Date: Fri Dec 5 05:40:49 2014 -0500
 
 This, of course, assumes that ``<projectDir>/`` is a local git repo (or is in
 local git repo).  If that is not the case, then one cannot use the script
-``snapshot-dir.py`` or must use it with the ``--skip-commit`` option.
+``snapshot_tribits.py`` or must use it with the ``--skip-commit`` option.
 
 See `snapshot-dir.py --help`_ for more details.  Note the guidance on using a
 different branch for the snapshot sync followed by a merge.  This allows for

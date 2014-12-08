@@ -441,12 +441,15 @@ namespace Basker{
         L->val[lnnz] = 1.0;
         lnnz++;
 
+        Entry last_v_temp = 0;
+
         for(i = top; i < nrow; i++)
           {
             j = pattern[i];
             t = pinv[j];
 
             /* check for numerical cancellations */
+            
 
             if(X[j] != ((Entry)0))
               {
@@ -455,20 +458,30 @@ namespace Basker{
                   {
                     if(unnz >= U->nnz)
                       {
-                        cout << "BASKER: Insufficent memroy for U" << endl;
+                        cout << "BASKER: Insufficent memory for U" << endl;
                         ierr = -3;
                         return ierr;
                       }
-                    U->row_idx[unnz] = pinv[j];
-                    U->val[unnz] = X[j];
-                    unnz++;
+                    if(t < k)
+                    //if(true)
+                      {
+                        U->row_idx[unnz] = pinv[j];
+                        U->val[unnz] = X[j];
+                        unnz++;
+                      }
+                    else
+                      {
+                        
+                        last_v_temp = X[j];
+                        //cout << "Called.  t: " << t << "Val: " << last_v_temp << endl; 
+                      }
 
                   }
                 else if (t ==  ncol)
                   {
                     if(lnnz >= L->nnz)
                       {
-                        cout << "BASKER: Insufficent memroy for L" << endl;
+                        cout << "BASKER: Insufficent memory for L" << endl;
                         ierr = -3;
                         return ierr;
                       }
@@ -481,9 +494,15 @@ namespace Basker{
                   }
 
               }
+            
+            
             X[j] = 0;
 
           }
+        //cout << "Value added at end: " << last_v_temp << endl;
+        U->row_idx[unnz] = k; 
+        U->val[unnz] = last_v_temp;
+        unnz++;
 
         xnnz = 0;
         top = ncol;
@@ -515,6 +534,25 @@ namespace Basker{
         printf("p[%d]=%d", k, pinv[k]);
       }
     cout << endl;
+    cout << endl;
+    
+    for(k = 0; k < ncol; k++)
+      {
+        printf("Up[%d]=%d", k, U->col_ptr[k]);
+      }
+    cout << endl;
+
+    for(k = 0; k < unnz; k++)
+      {
+        printf("U[%d]=%g" , k , U->val[k]);
+      }
+    cout << endl;
+    for(k = 0; k < unnz; k++)
+      {
+        printf("Ui[%d]=%d", k, U->row_idx[k]);
+      }
+    cout << endl;
+    
 
 #endif
     /*  Repermute   */
@@ -522,12 +560,12 @@ namespace Basker{
       {
         for(k = L->col_ptr[i]; k < L->col_ptr[i+1]; k++)
           {
-            L->row_idx[k] = pinv[L->row_idx[k]];
+            //L->row_idx[k] = pinv[L->row_idx[k]];
           }
       }
     //Max sure correct location of min in L and max in U for CSC format//
     //Speeds up tri-solve//
-    sort_factors();
+    //sort_factors();
 
 #ifdef BASKER_DEBUG
     cout << "After Permuting" << endl;
@@ -568,7 +606,7 @@ namespace Basker{
 
     for(i = 0; i < L->nnz; i++)
       {
-        (*row_idx)[i] = L->row_idx[i];
+        (*row_idx)[i] = pinv[L->row_idx[i]];
         (*val)[i]     = L->val[i];
       }
     return 0;
@@ -709,7 +747,7 @@ namespace Basker{
 
         for(j = col_ptr[i]+1; j < (col_ptr[i+1]); j++) //update all rows
           {
-            b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[i]);
+            b[pinv[row_idx[j]]] = b[pinv[row_idx[j]]] - (val[j]*x[i]);
           }
       }
     return 0;
@@ -728,6 +766,7 @@ namespace Basker{
 #else
         if(val[col_ptr[i]-1] == (Entry) 0)
           {
+            cout << "Dig(" << i << ") = " << val[col_ptr[i]-1] << endl;
             return i;
           }
 #endif
