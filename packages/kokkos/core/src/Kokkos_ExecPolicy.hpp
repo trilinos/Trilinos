@@ -143,28 +143,42 @@ private:
 
   enum { GranularityMask = IntType(Granularity) - 1 };
 
-  IntType m_begin ;
-  IntType m_end ;
+  ExecSpace m_space ;
+  IntType   m_begin ;
+  IntType   m_end ;
 
 public:
 
   //! Tag this class as an execution policy
-  typedef RangePolicy  execution_policy ;
   typedef ExecSpace    execution_space ;
-  typedef IntType      member_type ;
+  typedef RangePolicy  execution_policy ;
   typedef WorkTag      work_tag ;
+  typedef IntType      member_type ;
 
+  KOKKOS_INLINE_FUNCTION const execution_space & space() const { return m_space ; }
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
   KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
 
-  KOKKOS_INLINE_FUNCTION RangePolicy() : m_begin(0), m_end(0) {}
+  inline RangePolicy() : m_space(), m_begin(0), m_end(0) {}
 
   /** \brief  Total range */
-  KOKKOS_INLINE_FUNCTION
+  inline
   RangePolicy( const member_type work_begin
              , const member_type work_end
              )
-    : m_begin( work_begin < work_end ? work_begin : 0 )
+    : m_space()
+    , m_begin( work_begin < work_end ? work_begin : 0 )
+    , m_end(   work_begin < work_end ? work_end : 0 )
+    {}
+
+  /** \brief  Total range */
+  inline
+  RangePolicy( const execution_space & work_space
+             , const member_type work_begin
+             , const member_type work_end
+             )
+    : m_space( work_space )
+    , m_begin( work_begin < work_end ? work_begin : 0 )
     , m_end(   work_begin < work_end ? work_end : 0 )
     {}
 
@@ -284,7 +298,7 @@ public:
 
   //----------------------------------------
   /** \brief  Construct policy with the given instance of the execution space */
-  TeamPolicy( execution_space & , int league_size_request , int team_size_request );
+  TeamPolicy( const execution_space & , int league_size_request , int team_size_request );
 
   /** \brief  Construct policy with the default instance of the execution space */
   TeamPolicy( int league_size_request , int team_size_request );

@@ -67,6 +67,7 @@
 #include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestMemorySpaceTracking.hpp>
 #include <TestTeamVector.hpp>
@@ -305,6 +306,7 @@ TEST_F( cuda, tile )
 TEST_F( cuda , view_aggregate )
 {
   TestViewAggregate< Kokkos::Cuda >();
+  TestViewAggregateReduction< Kokkos::Cuda >();
 }
 
 

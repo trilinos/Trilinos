@@ -85,6 +85,10 @@ void initialize_internal(const int nthreads, const int use_numa, const int use_g
     } else {
       Kokkos::OpenMP::initialize();
     }
+    std::cout << "Kokkos::initialize() fyi: OpenMP enabled and initialized" << std::endl ;
+  }
+  else {
+    std::cout << "Kokkos::initialize() fyi: OpenMP enabled but not initialized" << std::endl ;
   }
 
 #endif
@@ -104,6 +108,10 @@ void initialize_internal(const int nthreads, const int use_numa, const int use_g
     } else {
       Kokkos::Threads::initialize();
     }
+    std::cout << "Kokkos::initialize() fyi: Pthread enabled and initialized" << std::endl ;
+  }
+  else {
+    std::cout << "Kokkos::initialize() fyi: Pthread enabled but not initialized" << std::endl ;
   }
 
 #endif
@@ -120,7 +128,7 @@ void initialize_internal(const int nthreads, const int use_numa, const int use_g
 
 #if defined( KOKKOS_HAVE_CUDA )
 
-  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value ) {
+  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value || 0 < use_gpu ) {
 
     if(use_gpu>-1) {
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( use_gpu ) );
@@ -128,6 +136,7 @@ void initialize_internal(const int nthreads, const int use_numa, const int use_g
     else {
       Kokkos::Cuda::initialize();
     }
+    std::cout << "Kokkos::initialize() fyi: Cuda enabled and initialized" << std::endl ;
   }
 
 #endif

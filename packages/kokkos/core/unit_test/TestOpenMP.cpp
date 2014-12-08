@@ -61,6 +61,7 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
@@ -233,6 +234,7 @@ TEST_F( openmp , view_remap )
 TEST_F( openmp , view_aggregate )
 {
   TestViewAggregate< Kokkos::OpenMP >();
+  TestViewAggregateReduction< Kokkos::OpenMP >();
 }
 
 //----------------------------------------------------------------------------
