@@ -32,6 +32,7 @@
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
+#include "Sacado_mpl_integral_nonzero_constant.hpp"
 
 namespace Sacado {
 
@@ -165,10 +166,10 @@ namespace Sacado {
     private:
 
       //! Derivative array size
-      const Kokkos::Impl::integral_nonzero_constant< int, static_length > sz_;
+      const mpl::integral_nonzero_constant< int, static_length > sz_;
 
       //! Derivative array stride
-      const Kokkos::Impl::integral_nonzero_constant< int, static_stride > stride_;
+      const mpl::integral_nonzero_constant< int, static_stride > stride_;
 
       //! Value
       T *val_;

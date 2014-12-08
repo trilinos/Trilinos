@@ -245,6 +245,7 @@ SET(HEADERS ${HEADERS}
   mpl/Sacado_mpl_quote.hpp
   mpl/Sacado_mpl_type_wrap.hpp
   mpl/Sacado_mpl_is_placeholder.hpp
+  mpl/Sacado_mpl_integral_nonzero_constant.hpp
   )
 
 # Scalar flop counters
