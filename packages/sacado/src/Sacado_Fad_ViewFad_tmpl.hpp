@@ -72,7 +72,8 @@ namespace Sacado {
       //! Turn ViewFad into a meta-function class usable with mpl::apply
       template <typename T>
       struct apply {
-        typedef typename mpl::mpl_if< IsView<T>, BaseFadType<T>, T >::type T_for_base;
+        // BaseFadType<T>::type is T if T is not a view
+        typedef typename BaseFadType<T>::type T_for_base;
         typedef typename mpl::apply<base_fad_type,T_for_base>::type new_base_fad_type;
         typedef ViewFad<T,length,stride,new_base_fad_type> type;
       };
