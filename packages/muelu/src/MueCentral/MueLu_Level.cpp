@@ -420,6 +420,7 @@ namespace MueLu {
             size_t npos = std::string::npos;
 
             if      (strType.find("Xpetra::Matrix")          != npos) outputter.outputField("Matrix" );
+            else if (strType.find("Xpetra::Operator")        != npos) outputter.outputField("Operator");
             else if (strType.find("Xpetra::MultiVector")     != npos) outputter.outputField("Vector");
             else if (strType.find("Xpetra::Map")             != npos) outputter.outputField("Map");
             else if (strType.find("Xpetra::Import")          != npos) outputter.outputField("Import");
