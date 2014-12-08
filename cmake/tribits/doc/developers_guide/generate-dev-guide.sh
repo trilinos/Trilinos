@@ -100,6 +100,25 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
 
 fi
 
+if [ -e "../../../README.DIRECTORY_CONTENTS.rst" ] ; then
+
+  echo
+  echo "Copy TriBITS/README.DIRECTORY_CONTENTS.rst to TriBITS.README.DIRECTORY_CONTENTS.rst ..."
+  echo
+
+  cp ../../../README.DIRECTORY_CONTENTS.rst TriBITS.README.DIRECTORY_CONTENTS.rst
+
+else
+
+
+  echo
+  echo "TriBITS/README.DIRECTORY_CONTENTS.rst does not exist to copy!"
+  echo
+
+  touch TriBITS.README.DIRECTORY_CONTENTS.rst
+
+fi
+
 
 echo
 echo "Generating HTML and PDF files ..."

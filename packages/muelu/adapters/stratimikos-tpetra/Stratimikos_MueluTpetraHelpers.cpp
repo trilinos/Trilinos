@@ -47,6 +47,9 @@
 #include "Stratimikos_MueluTpetraHelpers.hpp"
 
 #include "Thyra_MueLuTpetraPreconditionerFactory.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
+#endif
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -78,3 +81,28 @@ void enableMueLuTpetra(
 }
 
 } // namespace Stratimikos
+#ifdef HAVE_MUELU_EXPERIMENTAL
+namespace Stratimikos {
+
+void enableMueLuTpetraQ2Q1(
+    DefaultLinearSolverBuilder &builder,
+    const std::string &stratName)
+{
+  {
+    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams =
+      Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        precValidParams->isParameter(stratName),
+        std::logic_error,
+        "Stratimikos::enableMueLuTpetra cannot add \"" + stratName +"\" because it is already included in builder!");
+  }
+
+  typedef Thyra::PreconditionerFactoryBase<double> Base;
+  typedef Thyra::MueLuTpetraQ2Q1PreconditionerFactory<double, int, int> Q2Q1Version;
+
+  builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Q2Q1Version>(), stratName);
+}
+
+} // namespace Stratimikos
+#endif

@@ -1,4 +1,5 @@
 <ParameterList name="Inputs">
     <Parameter name="Interior Grid Points"              type="int"    value="100"/>
     <Parameter name="Nonlinearity Coefficient g"        type="double" value="50"/>
+    <Parameter name="Solve Exact Augmented System"      type="bool"   value="false"/>
 </ParameterList>
