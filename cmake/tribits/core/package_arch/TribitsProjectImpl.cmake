@@ -298,3 +298,25 @@ MACRO(TRIBITS_PROJECT_IMPL)
   ENDIF()
 
 ENDMACRO()
+
+
+#
+# @MACRO: TRIBITS_PROJECT_ENABLE_ALL()
+#
+# Process a project where you enable all of the packages by default.
+#
+# Usage::
+#
+#   TRIBITS_PROJECT_ENABLE_ALL()
+#
+# This macro just sets the global cache var
+# `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ to ``ON`` by default then calls
+# `TRIBITS_PROJECT()`_.  That is all.  This macro is generally used for
+# TriBITS projects that have just a single package or by default just want to
+# enable all packages.  This is especially useful when you have a TriBITS
+# project with just a single package.
+#
+MACRO(TRIBITS_PROJECT_ENABLE_ALL)
+  SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON CACHE BOOL "Enable all by default" )
+  TRIBITS_PROJECT_IMPL(${ARGN})
+ENDMACRO()

@@ -67,6 +67,8 @@ SET( CMAKE_MODULE_PATH
 INCLUDE(PrintVar)
 INCLUDE(SetDefaultAndFromEnv)
 
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/../ctest_driver/TribitsUpdateExtraRepo.cmake)
+
 #
 # A) Set up the environment get options
 #
@@ -194,18 +196,7 @@ if (NOT TDD_IN_TESTING_MODE)
     SET(PULL_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRA_PULL_DIR}.pull.out")
     set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} ${PULL_OUT_FILE})
     MESSAGE("Pull extra updates in '${EXTRA_PULL_DIR_ABS}' ...")
-    execute_process(
-      COMMAND ${git_exe} pull
-      WORKING_DIRECTORY "${EXTRA_PULL_DIR_ABS}"
-      TIMEOUT 60 # seconds
-      OUTPUT_FILE "${PULL_OUT_FILE}"
-      ERROR_FILE "${PULL_OUT_FILE}"
-      RESULT_VARIABLE PULL_RESULT
-      )
-    IF (NOT PULL_RESULT STREQUAL 0)
-      MESSAGE(SEND_ERROR
-        "The pull of '${EXTRA_PULL_DIR}' failed with error code ${PULL_RESULT}")
-    ENDIF()
+    EXTRAREPO_CLEAN_FETCH_RESET("${git_exe}" "${EXTRA_PULL_DIR_ABS}")
   endforeach()
 
 else()

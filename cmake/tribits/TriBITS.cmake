@@ -19,3 +19,4 @@ ELSE()
 ENDIF()
 
 INCLUDE("${TRIBITS_BASE_DIR_LOCAL}/core/package_arch/TribitsProject.cmake")
+INCLUDE("${TRIBITS_BASE_DIR_LOCAL}/Version.cmake")
