@@ -1,7 +1,7 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  [empty list]
-
+ 
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

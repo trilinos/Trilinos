@@ -74,9 +74,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
-    if (factoryTable_.count(varName))
-      GetOStream(Runtime1) << "FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
-
     factoryTable_[varName] = factory;
   }
 

@@ -129,7 +129,7 @@ Level 2
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
  
- Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+ Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 
   [empty list]
  
@@ -151,6 +151,6 @@ Smoother (level 0) post : no smoother
 Smoother (level 1) pre  : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 Smoother (level 1) post : no smoother
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = <ignored>}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 2) post : no smoother
 

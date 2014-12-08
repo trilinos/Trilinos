@@ -255,19 +255,17 @@ namespace MueLu {
     std::vector<keep_pair> keeps0;
     UpdateFactoryManager(paramList, ParameterList(), *defaultManager, 0, keeps0);
 
-    defaultManager->Print();
-
     // Create level specific factory managers
     for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
       // Note, that originally if there were no level specific parameters, we
       // simply copied the defaultManager However, with the introduction of
-      // levelID to UpdateFactoryManager, required for reuse, we can no longer
+      // levelID to UpdateFactoryManager (required for reuse), we can no longer
       // guarantee that the kept variables are the same for each level even if
       // dependency structure does not change.
       RCP<FactoryManager> levelManager = rcp(new FactoryManager(*defaultManager));
       levelManager->SetVerbLevel(defaultManager->GetVerbLevel());
 
-      Teuchos::ParameterList levelList;
+      ParameterList levelList;
       if (paramList.isSublist("level " + toString(levelID)))
         levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
 
@@ -502,10 +500,12 @@ namespace MueLu {
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
     dropFactory->SetParameterList(dropParams);
-    manager.SetFactory("Graph", dropFactory);
+    manager.SetFactory("Graph",       dropFactory);
 
     // Aggregation sheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
+    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled", Exceptions::RuntimeError,
+                               "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     RCP<Factory> aggFactory;
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
@@ -521,12 +521,19 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
+      // I'm not sure why we need this line, but without it we construct CoalesceDropFactory twice
+      // SaPFactory
+      //   FilteredAFactory
+      //     CoalesceDropFactory
+      //   TentativePFactory
+      //     UncoupledAggregationFactory
+      //       CoalesceDropFactory
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
 
     } else if (aggType == "coupled") {
       aggFactory = rcp(new CoupledAggregationFactory());
     }
-    aggFactory->SetFactory("Graph",       manager.GetFactory("Graph"));
-    aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+    aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
@@ -564,7 +571,9 @@ namespace MueLu {
         ParameterList fParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
         filterFactory->SetParameterList(fParams);
-        filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+        filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+        // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+        filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
         P->SetFactory("A", filterFactory);
       }
 
@@ -643,7 +652,7 @@ namespace MueLu {
       RAP->SetFactory("R", manager.GetFactory("R"));
     if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
       RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
-      aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
       RAP->AddTransferFactory(aggExport);
     }
     manager.SetFactory("A", RAP);
