@@ -52,7 +52,6 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
-#include <stk_util/parallel/DistributedIndex.hpp>  // for DistributedIndex
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator, etc
 #include <string>                       // for char_traits, string
@@ -377,6 +376,8 @@ public:
 
   //------------------------------------
 
+  void generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds);
+
   /** \brief Generate a set of entites with globally unique id's
    *
    *  Each processor fills a request vector asking for a number of new
@@ -386,7 +387,7 @@ public:
    *  request 0 entites of rank 0, 4 entites of rank 1, and 8 entites
    *  of rank 2
    */
-  void generate_new_entities(const std::vector<size_t>& requests,
+  virtual void generate_new_entities(const std::vector<size_t>& requests,
       std::vector<Entity>& requested_entities);
 
   //------------------------------------
@@ -726,7 +727,7 @@ protected: //functions
                                      const std::vector<Part*> & add_parts ,
                                      const std::vector<Part*> & remove_parts,
                                      bool always_propagate_internal_changes=true);
-  bool internal_destroy_entity( Entity entity, bool was_ghost = false );
+  virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -758,7 +759,6 @@ protected: //functions
   void internal_resolve_shared_membership();
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
-  void fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified);
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
 
@@ -841,12 +841,18 @@ protected: //functions
       this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
   }
 
+  void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
+  inline void set_synchronized_count(Entity entity, size_t sync_count);
+  void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
+
+  bool internal_destroy_relation(Entity e_from ,
+                                 Entity e_to,
+                                 const RelationIdentifier local_id );
 private: //functions
 
 
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
-  inline void set_synchronized_count(Entity entity, size_t sync_count);
   void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
@@ -854,7 +860,7 @@ private: //functions
 
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
-  void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
+  void addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
 
   // Forbidden
@@ -886,7 +892,6 @@ private: //functions
   // id_map, indexed by new id, maps to old id
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);
 
-  void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
   void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
   void add_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
 
@@ -898,10 +903,6 @@ private: //functions
                                  Permutation permut,
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch);
-
-  bool internal_destroy_relation(Entity e_from ,
-                                 Entity e_to,
-                                 const RelationIdentifier local_id );
 
   MetaData & meta_data() const { return m_mesh_meta_data ; }
 
@@ -953,8 +954,6 @@ private: //functions
 
   void require_metadata_committed();
 
-  void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
-
   bool is_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
 
   inline bool is_valid_connectivity(Entity entity, EntityRank rank) const;
@@ -997,7 +996,6 @@ public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
 
 protected: //data
-  parallel::DistributedIndex m_entities_index;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
@@ -1007,6 +1005,12 @@ protected: //data
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count;
   std::vector<MeshIndex> m_mesh_indexes;
+  impl::EntityRepository m_entity_repo;
+  EntityCommListInfoVector m_entity_comm_list;
+  std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities_current_modification_cycle;
+  GhostReuseMap m_ghost_reuse_map;
+  std::vector<EntityKey> m_entity_keys;
+  std::vector<uint16_t> m_entity_states;
 
 #ifdef SIERRA_MIGRATION
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
@@ -1016,18 +1020,12 @@ protected: //data
 
 private: // data
   Parallel m_parallel;
-  impl::EntityRepository m_entity_repo;
-  EntityCommListInfoVector m_entity_comm_list;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   std::vector<Part*> m_ghost_parts;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
-  std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities_current_modification_cycle;
-  GhostReuseMap m_ghost_reuse_map;
   std::string m_modification_begin_description;
   int m_num_fields;
   bool m_keep_fields_updated;
-  std::vector<EntityKey> m_entity_keys;
-  std::vector<uint16_t> m_entity_states;
   std::vector<size_t> m_entity_sync_counts;
   std::vector<unsigned> m_local_ids;
 

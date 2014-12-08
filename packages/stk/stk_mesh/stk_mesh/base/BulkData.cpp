@@ -34,7 +34,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stddef.h>                     // for size_t, NULL
 #include <string.h>                     // for memcpy, strcmp
-#include <algorithm>                    // for sort, lower_bound, unique, etc
+#include <algorithm>                    // fom_deleted_entities_current_modification_cycler sort, lower_bound, unique, etc
 #include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <sstream>
@@ -73,12 +73,12 @@
 #include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
+#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 
 namespace stk {
 namespace mesh {
@@ -285,7 +285,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #ifdef SIERRA_MIGRATION
     m_check_invalid_rels(true),
 #endif
-    m_entities_index( parallel, impl::convert_entity_keys_to_spans(mesh_meta_data) ),
     m_entity_comm_map(),
     m_ghosting(),
     m_mesh_meta_data( mesh_meta_data ),
@@ -295,24 +294,24 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_add_node_sharing_called(false),
     m_closure_count(),
     m_mesh_indexes(),
+    m_entity_repo(*this),
+    m_entity_comm_list(),
+    m_deleted_entities_current_modification_cycle(),
+    m_ghost_reuse_map(),
+    m_entity_keys(),
+    m_entity_states(),
 #ifdef SIERRA_MIGRATION
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_global_ids(),
     m_fmwk_aux_relations(),
 #endif
     m_parallel( parallel ),
-    m_entity_repo(*this),
-    m_entity_comm_list(),
     m_volatile_fast_shared_comm_map(),
     m_ghost_parts(),
     m_deleted_entities(),
-    m_deleted_entities_current_modification_cycle(),
-    m_ghost_reuse_map(),
     m_modification_begin_description("UNSET"),
     m_num_fields(-1), // meta data not necessarily committed yet
     m_keep_fields_updated(true),
-    m_entity_keys(),
-    m_entity_states(),
     m_entity_sync_counts(),
     m_local_ids(),
     m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
@@ -1326,8 +1325,6 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
 
-  m_entities_index.register_removed_key( key );
-
   bucket(entity).getPartition()->remove(entity);
   m_entity_repo.destroy_entity(key, entity );
   m_entity_states[entity.local_offset()] = Deleted;
@@ -1343,19 +1340,60 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 
 //----------------------------------------------------------------------
 
+void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds)
+{
+    size_t maxNumNeeded = 0;
+    MPI_Allreduce(&numIdsNeeded, &maxNumNeeded, 1, MPI_UINT64_T, MPI_MAX, this->parallel());
+    if ( maxNumNeeded == 0 ) return;
+
+    std::vector<uint64_t> ids_in_use;
+    ids_in_use.reserve(m_entity_keys.size() + m_deleted_entities_current_modification_cycle.size());
+
+    for (size_t i=0; i<m_entity_keys.size(); ++i)
+    {
+        if ( stk::mesh::EntityKey::is_valid_id(m_entity_keys[i].id()) && m_entity_keys[i].rank() == rank )
+        {
+            ids_in_use.push_back(m_entity_keys[i].id());
+        }
+    }
+
+    std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >::iterator iter = m_deleted_entities_current_modification_cycle.begin();
+    for (; iter != m_deleted_entities_current_modification_cycle.end(); ++iter)
+    {
+        size_t local_offset = *iter;
+        stk::mesh::Entity entity;
+        entity.set_local_offset(local_offset);
+        if ( is_valid(entity) && entity_rank(entity) == rank )
+        {
+            ids_in_use.push_back(entity_key(entity).id());
+        }
+    }
+
+    std::sort(ids_in_use.begin(), ids_in_use.end());
+    std::vector<uint64_t>::iterator iter2 = std::unique(ids_in_use.begin(), ids_in_use.end());
+    ids_in_use.resize(iter2-ids_in_use.begin());
+
+    uint64_t maxAllowedId = stk::mesh::EntityKey::MAX_ID;
+    requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, this->parallel());
+
+    return;
+}
+
 void BulkData::generate_new_entities(const std::vector<size_t>& requests,
                                  std::vector<Entity>& requested_entities)
 // requests = number of nodes needed, number of elements needed, etc.
 {
     Trace_("stk::mesh::BulkData::generate_new_entities");
 
-    typedef stk::parallel::DistributedIndex::KeyType KeyType;
-    typedef stk::parallel::DistributedIndex::KeyTypeVector KeyTypeVector;
-    typedef std::vector<KeyTypeVector> RequestKeyVector;
+    size_t numRanks = requests.size();
 
-    RequestKeyVector requested_key_types;
+    std::vector< std::vector<EntityId> > requestedIds(numRanks);
 
-    m_entities_index.generate_new_keys(requests, requested_key_types);
+    for (size_t i=0;i<numRanks;++i)
+    {
+        stk::topology::rank_t rank = static_cast<stk::topology::rank_t>(i);
+        generate_new_ids(rank, requests[i], requestedIds[i]);
+    }
 
     //generating 'owned' entities
     Part * const owns = &m_mesh_meta_data.locally_owned_part();
@@ -1366,16 +1404,18 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
     requested_entities.clear();
     unsigned total_number_of_key_types_requested = 0;
-    for(RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr)
+    for(size_t i=0;i<requests.size();++i)
     {
-        const KeyTypeVector& key_types = *itr;
-        for(KeyTypeVector::const_iterator kitr = key_types.begin(); kitr != key_types.end(); ++kitr)
-        {
-            ++total_number_of_key_types_requested;
-        }
+        total_number_of_key_types_requested += requests[i];
     }
+
     requested_entities.reserve(total_number_of_key_types_requested);
-    addMeshEntities(requested_key_types, rem, add, requested_entities);
+
+    for (size_t i=0;i<numRanks;++i)
+    {
+        stk::topology::rank_t rank = static_cast<stk::topology::rank_t>(i);
+        addMeshEntities(rank, requestedIds[i], rem, add, requested_entities);
+    }
 }
 
 std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t preferred_offset)
@@ -1384,41 +1424,26 @@ std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t p
     return m_entity_repo.internal_create_entity(key, preferred_offset);
 }
 
-void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
+void BulkData::addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
        const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities)
 {
-    typedef stk::parallel::DistributedIndex::KeyType       KeyType;
-    typedef stk::parallel::DistributedIndex::KeyTypeVector KeyTypeVector;
-    typedef std::vector< KeyTypeVector > RequestKeyVector;
-
-    for(RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr)
+    for(size_t i=0;i<new_ids.size();++i)
     {
-        const KeyTypeVector & key_types = *itr;
-        for(KeyTypeVector::const_iterator kitr = key_types.begin(); kitr != key_types.end(); ++kitr)
-        {
-            EntityKey key(static_cast<EntityKey::entity_key_t>((*kitr)));
-            require_good_rank_and_id(key.rank(), key.id());
-            std::pair<Entity, bool> result = internal_create_entity(key);
+        EntityKey key(rank, new_ids[i]);
+        require_good_rank_and_id(key.rank(), key.id());
+        std::pair<Entity, bool> result = internal_create_entity(key);
 
-            //if an entity is declared with the declare_entity function in
-            //the same modification cycle as the generate_new_entities
-            //function, and it happens to generate a key that was declared
-            //previously in the same cycle it is an error
-            ThrowErrorMsgIf( ! result.second,
-                    "Generated id " << key.id() << " of rank " << key.rank() <<
-                    " which was already used in this modification cycle.");
+        ThrowErrorMsgIf( ! result.second,
+                "Generated id " << key.id() << " of rank " << key.rank() <<
+                " which was already used in this modification cycle.");
 
-            // A new application-created entity
+        Entity new_entity = result.first;
 
-            Entity new_entity = result.first;
+        internal_verify_and_change_entity_parts(new_entity, add, rem);
+        requested_entities.push_back(new_entity);
 
-            //add entity to 'owned' part
-            internal_verify_and_change_entity_parts(new_entity, add, rem);
-            requested_entities.push_back(new_entity);
-
-            this->internal_set_parallel_owner_rank_but_not_comm_lists(new_entity, parallel_rank());
-            set_synchronized_count(new_entity, m_sync_count);
-        }
+        this->internal_set_parallel_owner_rank_but_not_comm_lists(new_entity, parallel_rank());
+        set_synchronized_count(new_entity, m_sync_count);
     }
 }
 
@@ -2374,7 +2399,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
         }
 
         for (int j = 0; j < num_rels; ++j) {
-          ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " has invalid back-relation for ordinal: "
+          ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " with key " << entity_key(e_to) << " has invalid back-relation for ordinal: "
                          << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
           if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
           {
@@ -4243,8 +4268,6 @@ void communicate_entity_modification( const BulkData & mesh ,
 //----------------------------------------------------------------------
 
 // Postconditions:
-//  * DistributedIndex is updated based on entity creation/deletions in the
-//    last modification cycle.
 //  * Comm lists for shared entities are up-to-date.
 //  * shared_new contains all entities that were modified/created on a
 //    different process
@@ -4252,7 +4275,7 @@ void communicate_entity_modification( const BulkData & mesh ,
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(
         stk::mesh::EntityRank entityRank, std::vector<Entity> & shared_new )
 {
-  Trace_("stk::mesh::BulkData::internal_update_distributed_index");
+  Trace_("stk::mesh::BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank");
   std::vector<EntityKey> entity_keys;
   //resolve_edge_sharing(*this, entity_keys);
   resolve_entity_sharing(entityRank, entity_keys);
@@ -4265,41 +4288,11 @@ void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_en
   }
 }
 
-void BulkData::fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified)
-{
-  size_t num_created_or_modified = 0;
-
-  for(size_t i=1; i<m_entity_states.size(); ++i) {
-      if (m_entity_states[i] != Unchanged &&
-          static_cast<entitySharing>(m_mark_entity[i])==BulkData::NOT_MARKED &&
-          m_closure_count[i])
-      {
-          ++num_created_or_modified;
-      }
-  }
-
-  local_created_or_modified.reserve(num_created_or_modified);
-
-  for(size_t i=1; i<m_entity_states.size(); ++i) {
-      if (m_entity_states[i] != Unchanged &&
-          static_cast<entitySharing>(m_mark_entity[i])==BulkData::NOT_MARKED &&
-          m_closure_count[i])
-      {
-          // Has been changed and is in owned closure, may be shared
-          local_created_or_modified.push_back( m_entity_keys[i] );
-      }
-  }
-}
-
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(
         std::vector<Entity> & shared_new )
 {
-    Trace_("stk::mesh::BulkData::internal_update_distributed_index");
+    Trace_("stk::mesh::BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities");
 
-    // Scoop up a list of all nodes that have had their sharing information
-    // provided directly by the end-user.  These need special handling so
-    // that DistributedIndex isn't used to query sharing information.
-    //
     std::vector<EntityKey> shared_nodes;
     impl::gather_shared_nodes(*this, shared_nodes);
 
@@ -4308,39 +4301,6 @@ void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_en
 
     std::vector<shared_entity_type> shared_faces;
     impl::markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::FACE_RANK, shared_faces);
-
-    // Generate a list of all entities that have been created or modified
-    // locally, who must have their sharing information in the comm lists
-    // updated by making queries to DistributedIndex.  This list *does not*
-    // include nodes that have had their sharing information explicitly
-    // provided or edges and faces that will have their sharing information
-    // resolved through node sharing.
-    //
-    parallel::DistributedIndex::KeyTypeVector local_created_or_modified;
-    fillLocallyCreatedOrModifiedEntities(local_created_or_modified);
-
-    // Update distributed index's ownership and sharing information with
-    // locally-owned/shared entities that have been created or modified.
-    // We need to manually insert the explicitly-shared nodes into this list
-    // so that DistributedIndex is notified about IDs that are now in use
-    // (since it manages available IDs).  These nodes will not have their
-    // sharing info updated through queries to DistributedIndex.
-    //
-    parallel::DistributedIndex::KeyTypeVector keys_requiring_update(local_created_or_modified);
-    keys_requiring_update.reserve(keys_requiring_update.size() + shared_nodes.size() + shared_edges.size() + shared_faces.size() );
-    keys_requiring_update.insert(keys_requiring_update.end(), shared_nodes.begin(), shared_nodes.end());
-    for (size_t i = 0; i < shared_edges.size(); ++i)
-    {
-      keys_requiring_update.push_back(shared_edges[i].global_key);
-    }
-    for (size_t i = 0; i < shared_faces.size(); ++i)
-    {
-      keys_requiring_update.push_back(shared_faces[i].global_key);
-    }
-
-    parallel::DistributedIndex::KeyTypeVector::const_iterator begin = keys_requiring_update.begin();
-    parallel::DistributedIndex::KeyTypeVector::const_iterator end = keys_requiring_update.end();
-    m_entities_index.update_keys( begin, end );
 
     update_shared_entities_global_ids( shared_edges );
     update_shared_entities_global_ids( shared_faces );
@@ -5205,8 +5165,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   }
   else {
     if (!add_fmwk_data()) {
-      //only do this if we are *not* under framework, because framework
-      //doesn't need the distributed index to be updated.
       std::vector<Entity> shared_modified ;
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_modified );
     }

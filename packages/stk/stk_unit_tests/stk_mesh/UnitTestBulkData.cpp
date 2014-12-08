@@ -4581,4 +4581,193 @@ TEST(BulkData, ChangeAuraElementPart)
   }
 }
 
-}  // empty namespace
+
+TEST(BulkData, generate_new_ids)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int psize = stk::parallel_machine_size(communicator);
+
+    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+    std::ostringstream os;
+    os << "generated:10x10x" << psize;
+    const std::string generatedMeshSpec = os.str();
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpec, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(stkMeshBulkData, counts);
+
+    std::vector<stk::mesh::EntityId> requestedIds;
+    size_t numIdsNeeded = counts[stk::topology::NODE_RANK] / 10 + 1;
+    ASSERT_TRUE(numIdsNeeded>0);
+    stkMeshBulkData.generate_new_ids(stk::topology::NODE_RANK, numIdsNeeded, requestedIds);
+
+    std::sort(requestedIds.begin(), requestedIds.end());
+    std::vector<stk::mesh::EntityId>::iterator iter = std::unique(requestedIds.begin(), requestedIds.end());
+
+    bool ids_better_be_unique_on_this_proc = ( iter == requestedIds.end() );
+    ASSERT_TRUE(ids_better_be_unique_on_this_proc);
+
+    stk::CommAll comm(stkMeshBulkData.parallel());
+
+    for(int phase = 0; phase < 2; ++phase)
+    {
+        for(int i = 0; i < stkMeshBulkData.parallel_size(); ++i)
+        {
+            if(i != stkMeshBulkData.parallel_rank())
+            {
+                for(size_t j = 0; j < requestedIds.size(); ++j)
+                {
+                    comm.send_buffer(i).pack<stk::mesh::EntityId>(requestedIds[j]);
+                }
+            }
+        }
+
+        if(phase == 0)
+        {
+            comm.allocate_buffers(stkMeshBulkData.parallel_size() / 4);
+        }
+        else
+        {
+            comm.communicate();
+        }
+    }
+
+    for(int i = 0; i < stkMeshBulkData.parallel_size(); ++i)
+    {
+        if(i != stkMeshBulkData.parallel_rank())
+        {
+            while(comm.recv_buffer(i).remaining())
+            {
+                stk::mesh::EntityId entity_id;
+                comm.recv_buffer(i).unpack<stk::mesh::EntityId>(entity_id);
+                bool is_other_procs_id_on_this_proc = std::binary_search(requestedIds.begin(), requestedIds.end(), entity_id);
+                ASSERT_FALSE(is_other_procs_id_on_this_proc);
+            }
+        }
+    }
+
+}
+
+TEST(BulkData, test_generate_new_entities)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int psize = stk::parallel_machine_size(communicator);
+
+    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+    std::ostringstream os;
+    os << "generated:10x10x" << psize;
+    const std::string generatedMeshSpec = os.str();
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpec, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(stkMeshBulkData, counts);
+
+    std::vector<stk::mesh::Entity> requestedEntities;
+    size_t numIdsNeeded = counts[stk::topology::NODE_RANK] / 10 + 1;
+    ASSERT_TRUE(numIdsNeeded>0);
+
+    std::vector<size_t> requests(stkMeshBulkData.mesh_meta_data().entity_rank_count(),0);
+    requests[0] = numIdsNeeded;
+
+    stkMeshBulkData.modification_begin();
+    stkMeshBulkData.generate_new_entities(requests, requestedEntities);
+    stkMeshBulkData.modification_end();
+
+    stk::CommAll comm(stkMeshBulkData.parallel());
+
+    for(int phase = 0; phase < 2; ++phase)
+    {
+        for(int i = 0; i < stkMeshBulkData.parallel_size(); ++i)
+        {
+            if(i != stkMeshBulkData.parallel_rank())
+            {
+                for(size_t j = 0; j < requestedEntities.size(); ++j)
+                {
+                    comm.send_buffer(i).pack<stk::mesh::EntityKey>(stkMeshBulkData.entity_key(requestedEntities[j]));
+                }
+            }
+        }
+
+        if(phase == 0)
+        {
+            comm.allocate_buffers(stkMeshBulkData.parallel_size() / 4);
+        }
+        else
+        {
+            comm.communicate();
+        }
+    }
+
+    for(int i = 0; i < stkMeshBulkData.parallel_size(); ++i)
+    {
+        if(i != stkMeshBulkData.parallel_rank())
+        {
+            while(comm.recv_buffer(i).remaining())
+            {
+                stk::mesh::EntityKey key;
+                comm.recv_buffer(i).unpack<stk::mesh::EntityKey>(key);
+                ASSERT_FALSE(stkMeshBulkData.is_valid(stkMeshBulkData.get_entity(key)));
+            }
+        }
+    }
+
+}
+
+TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with_same_identifier)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int psize = stk::parallel_machine_size(communicator);
+
+    if ( psize == 2 )
+    {
+        stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+        std::ostringstream os;
+        os << "generated:2x2x2";
+        const std::string generatedMeshSpec = os.str();
+        stkMeshIoBroker.add_mesh_database(generatedMeshSpec, stk::io::READ_MESH);
+        stkMeshIoBroker.create_input_mesh();
+        stkMeshIoBroker.populate_bulk_data();
+
+        stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+
+        stk::mesh::EntityKey key(stk::topology::ELEMENT_RANK,3);
+
+        stkMeshBulkData.modification_begin();
+        stkMeshBulkData.destroy_entity(stkMeshBulkData.get_entity(key), false);
+        stkMeshBulkData.modification_end();
+
+        stk::mesh::Part *part = stkMeshBulkData.mesh_meta_data().get_part("block_1");
+
+        stkMeshBulkData.modification_begin();
+        if ( stkMeshBulkData.parallel_rank() == 1 )
+        {
+            stk::mesh::Entity element = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, 3, *part);
+            stk::mesh::EntityId nodes[] = { 100, 101, 102, 103, 104, 105, 106, 107 };
+            const int num_nodes = 8;
+            for (int i=0;i<num_nodes;++i)
+            {
+                stk::mesh::Entity node = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, nodes[i]);
+                stkMeshBulkData.declare_relation(element, node, i);
+            }
+        }
+        stkMeshBulkData.modification_end();
+
+        stkMeshBulkData.modification_begin();
+        if ( stkMeshBulkData.parallel_rank() == 1 )
+        {
+            EXPECT_NO_THROW(stkMeshBulkData.destroy_entity(stkMeshBulkData.get_entity(key), false));
+        }
+        stkMeshBulkData.modification_end();
+
+    }
+}
+
+}// empty namespace
+
+

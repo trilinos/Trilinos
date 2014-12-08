@@ -385,6 +385,32 @@ TEST(GeneratedIds, numIdsInUseConstantNumIdsNeededVariesWithNumberProcessors)
     }
 }
 
+TEST(GeneratedIds, distributed_index_vs_generate_parallel_unique_ids)
+{
+  typedef stk::parallel::DistributedIndex PDIndex ;
+
+  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+
+  PDIndex::KeySpanVector partition_spans(1) ;
+
+  partition_spans[0].first  = 1;
+  partition_spans[0].second = 10000;
+
+  PDIndex di( comm , partition_spans );
+
+  size_t numIdsNeeded = 1;
+  std::vector<size_t> requests( partition_spans.size() , numIdsNeeded );
+
+  std::vector< PDIndex::KeyTypeVector > generated_ids_from_di ;
+  di.generate_new_keys( requests , generated_ids_from_di );
+
+  uint64_t maxAllowedId = 10000;
+  std::vector<uint64_t> existingIds;
+  std::vector<uint64_t> ids_from_gi = stk::generate_parallel_unique_ids(maxAllowedId, existingIds, numIdsNeeded, comm);
+
+  ASSERT_EQ(ids_from_gi.size(), generated_ids_from_di[0].size());
+}
+
 ////////////////////////////////////////////////////////////////////
 
 void distributeIds(std::vector<uint64_t> &myIds, const MpiInfo &mpiInfo)

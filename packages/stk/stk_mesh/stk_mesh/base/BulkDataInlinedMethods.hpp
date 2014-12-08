@@ -456,7 +456,7 @@ int BulkData::entity_comm_map_owner(const EntityKey & key) const
 {
   const int owner_rank = m_entity_comm_map.owner_rank(key);
   ThrowAssertMsg(owner_rank == InvalidProcessRank || owner_rank == parallel_owner_rank(get_entity(key)),
-                 "Expect entity " << key.id() << " to have owner " <<
+                 "Expected entity " << key.id() << " with rank " << key.rank() << " to have owner " <<
                  parallel_owner_rank(get_entity(key)) << " but in comm map, found " << owner_rank);
   return owner_rank;
 }

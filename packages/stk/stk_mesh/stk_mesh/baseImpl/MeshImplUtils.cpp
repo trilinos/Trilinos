@@ -39,6 +39,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/StaticAssert.hpp>
+#include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
 
@@ -1428,7 +1429,7 @@ bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMac
     return global_shared_modified > 0;
 }
 
-parallel::DistributedIndex::KeySpanVector
+stk::parallel::DistributedIndex::KeySpanVector
 convert_entity_keys_to_spans( const MetaData & meta )
 {
   // Make sure the distributed index can handle the EntityKey

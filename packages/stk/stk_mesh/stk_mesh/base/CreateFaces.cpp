@@ -51,6 +51,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
+#include <stk_mesh/base/GetEntities.hpp>
 
 #include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -107,12 +108,14 @@ struct create_face_impl
 {
   typedef void result_type;
 
-  create_face_impl(   size_t               & next_face
+  create_face_impl(   size_t & count_faces,
+        std::vector<stk::mesh::EntityId>               & available_ids
       , face_map_type        & face_map
       , shared_face_map_type & shared_face_map
       , Bucket               & bucket
   )
-  : m_next_face(next_face)
+  : m_count_faces(count_faces)
+  , m_available_ids(available_ids)
   , m_face_map(face_map)
   , m_shared_face_map(shared_face_map)
   , m_bucket(bucket)
@@ -171,7 +174,10 @@ struct create_face_impl
 
         typename face_map_type::iterator iface = m_face_map.find(permuted_face_nodes);
         if (iface == m_face_map.end()) {
-          EntityId face_id = m_next_face++;
+          ThrowRequireMsg(m_count_faces < m_available_ids.size(), "Error: face generation exhausted available identifier list. Report to sierra-help");
+          EntityId face_id = m_available_ids[m_count_faces];
+          m_count_faces++;
+
           PartVector add_parts;
           add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology)));
 
@@ -210,7 +216,8 @@ struct create_face_impl
 
 
   //members
-  size_t                & m_next_face;
+  size_t                                          & m_count_faces;
+  std::vector<stk::mesh::EntityId>                & m_available_ids;
   face_map_type         & m_face_map;
   shared_face_map_type  & m_shared_face_map;
   Bucket                & m_bucket;
@@ -228,7 +235,15 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
   // static size_t next_face = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
   // NOTE: This is a workaround to eliminate some bad behavior with the equation above when
   //       the #proc is a power of two.  The 256 below is the bin size of the Distributed Index.
-  static size_t next_face = (static_cast<size_t>(mesh.parallel_rank()+1) << 32) + 256 * mesh.parallel_rank();
+
+  std::vector<stk::mesh::EntityId> ids_requested;
+
+  std::vector<unsigned> localEntityCounts;
+  stk::mesh::count_entities(element_selector, mesh, localEntityCounts);
+  unsigned guessMultiplier = 6;
+  unsigned numRequested = localEntityCounts[stk::topology::ELEMENT_RANK] * guessMultiplier;
+  mesh.generate_new_ids(stk::topology::FACE_RANK, numRequested, ids_requested);
+  size_t count_faces = 0;
 
   bool i_started = mesh.modification_begin();
 
@@ -264,7 +279,7 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
   for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
     Bucket &b = *element_buckets[i];
 
-    create_face_impl functor( next_face, face_map, shared_face_map, b);
+    create_face_impl functor( count_faces, ids_requested, face_map, shared_face_map, b);
     stk::topology::apply_functor< create_face_impl > apply(functor);
     apply( b.topology() );
   }

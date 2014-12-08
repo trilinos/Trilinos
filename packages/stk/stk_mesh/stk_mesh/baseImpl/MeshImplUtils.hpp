@@ -37,6 +37,7 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/Types.hpp>
+#include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
 
@@ -350,7 +351,7 @@ void VisitAuraClosure(
     VisitAuraClosureGeneral(mesh,entity_of_interest,do_this,ovo);
 }
 
-parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
+stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
 
 

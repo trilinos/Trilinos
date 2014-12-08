@@ -145,11 +145,6 @@ public:
         this->add_comm_list_entries_for_entities( shared_modified );
     }
 
-    void my_fillLocallyCreatedOrModifiedEntities(stk::parallel::DistributedIndex::KeyTypeVector &local_created_or_modified)
-    {
-           this->fillLocallyCreatedOrModifiedEntities(local_created_or_modified);
-    }
-
     void my_internal_resolve_shared_membership()
     {
         this->internal_resolve_shared_membership();
