@@ -99,7 +99,7 @@ public:
 #pragma omp parallel
       {
         OpenMPexec & exec = * OpenMPexec::get_thread_omp();
-        driver( functor , Policy( policy , exec.pool_rank() , exec.pool_size() ) );
+        driver( functor , typename Policy::WorkRange( policy , exec.pool_rank() , exec.pool_size() ) );
       }
 /* END #pragma omp parallel */
     }
@@ -178,7 +178,7 @@ public:
 
       driver( functor
             , ValueInit::init( functor , exec.scratch_reduce() )
-            , Policy( policy , exec.pool_rank() , exec.pool_size() )
+            , typename Policy::WorkRange( policy , exec.pool_rank() , exec.pool_size() )
             );
     }
 /* END #pragma omp parallel */
@@ -272,7 +272,7 @@ public:
 
       driver( functor
             , ValueInit::init( functor , pointer_type( exec.scratch_reduce() ) + ValueTraits::value_count( functor ) )
-            , Policy( policy , exec.pool_rank() , exec.pool_size() )
+            , typename Policy::WorkRange( policy , exec.pool_rank() , exec.pool_size() )
             , false );
     }
 /* END #pragma omp parallel */
@@ -305,7 +305,7 @@ public:
 
       driver( functor
             , ValueOps::reference( pointer_type( exec.scratch_reduce() ) )
-            , Policy( policy , exec.pool_rank() , exec.pool_size() )
+            , typename Policy::WorkRange( policy , exec.pool_rank() , exec.pool_size() )
             , true );
     }
 /* END #pragma omp parallel */

@@ -50,70 +50,169 @@
 #include <iostream>
 #include <cstdlib>
 
+//----------------------------------------------------------------------------
+
 namespace Kokkos {
-  namespace {
-    bool isnumber(const char* str) {
-      // FIXME (mfh 02 Oct 2014): Doesn't C99 / C++11 have a better
-      // way to tell if a string represents an integer?  We could even
-      // give it to strtol(l), which knows how to report if the input
-      // string is not an integer.  We should call this method
-      // "isinteger", because it currently returns false for
-      // floating-point and complex numbers.
-      const size_t len = strlen (str);
-      for (size_t i = 0; i < len; ++i) {
-        if (! isdigit (str[i])) {
-          return false;
-        }
+namespace Impl {
+namespace {
+
+bool is_unsigned_int(const char* str)
+{
+  const size_t len = strlen (str);
+  for (size_t i = 0; i < len; ++i) {
+    if (! isdigit (str[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void initialize_internal(const int nthreads, const int use_numa, const int use_gpu)
+{
+
+#if defined( KOKKOS_HAVE_OPENMP )
+
+  if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ) {
+
+    if(nthreads>0) {
+      if(use_numa>0) {
+        Kokkos::OpenMP::initialize(nthreads,use_numa);
       }
-      return true;
+      else {
+        Kokkos::OpenMP::initialize(nthreads);
+      }
+    } else {
+      Kokkos::OpenMP::initialize();
     }
   }
 
-  typedef Kokkos::HostSpace::execution_space  DefaultHostExecutionSpace ;
+#endif
 
-  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostExecutionSpace >::value };
+#if defined( KOKKOS_HAVE_PTHREAD )
 
-  namespace Impl {
-    void initialize_internal(const int& nthreads, const int& numa, const int& device) {
-      if(DefaultIsNotHostSpace) {
-        if(nthreads>0) {
-          if(numa>0)
-            DefaultHostExecutionSpace::initialize(nthreads,numa);
-          else
-            DefaultHostExecutionSpace::initialize(nthreads);
-        } else
-          DefaultHostExecutionSpace::initialize();
+  if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ) {
+
+    if(nthreads>0) {
+      if(use_numa>0) {
+        Kokkos::Threads::initialize(nthreads,use_numa);
       }
-
-      #ifdef KOKKOS_HAVE_CUDA
-      if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
-        if(device>-1)
-          Kokkos::Cuda::initialize(device);
-        else
-          Kokkos::Cuda::initialize();
-      } else
-      #endif
-      {
-        if(nthreads>0) {
-          if(numa>0)
-            Kokkos::DefaultExecutionSpace::initialize(nthreads,numa);
-          else
-            Kokkos::DefaultExecutionSpace::initialize(nthreads);
-        } else
-          Kokkos::DefaultExecutionSpace::initialize();
+      else {
+        Kokkos::Threads::initialize(nthreads);
       }
+    } else {
+      Kokkos::Threads::initialize();
     }
   }
 
-  void initialize() {
-    if ( DefaultIsNotHostSpace ) {
-      Kokkos::HostSpace::execution_space::initialize();
-    }
-    Kokkos::DefaultExecutionSpace::initialize();
+#endif
+
+#if defined( KOKKOS_HAVE_SERIAL )
+
+  if( Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ) {
+
+    Kokkos::Serial::initialize();
   }
 
-  void initialize(int& narg, char* arg[]) {
+#endif
 
+#if defined( KOKKOS_HAVE_CUDA )
+
+  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value ) {
+
+    if(use_gpu>-1) {
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( use_gpu ) );
+    }
+    else {
+      Kokkos::Cuda::initialize();
+    }
+  }
+
+#endif
+
+}
+
+void finalize_internal()
+{
+
+#if defined( KOKKOS_HAVE_CUDA )
+  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value ) {
+    Kokkos::Cuda::finalize();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ) {
+    Kokkos::OpenMP::finalize();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ) {
+    Kokkos::Threads::finalize();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_SERIAL )
+  if( Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ) {
+    Kokkos::Serial::finalize();
+  }
+#endif
+
+}
+
+void fence_internal()
+{
+
+#if defined( KOKKOS_HAVE_CUDA )
+  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value ) {
+    Kokkos::Cuda::fence();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ) {
+    Kokkos::OpenMP::fence();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ) {
+    Kokkos::Threads::fence();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_SERIAL )
+  if( Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value ||
+      Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ) {
+    Kokkos::Serial::fence();
+  }
+#endif
+
+}
+
+} // namespace
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+void initialize()
+{
+  Impl::initialize_internal( -1 , -1 , -1 );
+}
+
+void initialize(int& narg, char* arg[])
+{
     int nthreads = -1;
     int numa = -1;
     int device = -1;
@@ -133,7 +232,7 @@ namespace Kokkos {
 
         char* number =  strchr(arg[iarg],'=')+1;
 
-        if(!isnumber(number) || (strlen(number)==0))
+        if(!Impl::is_unsigned_int(number) || (strlen(number)==0))
           Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--threads/--kokkos-threads'. Raised by Kokkos::initialize(int narg, char* argc[]).");
 
         if((strncmp(arg[iarg],"--kokkos-threads",16) == 0) || !kokkos_threads_found)
@@ -156,7 +255,7 @@ namespace Kokkos {
 
         char* number =  strchr(arg[iarg],'=')+1;
 
-        if(!isnumber(number) || (strlen(number)==0))
+        if(!Impl::is_unsigned_int(number) || (strlen(number)==0))
           Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--numa/--kokkos-numa'. Raised by Kokkos::initialize(int narg, char* argc[]).");
 
         if((strncmp(arg[iarg],"--kokkos-numa",13) == 0) || !kokkos_numa_found)
@@ -179,7 +278,7 @@ namespace Kokkos {
 
         char* number =  strchr(arg[iarg],'=')+1;
 
-        if(!isnumber(number) || (strlen(number)==0))
+        if(!Impl::is_unsigned_int(number) || (strlen(number)==0))
           Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--device/--kokkos-device'. Raised by Kokkos::initialize(int narg, char* argc[]).");
 
         if((strncmp(arg[iarg],"--kokkos-device",15) == 0) || !kokkos_device_found)
@@ -211,14 +310,14 @@ namespace Kokkos {
         strncpy(num1_only,num1,num1_len);
         num1_only[num1_len]=0;
 
-        if(!isnumber(num1_only) || (strlen(num1_only)==0)) {
+        if(!Impl::is_unsigned_int(num1_only) || (strlen(num1_only)==0)) {
           Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--kokkos-ndevices'. Raised by Kokkos::initialize(int narg, char* argc[]).");
         }
         if((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || !kokkos_ndevices_found)
           ndevices = atoi(num1_only);
 
         if( num2 != NULL ) {
-          if(( !isnumber(num2+1) ) || (strlen(num2)==1) )
+          if(( !Impl::is_unsigned_int(num2+1) ) || (strlen(num2)==1) )
             Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--kokkos-ndevices=XX,'. Raised by Kokkos::initialize(int narg, char* argc[]).");
 
           if((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || !kokkos_ndevices_found)
@@ -302,64 +401,17 @@ namespace Kokkos {
     }
 
     Impl::initialize_internal(nthreads,numa,device);
-
-  }
-
-  void initialize(const int arg1) {
-    int nthreads = -1;
-    int numa = -1;
-    int device = -1;
-
-    #ifdef KOKKOS_HAVE_CUDA
-    if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
-      device = arg1;
-    } else
-    #endif
-    {
-      nthreads = arg1;
-    }
-
-    Impl::initialize_internal(nthreads,numa,device);
-  }
-
-  void initialize(const int arg1, const int arg2) {
-    int nthreads = -1;
-    int numa = -1;
-    int device = -1;
-
-    #ifdef KOKKOS_HAVE_CUDA
-    if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
-      nthreads = arg1;
-      device = arg2;
-    } else
-    #endif
-    {
-      nthreads = arg1;
-      numa = arg2;
-    }
-
-    Impl::initialize_internal(nthreads,numa,device);
-  }
-
-  void initialize(const int arg1, const int arg2, const int arg3) {
-    int nthreads = arg1;
-    int numa = arg2;
-    int device = arg3;
-
-    Impl::initialize_internal(nthreads,numa,device);
-  }
-
-  void finalize() {
-    if(DefaultIsNotHostSpace) {
-      DefaultHostExecutionSpace::finalize();
-    }
-    Kokkos::DefaultExecutionSpace::finalize();
-  }
-
-  void fence() {
-    if(DefaultIsNotHostSpace) {
-      DefaultHostExecutionSpace::fence();
-    }
-    Kokkos::DefaultExecutionSpace::fence();
-  }
 }
+
+void finalize()
+{
+  Impl::finalize_internal();
+}
+
+void fence() 
+{
+  Impl::fence_internal();
+}
+
+} // namespace Kokkos
+

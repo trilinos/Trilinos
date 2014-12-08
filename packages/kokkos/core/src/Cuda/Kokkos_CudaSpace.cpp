@@ -63,17 +63,23 @@
 namespace Kokkos {
 namespace Impl {
 
-DeepCopy<CudaSpace,CudaSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
+DeepCopy<CudaSpace,CudaSpace>::DeepCopy( void * dst , const void * src , size_t n )
 { CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) ); }
 
-DeepCopy<HostSpace,CudaSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
+DeepCopy<CudaSpace,CudaSpace>::DeepCopy( const Cuda & instance , void * dst , const void * src , size_t n )
+{ CUDA_SAFE_CALL( cudaMemcpyAsync( dst , src , n , cudaMemcpyDefault , instance.m_stream ) ); }
+
+DeepCopy<HostSpace,CudaSpace>::DeepCopy( void * dst , const void * src , size_t n )
 { CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) ); }
 
-DeepCopy<CudaSpace,HostSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
+DeepCopy<HostSpace,CudaSpace>::DeepCopy( const Cuda & instance , void * dst , const void * src , size_t n )
+{ CUDA_SAFE_CALL( cudaMemcpyAsync( dst , src , n , cudaMemcpyDefault , instance.m_stream ) ); }
+
+DeepCopy<CudaSpace,HostSpace>::DeepCopy( void * dst , const void * src , size_t n )
 { CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) ); }
+
+DeepCopy<CudaSpace,HostSpace>::DeepCopy( const Cuda & instance , void * dst , const void * src , size_t n )
+{ CUDA_SAFE_CALL( cudaMemcpyAsync( dst , src , n , cudaMemcpyDefault , instance.m_stream ) ); }
 
 } // namespace Impl
 } // namespace Kokkos

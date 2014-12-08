@@ -172,26 +172,44 @@ public:
    *
    *  Typically used to partition a range over a group of threads.
    */
-  KOKKOS_INLINE_FUNCTION
-  RangePolicy( const RangePolicy & range
+  struct WorkRange {
+    typedef RangePolicy::work_tag     work_tag ;
+    typedef RangePolicy::member_type  member_type ;
+
+    KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
+    KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
+
+    /** \brief  Subrange for a partition's rank and size.
+     *
+     *  Typically used to partition a range over a group of threads.
+     */
+    KOKKOS_INLINE_FUNCTION
+    WorkRange( const RangePolicy & range
              , const int part_rank
              , const int part_size
              )
-    : m_begin(0), m_end(0)
-    {
-      if ( part_size ) {
+      : m_begin(0), m_end(0)
+      {
+        if ( part_size ) {
+  
+          // Split evenly among partitions, then round up to the granularity.
+          const member_type work_part =
+            ( ( ( ( range.end() - range.begin() ) + ( part_size - 1 ) ) / part_size )
+              + GranularityMask ) & ~member_type(GranularityMask);
 
-        // Split evenly among partitions, then round up to the granularity.
-        const member_type work_part =
-          ( ( ( ( range.m_end - range.m_begin ) + ( part_size - 1 ) ) / part_size ) + GranularityMask ) & ~member_type(GranularityMask);
-
-        m_begin = range.m_begin + work_part * part_rank ;
-        m_end   = m_begin       + work_part ;
-
-        if ( range.m_end < m_begin ) m_begin = range.m_end ;
-        if ( range.m_end < m_end )   m_end   = range.m_end ;
+          m_begin = range.begin() + work_part * part_rank ;
+          m_end   = m_begin       + work_part ;
+  
+          if ( range.end() < m_begin ) m_begin = range.end() ;
+          if ( range.end() < m_end )   m_end   = range.end() ;
+        }
       }
-    }
+  private:
+     member_type m_begin ;
+     member_type m_end ;
+     WorkRange();
+     WorkRange & operator = ( const WorkRange & );
+  };
 };
 
 } // namespace Kokkos

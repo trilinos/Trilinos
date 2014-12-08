@@ -279,9 +279,23 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template<> struct DeepCopy< CudaSpace , CudaSpace > { DeepCopy( void * dst , const void * src , size_t ); };
-template<> struct DeepCopy< CudaSpace , HostSpace > { DeepCopy( void * dst , const void * src , size_t ); };
-template<> struct DeepCopy< HostSpace , CudaSpace > { DeepCopy( void * dst , const void * src , size_t ); };
+template<> struct DeepCopy< CudaSpace , CudaSpace >
+{
+  DeepCopy( void * dst , const void * src , size_t );
+  DeepCopy( const Cuda & , void * dst , const void * src , size_t );
+};
+
+template<> struct DeepCopy< CudaSpace , HostSpace >
+{
+  DeepCopy( void * dst , const void * src , size_t );
+  DeepCopy( const Cuda & , void * dst , const void * src , size_t );
+};
+
+template<> struct DeepCopy< HostSpace , CudaSpace >
+{
+  DeepCopy( void * dst , const void * src , size_t );
+  DeepCopy( const Cuda & , void * dst , const void * src , size_t );
+};
 
 template<> struct DeepCopy< CudaSpace , CudaUVMSpace >
 {
