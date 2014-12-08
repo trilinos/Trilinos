@@ -3627,6 +3627,14 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.globally_shared_part() );
+          PartVector tempParts;
+          tempParts.reserve(parts.size());
+          for (size_t i = 0; i < parts.size(); ++i) {
+            if (parts[i]->entity_membership_is_parallel_consistent()) {
+              tempParts.push_back(parts[i]);
+            }
+          }
+          parts.swap(tempParts);
 
           if (owner != this->parallel_rank()) {
             // We will also add the entity to the part corresponding to the 'ghosts' ghosting.
@@ -5152,6 +5160,8 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
     // Regenerate the ghosting aura around all shared mesh entities.
     if ( regenerate_aura ) { internal_regenerate_aura(); }
 
+    internal_resolve_send_ghost_membership();
+
     // ------------------------------
     // Verify parallel consistency of mesh entities.
     // Unique ownership, communication lists, sharing part membership,
@@ -5895,7 +5905,9 @@ void BulkData::internal_resolve_shared_membership()
                 {
                     unsigned part_ord = 0;
                     buf.unpack<unsigned>(part_ord);
-                    insert(owner_parts, *all_parts[part_ord]);
+                    if (all_parts[part_ord]->entity_membership_is_parallel_consistent()) {
+                        insert(owner_parts, *all_parts[part_ord]);
+                    }
                 }
 
                 // Any current part that is not a member of owners_parts
@@ -5924,6 +5936,12 @@ void BulkData::internal_resolve_shared_membership()
             }
         }
     }
+}
+
+void BulkData::internal_resolve_send_ghost_membership()
+{
+    // This virtual method can be removed when we no longer need the
+    // StkTransitionBulkData derived class in Framework.
 }
 
 void BulkData::internal_update_fast_comm_maps()

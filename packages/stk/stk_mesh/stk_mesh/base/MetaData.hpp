@@ -570,6 +570,10 @@ public:
 
   void set_mesh_on_fields(BulkData* bulk);
 
+protected:
+
+  Part & declare_internal_part( const std::string & p_name);
+
   /** \} */
 private:
   // Functions
@@ -579,8 +583,6 @@ private:
 
   void add_new_part_in_part_fields();
   void synchronize_part_fields_with_parts();
-
-  Part & declare_internal_part( const std::string & p_name);
 
   Part & declare_internal_part( const std::string & p_name, EntityRank rank);
 
