@@ -55,10 +55,11 @@ namespace Zoltan2 {
 //
 // Greedy algorithm for maximum-weight matching.
 // This is an 1/2-approximation, but requires a sort.
-// We could also use the Path Growing Algorithm by
-// Drake & Hogardy, which runs in linear time.
+// Linear-time approximation algorithms should be considered
+// in the future, e.g., the Path Growing Algorithm by
+// Drake & Hogardy, and the Suitor algorithm by Manne & Halappanavar.
 // The algorithm runs in serial; the graph must be gathered to 
-// the process.
+// the process before entry.
 ////////////////////////////////////////////////////////////////////
 
 #include <vector>
