@@ -546,6 +546,8 @@ namespace MueLu {
     manager.SetFactory("Nullspace", nullSpace);
 
     // === Prolongation ===
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
+                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
     if (multigridAlgo == "unsmoothed") {
       manager.SetFactory("P", Ptent);
 
