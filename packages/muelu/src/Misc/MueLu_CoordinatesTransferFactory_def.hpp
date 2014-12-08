@@ -74,10 +74,17 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(fineLevel, "Coordinates");
-    Input(fineLevel, "Aggregates");
-    Input(fineLevel, "CoarseMap");
+  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    static bool isAvailableCoords = false;
+
+    if (coarseLevel.GetRequestMode() == Level::REQUEST)
+      isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
+
+    if (isAvailableCoords == false) {
+      Input(fineLevel, "Coordinates");
+      Input(fineLevel, "Aggregates");
+      Input(fineLevel, "CoarseMap");
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -85,6 +92,11 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
+
+    if (coarseLevel.IsAvailable("Coordinates", this)) {
+      GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
+      return;
+    }
 
     RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
     RCP<MultiVector>    fineCoords = Get< RCP<MultiVector> >(fineLevel, "Coordinates");
