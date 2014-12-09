@@ -107,7 +107,7 @@
 # such dependencies exist).
 #
 
-TRIBITS_REPOSITORY_DEFINE_TPLS(
+SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
@@ -142,7 +142,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Nemesis         "cmake/TPLs/"    SS
   XDMF            "cmake/TPLs/"    TS
   Zlib            "cmake/TPLs/"    SS
-  HDF5 "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/" EX
+  HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    EX
   Netcdf          "cmake/TPLs/"    SS
   y12m            "cmake/TPLs/"    SS
   SuperLUDist     "cmake/TPLs/"    SS
