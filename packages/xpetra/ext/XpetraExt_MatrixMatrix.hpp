@@ -55,6 +55,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
+#include <string>
 
 //#include "XpetraExt_MatrixMatrix.hpp"
 
@@ -258,7 +259,8 @@ void Multiply(
   bool transposeB,
   Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result = true,
-  bool doOptimizeStorage = true) {
+  bool doOptimizeStorage = true,
+  const std::string & label = std::string()) {
 
     if(transposeA == false && C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
       std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as row map of A";
@@ -312,7 +314,7 @@ void Multiply(
 
       //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
       //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
