@@ -231,6 +231,8 @@ struct functor_team_reduce {
               flag() = 1;
          }
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -267,6 +269,8 @@ struct functor_team_reduce_join {
               flag() = 1;
          }
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -363,6 +367,8 @@ struct functor_team_vector_reduce {
          }
       });
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -401,6 +407,8 @@ struct functor_team_vector_reduce_join {
          }
       });
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
