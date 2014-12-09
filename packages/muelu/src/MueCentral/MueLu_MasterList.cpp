@@ -201,7 +201,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: remap parts\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: remap num values\" type=\"int\" value=\"4\"/>"
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
 "</ParameterList>"
 ;

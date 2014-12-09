@@ -668,7 +668,7 @@
     <parameter>
       <name>repartition: rebalance P and R</name>
       <type>bool</type>
-      <default>true</default>
+      <default>false</default>
       <description>Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>

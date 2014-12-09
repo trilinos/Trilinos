@@ -77,7 +77,7 @@ Level 1
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
   
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Interpolation
@@ -85,7 +85,7 @@ Level 1
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Restriction
@@ -173,7 +173,7 @@ Level 2
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
   
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Interpolation
@@ -181,7 +181,7 @@ Level 2
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Restriction
@@ -289,7 +289,7 @@ Level 1
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
   
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Interpolation
@@ -297,7 +297,7 @@ Level 1
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Restriction
@@ -385,7 +385,7 @@ Level 2
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
   
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Interpolation
@@ -393,7 +393,7 @@ Level 2
  write end = -1   [default]
  
  Build (MueLu::RebalanceTransferFactory)
- repartition: rebalance P and R = 1   [default]
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  type = Restriction
