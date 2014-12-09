@@ -51,12 +51,165 @@
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_FunctorAdapter.hpp>
 #include <impl/Kokkos_Error.hpp>
-
+#include <Cuda/Kokkos_Cuda_Vectorization.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
+
+
+
+//Shfl based reductions
+/*
+ *  Algorithmic constraints:
+ *   (a) threads with same threadIdx.y have same value
+ *   (b) blockDim.x == power of two
+ *   (c) blockDim.z == 1
+ */
+
+template< class ValueType , class JoinOp>
+__device__
+inline void cuda_intra_warp_reduction( ValueType& result,
+                                       const JoinOp& join,
+                                       const int max_active_thread = blockDim.y) {
+
+  unsigned int shift = 1;
+
+  //Reduce over values from threads with different threadIdx.y
+  while(blockDim.x * shift < 32 ) {
+    const ValueType tmp = shfl_down(result, blockDim.x*shift,32u);
+    //Only join if upper thread is active (this allows non power of two for blockDim.y
+    if(threadIdx.y + shift < max_active_thread)
+      join(result , tmp);
+    shift*=2;
+  }
+
+  result = shfl(result,0,32);
+}
+
+template< class ValueType , class JoinOp>
+__device__
+inline void cuda_inter_warp_reduction( ValueType& value,
+                                       const JoinOp& join,
+                                       const int max_active_thread = blockDim.y) {
+
+  #define STEP_WIDTH 4
+  __shared__ char sh_result[sizeof(ValueType)*STEP_WIDTH];
+  ValueType* result = (ValueType*) & sh_result;
+  const unsigned step = 32 / blockDim.x;
+  unsigned shift = STEP_WIDTH;
+  const int id = threadIdx.y%step==0?threadIdx.y/step:65000;
+  if(id < STEP_WIDTH ) {
+    result[id] = value;
+  }
+  __syncthreads();
+  while (shift<=max_active_thread/step) {
+    if(shift<=id && shift+STEP_WIDTH>id && threadIdx.x==0) {
+      join(result[id%STEP_WIDTH],value);
+    }
+    __syncthreads();
+    shift+=STEP_WIDTH;
+  }
+
+
+  value = result[0];
+  for(int i = 1; (i*step<=max_active_thread) && i<STEP_WIDTH; i++)
+    join(value,result[i]);
+}
+
+template< class ValueType , class JoinOp>
+__device__
+inline void cuda_intra_block_reduction( ValueType& value,
+                                        const JoinOp& join,
+                                        const int max_active_thread = blockDim.y) {
+  cuda_intra_warp_reduction(value,join,max_active_thread);
+  cuda_inter_warp_reduction(value,join,max_active_thread);
+}
+
+template< class FunctorType , class JoinOp>
+__device__
+bool cuda_inter_block_reduction( typename FunctorValueTraits< FunctorType , void >::reference_type  value,
+                                 const JoinOp& join,
+                                 Cuda::size_type * const m_scratch_space,
+                                 typename FunctorValueTraits< FunctorType , void >::pointer_type const result,
+                                 Cuda::size_type * const m_scratch_flags,
+                                 const int max_active_thread = blockDim.y) {
+  typedef typename FunctorValueTraits< FunctorType , void >::pointer_type pointer_type;
+  typedef typename FunctorValueTraits< FunctorType , void >::value_type value_type;
+
+  //Do the intra-block reduction with shfl operations and static shared memory
+  cuda_intra_block_reduction(value,join,max_active_thread);
+
+  const unsigned id = threadIdx.y*blockDim.x + threadIdx.x;
+
+  //One thread in the block writes block result to global scratch_memory
+  if(id == 0 ) {
+    pointer_type global = ((pointer_type) m_scratch_space) + blockIdx.x;
+    *global = value;
+  }
+
+  //One warp of last block performs inter block reduction through loading the block values from global scratch_memory
+  bool last_block = false;
+
+  __syncthreads();
+  if ( id < 32 ) {
+    Cuda::size_type count;
+
+    //Figure out whether this is the last block
+    if(id == 0)
+      count = Kokkos::atomic_fetch_add(m_scratch_flags,1);
+    count = Kokkos::shfl(count,0,32);
+
+    //Last block does the inter block reduction
+    if( count == gridDim.x - 1) {
+      //set flag back to zero
+      if(id == 0)
+        *m_scratch_flags = 0;
+      last_block = true;
+      value = 0;
+
+      pointer_type const volatile global = (pointer_type) m_scratch_space ;
+
+      //Reduce all global values with splitting work over threads in one warp
+      const int step_size = blockDim.x*blockDim.y < 32 ? blockDim.x*blockDim.y : 32;
+      for(int i=id; i<gridDim.x; i+=step_size) {
+        value_type tmp = global[i];
+        join(value, tmp);
+      }
+
+      //Perform shfl reductions within the warp only join if contribution is valid (allows gridDim.x non power of two and <32)
+      if (blockDim.x*blockDim.y > 1) {
+        value_type tmp = Kokkos::shfl_down(value, 1,32);
+        if( id + 1 < gridDim.x )
+          join(value, tmp);
+      }
+      if (blockDim.x*blockDim.y > 2) {
+        value_type tmp = Kokkos::shfl_down(value, 2,32);
+        if( id + 2 < gridDim.x )
+          join(value, tmp);
+      }
+      if (blockDim.x*blockDim.y > 4) {
+        value_type tmp = Kokkos::shfl_down(value, 4,32);
+        if( id + 4 < gridDim.x )
+          join(value, tmp);
+      }
+      if (blockDim.x*blockDim.y > 8) {
+        value_type tmp = Kokkos::shfl_down(value, 8,32);
+        if( id + 8 < gridDim.x )
+          join(value, tmp);
+      }
+      if (blockDim.x*blockDim.y > 16) {
+        value_type tmp = Kokkos::shfl_down(value, 16,32);
+        if( id + 16 < gridDim.x )
+          join(value, tmp);
+      }
+    }
+  }
+
+  //The last block has in its thread=0 the global reduction value through "value"
+  return last_block;
+}
 
 //----------------------------------------------------------------------------
 // See section B.17 of Cuda C Programming Guide Version 3.2
@@ -75,49 +228,6 @@ namespace Impl {
  *   (b) blockDim.y <= 512
  *   (c) blockDim.x == blockDim.z == 1
  */
-
-
-template< class ValueType , class JoinOp>
-__device__
-inline void cuda_intra_warp_reduction( ValueType& value, const JoinOp& join) {
-
-  unsigned shift = 1;
-  ValueType result = value;
-  while(blockDim.x * shift < 32 && shift<blockDim.y) {
-    const ValueType tmp = shfl_down(result, blockDim.x*shift,32);
-    join(result , tmp);
-    shift*=2;
-  }
-  value = shfl(result,0,32);
-}
-
-template< class ValueType , class JoinOp>
-__device__
-inline void cuda_inter_warp_reduction( ValueType& value, const JoinOp& join) {
-
-  __shared__ char sh_result[sizeof(ValueType)];
-  ValueType* result = (ValueType*) & sh_result;
-  const unsigned step = 32 / blockDim.x;
-  unsigned shift = step;
-  __syncthreads();
-
-  if(threadIdx.y == 0) {
-    *result = value;
-  }
-  __syncthreads();
-  while (shift<blockDim.y) {
-    if(shift==threadIdx.y && threadIdx.x==0) {
-      join(*result,value);
-    }
-    __syncthreads();
-    shift+=step;
-  }
-  __syncthreads();
-
-  value = *result;
-}
-
-
 
 template< bool DoScan , class FunctorType >
 __device__

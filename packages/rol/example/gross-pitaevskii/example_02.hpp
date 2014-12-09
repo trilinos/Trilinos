@@ -91,7 +91,7 @@
 #include "ROL_CompositeStepSQP.hpp"
 #include "ROL_Algorithm.hpp"
 
-#include "FiniteDifference.hpp"
+#include "numerics/FiniteDifference.hpp"
 
 
 using namespace ROL;

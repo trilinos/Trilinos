@@ -164,14 +164,9 @@ echo ';
 sed -i '/<Parameter/ s/\\""/\\"/g' $code_file
 sed -i '/<Parameter/ s/"\\"/\\"/g' $code_file
 
-# generate LaTeX files (MueLu options)
-SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" )
+# generate LaTeX files (MueLu options and ML compatibility)
+SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" "reuse" )
 for i in "${SECTIONS[@]}"; do
-  xsltproc --stringparam section "$i" options.xsl masterList.xml > options_$i.tex
-done
-
-# generate LaTeX files (ML compatibility)
-SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" )
-for i in "${SECTIONS[@]}"; do
+  xsltproc --stringparam section "$i" options.xsl   masterList.xml > options_$i.tex
   xsltproc --stringparam section "$i" mloptions.xsl masterList.xml > mloptions_$i.tex
 done

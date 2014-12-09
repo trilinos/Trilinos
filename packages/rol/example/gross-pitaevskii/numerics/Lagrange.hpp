@@ -135,12 +135,13 @@ void Lagrange<Real>::interp(const std::vector<Real> &f, std::vector<Real> &p){
 template<class Real>
 void Lagrange<Real>::interpolant(const int k, std::vector<Real> &l){ 
     std::vector<Real> f(nin_,0);
+    std::fill(l.begin(),l.end(),0);
     f[k] = 1.0; 
     this->bi_sum(f,l);
 
     for(int j=0;j<nev_;++j)
     {
-        l[j] *= ell_[j];
+        l[j] = ell_[j]*w_[k]/(xev_[j]-xin_[k]);
     }    
 }
 
@@ -149,6 +150,8 @@ template<class Real>
 void Lagrange<Real>::derivative(const int k, std::vector<Real> &d ) {
     // Derivative of the interpolant on the interpolation points
     std::vector<Real> lp(nin_,0);
+    std::fill(d.begin(),d.end(),0);
+
     for(int i=0;i<nin_;++i) {
         if(i!=k) {  
             lp[i] = w_[k]/(w_[i]*(xin_[i]-xin_[k])); 
