@@ -89,6 +89,9 @@ namespace Sacado {
      */
     template <typename ExprT> class Expr {};
 
+    // Forward declaration
+    template <typename T, typename S> class OrthogPoly;
+
     //! Generalized polynomial chaos expansion class implementation
     template <typename T, typename Storage >
     class OrthogPolyImpl {
@@ -381,6 +384,8 @@ namespace Sacado {
       typedef typename OrthogPolyImpl<T,Storage>::storage_type storage_type;
       typedef typename OrthogPolyImpl<T,Storage>::const_reference const_reference;
 
+      typedef OrthogPoly<T,Storage> base_expr_type;
+
       //! Number of arguments
       static const int num_args = 1;
 
@@ -620,6 +625,26 @@ namespace Sacado {
     }; // class OrthogPoly
 
   } // namespace ETPCE
+
+  template <typename T>
+  struct IsExpr< ETPCE::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< ETPCE::Expr<T> > {
+    typedef typename ETPCE::Expr<T>::base_expr_type type;
+  };
+
+  template <typename T, typename S>
+  struct IsExpr< ETPCE::OrthogPoly<T,S> > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename S>
+  struct BaseExprType< ETPCE::OrthogPoly<T,S> > {
+    typedef ETPCE::OrthogPoly<T,S> type;
+  };
 
 } // namespace Sacado
 

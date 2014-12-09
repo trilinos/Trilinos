@@ -61,6 +61,7 @@ namespace Sacado {							\
       typedef typename ExprT::expansion_type expansion_type;		\
       typedef typename ExprT::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT::storage_type storage_type;		\
+      typedef typename ExprT::base_expr_type base_expr_type;            \
 									\
       static const int num_args = ExprT::num_args;			\
 									\
@@ -138,6 +139,7 @@ namespace Sacado {							\
       typedef typename ExprT::expansion_type expansion_type;		\
       typedef typename ExprT::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT::storage_type storage_type;		\
+      typedef typename ExprT::base_expr_type base_expr_type;            \
 									\
       static const int num_args = ExprT::num_args;			\
 									\
@@ -253,6 +255,7 @@ namespace Sacado {							\
       typedef typename ExprT1::expansion_type expansion_type;		\
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
       static const int num_args1 = ExprT1::num_args;			\
       static const int num_args2 = ExprT2::num_args;			\
@@ -342,6 +345,7 @@ namespace Sacado {							\
       typedef typename ExprT1::expansion_type expansion_type;		\
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
       static const int num_args = ExprT1::num_args;			\
 									\
@@ -410,6 +414,7 @@ namespace Sacado {							\
       typedef typename ExprT2::expansion_type expansion_type;		\
       typedef typename ExprT2::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT2::storage_type storage_type;		\
+      typedef typename ExprT2::base_expr_type base_expr_type;           \
 									\
       static const int num_args = ExprT2::num_args;			\
 									\
@@ -528,6 +533,7 @@ namespace Sacado {							\
       typedef typename ExprT1::expansion_type expansion_type;		\
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
       static const int num_args1 = ExprT1::num_args;			\
       static const int num_args2 = ExprT2::num_args;			\
@@ -613,6 +619,7 @@ namespace Sacado {							\
       typedef typename ExprT1::expansion_type expansion_type;		\
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
       static const int num_args = ExprT1::num_args;			\
 									\
@@ -687,6 +694,7 @@ namespace Sacado {							\
       typedef typename ExprT2::expansion_type expansion_type;		\
       typedef typename ExprT2::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT2::storage_type storage_type;		\
+      typedef typename ExprT2::base_expr_type base_expr_type;           \
 									\
       static const int num_args = ExprT2::num_args;			\
 									\
@@ -823,6 +831,7 @@ namespace Sacado {
       typedef typename ExprT1::expansion_type expansion_type;
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
 
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
@@ -913,6 +922,7 @@ namespace Sacado {
       typedef typename ExprT1::expansion_type expansion_type;
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
 
@@ -981,6 +991,7 @@ namespace Sacado {
       typedef typename ExprT2::expansion_type expansion_type;
       typedef typename ExprT2::quad_expansion_type quad_expansion_type;
       typedef typename ExprT2::storage_type storage_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
 
@@ -1100,6 +1111,7 @@ namespace Sacado {
       typedef typename ExprT1::expansion_type expansion_type;
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
 
       static const int num_args1 = ExprT1::num_args;
       static const int num_args2 = ExprT2::num_args;
@@ -1185,6 +1197,7 @@ namespace Sacado {
       typedef typename ExprT1::expansion_type expansion_type;
       typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
 
       static const int num_args = ExprT1::num_args;
 
@@ -1253,6 +1266,7 @@ namespace Sacado {
       typedef typename ExprT2::expansion_type expansion_type;
       typedef typename ExprT2::quad_expansion_type quad_expansion_type;
       typedef typename ExprT2::storage_type storage_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
 
       static const int num_args = ExprT2::num_args;
 
