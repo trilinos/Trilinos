@@ -31,6 +31,9 @@ export LD_LIBRARY_PATH=~/local/lib:~/local/lib64:/usr/lib64:/lib64:$LD_LIBRARY_P
 export PATH=~/bin:/opt/bin:~/local/bin:$PATH
 export PKG_CONFIG_PATH=~/local:$PKG_CONFIG_PATH
 
+# Initialize Modules environment
+. /usr/share/Modules/init/bash
+
 module use-append ~/.modules
 module load common_base
 module load openmpi/1.8.3

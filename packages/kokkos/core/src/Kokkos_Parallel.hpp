@@ -236,6 +236,14 @@ namespace Impl {
     void join(volatile value_type& dst, const volatile value_type& src) const {
       dst+=src;
     }
+    KOKKOS_INLINE_FUNCTION
+    void operator() (value_type& dst, const value_type& src) const {
+      dst+=src;
+    }
+    KOKKOS_INLINE_FUNCTION
+    void operator() (volatile value_type& dst, const volatile value_type& src) const {
+      dst+=src;
+    }
   };
 
 }
