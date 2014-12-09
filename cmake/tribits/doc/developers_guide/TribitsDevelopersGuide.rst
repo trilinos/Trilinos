@@ -493,8 +493,9 @@ Details`_ defines exactly what files TriBITS processes and in what order.  It
 also shows how to get TriBITS to show exactly what files it is processing to
 help in debugging issues.  The subsection `Coexisting Projects, Repositories,
 and Packages`_ gives some of the rules and constrains for how the different
-structure units can co-exist in the same directories.  The last subsection in
-this section covers the `Standard TriBITS TPLs`_.
+structure units can co-exist in the same directories.  The last two
+subsections in this section cover `Standard TriBITS TPLs`_ and `Common TriBITS
+TPLs`_.
 
 TriBITS Structural Units
 ------------------------
@@ -2055,7 +2056,7 @@ For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the function
 `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.  A simple
-example of such a file is the standard TriBITS ``FindTPLPETSC.cmake`` module
+example of such a file is the common TriBITS ``FindTPLPETSC.cmake`` module
 which is currently:
 
 .. include:: ../../common_tpls/FindTPLPETSC.cmake
@@ -2063,10 +2064,12 @@ which is currently:
 
 Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find module to fill in the
-guts of finding at TPL which is perfectly fine.
+guts of finding at TPL which is perfectly fine.  In this case, the purpose for
+the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
+variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
 
-Once processed, each defined TPL ``TPL_NAME`` is assigned the following global
-non-cache variables:
+Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
+defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
   .. _${TPL_NAME}_FINDMOD:
 
@@ -2086,7 +2089,7 @@ non-cache variables:
 
   ``${TPL_NAME}_TESTGROUP``
 
-    Gives the TPLs `SE Package Test Group`_. This is set using the
+    Gives the TPL's `SE Package Test Group`_. This is set using the
     ``CLASSIFICATION`` field in the call to
     `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.  If multiple repos define a given
     TPL, then the *first* `<repoDir>/TPLsList.cmake`_ file that is processed
@@ -2101,21 +2104,22 @@ non-cache variables:
     TPL if desired.
 
 The specification given in `Enabling support for an optional Third-Party
-Library (TPL)`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ describes how the a
-``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to override
-and specialize how a TPL is determined.  However, note that the TriBITS system
-does not require the usage of of the function
-``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` and does not even care about the TPL
-module name ``FindTPL${TPL_NAME}.cmake``.  All that is required is that some
-CMake file fragment exist that once included, will define the variables
-``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  However, to be
-user friendly, such a CMake file should respond to the same variables as
-accepted by the standard ``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` function.
+Library (TPL)`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ describes
+how the a ``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to
+override and specialize how a TPL's include directories and libraries are
+determined.  However, note that the TriBITS system does not require the usage
+of the function ``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` and does not
+even care about the TPL module name ``FindTPL${TPL_NAME}.cmake``.  All that is
+required is that some CMake file fragment exist that once included, will
+define the variables ``${TPL_NAME}_LIBRARIES`` and
+``${TPL_NAME}_INCLUDE_DIRS``.  However, to be user friendly, such a CMake file
+should respond to the same variables as accepted by the standard
+``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` function.
 
 The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
-`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ need to be defined.  For more details, see
-`TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ need to be defined.  For more
+details, see `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
 
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
@@ -2423,27 +2427,34 @@ source directory.
 The primary use case for collapsing a project, repository, and package into a
 single base source directory would be to support the stand-alone build of a
 TriBITS package as its own entity that uses an independent installation of the
-TriBITS (or a minimal snapshotof TriBITS).  If a given TriBITS package has no
+TriBITS (or a minimal snapshot of TriBITS).  If a given TriBITS package has no
 required `upstream`_ TriBITS package dependencies and minimal TPL dependencies
-(or only uses `Standard TriBITS TPLs`_ already defined in the
-``tribits/tpls/`` directory), then creating a stand-alone project build of a
-single TriBITS package requires fairly little extra overhead or duplication.
+(or only uses `Standard TriBITS TPLs`_ or `Common TriBITS TPLs`_ already
+defined in the ``tribits/core/std_tpls/`` or ``tribits/common_tpls/``
+directories), then creating a stand-alone project build of a single TriBITS
+package requires fairly little extra overhead or duplication.
+
+
+Standard and Common TPLs
+------------------------
+
+While a TriBITS Repository can define their own TPLs and their own TPL find
+modules (see `TriBITS TPL`_), the TriBITS source tree contains the find
+modules for a few different standard TPLs and common TPLs.  `Standard TriBITS
+TPLs`_ are integral to the TriBITS system itself while `Common TriBITS TPLs`_
+are TPL that are used in several different TriBITS Repositories and are
+contained in TriBITS for convenience and uniformity.
 
 
 Standard TriBITS TPLs
----------------------
++++++++++++++++++++++
 
-TriBITS contains find modules for a few standard TPLs that are either integral
-to the TriBITS system or are likely to be used across many independent TriBITS
-repositories.  The goal of maintaining a few of these in the later case under
-TriBITS is to enforce conformity in case these independent repositories are
-combined into a single meta-project.
+TriBITS contains find modules for a few standard TPLs integral to the TriBITS
+system.  The standard TriBITS TPLs are contained under the directory::
 
-The standard TriBITS TPLs are contained under the directory::
+  tribits/core/std_tpls/
 
-  tribits/tpls/
-
-The current list of standard TriBITS TPLs is:
+The current list of standard TriBITS TPL find modules is:
 
 .. include:: TribitsStandardTPLsList.txt
    :literal:
@@ -2456,25 +2467,48 @@ and other commands.
 These standard TPLs are used in a `<repoDir>/TPLsList.cmake`_ file as::
 
   TRIBITS_REPOSITORY_DEFINE_TPLS(
-    MPI   "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"  PT
-    CUDA  "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"  ST
+    MPI   "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"  PT
+    CUDA  "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"  ST
     ...
     )
 
-Other than the special TPLs ``MPI`` and ``CUDA``, other TPLs that are
-candidates to put into TriBITS are those that are likely to be used by
-different stand-alone TriBITS repositories that need to be combined into a
-single TriBITS meta-project.  By using a standard TPL definition, it is
-guaranteed that the TPL used will be consistent with all of the repositories.
 
-Note that just because packages in two repositories reference the same TPL
-does not necessarily mean that it needs to be a standard TriBITS TPL.  For
-example, if the TPL ``BLAS`` is defined in an `upstream`_ repository
-(e.g. Trilinos), then a package in a `downstream`_ repository can list a
-dependency on the TPL ``BLAS`` without having to define its own ``BLAS`` TPL
-in its repository's `<repoDir>/TPLsList.cmake`_ file.  For more details, see
-`TriBITS TPL`_.
+Common TriBITS TPLs
++++++++++++++++++++
 
+TriBITS also contains find modules for several TPLs that are used across many
+independent TriBITS repositories.  The goal of maintaining these under TriBITS
+is to enforce conformity in case these independent repositories are combined
+into a single meta-project.
+
+The common riBITS TPLs are contained under the directory::
+
+  tribits/common_tpls/
+
+The current list of common TriBITS TPL find modules is:
+
+.. include:: TribitsCommonTPLsList.txt
+   :literal:
+
+Common TPLs are used in a `<repoDir>/TPLsList.cmake`_ file as::
+
+  TRIBITS_REPOSITORY_DEFINE_TPLS(
+    BLAS   "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+    LAPACK  "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+    ...
+    )
+
+By using a standard TPL definition, it is guaranteed that the TPL used will be
+consistent with all of the TriBITS packages that depend on these TPLs in case
+they are combined into a single project.
+
+Note that just because packages in two different TriBIITS repositories
+reference the same TPL does not necessarily mean that it needs to be moved
+into the TriBITS source tree under ``tribits/common_tpls``.  For example, if
+the TPL ``QT`` is defined in an `upstream`_ repository (e.g. Trilinos), then a
+package in a `downstream`_ repository can list a dependency on the TPL ``QT``
+without having to define its own ``QT`` TPL in its repository's
+`<repoDir>/TPLsList.cmake`_ file.  For more details, see `TriBITS TPL`_.
 
 .. Where to set variables?
 .. -----------------------
@@ -7119,6 +7153,17 @@ command as ``_some_builtin_command()``.
 .. include:: UtilsMacroFunctionDoc.rst
 
 .. ToDo: Edited and spell-checked through here on 5/15/2014.
+
+
+FAQ
+===
+
+**Q:** Why does not TriBITS just use the standard CMake ``Find<PACKAGE_NAME>.cmake``
+modules and the standard ``FIND_PACKAGE()`` function to find TPLs?
+
+**A:** The different "standard" CMake ``Find<PACKAGE_NAME>.cmake`` modules do not
+have a standard set of outputs and therefore, can't be handled in a uniform
+way.  For example, 
 
 
 Appendix
