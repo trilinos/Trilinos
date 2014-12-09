@@ -962,6 +962,7 @@ namespace Basker{
         new_entry[i] = BASKER_ScalarTraits<Entry>::copyConstruct(old[i]);
       }
     return new_entry;
+    delete[] old;
 
   }
   template <class Int, class Entry>
@@ -973,6 +974,7 @@ namespace Basker{
         new_int[i] = old[i];
       }
     return new_int;
+    delete[] old;
   }
 
 
