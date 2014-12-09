@@ -476,7 +476,8 @@ void Jacobi(
   const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result = true,
-  bool doOptimizeStorage = true) {
+  bool doOptimizeStorage = true,
+  const std::string & label = std::string()) {
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -507,7 +508,7 @@ void Jacobi(
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
 
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
+    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
