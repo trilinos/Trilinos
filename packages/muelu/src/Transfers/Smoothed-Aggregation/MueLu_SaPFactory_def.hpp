@@ -47,6 +47,7 @@
 #define MUELU_SAPFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <sstream>
 
 #include "MueLu_SaPFactory_decl.hpp"
 
@@ -96,6 +97,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
+    std::ostringstream levelstr;
+    levelstr << coarseLevel.GetLevelID();
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -145,7 +148,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP"));
+        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
       }
 
     } else {
