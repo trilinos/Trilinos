@@ -264,11 +264,21 @@ namespace Sacado {
     };
 
     template <typename T>
-    struct IsExpr< DVFad<T> > {
+    struct IsFadExpr< DVFad<T> > {
       static const bool value = true;
     };
 
   } // namespace Fad
+
+  template <typename T>
+  struct IsExpr< Fad::DVFad<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< Fad::DVFad<T> > {
+    typedef typename Fad::DVFad<T>::base_expr_type type;
+  };
 
   //! The View Fad type associated with this type
   template< class ValueType, unsigned length, unsigned stride >

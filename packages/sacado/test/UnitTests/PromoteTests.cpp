@@ -49,10 +49,12 @@ bool testADPromote() {
   typedef typename Sacado::ValueType<ad_type>::type value_type;
   typedef typename Sacado::ScalarType<ad_type>::type scalar_type;
 
-  // Get the type of the result of the expression 'ad_type * ad_type'
+  // Get the type of the result of the expression '- ad_type'
   // The use of declval gets around actually instantiation objects of type
   // ad_type.
-  typedef decltype(std::declval<ad_type>()*std::declval<ad_type>()) expr_type;
+  // We use a unary expression to catch special-case problems with Promote
+  // since the AD type may be convertible to the expression type
+  typedef decltype(-std::declval<ad_type>()) expr_type;
 
   static_assert(
     is_same<typename Promote<ad_type,ad_type>::type, ad_type >::value,
@@ -112,10 +114,12 @@ bool testViewPromote() {
   typedef typename Sacado::ScalarType<view_type>::type scalar_type;
   typedef typename view_type::base_fad_type base_fad_type;
 
-  // Get the type of the result of the expression 'view_type * view_type'
+  // Get the type of the result of the expression '- view_type'
   // The use of declval gets around actually instantiation objects of type
   // view_type.
-  typedef decltype(std::declval<view_type>()*std::declval<view_type>()) expr_type;
+  // We use a unary expression to catch special-case problems with Promote
+  // since the AD type may be convertible to the expression type
+  typedef decltype(-std::declval<view_type>()) expr_type;
 
   static_assert(
     is_same<typename Promote<view_type,view_type>::type, base_fad_type >::value,
@@ -221,9 +225,9 @@ bool testFadPromote() {
     is_same<typename Promote<view_fad_expr_type,fad_type>::type, fad_type >::value,
     "Promote<view_fad_expr_type,fad_type>::type != fad_type");
 
-  typedef decltype(std::declval<fad_fad_type>()*std::declval<fad_fad_type>()) fad_fad_expr_type;
-  typedef decltype(std::declval<view_fad_fad_type>()*std::declval<view_fad_fad_type>()) view_fad_fad_expr_type;
-   typedef decltype(std::declval<view_view_fad_type>()*std::declval<view_view_fad_type>()) view_view_fad_expr_type;
+  typedef decltype(-std::declval<fad_fad_type>()) fad_fad_expr_type;
+  typedef decltype(-std::declval<view_fad_fad_type>()) view_fad_fad_expr_type;
+   typedef decltype(-std::declval<view_view_fad_type>()) view_view_fad_expr_type;
 
   static_assert(
     is_same<typename Promote<view_fad_type,fad_fad_expr_type>::type, fad_fad_type >::value,

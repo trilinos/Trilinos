@@ -95,12 +95,12 @@ namespace Sacado {
 
     //! Determine whether a given type is an expression
     template <typename T>
-    struct IsExpr {
+    struct IsFadExpr {
       static const bool value = false;
     };
 
     template <typename T>
-    struct IsExpr< Expr<T> > {
+    struct IsFadExpr< Expr<T> > {
       static const bool value = true;
     };
 
@@ -158,6 +158,16 @@ namespace Sacado {
     }; // class ConstExpr
 
   } // namespace CacheFad
+
+  template <typename T>
+  struct IsExpr< CacheFad::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< CacheFad::Expr<T> > {
+    typedef typename CacheFad::Expr<T>::base_expr_type type;
+  };
 
 } // namespace Sacado
 

@@ -63,6 +63,17 @@ namespace Sacado {
         ExprLevel< typename Expr<T>::value_type >::value + 1;
     };
 
+    //! Determine whether a given type is an expression
+    template <typename T>
+    struct IsFadExpr {
+      static const bool value = false;
+    };
+
+    template <typename T>
+    struct IsFadExpr< Expr<T> > {
+      static const bool value = true;
+    };
+
     // Forward declaration
     template <typename ValT, typename LogT> class LogicalSparse;
 
@@ -505,6 +516,26 @@ namespace Sacado {
     };
 
   } // namespace LFad
+
+  template <typename T>
+  struct IsExpr< LFad::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< LFad::Expr<T> > {
+    typedef typename LFad::Expr<T>::base_expr_type type;
+  };
+
+  template <typename T, typename L>
+  struct IsExpr< LFad::LogicalSparse<T,L> > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename L>
+  struct BaseExprType< LFad::LogicalSparse<T,L> > {
+    typedef typename LFad::LogicalSparse<T,L>::base_expr_type type;
+  };
 
 } // namespace Sacado
 

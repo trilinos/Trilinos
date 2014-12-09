@@ -139,7 +139,7 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
-    template <typename T> struct IsExpr;                                \
+    template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -191,7 +191,7 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
-    template <typename T> struct IsExpr;                                \
+    template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -228,7 +228,7 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
-    template <typename T> struct IsExpr;                                \
+    template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -265,7 +265,7 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
-    template <typename T> struct IsExpr;                                \
+    template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \

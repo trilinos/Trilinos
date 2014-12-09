@@ -104,15 +104,21 @@ namespace Sacado {
     typedef A type;
   };
 
+  //! Is a type an expression
+  template <typename T>
+  struct IsExpr {
+    static const bool value = false;
+  };
+
   //! Determine whether a given type is a view
   template <typename T>
   struct IsView {
     static const bool value = false;
   };
 
-  //! Get the base Fad type from a view
+  //! Get the base Fad type from a view/expression
   template <typename T>
-  struct BaseFadType {
+  struct BaseExprType {
     typedef T type;
   };
 
@@ -124,9 +130,24 @@ namespace Sacado {
   struct Promote< A, B,
                   typename mpl::enable_if_c< IsView<A>::value ||
                                              IsView<B>::value >::type > {
-    typedef typename BaseFadType<A>::type base_fad_type_A;
-    typedef typename BaseFadType<B>::type base_fad_type_B;
+    typedef typename BaseExprType<A>::type base_fad_type_A;
+    typedef typename BaseExprType<B>::type base_fad_type_B;
     typedef typename Promote<base_fad_type_A,base_fad_type_B>::type type;
+  };
+
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                             mpl::is_convertible<B,A>::value &&
+                                             !mpl::is_same<A,B>::value &&
+                                             !IsView<A>::value &&
+                                             !IsView<B>::value &&
+                                             ( IsExpr<A>::value ||
+                                               IsExpr<B>::value ) >::type >
+  {
+    typedef typename BaseExprType<A>::type A_base_fad_type;
+    typedef typename BaseExprType<B>::type B_base_fad_type;
+    typedef typename Promote< A_base_fad_type, B_base_fad_type >::type type;
   };
 
   //! Specialization of %Promote to builtin types

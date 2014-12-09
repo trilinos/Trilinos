@@ -38,7 +38,7 @@
 
 /* Define some macros useful for disabling template function overloads */
 #define SACADO_ENABLE_IF_SAME(TYPE1, TYPE2, RETURN_TYPE)              \
-   typename mpl::enable_if_c<mpl::is_convertible< TYPE1 , TYPE2 >::value && ExprLevel<TYPE1>::value == ExprLevel<TYPE2>::value, RETURN_TYPE >::type
+  typename mpl::enable_if_c<mpl::is_convertible< TYPE1 , TYPE2 >::value && ExprLevel<TYPE1>::value == ExprLevel<TYPE2>::value, RETURN_TYPE >::type
 #define SACADO_ENABLE_EXPR_FUNC(RETURN_TYPE) \
   SACADO_ENABLE_IF_SAME(typename Expr<S>::value_type, value_type, RETURN_TYPE)
 #define SACADO_ENABLE_EXPR_CTOR_DEF SACADO_ENABLE_EXPR_FUNC(void*)
@@ -54,7 +54,7 @@
 #define SACADO_ENABLE_VALUE_CTOR_DECL SACADO_ENABLE_VALUE_CTOR_DEF = 0
 
 #define SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                              \
-  typename mpl::enable_if_c< IsExpr<T1>::value && IsExpr<T2>::value &&  \
+  typename mpl::enable_if_c< IsFadExpr<T1>::value && IsFadExpr<T2>::value && \
                              ExprLevel<T1>::value == ExprLevel<T2>::value, \
                              Expr< OP< T1, T2 > >                       \
                            >::type

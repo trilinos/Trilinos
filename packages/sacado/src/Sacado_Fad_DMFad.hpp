@@ -251,11 +251,21 @@ namespace Sacado {
     };
 
     template <typename T>
-    struct IsExpr< DMFad<T> > {
+    struct IsFadExpr< DMFad<T> > {
       static const bool value = true;
     };
 
   } // namespace Fad
+
+  template <typename T>
+  struct IsExpr< Fad::DMFad<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< Fad::DMFad<T> > {
+    typedef typename Fad::DMFad<T>::base_expr_type type;
+  };
 
   //! The View Fad type associated with this type
   template< class ValueType, unsigned length, unsigned stride >

@@ -254,11 +254,21 @@ namespace Sacado {
     };
 
     template <typename T>
-    struct IsExpr< DFad<T> > {
+    struct IsFadExpr< DFad<T> > {
       static const bool value = true;
     };
 
   } // namespace Fad
+
+  template <typename T>
+  struct IsExpr< FAD_NS::DFad<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< FAD_NS::DFad<T> > {
+    typedef typename FAD_NS::DFad<T>::base_expr_type type;
+  };
 
   template <typename,unsigned,unsigned> struct ViewFadType;
   namespace FAD_NS {

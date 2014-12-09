@@ -72,8 +72,8 @@ namespace Sacado {
       //! Turn ViewFad into a meta-function class usable with mpl::apply
       template <typename T>
       struct apply {
-        // BaseFadType<T>::type is T if T is not a view
-        typedef typename BaseFadType<T>::type T_for_base;
+        // BaseExprType<T>::type is T if T is not a view
+        typedef typename BaseExprType<T>::type T_for_base;
         typedef typename mpl::apply<base_fad_type,T_for_base>::type new_base_fad_type;
         typedef ViewFad<T,length,stride,new_base_fad_type> type;
       };
@@ -285,7 +285,7 @@ namespace Sacado {
     };
 
     template <typename T, unsigned l, unsigned s, typename U>
-    struct IsExpr< ViewFad<T,l,s,U> > {
+    struct IsFadExpr< ViewFad<T,l,s,U> > {
       static const bool value = true;
     };
 
@@ -298,8 +298,13 @@ namespace Sacado {
   };
 
   template <typename T, unsigned l, unsigned s, typename U>
-  struct BaseFadType< Sacado::FAD_NS::ViewFad<T,l,s,U> > {
-    typedef typename Sacado::FAD_NS::ViewFad<T,l,s,U>::base_fad_type type;
+  struct IsExpr< FAD_NS::ViewFad<T,l,s,U> > {
+    static const bool value = true;
+  };
+
+  template <typename T, unsigned l, unsigned s, typename U>
+  struct BaseExprType< FAD_NS::ViewFad<T,l,s,U> > {
+    typedef typename FAD_NS::ViewFad<T,l,s,U>::base_expr_type type;
   };
 
 } // namespace Sacado
