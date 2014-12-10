@@ -239,11 +239,7 @@ namespace Basker{
         return ierr;
       }
 
-
     /*End creating working space */
-
-
-
 
     /*Defining Variables Used*/
     Int i, j, k;
@@ -264,7 +260,6 @@ namespace Basker{
 
     stack = tptr;
     tptr += 2*(nrow);
-
 
     cu_ltop = 0;
     cu_utop = 0;
