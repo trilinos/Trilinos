@@ -119,12 +119,12 @@ private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<OptDualStdVector<Real> >  dual_vec_;
 
-FiniteDifference<Real> *fd_;
+Teuchos::RCP<FiniteDifference<Real> > fd_;
 
 
 public:
 
-OptStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, FiniteDifference<Real> *fd) : 
+OptStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, Teuchos::RCP<FiniteDifference<Real> >fd) : 
     std_vec_(std_vec), dual_vec_(Teuchos::null), fd_(fd) {}
 
 void plus( const Vector<Real> &x ) {
@@ -202,11 +202,11 @@ class OptDualStdVector : public Vector<Real> {
 private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<OptStdVector<Real> >  dual_vec_;
-FiniteDifference<Real> *fd_;
+Teuchos::RCP<FiniteDifference<Real> > fd_;
 
 public:
 
-OptDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, FiniteDifference<Real> *fd) : 
+OptDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, Teuchos::RCP<FiniteDifference<Real> >fd) : 
     std_vec_(std_vec), dual_vec_(Teuchos::null), fd_(fd) {}
 
 void plus( const Vector<Real> &x ) {
@@ -436,7 +436,7 @@ class Objective_GrossPitaevskii : public Objective<Real> {
         /*! \var ptr Vp_ Pointer to potential vector  */ 
         Teuchos::RCP<const std::vector<Real> > Vp_;    
 
-        FiniteDifference<Real> *fd_;
+        Teuchos::RCP<FiniteDifference<Real> > fd_;
 
         //! Apply finite difference operator 
         /*! Compute \f$K\psi\f$, where \f$K\f$ is the finite difference approximation 
@@ -463,7 +463,7 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 
     public: 
 
-        Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V, FiniteDifference<Real> *fd) : g_(g),  
+        Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V, Teuchos::RCP<FiniteDifference<Real> > fd) : g_(g),  
             Vp_((Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(V))).getVector()), fd_(fd)  {
 
             nx_ = Vp_->size(); 
@@ -561,11 +561,11 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
     private:     
     int nx_;
     Real dx_;
-    FiniteDifference<Real> *fd_;
+    Teuchos::RCP<FiniteDifference<Real> > fd_;
     bool exactsolve_; 
 
     public:
-    Normalization_Constraint(int n, Real dx, FiniteDifference<Real> *fd, bool exactsolve) : 
+    Normalization_Constraint(int n, Real dx, Teuchos::RCP<FiniteDifference<Real> > fd, bool exactsolve) : 
         nx_(n), dx_(dx), fd_(fd), exactsolve_(exactsolve) {}          
 
     //! Evaluate \f$c[\psi]\f$
