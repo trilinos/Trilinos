@@ -174,7 +174,6 @@ namespace Tpetra {
                     const Teuchos::ArrayView<LO> &localIDs,
                     const bool computeLIDs) const
     {
-      using Teuchos::as;
       using Teuchos::Comm;
       using Teuchos::RCP;
       typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
@@ -205,11 +204,12 @@ namespace Tpetra {
       // owns g is then R + floor(g_R / N_L), and its corresponding
       // local index on that process is g_R mod N_L.
 
-      const size_type N_G = as<size_type> (map.getGlobalNumElements ());
-      const size_type P = as<size_type> (comm->getSize ());
+      const size_type N_G =
+        static_cast<size_type> (map.getGlobalNumElements ());
+      const size_type P = static_cast<size_type> (comm->getSize ());
       const size_type N_L  = N_G / P;
       const size_type R = N_G - N_L * P; // N_G mod P
-      const size_type N_R = R * (N_L + 1);
+      const size_type N_R = R * (N_L + static_cast<size_type> (1));
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -221,28 +221,33 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
       const size_type numGids = globalIDs.size (); // for const loop bound
+      // Avoid signed/unsigned comparisons below, in case GO is
+      // unsigned.  (Integer literals are generally signed.)
+      const GO ONE = static_cast<GO> (1);
+
       if (computeLIDs) {
         for (size_type k = 0; k < numGids; ++k) {
           const GO g_0 = globalIDs[k] - g_min;
+
           // The first test is a little strange just in case GO is
           // unsigned.  Compilers raise a warning on tests like "x <
           // 0" if x is unsigned, but don't usually raise a warning if
           // the expression is a bit more complicated than that.
-          if (g_0 + 1 < 1 || g_0 >= N_G) {
+          if (g_0 + ONE < ONE || g_0 >= static_cast<GO> (N_G)) {
             nodeIDs[k] = -1;
             localIDs[k] = invalidLid;
             res = IDNotPresent;
           }
-          else if (g_0 < as<GO> (N_R)) {
+          else if (g_0 < static_cast<GO> (N_R)) {
             // The GID comes from the initial sequence of R processes.
-            nodeIDs[k] = as<int> (g_0 / (N_L + 1));
-            localIDs[k] = g_0 % (N_L + 1);
+            nodeIDs[k] = static_cast<int> (g_0 / static_cast<GO> (N_L + 1));
+            localIDs[k] = static_cast<LO> (g_0 % static_cast<GO> (N_L + 1));
           }
-          else if (g_0 >= as<GO> (N_R)) {
+          else if (g_0 >= static_cast<GO> (N_R)) {
             // The GID comes from the remaining P-R processes.
-            const GO g_R = g_0 - N_R;
-            nodeIDs[k] = as<int> (R + g_R / N_L);
-            localIDs[k] = as<int> (g_R % N_L);
+            const GO g_R = g_0 - static_cast<GO> (N_R);
+            nodeIDs[k] = static_cast<int> (R + g_R / N_L);
+            localIDs[k] = static_cast<int> (g_R % N_L);
           }
 #ifdef HAVE_TPETRA_DEBUG
           else {
@@ -261,18 +266,18 @@ namespace Tpetra {
           // unsigned.  Compilers raise a warning on tests like "x <
           // 0" if x is unsigned, but don't usually raise a warning if
           // the expression is a bit more complicated than that.
-          if (g_0 + 1 < 1 || g_0 >= N_G) {
+          if (g_0 + ONE < ONE || g_0 >= static_cast<GO> (N_G)) {
             nodeIDs[k] = -1;
             res = IDNotPresent;
           }
-          else if (g_0 < as<GO> (N_R)) {
+          else if (g_0 < static_cast<GO> (N_R)) {
             // The GID comes from the initial sequence of R processes.
-            nodeIDs[k] = as<int> (g_0 / (N_L + 1));
+            nodeIDs[k] = static_cast<int> (g_0 / static_cast<GO> (N_L + 1));
           }
-          else if (g_0 >= as<GO> (N_R)) {
+          else if (g_0 >= static_cast<GO> (N_R)) {
             // The GID comes from the remaining P-R processes.
-            const GO g_R = g_0 - N_R;
-            nodeIDs[k] = as<int> (R + g_R / N_L);
+            const GO g_R = g_0 - static_cast<GO> (N_R);
+            nodeIDs[k] = static_cast<int> (R + g_R / N_L);
           }
 #ifdef HAVE_TPETRA_DEBUG
           else {

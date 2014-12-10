@@ -59,9 +59,13 @@ class Distributor;
 
 namespace Details {
 
-template <class LO = Map<>::local_ordinal_type,
-          class GO = typename Map<LO>::global_ordinal_type,
-          class NT = typename Map<LO, GO>::node_type>
+/// \class Transfer
+/// \brief Common base class of Import and Export
+/// \warning This is an implementation detail of Tpetra.  We make no
+///   promises of backwards compatibility with this class.
+template <class LO = ::Tpetra::Map<>::local_ordinal_type,
+          class GO = typename ::Tpetra::Map<LO>::global_ordinal_type,
+          class NT = typename ::Tpetra::Map<LO, GO>::node_type>
 class Transfer : public Teuchos::Describable {
 public:
   //! Destructor (declared virtual for memory safety of derived classes).

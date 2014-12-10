@@ -504,6 +504,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::RCP;
     using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
     //typedef typename ArrayView<const LocalOrdinal>::size_type size_type; // unused
     const char tfecfFuncName[] = "copyAndPermute";
@@ -516,7 +517,6 @@ namespace Tpetra {
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
-
     const size_t numCols = this->getNumVectors ();
 
     // TODO (mfh 15 Sep 2013) When we replace
@@ -541,17 +541,15 @@ namespace Tpetra {
     // deep_copy between strided subviews with more than one column
     // doesn't currently work.
     if (numSameIDs > 0) {
-      const std::pair<size_t, size_t> rows( 0, numSameIDs );
+      const std::pair<size_t, size_t> rows (0, numSameIDs);
       for (size_t j = 0; j < numCols; ++j) {
-        const size_t dstCol =
-          isConstantStride() ? j : whichVectors_[j];
+        const size_t dstCol = isConstantStride () ? j : whichVectors_[j];
         const size_t srcCol =
-          sourceMV.isConstantStride() ? j : sourceMV.whichVectors_[j];
-        dual_view_type dst_j =
-          Kokkos::subview<dual_view_type>( view_, rows, dstCol );
+          sourceMV.isConstantStride () ? j : sourceMV.whichVectors_[j];
+        dual_view_type dst_j = subview<dual_view_type> (view_, rows, dstCol);
         dual_view_type src_j =
-          Kokkos::subview<dual_view_type>( sourceMV.view_, rows, srcCol );
-        Kokkos::deep_copy( dst_j, src_j ); // Copy src_j into dest_j
+          subview<dual_view_type> (sourceMV.view_, rows, srcCol);
+        Kokkos::deep_copy (dst_j, src_j); // Copy src_j into dst_j
       }
     }
 
@@ -3616,31 +3614,28 @@ namespace Tpetra {
             Teuchos::OSTab tab2 (out);
 
             // >= VERB_MEDIUM: print the local vector length.
-            out << "local length: " << getLocalLength();
+            out << "localNumRows: " << getLocalLength() << endl
+                << "isConstantStride: " << isConstantStride () << endl;
             if (vl != VERB_MEDIUM) {
               // >= VERB_HIGH: print isConstantStride() and getStride()
               if (isConstantStride()) {
-                out << "constant stride: " << getStride() << endl;
-              }
-              else {
-                out << "not constant stride" << endl;
+                out << "columnStride: " << getStride() << endl;
               }
               if (vl == VERB_EXTREME) {
                 // VERB_EXTREME: print all the values in the multivector.
                 out << "values: " << endl;
                 typename dual_view_type::t_host X = this->getDualView ().h_view;
                 out << "[";
-                for (size_t i = 0; i < getLocalLength(); ++i) {
-                  for (size_t j = 0; j < getNumVectors(); ++j) {
-                    out << X(i,j);
-                    if (j + 1 < getNumVectors()) {
+                for (size_t i = 0; i < getLocalLength (); ++i) {
+                  for (size_t j = 0; j < getNumVectors (); ++j) {
+                    const size_t col = isConstantStride () ? j : whichVectors_[j];
+                    out << X(i,col);
+                    if (j + 1 < getNumVectors ()) {
                       out << ", ";
                     }
                   } // for each column
                   if (i + 1 < getLocalLength ()) {
                     out << "; ";
-                  } else {
-                    out << endl;
                   }
                 } // for each row
                 out << "]" << endl;
@@ -3989,44 +3984,8 @@ namespace Tpetra {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
     typedef MultiVector<ST, LO, GO, node_type> MV;
 
-    MV cpy (src.getMap (), src.getNumVectors ());
-    if (src.isConstantStride ()) {
-      Kokkos::deep_copy (cpy.getDualView (), src.getDualView ());
-    }
-    else {
-      const char viewName[] = "MV::createCopy::whichVecs";
-      const LO numWhichVecs = static_cast<LO> (src.whichVectors_.size ());
-
-      if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
-        typedef typename MV::dual_view_type::t_dev dev_view_type;
-        typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
-          LO, DeviceType, true, false> functor_type;
-
-        Kokkos::View<LO*, DeviceType> whichVectors (viewName, numWhichVecs);
-        // FIXME (mfh 23 Jul 2014) The following loop assumes CUDA UVM.
-        for (LO i = 0; i < numWhichVecs; ++i) {
-          whichVectors(i) = static_cast<LO> (src.whichVectors_[i]);
-        }
-        functor_type f (cpy.getDualView ().template view<DeviceType> (),
-                        src.getDualView ().template view<DeviceType> (),
-                        whichVectors, whichVectors);
-        Kokkos::parallel_for (src.getLocalLength (), f);
-      }
-      else {
-        typedef typename MV::dual_view_type::host_mirror_space host_dev_type;
-        typedef typename MV::dual_view_type::t_host host_view_type;
-        typedef DeepCopySelectedVectors<host_view_type, host_view_type,
-          LO, host_dev_type, true, false> functor_type;
-        Kokkos::View<LO*, host_dev_type> whichVectors (viewName, numWhichVecs);
-        for (LO i = 0; i < numWhichVecs; ++i) {
-          whichVectors(i) = static_cast<LO> (src.whichVectors_[i]);
-        }
-        functor_type f (cpy.getDualView ().template view<host_dev_type> (),
-                        src.getDualView ().template view<host_dev_type> (),
-                        whichVectors, whichVectors);
-        Kokkos::parallel_for (src.getLocalLength (), f);
-      }
-    }
+    MV cpy (src.getMap (), src.getNumVectors (), false);
+    cpy.assign (src);
     return cpy;
   }
 
