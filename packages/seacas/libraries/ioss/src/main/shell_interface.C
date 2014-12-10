@@ -221,6 +221,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     shuffle = true;
   }
 
+  {
+    const char *temp = options_.retrieve("compress");
+    if (temp != NULL) {
+      compression_level = std::strtol(temp, NULL, 10);
+    }
+  }
+
   if (options_.retrieve("rcb")) {
     decomp_method = "RCB";
   }
