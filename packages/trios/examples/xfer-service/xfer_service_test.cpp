@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
 
-    log_debug(LOG_ALL, "transport_index=%d", transport_index);
+    log_debug(args.debug_level, "transport_index=%d", transport_index);
     if (transport_index > -1) {
     	args.transport     =nssi_transport_list[transport_index];
     	args.transport_name=std::string(nssi_transport_names[transport_index]);
