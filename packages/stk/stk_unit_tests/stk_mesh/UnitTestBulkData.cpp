@@ -78,6 +78,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <unit_tests/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include <stk_mesh/base/MeshUtils.hpp>
 
 namespace stk
 {
@@ -4020,7 +4021,7 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
         bulk.change_ghosting(ghosting, ghostingStruct);
 
         stk::mesh::EntityVector ghosted_nodes_that_need_to_be_shared;
-        bulk.my_find_ghosted_nodes_that_need_to_be_shared(ghosted_nodes_that_need_to_be_shared);
+        stk::mesh::find_ghosted_nodes_that_need_to_be_shared(bulk, ghosted_nodes_that_need_to_be_shared);
 
         EXPECT_EQ(0u, ghosted_nodes_that_need_to_be_shared.size());
 
@@ -4051,7 +4052,7 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
             bulk.declare_relation( element1, ghostedNode2, 1 );
         }
 
-        bulk.my_find_ghosted_nodes_that_need_to_be_shared(ghosted_nodes_that_need_to_be_shared);
+        stk::mesh::find_ghosted_nodes_that_need_to_be_shared(bulk, ghosted_nodes_that_need_to_be_shared);
 
         if ( bulk.parallel_rank() == 1 )
         {
@@ -4068,7 +4069,8 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
             EXPECT_EQ(0u, ghosted_nodes_that_need_to_be_shared.size());
         }
 
-        ASSERT_NO_THROW(bulk.modification_end_for_percept());
+        stk::mesh::fixup_ghosted_to_shared_nodes(bulk);
+        ASSERT_NO_THROW(bulk.modification_end());
 
         stk::mesh::Entity shared_node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
         ASSERT_TRUE(bulk.bucket(shared_node1).shared());

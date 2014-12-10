@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_mesh_MeshUtils_hpp
-#define stk_mesh_MeshUtils_hpp
+#ifndef stk_mesh_base_impl_MeshImplUtils_hpp
+#define stk_mesh_base_impl_MeshImplUtils_hpp
 
 //----------------------------------------------------------------------
 
@@ -362,5 +362,5 @@ stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( con
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-#endif
+#endif // stk_mesh_base_impl_MeshImplUtils_hpp
 

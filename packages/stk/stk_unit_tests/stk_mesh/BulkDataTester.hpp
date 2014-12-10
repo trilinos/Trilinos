@@ -128,11 +128,6 @@ public:
         return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
     }
 
-    void my_find_ghosted_nodes_that_need_to_be_shared(stk::mesh::EntityVector& ghosted_nodes_that_are_now_shared)
-    {
-        this->find_ghosted_nodes_that_need_to_be_shared(ghosted_nodes_that_are_now_shared);
-    }
-
     bool my_internal_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
     {
         return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);

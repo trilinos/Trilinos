@@ -207,7 +207,6 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
-  bool modification_end_for_percept( modification_optimization opt = MOD_END_SORT);
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
   /** \brief  Give away ownership of entities to other parallel processes.
@@ -769,8 +768,6 @@ protected: //functions
   bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
-  void fixup_ghosted_to_shared_nodes();
-  void find_ghosted_nodes_that_need_to_be_shared(stk::mesh::EntityVector& ghosted_nodes_that_are_now_shared);
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
@@ -1053,6 +1050,7 @@ private: // data
 #endif
 
 };
+
 
 } // namespace mesh
 } // namespace stk
