@@ -102,9 +102,10 @@ void Internals::update_last_time_attribute(double value)
   const char *routine = "Internals::update_last_time_attribute()";
 
   double tmp = 0.0;
-  int status = nc_get_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time", &tmp);
+  int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
+  int status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
   if (status == NC_NOERR && value > tmp) {
-    status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
+    status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
 			     NC_DOUBLE, 1, &value);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -668,66 +669,70 @@ int Internals::put_metadata(const Mesh &mesh,
   }
 
 
-  int status = nc_put_att_text(rootid, NC_GLOBAL, ATT_TITLE,
-			       (int)std::strlen(mesh.title)+1, mesh.title);
+  if (rootid == exodusFilePtr) {
+    // We are creating a grouped file, the title and other attributes haveee
+    // already been defined when the root group was created; don't redo now.
+    int status = nc_put_att_text(rootid, NC_GLOBAL, ATT_TITLE,
+				 (int)std::strlen(mesh.title)+1, mesh.title);
 
-  // define some attributes...
-  if (status != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to define title attribute to file id %d", exodusFilePtr);
-    ex_err(routine,errmsg,status);
-    return(EX_FATAL);
-  }
-
-  // For use later as a consistency check, define the number of processors and
-  // the current processor id as an attribute of the file...
-  {
-    int ltempsv[2];
-    ltempsv[0] = comm.processorCount;
-    ltempsv[1] = comm.processorId;
-    status=nc_put_att_int(rootid, NC_GLOBAL, "processor_info", NC_INT, 2, ltempsv);
+    // define some attributes...
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,
-	      "Error: failed to define processor info attribute to file id %d", exodusFilePtr);
+	      "Error: failed to define title attribute to file id %d", exodusFilePtr);
       ex_err(routine,errmsg,status);
       return(EX_FATAL);
     }
-  }
 
-  // For use later to determine whether a timestep is corrupt, we define an attribute
-  // containing the last written time...
-  {
-    double fake_time = -1.0e38;
-    status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
-			     NC_DOUBLE, 1, &fake_time);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define 'last_written_time' attribute to file id %d", exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
+    // For use later as a consistency check, define the number of processors and
+    // the current processor id as an attribute of the file...
+    {
+      int ltempsv[2];
+      ltempsv[0] = comm.processorCount;
+      ltempsv[1] = comm.processorId;
+      status=nc_put_att_int(rootid, NC_GLOBAL, "processor_info", NC_INT, 2, ltempsv);
+      if (status != NC_NOERR) {
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to define processor info attribute to file id %d", exodusFilePtr);
+	ex_err(routine,errmsg,status);
+	return(EX_FATAL);
+      }
     }
-  }
 
-  // For use later to help readers know how much memory to allocate
-  // for name storage, we define an attribute containing the maximum
-  // size of any name.
-  {
-    int current_len = 0;
-    status=nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define ATT_MAX_NAME_LENGTH attribute to file id %d", exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
+    // For use later to determine whether a timestep is corrupt, we define an attribute
+    // containing the last written time...
+    {
+      double fake_time = -1.0e38;
+      status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
+			       NC_DOUBLE, 1, &fake_time);
+      if (status != NC_NOERR) {
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to define 'last_written_time' attribute to file id %d", exodusFilePtr);
+	ex_err(routine,errmsg,status);
+	return(EX_FATAL);
+      }
+    }
+
+    // For use later to help readers know how much memory to allocate
+    // for name storage, we define an attribute containing the maximum
+    // size of any name.
+    {
+      int current_len = 0;
+      status=nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
+      if (status != NC_NOERR) {
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to define ATT_MAX_NAME_LENGTH attribute to file id %d", exodusFilePtr);
+	ex_err(routine,errmsg,status);
+	return(EX_FATAL);
+      }
     }
   }
 
   // inquire previously defined dimensions
-  status=nc_inq_dimid (rootid, DIM_STR, &strdim);
+  int status=nc_inq_dimid (rootid, DIM_STR, &strdim);
   if (status != NC_NOERR) {
     ex_opts(EX_VERBOSE);
     sprintf(errmsg,
