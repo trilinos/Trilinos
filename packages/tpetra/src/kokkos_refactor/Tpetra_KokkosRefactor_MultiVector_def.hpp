@@ -3574,7 +3574,6 @@ namespace Tpetra {
     using Teuchos::VERB_EXTREME;
     using std::endl;
     using std::setw;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
 
     // Set default verbosity if applicable.
     const Teuchos::EVerbosityLevel vl =
