@@ -75,8 +75,7 @@ void IOShell::Interface::enroll_options()
 		  "exodus");
 
   options_.enroll("extract_group", Ioss::GetLongOption::MandatoryValue,
-		  "Write the data from the specified group to the output file.\n"
-		  "\t\tUse 'ALL' to extract all groups in the file to separate output files.",
+		  "Write the data from the specified group to the output file.\n",
 		  NULL);
 
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue,

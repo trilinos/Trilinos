@@ -91,7 +91,7 @@ void Info::Interface::enroll_options()
 		  "Database Type: exodus, generated","exodusii");
 
   options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
-                 "List information only for the specified group. Use 'ALL' to see info for all groups",
+                 "List information only for the specified group.",
                  NULL);
 
   options_.enroll("use_generic_names", Ioss::GetLongOption::NoValue,
