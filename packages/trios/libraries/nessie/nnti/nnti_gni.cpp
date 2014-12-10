@@ -189,6 +189,8 @@ typedef struct {
 
 	uint32_t min_atomics_vars;
 
+	uint32_t queue_elements_per_connection;
+
 } nnti_gni_config_t;
 
 
@@ -267,6 +269,10 @@ typedef struct {
 
 
 typedef struct {
+    uint64_t inst_id;
+} nnti_gni_credit_msg_t;
+
+typedef struct {
     uint64_t ack_received;
     uint64_t inst_id;
     uint64_t byte_len;
@@ -278,32 +284,8 @@ typedef struct {
     uint16_t op;
 } nnti_gni_work_completion_t;
 
-/**
- * attrs to send to the client
- */
-typedef struct {
-    uint64_t          req_index_addr; /* address of the request index var on the server */
-    gni_mem_handle_t  req_index_mem_hdl;
-
-    uint64_t         req_buffer_addr; /* address of the request buffer */
-    uint64_t         req_size;        /* the maximum size of a request */
-    uint64_t         req_count;       /* the number of requests that will fit in the queue */
-    gni_mem_handle_t req_mem_hdl;
-
-} nnti_gni_recv_queue_attrs_t;
-
-typedef struct {
-    uint64_t         req_index;      /* after AMO Fetch-Add, this buffer contains the current index of the request queue */
-    uint64_t         req_index_addr; /* address of the request index var on the client. */
-    gni_cq_handle_t  req_index_mem_cq_hdl;
-    gni_mem_handle_t req_index_mem_hdl;
-    gni_cq_handle_t  req_index_cq_hdl;
-    gni_ep_handle_t  req_index_ep_hdl;
-
-    gni_ep_handle_t  req_ep_hdl;
-
-    uint64_t last_offset;
-} nnti_gni_client_queue_t;
+// forward declaration
+struct nnti_gni_req_queue_mbox_t;
 
 typedef struct {
     NNTI_peer_t       peer;
@@ -316,8 +298,9 @@ typedef struct {
 
     alpsAppGni_t      peer_alps_info;
 
-    nnti_gni_client_queue_t     queue_local_attrs;
-    nnti_gni_recv_queue_attrs_t queue_remote_attrs;
+    nnti_gni_req_queue_mbox_t *send_mbox;
+    nnti_gni_req_queue_mbox_t *recv_mbox;
+    nthread_counter_t reqs_received;
 
     uint64_t         atomics_addr;
     gni_mem_handle_t atomics_mem_hdl;
@@ -342,19 +325,21 @@ typedef struct {
 } nnti_gni_sge_t;  /* scatter-gather element */
 
 typedef struct nnti_gni_work_request_t {
-    NNTI_work_request_t       *nnti_wr;
+    NNTI_work_request_t *nnti_wr;
 
     nnti_gni_wr_state_t state;
 
-    uint8_t                  is_initiator;
+    uint8_t is_initiator;
 
-    nthread_lock_t           lock;
+    nthread_lock_t lock;
 
-    const NNTI_buffer_t     *reg_buf;
+    const NNTI_buffer_t *reg_buf;
 
-    nnti_gni_sge_t           sge;
-    nnti_gni_sge_t          *sge_list;
-    uint32_t                 sge_count;
+    nnti_gni_sge_t  sge;
+    nnti_gni_sge_t *sge_list;
+    uint32_t        sge_count;
+
+    uint64_t index;
 
     nnti_gni_work_completion_t  rdma_wc;  /* RDMA buffers don't have a work completion footer.  use this work for RDMA ops. */
     nnti_gni_work_completion_t *wc;
@@ -368,32 +353,61 @@ typedef std::deque<nnti_gni_work_request_t *>           wr_queue_t;
 typedef std::deque<nnti_gni_work_request_t *>::iterator wr_queue_iter_t;
 
 typedef struct {
-    nnti_gni_buffer_type_t   type;
-    gni_mem_handle_t  mem_hdl;
-    gni_mem_handle_t *mem_hdl_list;
-    uint32_t          mem_hdl_count;
-    wr_queue_t       *wr_queue;
-    nthread_lock_t    wr_queue_lock;
-    uint32_t          ref_count;
-    uint64_t          extra;
+    nnti_gni_buffer_type_t  type;
+    gni_mem_handle_t        mem_hdl;
+    gni_mem_handle_t       *mem_hdl_list;
+    uint32_t                mem_hdl_count;
+    wr_queue_t             *wr_queue;
+    nthread_lock_t          wr_queue_lock;
+    uint32_t                ref_count;
+    uint64_t                extra;
 } nnti_gni_memory_handle_t;
 
+typedef struct nnti_gni_req_queue_mbox_t {
+    NNTI_buffer_t         *reg_buf;
+
+    nnti_gni_connection_t *conn;
+
+    nthread_counter_t mbox_index;      /* index of the next available slot in the mailbox */
+
+    int64_t           msg_maxsize;     /* max size of a request */
+    int64_t           wc_size;         /* size of the transport-specific work completion struct */
+
+    int64_t           max_credits;     /* max number of requests the mailbox can hold */
+
+    int64_t           amo_result;
+    uint64_t          amo_result_addr;
+    gni_mem_handle_t  amo_result_mem_hdl;
+
+    int64_t           credits;         /* current number of credits available */
+    uint64_t          credits_addr;
+    gni_mem_handle_t  credits_mem_hdl;
+
+    char             *mbox_buf;
+    uint64_t          mbox_addr;
+    int64_t           mbox_bufsize;    /* ( msg_maxsize + wc_size ) * max_credits */
+    gni_mem_handle_t  mbox_mem_hdl;
+
+    gni_cq_handle_t   amo_cq_hdl;
+    gni_ep_handle_t   amo_ep_hdl;
+
+    gni_ep_handle_t   ep_hdl;
+
+} nnti_gni_req_queue_mbox_t;
+
 typedef struct {
-    NNTI_buffer_t   *reg_buf;
+    NNTI_buffer_t    *reg_buf;
 
-    uint64_t         last_index_before_reset;
-    uint64_t         req_index;       /* index of the next available slot in the request queue */
-    uint64_t         req_index_addr;  /* address of the request index var on the server */
-    gni_cq_handle_t  req_index_mem_cq_hdl;
-    gni_mem_handle_t req_index_mem_hdl;
+    nthread_counter_t req_index;      /* index of the next available slot in the request queue */
 
-    char            *req_buffer;      /* pointer to the head of the request buffer */
-    uint64_t         req_size;        /* the maximum size of a request */
-    uint64_t         req_count;       /* the number of requests that will fit in the queue */
-    uint64_t         req_buffer_size; /* the size of the request buffer in bytes (req_size*req_count) */
+    char             *req_buffer;      /* pointer to the head of the request buffer */
+    uint64_t          req_size;        /* the maximum size of a request */
+    uint64_t          req_count;       /* the number of requests that will fit in the queue */
+    uint64_t          req_buffer_size; /* the size of the request buffer in bytes (req_size*req_count) */
 
-    int64_t          head;  /* index of the next work request to assign */
-    int64_t          tail;  /* index of lowest assigned work request */
+    int64_t           head;  /* index of the next work request to assign */
+    int64_t           tail;  /* index of lowest assigned work request */
+
 } nnti_gni_request_queue_handle_t;
 
 typedef struct {
@@ -402,6 +416,11 @@ typedef struct {
     gni_cdm_handle_t cdm_hdl;
     gni_nic_handle_t nic_hdl;
     NNTI_instance_id instance;
+
+    gni_cq_handle_t   req_send_ep_cq_hdl;   /* events are delivered here when a request has been delivered to a remote mailbox */
+    gni_cq_handle_t   req_send_mem_cq_hdl;  /* events are delivered here when an unsolicited credit message is received */
+    gni_cq_handle_t   req_recv_ep_cq_hdl;
+    gni_cq_handle_t   req_recv_mem_cq_hdl;  /* events are delivered here when a request is delivered to a local mailbox */
 
     gni_cq_handle_t  ep_cq_hdl;
     gni_cq_handle_t  mem_cq_hdl;
@@ -432,6 +451,7 @@ typedef struct {
 
 static nthread_lock_t nnti_gni_lock;
 static nthread_lock_t nnti_mem_lock;
+static nthread_lock_t nnti_resend_lock;
 static nthread_lock_t nnti_progress_lock;
 static nthread_cond_t nnti_progress_cond;
 
@@ -455,7 +475,8 @@ static NNTI_result_t register_memory(
 static NNTI_result_t unregister_memory(
         gni_mem_handle_t mem_hdl);
 static nnti_gni_sge_t *decode_sge(
-        gni_cq_entry_t      *ev_data);
+        gni_cq_entry_t      *ev_data,
+        gni_cq_handle_t      cq_hdl);
 static nnti_gni_work_request_t *decode_work_request(
         gni_cq_entry_t      *ev_data);
 static int cancel_wr(
@@ -463,6 +484,7 @@ static int cancel_wr(
 static int process_event(
         const NNTI_buffer_t   *reg_buf,
         nnti_gni_sge_t        *gni_sge,
+        void                  *header,
         gni_cq_handle_t        cq_hdl,
         gni_cq_entry_t        *ev_data,
         gni_post_descriptor_t *post_desc_ptr);
@@ -527,10 +549,10 @@ static int need_wc_mem_cq(nnti_gni_memory_handle_t *gni_mem_hdl);
 static void print_gni_conn(nnti_gni_connection_t *c);
 static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_t *conn);
 static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, nnti_gni_connection_t *conn);
-static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer);
+static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type);
 static nnti_gni_connection_t *get_conn_instance(const NNTI_instance_id instance);
 static NNTI_peer_t *get_peer_by_url(const char *url);
-static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer);
+static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type);
 static nnti_gni_connection_t *del_conn_instance(const NNTI_instance_id instance);
 static void print_peer_map(void);
 static void print_instance_map(void);
@@ -579,6 +601,10 @@ static void server_req_queue_init(
         uint64_t                  req_size,
         uint64_t                  extra,
         uint64_t                  req_count);
+static void server_req_queue_add_client(
+        nnti_gni_connection_t *c);
+static void server_req_queue_remove_client(
+        nnti_gni_connection_t *c);
 static void server_req_queue_destroy(
         nnti_gni_request_queue_handle_t *q);
 
@@ -587,43 +613,30 @@ static void client_req_queue_init(
 static void client_req_queue_destroy(
         nnti_gni_connection_t *c);
 
-static int reset_req_index(
-        nnti_gni_request_queue_handle_t  *req_queue_attrs);
-
-static void send_rdma_wc (
-        nnti_gni_work_request_t    *wr,
-        const NNTI_buffer_t *local_buf,
-        const NNTI_buffer_t *remote_buf);
-
-static int fetch_add_buffer_offset(
-        nnti_gni_client_queue_t     *local_req_queue_attrs,
-        nnti_gni_recv_queue_attrs_t *remote_req_queue_attrs,
-        uint64_t                   addend,
-        uint64_t                  *prev_offset);
-static int send_req(
-        const NNTI_peer_t         *peer_hdl,
-        nnti_gni_client_queue_t     *local_req_queue_attrs,
-        nnti_gni_recv_queue_attrs_t *remote_req_queue_attrs,
-        uint64_t                   offset,
-        const NNTI_buffer_t       *reg_buf,
-        nnti_gni_work_request_t          *gni_wr);
+static int send_back_credits(
+        nnti_gni_connection_t *conn,
+        uint64_t               credits_to_send);
+static int credits_available(
+        nnti_gni_connection_t *conn);
+static int resend_all(void);
 static int request_send(
-        const NNTI_peer_t         *peer_hdl,
-        nnti_gni_client_queue_t     *client_q,
-        nnti_gni_recv_queue_attrs_t *server_q,
-        const NNTI_buffer_t       *reg_buf,
-        int                        req_num,
-        nnti_gni_work_request_t          *gni_wr);
+        const NNTI_peer_t       *peer_hdl,
+        nnti_gni_connection_t   *conn,
+        const NNTI_buffer_t     *reg_buf,
+        int                      req_num,
+        nnti_gni_work_request_t *gni_wr);
 static int send_buffer(
-        const NNTI_peer_t   *peer_hdl,
-        const NNTI_buffer_t *src_hdl,
-        const NNTI_buffer_t *dest_hdl,
-        nnti_gni_work_request_t    *gni_wr);
+        const NNTI_peer_t       *peer_hdl,
+        nnti_gni_connection_t   *conn,
+        const NNTI_buffer_t     *src_hdl,
+        const NNTI_buffer_t     *dest_hdl,
+        nnti_gni_work_request_t *gni_wr);
 static int buffer_send(
-        const NNTI_peer_t   *peer_hdl,
-        const NNTI_buffer_t *src_hdl,
-        const NNTI_buffer_t *dest_hdl,
-        nnti_gni_work_request_t    *gni_wr);
+        const NNTI_peer_t       *peer_hdl,
+        nnti_gni_connection_t   *conn,
+        const NNTI_buffer_t     *src_hdl,
+        const NNTI_buffer_t     *dest_hdl,
+        nnti_gni_work_request_t *gni_wr);
 
 static NNTI_result_t progress(int timeout);
 
@@ -645,7 +658,8 @@ inline int IS_RDMA_TARGET_BUFFER(
 #define GNI_MEM_HDL(_b)           ((nnti_gni_memory_handle_t *)((_b)->transport_private))
 #define GNI_WORK_REQUEST(_gwr)    ((nnti_gni_work_request_t *)((_gwr)->transport_private))
 
-#define GNI_ELEMENT_ADDRESS(_b,_i)  (_b->payload+((_b->payload_size+sizeof(nnti_gni_work_completion_t))*_i))
+#define GNI_ELEMENT_OFFSET(_b,_i)   ((_b->payload_size+sizeof(nnti_gni_work_completion_t))*_i)
+#define GNI_ELEMENT_ADDRESS(_b,_i)  (_b->payload+GNI_ELEMENT_OFFSET(_b,_i))
 #define GNI_WC_ADDRESS(_b,_i)       ((nnti_gni_work_completion_t *)(_b->payload + \
 		                            ((_b->payload_size+sizeof(nnti_gni_work_completion_t))*_i) + \
 		                            _b->payload_size))
@@ -663,7 +677,7 @@ inline int IS_RDMA_TARGET_BUFFER(
 static bool gni_initialized=false;
 
 static nnti_gni_transport_global_t transport_global_data;
-static const int MIN_TIMEOUT = 100;  /* in milliseconds.  must be >0 for GNI_CqVectorWaitEvent(). */
+static const int MIN_TIMEOUT = 100;  /* in milliseconds.  must be >0 for CqVectorMonitor(). */
 
 static log_level nnti_cq_debug_level;
 static log_level nnti_event_debug_level;
@@ -677,6 +691,7 @@ static log_level nnti_ee_debug_level;
 struct addrport_key {
     NNTI_ip_addr    addr;       /* part1 of a compound key */
     NNTI_tcp_port   port;       /* part2 of a compound key */
+    nnti_gni_connection_type_t type; /* part3 of a compound key */
 
     // Need this operators for the hash map
     bool operator<(const addrport_key &key1) const {
@@ -685,6 +700,10 @@ struct addrport_key {
         } else if (addr == key1.addr) {
             if (port < key1.port) {
                 return true;
+            } else if (port == key1.port) {
+                if (type < key1.type) {
+                    return true;
+                }
             }
         }
         return false;
@@ -695,6 +714,10 @@ struct addrport_key {
         } else if (addr == key1.addr) {
             if (port > key1.port) {
                 return true;
+            } else if (port == key1.port) {
+                if (type > key1.type) {
+                    return true;
+                }
             }
         }
         return false;
@@ -748,9 +771,14 @@ typedef std::deque<nnti_gni_work_request_t *>           wr_pool_t;
 typedef std::deque<nnti_gni_work_request_t *>::iterator wr_pool_iter_t;
 static nthread_lock_t nnti_wr_pool_lock;
 
+typedef std::map<NNTI_instance_id, wr_queue_t *>           wr_queue_map_t;
+typedef std::map<NNTI_instance_id, wr_queue_t *>::iterator wr_queue_map_iter_t;
+static nthread_lock_t nnti_wr_queue_map_lock;
+
 static wr_pool_t target_wr_pool;
 static wr_pool_t initiator_wr_pool;
 
+static wr_queue_map_t wr_resend_map;
 
 static nnti_gni_config_t config;
 
@@ -867,6 +895,7 @@ NNTI_result_t NNTI_gni_init (
         nnti_ee_debug_level=nnti_debug_level;
 
         nthread_lock_init(&nnti_gni_lock);
+        nthread_lock_init(&nnti_resend_lock);
         nthread_lock_init(&nnti_mem_lock);
 
         nthread_lock_init(&nnti_progress_lock);
@@ -991,7 +1020,7 @@ NNTI_result_t NNTI_gni_init (
 
         trios_start_timer(call_time);
 
-        rc=GNI_CdmAttach_wrapper (transport_global_data.cdm_hdl,
+        rc=GNI_CdmAttach (transport_global_data.cdm_hdl,
                 transport_global_data.alps_info.device_id,
                 (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &transport_global_data.nic_hdl);
@@ -1007,6 +1036,55 @@ NNTI_result_t NNTI_gni_init (
             goto cleanup;
         }
 
+        rc=GNI_CqCreate (
+                transport_global_data.nic_hdl,
+                10000,
+                0,
+                GNI_CQ_BLOCKING,
+                NULL,
+                NULL,
+                &transport_global_data.req_send_ep_cq_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "CqCreate(transport_global_data.req_send_ep_cq_hdl) failed: %d", rc);
+            goto cleanup;
+        }
+        rc=GNI_CqCreate (
+                transport_global_data.nic_hdl,
+                10000,
+                0,
+                GNI_CQ_BLOCKING,
+                NULL,
+                NULL,
+                &transport_global_data.req_send_mem_cq_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "CqCreate(transport_global_data.req_send_mem_cq_hdl) failed: %d", rc);
+            goto cleanup;
+        }
+        rc=GNI_CqCreate (
+                transport_global_data.nic_hdl,
+                10000,
+                0,
+                GNI_CQ_BLOCKING,
+                NULL,
+                NULL,
+                &transport_global_data.req_recv_ep_cq_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "CqCreate(transport_global_data.req_recv_ep_cq_hdl) failed: %d", rc);
+            goto cleanup;
+        }
+        rc=GNI_CqCreate (
+                transport_global_data.nic_hdl,
+                10000,
+                0,
+                GNI_CQ_BLOCKING,
+                NULL,
+                NULL,
+                &transport_global_data.req_recv_mem_cq_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "CqCreate(transport_global_data.req_recv_mem_cq_hdl) failed: %d", rc);
+            goto cleanup;
+        }
+
         rc=GNI_CqCreate (transport_global_data.nic_hdl, 10000, 0, GNI_CQ_BLOCKING, NULL, NULL, &transport_global_data.ep_cq_hdl);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(nnti_debug_level, "CqCreate(transport_global_data.ep_cq_hdl) failed: %d", rc);
@@ -1017,7 +1095,6 @@ NNTI_result_t NNTI_gni_init (
             log_error(nnti_debug_level, "CqCreate(transport_global_data.mem_cq_hdl) failed: %d", rc);
             goto cleanup;
         }
-
 
         rc=GNI_CqCreate (transport_global_data.nic_hdl, 10, 0, GNI_CQ_BLOCKING, NULL, NULL, &transport_global_data.interrupt_mem_cq_hdl);
         if (rc!=GNI_RC_SUCCESS) {
@@ -1051,7 +1128,6 @@ NNTI_result_t NNTI_gni_init (
             log_error(nnti_debug_level, "EpBind(transport_global_data.interrupt_ep_hdl) failed: %d", rc);
             goto cleanup;
         }
-
 
         if (config.use_wr_pool) {
             rc=wr_pool_init();
@@ -1195,6 +1271,7 @@ NNTI_result_t NNTI_gni_connect (
         rc=NNTI_ENOMEM;
         goto cleanup;
     }
+    nthread_counter_init(&conn->reqs_received);
 
     if (url != NULL) {
         if ((rc=nnti_url_get_transport(url, transport, NNTI_URL_LEN)) != NNTI_OK) {
@@ -1276,7 +1353,7 @@ NNTI_result_t NNTI_gni_connect (
         }
 
         trios_start_timer(call_time);
-        rc=GNI_CdmAttach_wrapper (conn->cdm_hdl,
+        rc=GNI_CdmAttach (conn->cdm_hdl,
                 transport_global_data.alps_info.device_id,
                 (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &conn->nic_hdl);
@@ -1402,11 +1479,11 @@ NNTI_result_t NNTI_gni_disconnect (
 
     log_debug(nnti_ee_debug_level, "enter");
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
 
     close_connection(conn);
 
-    del_conn_peer(peer_hdl);
+    del_conn_peer(peer_hdl, CLIENT_CONNECTION);
     del_conn_instance(conn->peer_instance);
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -1844,6 +1921,8 @@ NNTI_result_t NNTI_gni_send (
     }
     assert(gni_wr);
 
+    gni_wr->nnti_wr=wr;
+
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "msg_hdl",
                 "NNTI_send", msg_hdl);
@@ -1854,31 +1933,29 @@ NNTI_result_t NNTI_gni_send (
     }
 
     if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
-        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
+        if (conn==NULL) {
+            conn=get_conn_peer(peer_hdl, SERVER_CONNECTION);
+        }
         assert(conn);
 
         trios_start_timer(call_time);
-        int rc=request_send(peer_hdl, &conn->queue_local_attrs, &conn->queue_remote_attrs, msg_hdl, 0, gni_wr);
+        int rc=request_send(peer_hdl, conn, msg_hdl, 0, gni_wr);
         trios_stop_timer("send to request queue", call_time);
 
-        if (rc == -1) {
-            wr->result=NNTI_EDROPPED;
-        } else {
-            wr->result=NNTI_OK;
-        }
-
     } else if (dest_hdl->ops == NNTI_RECV_DST) {
-        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
+        if (conn==NULL) {
+            conn=get_conn_peer(peer_hdl, SERVER_CONNECTION);
+        }
         assert(conn);
 
         trios_start_timer(call_time);
-        buffer_send(peer_hdl, msg_hdl, dest_hdl, gni_wr);
+        buffer_send(peer_hdl, conn, msg_hdl, dest_hdl, gni_wr);
         trios_stop_timer("send to receive dest", call_time);
 
         wr->result=NNTI_OK;
     }
-
-    gni_wr->nnti_wr=wr;
 
     wr->transport_id     =msg_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
@@ -1887,7 +1964,7 @@ NNTI_result_t NNTI_gni_send (
 
     log_debug(nnti_debug_level, "sending to (%s, instance=%llu)", peer_hdl->url, (uint64_t)peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
 
     return(nnti_rc);
 }
@@ -1957,7 +2034,10 @@ NNTI_result_t NNTI_gni_put (
 
 	gni_wr->reg_buf = src_buffer_hdl;
 
-    nnti_gni_connection_t *conn=get_conn_peer(&dest_buffer_hdl->buffer_owner);
+    nnti_gni_connection_t *conn=get_conn_peer(&dest_buffer_hdl->buffer_owner, CLIENT_CONNECTION);
+    if (conn==NULL) {
+        conn=get_conn_peer(&dest_buffer_hdl->buffer_owner, SERVER_CONNECTION);
+    }
     assert(conn);
     ep_hdl=conn->ep_hdl;
 
@@ -2245,7 +2325,7 @@ NNTI_result_t NNTI_gni_put (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)gni_wr;
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
 
     return((NNTI_result_t)rc);
 }
@@ -2315,7 +2395,10 @@ NNTI_result_t NNTI_gni_get (
 
     gni_wr->reg_buf = dest_buffer_hdl;
 
-    nnti_gni_connection_t *conn=get_conn_peer(&src_buffer_hdl->buffer_owner);
+    nnti_gni_connection_t *conn=get_conn_peer(&src_buffer_hdl->buffer_owner, CLIENT_CONNECTION);
+    if (conn==NULL) {
+        conn=get_conn_peer(&src_buffer_hdl->buffer_owner, SERVER_CONNECTION);
+    }
     assert(conn);
     ep_hdl=conn->ep_hdl;
 
@@ -2600,7 +2683,7 @@ NNTI_result_t NNTI_gni_get (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)gni_wr;
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
 
     return((NNTI_result_t)rc);
 }
@@ -2706,7 +2789,7 @@ NNTI_result_t NNTI_gni_atomic_fop (
 
     gni_wr->reg_buf = NULL;
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
     assert(conn);
 
     gni_wr->last_op  =GNI_OP_FETCH_ADD;
@@ -2793,7 +2876,7 @@ NNTI_result_t NNTI_gni_atomic_cswap (
 
     gni_wr->reg_buf = NULL;
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
     assert(conn);
 
     gni_wr->last_op  =GNI_OP_FETCH_ADD;
@@ -3054,12 +3137,13 @@ NNTI_result_t NNTI_gni_destroy_work_request (
 				}
 			}
 		}
-        if ((q_hdl->req_index >= q_hdl->req_count) &&
-        	(q_hdl->head == 0)                 &&
-        	(q_hdl->tail == 0)) {
-        	reset_req_index(q_hdl);
-        	log_debug(nnti_event_debug_level, "resetting req_index(%llu)", q_hdl->req_index);
-        }
+		if ((nthread_counter_read(&q_hdl->req_index) >= q_hdl->req_count) &&
+		    (q_hdl->head == 0)                     &&
+		    (q_hdl->tail == 0)) {
+
+            nthread_counter_set(&q_hdl->req_index, 0);
+            log_debug(nnti_event_debug_level, "resetting req_index(%lld)", nthread_counter_read(&q_hdl->req_index));
+		}
 
     	log_debug(nnti_debug_level, "q->head=%lld ; q->tail==%lld", q_hdl->head, q_hdl->tail);
     } else if (wr->ops == NNTI_RECV_DST) {
@@ -3146,15 +3230,21 @@ NNTI_result_t NNTI_gni_interrupt (
     *ptr32=dummy;
 
     log_debug(nnti_debug_level, "calling PostCqWrite(cqwrite_value=%X)\n", *(uint32_t*)&post_desc.cqwrite_value);
+    nthread_lock(&nnti_gni_lock);
     gni_rc=GNI_PostCqWrite(transport_global_data.interrupt_ep_hdl, &post_desc);
+    nthread_unlock(&nnti_gni_lock);
     if (gni_rc!=GNI_RC_SUCCESS) {
         log_error(nnti_debug_level, "PostCqWrite(post_desc) failed: %d\n", rc);
         rc=NNTI_EIO;
+        goto cleanup;
     }
 
-    gni_rc=GNI_CqWaitEvent_wrapper(transport_global_data.interrupt_ep_cq_hdl, -1, &ev_data);
+    nthread_lock(&nnti_gni_lock);
+    gni_rc=GNI_CqWaitEvent(transport_global_data.interrupt_ep_cq_hdl, -1, &ev_data);
     DEQUEUE_POST_DESCRIPTOR(transport_global_data.interrupt_ep_cq_hdl, &ev_data, &post_desc_ptr);
+    nthread_unlock(&nnti_gni_lock);
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
     return rc;
@@ -3260,6 +3350,8 @@ NNTI_result_t NNTI_gni_wait (
                 nnti_rc = rc;
                 break;
             }
+
+            resend_all();
 
             if (is_wr_complete(gni_wr) == TRUE) {
                 log_debug(nnti_debug_level, "wr completed (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
@@ -3490,6 +3582,8 @@ NNTI_result_t NNTI_gni_waitany (
                 break;
             }
 
+            resend_all();
+
             if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
                 log_debug(nnti_debug_level, "wr complete (wr_list[%d]=%p ; gni_wr=%p)", *which, wr_list[*which], GNI_WORK_REQUEST(wr_list[*which]));
                 nnti_rc = NNTI_OK;
@@ -3694,6 +3788,8 @@ NNTI_result_t NNTI_gni_waitall (
                 break;
             }
 
+            resend_all();
+
             if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
                 log_debug(nnti_debug_level, "all work requests complete");
                 nnti_rc = NNTI_OK;
@@ -3831,6 +3927,7 @@ NNTI_result_t NNTI_gni_fini (
     }
 
     nthread_lock_fini(&nnti_gni_lock);
+    nthread_lock_fini(&nnti_resend_lock);
     nthread_lock_fini(&nnti_mem_lock);
 
     nthread_lock_fini(&nnti_progress_lock);
@@ -3900,7 +3997,7 @@ static void *aligned_malloc(
 #ifdef NO_MEMALIGN
       ptr = malloc( size );
 #else
-      rc = posix_memalign( &ptr , 128 , size );
+      rc = posix_memalign( &ptr , 64 , size );
 #endif
 
     if (rc!=0) {
@@ -4033,8 +4130,6 @@ nthread_lock(&nnti_mem_lock);
             nnti_gni_request_queue_handle_t *q_hdl=&transport_global_data.req_queue;
 
             gni_mem_hdl->type   =REQUEST_BUFFER;
-
-            memset(q_hdl, 0, sizeof(nnti_gni_request_queue_handle_t));
 
             q_hdl->reg_buf=reg_buf;
 
@@ -4276,7 +4371,8 @@ static int need_wc_mem_cq(nnti_gni_memory_handle_t *gni_mem_hdl)
 }
 
 static nnti_gni_sge_t *decode_sge(
-        gni_cq_entry_t      *ev_data)
+        gni_cq_entry_t      *ev_data,
+        gni_cq_handle_t      cq_hdl)
 {
     const NNTI_buffer_t     *event_buf=NULL;
     nnti_gni_sge_t          *gni_sge  =NULL;
@@ -4284,27 +4380,44 @@ static nnti_gni_sge_t *decode_sge(
 
     log_debug(nnti_debug_level, "enter");
 
-    if (gni_cq_get_source(*ev_data) == 6) {
-    	// this is a target buffer.  determine if it is REQUEST_BUFFER or RECEIVE_BUFFER.
-    	event_buf = get_buf_bufhash((uint32_t)gni_cq_get_inst_id(*ev_data));
-    	if (event_buf == NULL) {
-    		// ev_data.inst_id is not a buffer hash.  assume this is a REQUEST_BUFFER.
-            log_debug(nnti_debug_level, "ev_data.source==6 and ev_data.inst_id is NOT a hash, "
-            		"so the event buffer is a REQUEST BUFFER and ev_data.inst_id is the request buffer index.");
+    uint64_t event_type = GNI_CQ_GET_TYPE(*ev_data);
+    if (event_type == GNI_CQ_EVENT_TYPE_POST) {
+        log_debug(nnti_debug_level, "ev_data.type == GNI_CQ_EVENT_TYPE_POST");
+    } else if (event_type == GNI_CQ_EVENT_TYPE_SMSG) {
+        log_debug(nnti_debug_level, "ev_data.type == GNI_CQ_EVENT_TYPE_SMSG");
+    } else if (event_type == GNI_CQ_EVENT_TYPE_MSGQ) {
+        log_debug(nnti_debug_level, "ev_data.type == GNI_CQ_EVENT_TYPE_MSGQ");
+    } else {
+        log_debug(nnti_debug_level, "unknown type: ev_data.type == %llu", event_type);
+    }
 
-            uint64_t index=(uint64_t)gni_cq_get_inst_id(*ev_data);
+    if (gni_cq_get_source(*ev_data) == 6) {
+        uint64_t event_inst_id = gni_cq_get_inst_id(*ev_data);
+    	// this is a target buffer.  determine if it is REQUEST_BUFFER or RECEIVE_BUFFER.
+        if (cq_hdl == transport_global_data.req_recv_mem_cq_hdl) {
+            log_debug(nnti_debug_level, "ev_data.source==6 and cq_hdl is transport_global_data.req_recv_cq_hdl, "
+                    "so the event buffer is a REQUEST BUFFER.");
+
+            int64_t next_req_index=nthread_counter_increment(&transport_global_data.req_queue.req_index);
+            next_req_index %= transport_global_data.req_queue.req_count;
+
             nnti_gni_memory_handle_t *gni_mem_hdl=GNI_MEM_HDL(transport_global_data.req_queue.reg_buf);
 
-            gni_wr =gni_mem_hdl->wr_queue->at(index);
+            gni_wr =gni_mem_hdl->wr_queue->at(next_req_index);
             gni_sge=&gni_wr->sge_list[0];
-    	} else {
-            log_debug(nnti_debug_level, "ev_data.source==6 and ev_data.inst_id is a hash, so the event buffer is a RECEIVE BUFFER.");
+        } else {
+            event_buf = get_buf_bufhash((uint32_t)event_inst_id);
+            if (event_buf == NULL) {
+                log_debug(nnti_debug_level, "unknown event -- ev_data.source==6 but inst_id is NOT a hash.");
+            } else {
+                log_debug(nnti_debug_level, "ev_data.source==6 and ev_data.inst_id is a hash, so the event buffer is a RECEIVE BUFFER.");
 
-            nnti_gni_memory_handle_t *gni_mem_hdl=GNI_MEM_HDL(event_buf);
+                nnti_gni_memory_handle_t *gni_mem_hdl=GNI_MEM_HDL(event_buf);
 
-            gni_wr =gni_mem_hdl->wr_queue->front();
-            gni_sge=&gni_wr->sge_list[0];
-    	}
+                gni_wr =gni_mem_hdl->wr_queue->front();
+                gni_sge=&gni_wr->sge_list[0];
+            }
+        }
     } else {
     	gni_sge=get_sge_sgehash((uint32_t)gni_cq_get_inst_id(*ev_data));
         if (gni_sge==NULL) {
@@ -4399,6 +4512,7 @@ static int cancel_wr(
 static int process_event(
         const NNTI_buffer_t     *reg_buf,
         nnti_gni_sge_t          *gni_sge,
+        void                    *header,
         gni_cq_handle_t          cq_hdl,
         gni_cq_entry_t          *ev_data,
         gni_post_descriptor_t   *post_desc_ptr)
@@ -4413,6 +4527,9 @@ static int process_event(
     log_debug(debug_level, "enter (reg_buf=%p, gni_sge=%p, cq_hdl=%llu, ev_data=%llu)", reg_buf, gni_sge, (uint64_t)cq_hdl, (uint64_t)ev_data);
 
     if (!GNI_CQ_STATUS_OK(*ev_data)) {
+        if (GNI_CQ_OVERRUN(*ev_data)) {
+            log_debug(debug_level, "CQ overrun detected");
+        }
         return NNTI_EIO;
     }
 
@@ -4447,13 +4564,9 @@ static int process_event(
 
                 log_debug(debug_level, "SEND request event - event_buf==%p, state==%d", event_buf, gni_sge->state);
 
-                if (post_desc_ptr == &gni_sge->post_desc) {
-                    log_debug(debug_level, "SEND request completion - event_buf==%p", event_buf);
-                    gni_sge->state=NNTI_GNI_SGE_STATE_COMPLETE;
-                } else {
-                    log_debug(debug_level, "SEND request - unknown post descriptor - post_desc_ptr(%p) != &gni_sge->post_desc(%p)",
-                            post_desc_ptr, &gni_sge->post_desc);
-                }
+                log_debug(debug_level, "SEND request completion - event_buf==%p", event_buf);
+                gni_sge->state=NNTI_GNI_SGE_STATE_COMPLETE;
+
                 gni_wr->wc->byte_offset=gni_wr->wc->src_offset;
             } else if ((gni_wr->last_op==GNI_OP_SEND_BUFFER) &&
                     (gni_sge->state==NNTI_GNI_SGE_STATE_STARTED)) {
@@ -4500,29 +4613,40 @@ static int process_event(
             break;
         case REQUEST_BUFFER:
             {
-            uint64_t  index=0;
             nnti_gni_request_queue_handle_t *q=&transport_global_data.req_queue;
+            nnti_gni_credit_msg_t credit_return_msg;
+            int64_t req_count=0, req_index=0, mbox_offset=0;
+
+            nnti_gni_connection_t *conn=get_conn_instance((uint32_t)gni_cq_get_inst_id(*ev_data));
+            assert(conn);
 
             gni_wr->last_op=GNI_OP_NEW_REQUEST;
 
-            index = (uint64_t)gni_cq_get_inst_id(*ev_data);
-            log_debug(debug_level, "wc_index(%llu)", index);
+            int64_t req_buffer_offset=GNI_ELEMENT_OFFSET(q->reg_buf, gni_wr->index);
 
-            nnti_gni_work_request_t *tmp_wr=gni_mem_hdl->wr_queue->at(index);
+            req_count=nthread_counter_increment(&conn->reqs_received);
+            req_index=req_count % conn->recv_mbox->max_credits;
+            mbox_offset=conn->recv_mbox->msg_maxsize*req_index;
 
-            assert(tmp_wr == gni_wr);
+            log_debug(nnti_debug_level, "&q->req_buffer[req_buffer_offset=%lld] = %p, mbox req_index = %llu",
+                    req_buffer_offset, &q->req_buffer[req_buffer_offset], req_index);
+
+            memcpy(&q->req_buffer[req_buffer_offset], conn->recv_mbox->mbox_buf+mbox_offset, q->req_size);
+
+            send_back_credits(conn, 1);
+
+            log_debug(debug_level, "recv completion - event_buf=%p index=%llu", event_buf, gni_wr->index);
 
             gni_wr->wc->ack_received=1;
-
-            log_debug(debug_level, "recv completion - event_buf=%p index=%llu", event_buf, index);
+            gni_wr->wc->inst_id     =(uint32_t)gni_cq_get_inst_id(*ev_data);
+            gni_wr->wc->op          =GNI_OP_SEND_REQUEST;
+            gni_wr->wc->byte_len    =q->req_size;
+            gni_wr->wc->byte_offset =req_buffer_offset;
+            gni_wr->wc->src_offset  =0;
+            gni_wr->wc->dest_offset =req_buffer_offset;
 
             gni_wr->state=NNTI_GNI_WR_STATE_RDMA_COMPLETE;
 
-//            if ((q->req_index >= q->req_count) &&
-//           	    (q->tail == 0)) {
-//                reset_req_index(q);
-//                log_debug(nnti_event_debug_level, "resetting req_index(%llu)", q->req_index);
-//            }
             }
             break;
         case RECEIVE_BUFFER:
@@ -4682,7 +4806,8 @@ static NNTI_result_t post_recv_queue_work_requests(
     	gni_wr->reg_buf=reg_buf;
     	gni_wr->state  =NNTI_GNI_WR_STATE_POSTED;
 
-    	gni_wr->wc = GNI_WC_ADDRESS(reg_buf, index);
+    	gni_wr->index = index;
+    	gni_wr->wc    = GNI_WC_ADDRESS(reg_buf, index);
 
     	gni_mem_hdl->wr_queue->push_back(gni_wr);
     }
@@ -4855,168 +4980,6 @@ static int8_t is_all_wr_complete(
     return(rc);
 }
 
-//static void create_wr_array(
-//        const NNTI_buffer_t **buf_list,
-//        const uint32_t        buf_count,
-//        nnti_gni_work_request_t   ***wr_list,
-//        uint32_t             *wr_count)
-//{
-//    *wr_list=(nnti_gni_work_request_t **)calloc(sizeof(nnti_gni_work_request_t *), buf_count);
-//    assert(*wr_list);
-//    *wr_count=buf_count;
-//    for(uint32_t i=0;i<buf_count;i++) {
-//        if (buf_list[i]==NULL) {
-//            (*wr_list)[i]=NULL;
-//            continue;
-//        }
-//        nnti_gni_memory_handle_t *gni_mem_hdl=(nnti_gni_memory_handle_t *)buf_list[i]->transport_private;
-//        assert(gni_mem_hdl);
-//
-//        nthread_lock(&gni_mem_hdl->wr_queue_lock);
-//        if (gni_mem_hdl->wr_queue->empty()) {
-//            (*wr_list)[i]=NULL;
-//        } else {
-//            (*wr_list)[i]=gni_mem_hdl->wr_queue->front();
-//            assert((*wr_list)[i]);
-//        }
-//        nthread_unlock(&gni_mem_hdl->wr_queue_lock);
-//    }
-//
-//    return;
-//}
-
-
-//static nnti_gni_work_request_t *first_incomplete_wr(
-//        nnti_gni_memory_handle_t *gni_mem_hdl)
-//{
-//    nnti_gni_work_request_t  *wr=NULL;
-//
-//    log_debug(nnti_ee_debug_level, "enter");
-//
-//    assert(gni_mem_hdl);
-//
-////    nthread_lock(&gni_mem_hdl->wr_queue_lock);
-//
-//    if (gni_mem_hdl->wr_queue->empty()) {
-//        log_debug(nnti_ee_debug_level, "work request queue is empty");
-//    } else {
-//        wr_queue_iter_t i;
-//        for (i=gni_mem_hdl->wr_queue->begin(); i != gni_mem_hdl->wr_queue->end(); i++) {
-//            wr=*i;
-//            assert(wr);
-//            if (is_wr_complete(wr) == FALSE) {
-//                log_debug(nnti_ee_debug_level, "incomplete work request found");
-//                break;
-//            }
-//        }
-//        if (wr==NULL) {
-//            log_debug(nnti_ee_debug_level, "all work requests complete");
-//        }
-//    }
-//
-////    nthread_unlock(&gni_mem_hdl->wr_queue_lock);
-//
-//    log_debug(nnti_ee_debug_level, "exit (wr=%p)", wr);
-//    return(wr);
-//}
-
-//static int8_t is_wr_queue_empty(
-//        const NNTI_buffer_t *reg_buf)
-//{
-//    int8_t rc=FALSE;
-//    nnti_gni_memory_handle_t *gni_mem_hdl=NULL;
-//
-//    log_debug(nnti_ee_debug_level, "enter");
-//
-//    gni_mem_hdl=(nnti_gni_memory_handle_t *)reg_buf->transport_private;
-//    assert(gni_mem_hdl);
-//
-//    if (gni_mem_hdl->wr_queue->empty()) {
-//        rc=TRUE;
-//    }
-//
-//    log_debug(nnti_ee_debug_level, "exit (rc=%d)", rc);
-//    return(rc);
-//}
-
-//static int8_t is_buf_op_complete(
-//        const NNTI_buffer_t *reg_buf)
-//{
-//    int8_t rc=FALSE;
-//    nnti_gni_memory_handle_t *gni_mem_hdl=NULL;
-//    nnti_gni_work_request_t  *wr=NULL;
-//
-//    log_debug(nnti_ee_debug_level, "enter");
-//
-//    gni_mem_hdl=(nnti_gni_memory_handle_t *)reg_buf->transport_private;
-//    assert(gni_mem_hdl);
-//
-//    nthread_lock(&gni_mem_hdl->wr_queue_lock);
-//
-//    if (is_wr_queue_empty(reg_buf) == TRUE) {
-//        log_debug(nnti_ee_debug_level, "work request queue is empty - return FALSE");
-//        rc=FALSE;
-//    } else {
-//        wr=gni_mem_hdl->wr_queue->front();
-//        assert(wr);
-//
-//        rc = is_wr_complete(wr);
-//    }
-//
-//    nthread_unlock(&gni_mem_hdl->wr_queue_lock);
-//
-//    log_debug(nnti_ee_debug_level, "exit (rc=%d)", rc);
-//    return(rc);
-//}
-//
-//static int8_t is_any_buf_op_complete(
-//        const NNTI_buffer_t **buf_list,
-//        const uint32_t        buf_count,
-//        uint32_t             *which)
-//{
-//    int8_t rc=FALSE;
-//
-//    log_debug(nnti_debug_level, "enter");
-//
-//    for (int i=0;i<buf_count;i++) {
-//        if ((buf_list[i] != NULL) &&
-//            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
-//            (is_buf_op_complete(buf_list[i]) == TRUE)) {
-//
-//            *which=i;
-//            rc = TRUE;
-//            break;
-//        }
-//    }
-//
-//    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
-//
-//    return(rc);
-//}
-//
-//static int8_t is_all_buf_ops_complete(
-//        const NNTI_buffer_t **buf_list,
-//        const uint32_t        buf_count)
-//{
-//    int8_t rc=TRUE;
-//
-//    log_debug(nnti_debug_level, "enter");
-//
-//    for (int i=0;i<buf_count;i++) {
-//        if ((buf_list[i] != NULL) &&
-//            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
-//            (is_buf_op_complete(buf_list[i]) == FALSE)) {
-//
-//            rc = FALSE;
-//            break;
-//        }
-//    }
-//
-//    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
-//
-//    return(rc);
-//}
-
 static void create_status(
         NNTI_work_request_t     *wr,
         nnti_gni_work_request_t *gni_wr,
@@ -5110,6 +5073,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, nnti_gni_connecti
 
     key.addr = peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port = peer->peer.NNTI_remote_process_t_u.gni.port;
+    key.type = conn->connection_type;
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "peer",
@@ -5144,7 +5108,7 @@ static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, nnti_
 
     return(rc);
 }
-static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer)
+static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type)
 {
     nnti_gni_connection_t *conn = NULL;
     addrport_key   key;
@@ -5157,6 +5121,7 @@ static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer)
     memset(&key, 0, sizeof(addrport_key));
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
+    key.type=connection_type;
 
     if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
@@ -5222,7 +5187,7 @@ static NNTI_peer_t *get_peer_by_url(const char *url)
 
     return(NULL);
 }
-static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer)
+static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type)
 {
     nnti_gni_connection_t *conn=NULL;
     addrport_key    key;
@@ -5235,6 +5200,7 @@ static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer)
     memset(&key, 0, sizeof(addrport_key));
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
+    key.type=connection_type;
 
     if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
@@ -5280,8 +5246,8 @@ static void print_peer_map()
 
     conn_by_peer_iter_t i;
     for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
-        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
-                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, (uint64_t)i->first.type, i->second);
     }
 }
 static void print_instance_map()
@@ -5897,6 +5863,13 @@ static int new_client_connection(
 {
     int rc;
 
+    nnti_gni_request_queue_handle_t *q          =&transport_global_data.req_queue;
+    nnti_gni_memory_handle_t        *gni_mem_hdl=NULL;
+
+    const unsigned int CACHELINE_SIZE=64;
+    unsigned int bytes_per_mbox=0;
+    unsigned int adjusted_bytes_per_mbox=0;
+
     /*
      * Values passed through TCP to permit Gemini connection
      */
@@ -5910,10 +5883,16 @@ static int new_client_connection(
         uint64_t         atomics_addr;
         gni_mem_handle_t atomics_mem_hdl;
 
+        uint32_t         server_msg_maxsize;
+
         uint32_t         client_has_recv_queue;
+        uint32_t         client_msg_maxsize;
     } instance_in, instance_out;
     struct {
-        nnti_gni_recv_queue_attrs_t server_attrs;
+        uint64_t         mbox_addr;
+        gni_mem_handle_t mbox_mem_hdl;
+        uint64_t         credits_addr;
+        gni_mem_handle_t credits_mem_hdl;
     } sa_in, sa_out;
 
     trios_declare_timer(call_time);
@@ -5933,9 +5912,14 @@ static int new_client_connection(
     instance_out.atomics_addr   =(uint64_t)transport_global_data.atomics;
     instance_out.atomics_mem_hdl=transport_global_data.atomics_mem_hdl;
 
-    if ((transport_global_data.req_queue.req_size  > 0) &&
+    if ((transport_global_data.req_queue.reg_buf != NULL) &&
+        (transport_global_data.req_queue.req_size  > 0)   &&
         (transport_global_data.req_queue.req_count > 0)) {
+
+        gni_mem_hdl=(nnti_gni_memory_handle_t *)q->reg_buf->transport_private;
+
         instance_out.client_has_recv_queue = 1;
+        instance_out.client_msg_maxsize    = q->reg_buf->payload_size+gni_mem_hdl->extra;
     }
 
     /*
@@ -5958,12 +5942,76 @@ static int new_client_connection(
     c->atomics_addr    = instance_in.atomics_addr;
     c->atomics_mem_hdl = instance_in.atomics_mem_hdl;
 
+    c->send_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
+
+    nthread_counter_init(&c->send_mbox->mbox_index);
+
+    c->send_mbox->reg_buf = q->reg_buf;
+
+    c->send_mbox->max_credits  = config.queue_elements_per_connection;
+    c->send_mbox->msg_maxsize  = instance_in.server_msg_maxsize;
+    c->send_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
+
+    adjusted_bytes_per_mbox = c->send_mbox->max_credits * c->send_mbox->msg_maxsize;
+    adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
+
+//    c->send_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
+//    c->send_mbox->mbox_buf     = (char *)malloc(c->send_mbox->mbox_bufsize);
+//    c->send_mbox->mbox_addr    = (uint64_t)c->send_mbox->mbox_buf;
+//
+//    rc=GNI_MemRegister(
+//            transport_global_data.nic_hdl,
+//            (uint64_t)c->send_mbox->mbox_buf,
+//            c->send_mbox->mbox_bufsize,
+//            transport_global_data.req_send_mem_cq_hdl,
+//            GNI_MEM_READWRITE,
+//            -1,
+//            &c->send_mbox->mbox_mem_hdl);
+//    if (rc!=GNI_RC_SUCCESS) {
+//        log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
+//    }
+
+    c->send_mbox->credits_addr = (uint64_t)&c->send_mbox->credits;
+    c->send_mbox->credits      = c->send_mbox->max_credits;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->send_mbox->credits,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->send_mbox->credits_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
+    }
+
+    c->send_mbox->amo_result_addr = (uint64_t)&c->send_mbox->amo_result;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->send_mbox->amo_result,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->send_mbox->amo_result_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->send_mbox->amo_result) failed: %d", rc);
+    }
+
+    /*
+     * Write the receive queue attributes to the client
+     */
+    sa_out.credits_addr   =c->send_mbox->credits_addr;
+    sa_out.credits_mem_hdl=c->send_mbox->credits_mem_hdl;
+
     /*
      * Read the receive queue attributes from the server
      */
     memset(&sa_in, 0, sizeof(sa_in));
     trios_start_timer(call_time);
-    rc = tcp_read(sock, &sa_in, sizeof(sa_in));
+    rc = tcp_exchange(sock, 0, &sa_in, &sa_out, sizeof(sa_in));
     trios_stop_timer("read server queue attrs", call_time);
     if (rc == sizeof(sa_in)) {
         rc=0;
@@ -5974,7 +6022,8 @@ static int new_client_connection(
     /*
      * Record the server's attributes
      */
-    c->queue_remote_attrs=sa_in.server_attrs;
+    c->send_mbox->mbox_addr   =sa_in.mbox_addr;
+    c->send_mbox->mbox_mem_hdl=sa_in.mbox_mem_hdl;
 
     /*
      * Setup flow control attributes
@@ -5982,27 +6031,79 @@ static int new_client_connection(
     client_req_queue_init(c);
 
 
-
     /*
      * If the client registered a receive queue (bidirectional connection)...
      */
     if (instance_out.client_has_recv_queue == 1) {
-        memset(&sa_out, 0, sizeof(sa_out));
-
-        nnti_gni_memory_handle_t *gni_mem_hdl=(nnti_gni_memory_handle_t *)transport_global_data.req_queue.reg_buf->transport_private;
-
         /*
          * Then write the receive queue attributes to the server
          */
-        sa_out.server_attrs.req_index_addr   =transport_global_data.req_queue.req_index_addr;
-        sa_out.server_attrs.req_index_mem_hdl=transport_global_data.req_queue.req_index_mem_hdl;
-        sa_out.server_attrs.req_buffer_addr  =(uint64_t)transport_global_data.req_queue.req_buffer;
-        sa_out.server_attrs.req_size         =transport_global_data.req_queue.req_size;
-        sa_out.server_attrs.req_count        =transport_global_data.req_queue.req_count;
-        sa_out.server_attrs.req_mem_hdl      =gni_mem_hdl->mem_hdl;
+        c->recv_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
+
+        nthread_counter_init(&c->recv_mbox->mbox_index);
+
+        c->recv_mbox->reg_buf = q->reg_buf;
+
+        c->recv_mbox->max_credits  = config.queue_elements_per_connection;
+        c->recv_mbox->msg_maxsize  = instance_out.client_msg_maxsize;
+        c->recv_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
+
+        adjusted_bytes_per_mbox = c->recv_mbox->max_credits * c->recv_mbox->msg_maxsize;
+        adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
+
+        c->recv_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
+        c->recv_mbox->mbox_buf     = (char *)aligned_malloc(c->recv_mbox->mbox_bufsize);
+        c->recv_mbox->mbox_addr    = (uint64_t)c->recv_mbox->mbox_buf;
+
+        rc=GNI_MemRegister(
+                transport_global_data.nic_hdl,
+                (uint64_t)c->recv_mbox->mbox_buf,
+                c->recv_mbox->mbox_bufsize,
+                transport_global_data.req_recv_mem_cq_hdl,
+                GNI_MEM_READWRITE,
+                -1,
+                &c->recv_mbox->mbox_mem_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "MemRegister(c->recv_mbox->mbox_buf) failed: %d", rc);
+        }
+
+        c->recv_mbox->credits_addr = (uint64_t)&c->recv_mbox->credits;
+        c->recv_mbox->credits      = c->recv_mbox->max_credits;
+
+        rc=GNI_MemRegister(
+                transport_global_data.nic_hdl,
+                (uint64_t)&c->recv_mbox->credits,
+                sizeof(int64_t),
+                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+                GNI_MEM_READWRITE,
+                -1,
+                &c->recv_mbox->credits_mem_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "MemRegister(c->recv_mbox->credits) failed: %d", rc);
+        }
+
+        c->recv_mbox->amo_result_addr = (uint64_t)&c->recv_mbox->amo_result;
+
+        rc=GNI_MemRegister(
+                transport_global_data.nic_hdl,
+                (uint64_t)&c->recv_mbox->amo_result,
+                sizeof(int64_t),
+                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+                GNI_MEM_READWRITE,
+                -1,
+                &c->recv_mbox->amo_result_mem_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "MemRegister(c->recv_mbox->amo_result) failed: %d", rc);
+        }
+
+        /*
+         * Write the receive queue attributes to the client
+         */
+        sa_out.mbox_addr   =c->recv_mbox->mbox_addr;
+        sa_out.mbox_mem_hdl=c->recv_mbox->mbox_mem_hdl;
 
         trios_start_timer(call_time);
-        rc = tcp_write(sock, &sa_out, sizeof(sa_out));
+        rc = tcp_exchange(sock, 1, &sa_in, &sa_out, sizeof(sa_in));
         trios_stop_timer("write server queue attrs", call_time);
         if (rc == sizeof(sa_out)) {
             rc=0;
@@ -6010,6 +6111,10 @@ static int new_client_connection(
         if (rc)
             goto out;
 
+        c->recv_mbox->credits_addr   =sa_in.credits_addr;
+        c->recv_mbox->credits_mem_hdl=sa_in.credits_mem_hdl;
+
+        server_req_queue_add_client(c);
     }
 
 
@@ -6036,6 +6141,13 @@ static int new_server_connection(
 {
     int rc;
 
+    nnti_gni_request_queue_handle_t *q          =&transport_global_data.req_queue;
+    nnti_gni_memory_handle_t        *gni_mem_hdl=(nnti_gni_memory_handle_t *)q->reg_buf->transport_private;
+
+    const unsigned int CACHELINE_SIZE=64;
+    unsigned int bytes_per_mbox=0;
+    unsigned int adjusted_bytes_per_mbox=0;
+
     /*
      * Values passed through TCP to permit Gemini connection
      */
@@ -6049,18 +6161,21 @@ static int new_server_connection(
         uint64_t         atomics_addr;
         gni_mem_handle_t atomics_mem_hdl;
 
+        uint32_t         server_msg_maxsize;
+
         uint32_t         client_has_recv_queue;
+        uint32_t         client_msg_maxsize;
     } instance_in, instance_out;
     struct {
-        nnti_gni_recv_queue_attrs_t server_attrs;
+        uint64_t         mbox_addr;
+        gni_mem_handle_t mbox_mem_hdl;
+        uint64_t         credits_addr;
+        gni_mem_handle_t credits_mem_hdl;
     } sa_out, sa_in;
 
     trios_declare_timer(call_time);
 
     assert(transport_global_data.req_queue.reg_buf);
-
-    nnti_gni_memory_handle_t *gni_mem_hdl=(nnti_gni_memory_handle_t *)transport_global_data.req_queue.reg_buf->transport_private;
-
 
     c->connection_type=SERVER_CONNECTION;
 
@@ -6076,6 +6191,8 @@ static int new_server_connection(
 
     instance_out.atomics_addr   =(uint64_t)transport_global_data.atomics;
     instance_out.atomics_mem_hdl=transport_global_data.atomics_mem_hdl;
+
+    instance_out.server_msg_maxsize=q->reg_buf->payload_size+gni_mem_hdl->extra;
 
     /*
      * Exchange TCP and ALPS parameters with the client
@@ -6102,19 +6219,72 @@ static int new_server_connection(
     c->cdm_hdl = transport_global_data.cdm_hdl;
     c->nic_hdl = transport_global_data.nic_hdl;
 
+    c->recv_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
+
+    nthread_counter_init(&c->recv_mbox->mbox_index);
+
+    c->recv_mbox->reg_buf = q->reg_buf;
+
+    c->recv_mbox->max_credits  = config.queue_elements_per_connection;
+    c->recv_mbox->msg_maxsize  = instance_out.server_msg_maxsize;
+    c->recv_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
+
+    adjusted_bytes_per_mbox = c->recv_mbox->max_credits * c->recv_mbox->msg_maxsize;
+    adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
+
+    c->recv_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
+    c->recv_mbox->mbox_buf     = (char *)aligned_malloc(c->recv_mbox->mbox_bufsize);
+    c->recv_mbox->mbox_addr    = (uint64_t)c->recv_mbox->mbox_buf;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)c->recv_mbox->mbox_buf,
+            c->recv_mbox->mbox_bufsize,
+            transport_global_data.req_recv_mem_cq_hdl,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->recv_mbox->mbox_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->mbox_buf) failed: %d", rc);
+    }
+
+    c->recv_mbox->credits_addr = (uint64_t)&c->recv_mbox->credits;
+    c->recv_mbox->credits      = c->recv_mbox->max_credits;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->recv_mbox->credits,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->recv_mbox->credits_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->credits) failed: %d", rc);
+    }
+
+    c->recv_mbox->amo_result_addr = (uint64_t)&c->recv_mbox->amo_result;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->recv_mbox->amo_result,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->recv_mbox->amo_result_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->amo_result) failed: %d", rc);
+    }
+
     /*
      * Write the receive queue attributes to the client
      */
-    memset(&sa_out, 0, sizeof(sa_out));
-    sa_out.server_attrs.req_index_addr   =transport_global_data.req_queue.req_index_addr;
-    sa_out.server_attrs.req_index_mem_hdl=transport_global_data.req_queue.req_index_mem_hdl;
-    sa_out.server_attrs.req_buffer_addr  =(uint64_t)transport_global_data.req_queue.req_buffer;
-    sa_out.server_attrs.req_size         =transport_global_data.req_queue.req_size;
-    sa_out.server_attrs.req_count        =transport_global_data.req_queue.req_count;
-    sa_out.server_attrs.req_mem_hdl      =gni_mem_hdl->mem_hdl;
+    sa_out.mbox_addr   =c->recv_mbox->mbox_addr;
+    sa_out.mbox_mem_hdl=c->recv_mbox->mbox_mem_hdl;
 
     trios_start_timer(call_time);
-    rc = tcp_write(sock, &sa_out, sizeof(sa_out));
+    rc = tcp_exchange(sock, 1, &sa_in, &sa_out, sizeof(sa_in));
     trios_stop_timer("write server queue attrs", call_time);
     if (rc == sizeof(sa_out)) {
         rc=0;
@@ -6122,7 +6292,10 @@ static int new_server_connection(
     if (rc)
         goto out;
 
+    c->recv_mbox->credits_addr   =sa_in.credits_addr;
+    c->recv_mbox->credits_mem_hdl=sa_in.credits_mem_hdl;
 
+    server_req_queue_add_client(c);
 
     /*
      * If the client registered a receive queue (bidirectional connection)...
@@ -6131,9 +6304,72 @@ static int new_server_connection(
         /*
          * Then read the receive queue attributes from the client
          */
+        c->send_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
+
+        nthread_counter_init(&c->send_mbox->mbox_index);
+
+        c->send_mbox->reg_buf = q->reg_buf;
+
+        c->send_mbox->max_credits  = config.queue_elements_per_connection;
+        c->send_mbox->msg_maxsize  = instance_in.client_msg_maxsize;
+        c->send_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
+
+        adjusted_bytes_per_mbox = c->send_mbox->max_credits * c->send_mbox->msg_maxsize;
+        adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
+
+        c->send_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
+    //    c->send_mbox->mbox_buf     = (char *)malloc(c->send_mbox->mbox_bufsize);
+    //
+    //    rc=GNI_MemRegister(
+    //            transport_global_data.nic_hdl,
+    //            (uint64_t)c->send_mbox->mbox_buf,
+    //            c->send_mbox->mbox_bufsize,
+    //            transport_global_data.req_send_mem_cq_hdl,
+    //            GNI_MEM_READWRITE,
+    //            -1,
+    //            &c->send_mbox->mbox_mem_hdl);
+
+        c->send_mbox->credits_addr = (uint64_t)&c->send_mbox->credits;
+        c->send_mbox->credits      = c->send_mbox->max_credits;
+
+        rc=GNI_MemRegister(
+                transport_global_data.nic_hdl,
+                (uint64_t)&c->send_mbox->credits,
+                sizeof(int64_t),
+                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+                GNI_MEM_READWRITE,
+                -1,
+                &c->send_mbox->credits_mem_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
+        }
+
+        c->send_mbox->amo_result_addr = (uint64_t)&c->send_mbox->amo_result;
+
+        rc=GNI_MemRegister(
+                transport_global_data.nic_hdl,
+                (uint64_t)&c->send_mbox->amo_result,
+                sizeof(int64_t),
+                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+                GNI_MEM_READWRITE,
+                -1,
+                &c->send_mbox->amo_result_mem_hdl);
+        if (rc!=GNI_RC_SUCCESS) {
+            log_error(nnti_debug_level, "MemRegister(c->send_mbox->amo_result) failed: %d", rc);
+        }
+
+        /*
+         * Write the receive queue attributes to the client
+         */
+        sa_out.credits_addr   =c->send_mbox->credits_addr;
+        sa_out.credits_mem_hdl=c->send_mbox->credits_mem_hdl;
+
+        /*
+         * Read the receive queue attributes from the server
+         */
         memset(&sa_in, 0, sizeof(sa_in));
         trios_start_timer(call_time);
-        rc = tcp_read(sock, &sa_in, sizeof(sa_in));
+        rc = tcp_exchange(sock, 0, &sa_in, &sa_out, sizeof(sa_in));
         trios_stop_timer("read server queue attrs", call_time);
         if (rc == sizeof(sa_in)) {
             rc=0;
@@ -6142,15 +6378,15 @@ static int new_server_connection(
             goto out;
 
         /*
-         * Record the client's attributes
+         * Record the server's attributes
          */
-        c->queue_remote_attrs=sa_in.server_attrs;
+        c->send_mbox->mbox_addr   =sa_in.mbox_addr;
+        c->send_mbox->mbox_mem_hdl=sa_in.mbox_mem_hdl;
 
         /*
          * Setup flow control attributes
          */
         client_req_queue_init(c);
-
     }
 
 
@@ -6233,6 +6469,7 @@ static int check_for_waiting_connection()
             rc=NNTI_ENOMEM;
             goto cleanup;
         }
+        nthread_counter_init(&conn->reqs_received);
 
 //        nthread_lock(&nnti_gni_lock);
         rc=init_connection(&conn, s, 1);
@@ -6250,7 +6487,7 @@ static int check_for_waiting_connection()
 
         conn->peer=peer;
 
-        del_conn_peer(&peer);
+        del_conn_peer(&peer, SERVER_CONNECTION);
         del_conn_instance(conn->peer_instance);
         insert_conn_peer(&peer, conn);
         insert_conn_instance(conn->peer_instance, conn);
@@ -6388,6 +6625,10 @@ static void close_connection(nnti_gni_connection_t *c)
 
     print_gni_conn(c);
 
+    c->state=DISCONNECTED;
+
+    nthread_counter_fini(&c->reqs_received);
+
     if (c->peer_name) {
         free(c->peer_name);
         c->peer_name = NULL;
@@ -6396,8 +6637,6 @@ static void close_connection(nnti_gni_connection_t *c)
     if (c->connection_type == CLIENT_CONNECTION) {
         client_req_queue_destroy(c);
     }
-
-    c->state=DISCONNECTED;
 
     log_debug(debug_level, "close_connection: exit");
 }
@@ -6863,12 +7102,15 @@ static int post_wait(
 retry:
     memset(&ev_data, 0, sizeof(ev_data));
     log_debug(nnti_ee_debug_level, "calling CqWaitEvent");
-//nthread_lock(&nnti_gni_lock);
-    rc=GNI_CqWaitEvent_wrapper (cq_hdl, timeout, &ev_data);
+    nthread_lock(&nnti_gni_lock);
+    rc=GNI_CqWaitEvent (cq_hdl, timeout, &ev_data);
+    nthread_unlock(&nnti_gni_lock);
     if (rc==GNI_RC_SUCCESS) {
         print_cq_event(&ev_data, false);
         log_debug(nnti_debug_level, "calling GetComplete");
-        rc=GNI_GetCompleted_wrapper (cq_hdl, ev_data, &post_desc_ptr);
+        nthread_lock(&nnti_gni_lock);
+        rc=GNI_GetCompleted (cq_hdl, ev_data, &post_desc_ptr);
+        nthread_unlock(&nnti_gni_lock);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted failed: %d", rc);
         print_post_desc(post_desc_ptr);
     } else if (rc==GNI_RC_TIMEOUT) {
@@ -6877,252 +7119,262 @@ retry:
     } else {
         log_error(nnti_debug_level, "CqWaitEvent failed: %d", rc);
     }
-//nthread_unlock(&nnti_gni_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
 
     return(rc);
 }
 
-static int reset_req_index(
-        nnti_gni_request_queue_handle_t  *req_queue_attrs)
+static int send_back_credits(
+        nnti_gni_connection_t *conn,
+        uint64_t               credits_to_send)
 {
-    int rc=0;
-    gni_post_descriptor_t  post_desc;
+    int rc=FALSE;
 
-    uint64_t value_before_reset=0;
-    uint64_t value_before_reset_addr=(uint64_t)&value_before_reset;
-    gni_mem_handle_t value_before_reset_mem_hdl;
-    gni_cq_handle_t reset_cq_hdl;
-    gni_ep_handle_t reset_ep_hdl;
+    gni_post_descriptor_t fetch_post_desc;
 
-    log_debug(nnti_ee_debug_level, "enter");
+    memset(&fetch_post_desc, 0, sizeof(gni_post_descriptor_t));
+    fetch_post_desc.type           =GNI_POST_AMO;
+    fetch_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
 
-nthread_lock(&nnti_gni_lock);
+    set_dlvr_mode(&fetch_post_desc);
+    set_rdma_mode(&fetch_post_desc);
 
-    rc=GNI_CqCreate (transport_global_data.nic_hdl, 2, 0, GNI_CQ_BLOCKING, NULL, NULL, &reset_cq_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqCreate(value_before_reset_cq_hdl) failed: %d", rc);
+    fetch_post_desc.local_addr     =conn->recv_mbox->amo_result_addr;
+    fetch_post_desc.local_mem_hndl =conn->recv_mbox->amo_result_mem_hdl;
+    fetch_post_desc.remote_addr    =conn->recv_mbox->credits_addr;
+    fetch_post_desc.remote_mem_hndl=conn->recv_mbox->credits_mem_hdl;
+    fetch_post_desc.length         =sizeof(uint64_t);
+    fetch_post_desc.amo_cmd        =GNI_FMA_ATOMIC_FADD;
+    fetch_post_desc.first_operand  =credits_to_send;
+    fetch_post_desc.second_operand =0;
 
-//    rc=GNI_MemRegister (transport_global_data.nic_hdl, value_before_reset_addr, sizeof(uint64_t), NULL, GNI_MEM_READWRITE, (uint32_t)-1, &value_before_reset_mem_hdl);
-//    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(value_before_reset) failed: %d", rc);
+    conn->recv_mbox->amo_result=-1;
 
-    rc=GNI_EpCreate (transport_global_data.nic_hdl, reset_cq_hdl, &reset_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(reset_ep_hdl) failed: %d", rc);
-    rc=GNI_EpBind (reset_ep_hdl, transport_global_data.alps_info.local_addr, transport_global_data.instance);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(reset_ep_hdl) failed: %d", rc);
-
-    log_debug(nnti_debug_level, "index before reset(%llu).", req_queue_attrs->req_index);
-
-
-    memset(&post_desc, 0, sizeof(gni_post_descriptor_t));
-    post_desc.type           =GNI_POST_AMO;
-    post_desc.cq_mode        =GNI_CQMODE_SILENT;
-
-    set_dlvr_mode(&post_desc);
-    set_rdma_mode(&post_desc);
-
-    post_desc.local_addr     =value_before_reset_addr;
-    post_desc.local_mem_hndl =value_before_reset_mem_hdl;
-    post_desc.remote_addr    =req_queue_attrs->req_index_addr;
-    post_desc.remote_mem_hndl=req_queue_attrs->req_index_mem_hdl;
-    post_desc.length         =sizeof(uint64_t);
-    post_desc.amo_cmd        =GNI_FMA_ATOMIC_FAND;
-    post_desc.first_operand  =0;
-
-    log_debug(nnti_debug_level, "calling PostFma(reset index ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
-            reset_ep_hdl, post_desc.local_addr, post_desc.remote_addr);
-    rc=GNI_PostFma(reset_ep_hdl, &post_desc);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(reset index) failed: %d", rc);
-
-//    post_wait(reset_cq_hdl, 1000);
-
-//    rc=GNI_MemDeregister (transport_global_data.nic_hdl, &value_before_reset_mem_hdl);
-//    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemDeregister(1) failed: %d", rc);
-
-    rc=GNI_EpUnbind (reset_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpUnbind() failed: %d", rc);
-    rc=GNI_EpDestroy (reset_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpDestroy() failed: %d", rc);
-
-    rc=GNI_CqDestroy (reset_cq_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqDestroy() failed: %d", rc);
-
-    log_debug(nnti_debug_level, "index after reset(%llu).", req_queue_attrs->req_index);
-
-nthread_unlock(&nnti_gni_lock);
-
-    log_debug(nnti_ee_debug_level, "exit");
-
-    return(0);
-}
-
-static int fetch_add_buffer_offset(
-        nnti_gni_client_queue_t       *local_req_queue_attrs,
-        nnti_gni_recv_queue_attrs_t *remote_req_queue_attrs,
-        uint64_t                     addend,
-        uint64_t                    *prev_offset)
-{
-    int rc=0;
-    trios_declare_timer(call_time);
-    gni_post_descriptor_t  post_desc;
-    gni_cq_entry_t ev_data;
-    int extras_absorbed=0;
-
-    log_level debug_level=nnti_debug_level;
-
-//    static uint64_t last_offset=0;
-
-    log_debug(nnti_ee_debug_level, "enter");
-
-    memset(&post_desc, 0, sizeof(gni_post_descriptor_t));
-    post_desc.type           =GNI_POST_AMO;
-    post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
-
-    set_dlvr_mode(&post_desc);
-    set_rdma_mode(&post_desc);
-
-    post_desc.local_addr     =local_req_queue_attrs->req_index_addr;
-    post_desc.local_mem_hndl =local_req_queue_attrs->req_index_mem_hdl;
-    post_desc.remote_addr    =remote_req_queue_attrs->req_index_addr;
-    post_desc.remote_mem_hndl=remote_req_queue_attrs->req_index_mem_hdl;
-    post_desc.length         =sizeof(uint64_t);
-    post_desc.amo_cmd        =GNI_FMA_ATOMIC_FADD;
-    post_desc.first_operand  =addend;
-    post_desc.second_operand =0;
-
-    log_debug(debug_level, "calling PostFma(fetch add - req_index_ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
-    		local_req_queue_attrs->req_index_ep_hdl, post_desc.local_addr, (uint64_t)post_desc.remote_addr);
     nthread_lock(&nnti_gni_lock);
-    rc=GNI_PostFma(local_req_queue_attrs->req_index_ep_hdl, &post_desc);
-    if (rc!=GNI_RC_SUCCESS) {
-    	log_error(debug_level, "PostFma(fetch add) failed: %d", rc);
-    	rc=-1;
-    }
-
-    rc=post_wait(local_req_queue_attrs->req_index_cq_hdl, 1000);
+    rc=GNI_PostFma(conn->recv_mbox->amo_ep_hdl, &fetch_post_desc);
     nthread_unlock(&nnti_gni_lock);
-    if (rc!=GNI_RC_SUCCESS) {
-    	log_error(debug_level, "post_wait(fetch add) failed: %d", rc);
-    	if (rc==GNI_RC_TRANSACTION_ERROR) {
-    		log_error(debug_level, "post_wait(fetch add) return GNI_RC_TRANSACTION_ERROR.  This is unrecoverable.  Aborting.");
-    		abort();
-    	}
-    	rc=-1;
-    }
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(credits_available fetch-add) failed: %d", rc);
 
-    log_debug(debug_level, "fetched queue_index(%llu)", local_req_queue_attrs->req_index);
-    *prev_offset=local_req_queue_attrs->req_index;
-    if (*prev_offset >= remote_req_queue_attrs->req_count) {
-    	/*
-    	 * The queue offset I just fetched is beyond the end of the queue.
-    	 * The server needs to reset the offset counter.  I will return -2
-    	 * to indicate the fetch returned an out-of-bounds value.
-    	 */
-    	rc=-1;
-    } else {
-    	local_req_queue_attrs->last_offset=*prev_offset;
-    }
+    post_wait(conn->recv_mbox->amo_cq_hdl, -1);
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_debug_level, "credits available=%lld", conn->recv_mbox->amo_result);
 
-    return(rc);
+    return (rc);
 }
 
-static int send_req(
-        const NNTI_peer_t           *peer_hdl,
-        nnti_gni_client_queue_t     *local_req_queue_attrs,
-        nnti_gni_recv_queue_attrs_t *remote_req_queue_attrs,
-        uint64_t                     offset,
-        const NNTI_buffer_t         *reg_buf,
-        nnti_gni_work_request_t     *gni_wr)
+static int credits_available(
+        nnti_gni_connection_t *conn)
 {
-    int rc=0;
-    nnti_gni_memory_handle_t *gni_mem_hdl=NULL;
+    int rc=FALSE;
+
+    int64_t credits_available=-1;
+
+    gni_post_descriptor_t fetch_post_desc;
+    gni_post_descriptor_t cas_post_desc;
+
+    memset(&fetch_post_desc, 0, sizeof(gni_post_descriptor_t));
+    fetch_post_desc.type           =GNI_POST_AMO;
+    fetch_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
+
+    set_dlvr_mode(&fetch_post_desc);
+    set_rdma_mode(&fetch_post_desc);
+
+    fetch_post_desc.local_addr     =conn->send_mbox->amo_result_addr;
+    fetch_post_desc.local_mem_hndl =conn->send_mbox->amo_result_mem_hdl;
+    fetch_post_desc.remote_addr    =conn->send_mbox->credits_addr;
+    fetch_post_desc.remote_mem_hndl=conn->send_mbox->credits_mem_hdl;
+    fetch_post_desc.length         =sizeof(uint64_t);
+    fetch_post_desc.amo_cmd        =GNI_FMA_ATOMIC_FADD;
+    fetch_post_desc.first_operand  =0;
+    fetch_post_desc.second_operand =0;
+
+    memset(&cas_post_desc, 0, sizeof(gni_post_descriptor_t));
+    cas_post_desc.type           =GNI_POST_AMO;
+    cas_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
+
+    set_dlvr_mode(&cas_post_desc);
+    set_rdma_mode(&cas_post_desc);
+
+    cas_post_desc.local_addr     =conn->send_mbox->amo_result_addr;
+    cas_post_desc.local_mem_hndl =conn->send_mbox->amo_result_mem_hdl;
+    cas_post_desc.remote_addr    =conn->send_mbox->credits_addr;
+    cas_post_desc.remote_mem_hndl=conn->send_mbox->credits_mem_hdl;
+    cas_post_desc.length         =sizeof(uint64_t);
+    cas_post_desc.amo_cmd        =GNI_FMA_ATOMIC_CSWAP;
+    cas_post_desc.first_operand  =0;
+    cas_post_desc.second_operand =0;
+
+
+retry:
+    conn->send_mbox->amo_result=-1;
+
+    nthread_lock(&nnti_gni_lock);
+    rc=GNI_PostFma(conn->send_mbox->amo_ep_hdl, &fetch_post_desc);
+    nthread_unlock(&nnti_gni_lock);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(credits_available fetch-add) failed: %d", rc);
+
+    post_wait(conn->send_mbox->amo_cq_hdl, -1);
+
+    credits_available = conn->send_mbox->amo_result;
+
+    log_debug(nnti_debug_level, "credits_available=%lld", credits_available);
+
+    if (conn->send_mbox->amo_result > 0) {
+
+        cas_post_desc.first_operand  =conn->send_mbox->amo_result;
+        cas_post_desc.second_operand =conn->send_mbox->amo_result - 1;
+
+        conn->send_mbox->amo_result=-1;
+
+        nthread_lock(&nnti_gni_lock);
+        rc=GNI_PostFma(conn->send_mbox->amo_ep_hdl, &cas_post_desc);
+        nthread_unlock(&nnti_gni_lock);
+        if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(credits_available compare-swap) failed: %d", rc);
+
+        post_wait(conn->send_mbox->amo_cq_hdl, -1);
+
+        log_debug(nnti_debug_level, "amo_result=%lld  first_operand=%lld", conn->send_mbox->amo_result, cas_post_desc.first_operand);
+
+        if (conn->send_mbox->amo_result > credits_available) {
+            log_debug(nnti_debug_level, "server sent back credits between AMO calls (amo_result=%lld > credits_available=%lld)", conn->send_mbox->amo_result, credits_available);
+            goto retry;
+        }
+
+        if (conn->send_mbox->amo_result == cas_post_desc.first_operand) {
+            rc=TRUE;
+        }
+    }
+
+    return (rc);
+}
+
+static int execute_send_wr(
+        nnti_gni_work_request_t *gni_wr)
+{
+    int rc=GNI_RC_NOT_DONE;
 
     trios_declare_timer(call_time);
 
-    bool use_fma=true;
+    log_debug(nnti_debug_level, "enter (wr=%p  gni_wr=%p)", gni_wr->nnti_wr, gni_wr);
 
-    gni_mem_hdl=(nnti_gni_memory_handle_t *)reg_buf->transport_private;
+    nnti_gni_memory_handle_t *gni_mem_hdl=(nnti_gni_memory_handle_t *)gni_wr->reg_buf->transport_private;
     assert(gni_mem_hdl);
 
-    log_debug(nnti_ee_debug_level, "enter");
+    nnti_gni_connection_t *conn=get_conn_instance(gni_wr->peer_instance);
+    assert(conn);
 
-    gni_wr->last_op =GNI_OP_SEND_REQUEST;
-    gni_wr->state=NNTI_GNI_WR_STATE_STARTED;
+    if (credits_available(conn)) {
+        int64_t mbox_index =nthread_counter_increment(&conn->send_mbox->mbox_index);
+        mbox_index %= conn->send_mbox->max_credits;
+        int64_t mbox_offset=conn->send_mbox->msg_maxsize*mbox_index;
 
-    gni_wr->sge_list =&gni_wr->sge;
-    gni_wr->sge_count=1;
+        gni_wr->sge_list[0].post_desc.remote_addr=conn->send_mbox->mbox_addr+mbox_offset;
 
-    gni_wr->sge_list[0].gni_wr=gni_wr;
-    gni_wr->sge_list[0].state=NNTI_GNI_SGE_STATE_STARTED;
+        print_post_desc(&gni_wr->sge_list[0].post_desc);
 
-    memset(&gni_wr->sge_list[0].post_desc, 0, sizeof(gni_post_descriptor_t));
-    set_post_desc(&gni_wr->sge_list[0].post_desc, REQUEST_BUFFER, reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size);
-
-    gni_wr->sge_list[0].post_desc.src_cq_hndl=transport_global_data.ep_cq_hdl;
-
-    gni_wr->sge_list[0].post_desc.local_addr           =reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.buf;
-    gni_wr->sge_list[0].post_desc.local_mem_hndl.qword1=reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
-    gni_wr->sge_list[0].post_desc.local_mem_hndl.qword2=reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
-    gni_wr->sge_list[0].post_desc.remote_addr          =remote_req_queue_attrs->req_buffer_addr+offset;
-    gni_wr->sge_list[0].post_desc.remote_mem_hndl      =remote_req_queue_attrs->req_mem_hdl;
-    gni_wr->sge_list[0].post_desc.length               =reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size + gni_mem_hdl->extra;
-
-//    gni_wr->sge_list[0].post_desc.rdma_mode=GNI_RDMAMODE_FENCE;
-    gni_wr->sge_list[0].post_desc.dlvr_mode=GNI_DLVMODE_IN_ORDER;
-
-    print_raw_buf((void *)gni_wr->sge_list[0].post_desc.local_addr, gni_wr->sge_list[0].post_desc.length);
-
-    insert_sge_sgehash(&gni_wr->sge_list[0]);
-
-    if (config.rdma_mode==RDMA_CROSSOVER) {
-        if (gni_wr->sge_list[0].post_desc.length > config.fma_bte_crossover_size) {
-            use_fma=false;
-        } else {
-            use_fma=true;
-        }
-    } else if (config.rdma_mode==RDMA_BTE) {
-        use_fma=false;
-    } else if ((config.rdma_mode==RDMA_FMA) || (config.rdma_mode==RDMA_MIXED)) {
-        use_fma=true;
-    }
-
-nthread_lock(&nnti_gni_lock);
-    GNI_EpSetEventData(
-            local_req_queue_attrs->req_ep_hdl,
-            hash6432shift((uint64_t)&gni_wr->sge_list[0]),
-            offset/(remote_req_queue_attrs->req_size+ + gni_mem_hdl->extra));
-
-    if (use_fma) {
         log_debug(nnti_debug_level, "calling PostFma(send req ep_hdl(%llu), cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
-                local_req_queue_attrs->req_ep_hdl, transport_global_data.ep_cq_hdl, gni_wr->sge_list[0].post_desc.local_addr, gni_wr->sge_list[0].post_desc.remote_addr);
+                conn->send_mbox->ep_hdl, transport_global_data.ep_cq_hdl, gni_wr->sge_list[0].post_desc.local_addr, gni_wr->sge_list[0].post_desc.remote_addr);
         trios_start_timer(call_time);
-        rc=GNI_PostFma(local_req_queue_attrs->req_ep_hdl, &gni_wr->sge_list[0].post_desc);
+        nthread_lock(&nnti_gni_lock);
+        GNI_EpSetEventData(
+                conn->send_mbox->ep_hdl,
+                hash6432shift((uint64_t)&gni_wr->sge_list[0]),
+                transport_global_data.instance);
+        rc=GNI_PostFma(conn->send_mbox->ep_hdl, &gni_wr->sge_list[0].post_desc);
+        nthread_unlock(&nnti_gni_lock);
         trios_stop_timer("PostFma req", call_time);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(fma put) failed: %d", rc);
-    } else {
-        log_debug(nnti_debug_level, "calling PostRdma(send req ep_hdl(%llu), cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
-                local_req_queue_attrs->req_ep_hdl, transport_global_data.ep_cq_hdl, gni_wr->sge_list[0].post_desc.local_addr, gni_wr->sge_list[0].post_desc.remote_addr);
-        trios_start_timer(call_time);
-        rc=GNI_PostRdma(local_req_queue_attrs->req_ep_hdl, &gni_wr->sge_list[0].post_desc);
-        trios_stop_timer("PostRdma req", call_time);
-        if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostRdma(rdma put) failed: %d", rc);
     }
-nthread_unlock(&nnti_gni_lock);
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_debug_level, "exit");
 
-    return(0);
+    return(rc);
+}
+
+static int insert_resend(
+        nnti_gni_work_request_t *gni_wr)
+{
+    wr_queue_t *peer_resend_queue;
+
+    nthread_lock(&nnti_resend_lock);
+    wr_queue_map_iter_t target=wr_resend_map.find(gni_wr->peer_instance);
+    if (target != wr_resend_map.end()) {
+        peer_resend_queue = target->second;
+    } else {
+        peer_resend_queue = new wr_queue_t;
+        wr_resend_map[gni_wr->peer_instance]=peer_resend_queue;
+    }
+
+    peer_resend_queue->push_back(gni_wr);
+    nthread_unlock(&nnti_resend_lock);
+
+    return 0;
+}
+
+static int resend_all(void)
+{
+    int rc=0;
+
+    wr_queue_map_iter_t map_iter;
+    wr_queue_iter_t     queue_iter;
+
+    wr_queue_t *peer_resend_queue;
+
+    trios_declare_timer(call_time);
+
+    nthread_lock(&nnti_resend_lock);
+    log_debug(nnti_debug_level, "wr_resend_map.size()=%d", wr_resend_map.size());
+
+    map_iter=wr_resend_map.begin();
+    while (map_iter != wr_resend_map.end()) {
+        peer_resend_queue=map_iter->second;
+
+        log_debug(nnti_debug_level, "peer_resend_queue.size()=%d", peer_resend_queue->size());
+
+        queue_iter=peer_resend_queue->begin();
+        while (queue_iter != peer_resend_queue->end()) {
+            nnti_gni_work_request_t *gni_wr=*queue_iter;
+
+            rc=execute_send_wr(gni_wr);
+            if (rc == GNI_RC_SUCCESS) {
+                log_debug(nnti_debug_level, "execute_send_wr(conn->send_mbox) success: %d", rc);
+
+                queue_iter = peer_resend_queue->erase(queue_iter);
+
+            } else if (rc == GNI_RC_NOT_DONE) {
+                log_warn(nnti_debug_level, "execute_send_wr(conn->send_mbox) dropped again: %d", rc);
+
+                break;
+
+            } else {
+                log_warn(nnti_debug_level, "execute_send_wr(conn->send_mbox) failed: %d", rc);
+                gni_wr->sge_list[0].state=NNTI_GNI_SGE_STATE_ERROR;
+                gni_wr->state            =NNTI_GNI_WR_STATE_ERROR;
+                gni_wr->nnti_wr->result  =NNTI_EIO;
+
+                break;
+
+            }
+        }
+
+        if (peer_resend_queue->empty()) {
+            wr_resend_map.erase(map_iter++);
+        } else {
+            ++map_iter;
+        }
+    }
+    nthread_unlock(&nnti_resend_lock);
+
+    return rc;
 }
 
 static int request_send(
-        const NNTI_peer_t           *peer_hdl,
-        nnti_gni_client_queue_t     *client_q,
-        nnti_gni_recv_queue_attrs_t *server_q,
-        const NNTI_buffer_t         *reg_buf,
-        int                          req_num,
-        nnti_gni_work_request_t     *gni_wr)
+        const NNTI_peer_t       *peer_hdl,
+        nnti_gni_connection_t   *conn,
+        const NNTI_buffer_t     *reg_buf,
+        int                      req_num,
+        nnti_gni_work_request_t *gni_wr)
 {
     int rc=0;
     uint64_t offset=0;
@@ -7135,40 +7387,62 @@ static int request_send(
     gni_mem_hdl=(nnti_gni_memory_handle_t *)reg_buf->transport_private;
     assert(gni_mem_hdl);
 
-    log_debug(nnti_debug_level, "calling fetch_add_buffer_offset()");
-    trios_start_timer(call_time);
-    rc=fetch_add_buffer_offset(client_q, server_q, 1, &offset);
-    trios_stop_timer("fetch_add_buffer_offset", call_time);
-    if ((rc != -1) && (rc!=GNI_RC_SUCCESS)) log_error(nnti_debug_level, "fetch_add_buffer_offset() failed: %d", rc);
+    gni_wr->reg_buf         =reg_buf;
+    gni_wr->wc              =GNI_WC_ADDRESS(reg_buf, 0);
+    gni_wr->wc->ack_received=0;
+    gni_wr->wc->inst_id     =transport_global_data.instance;
+    gni_wr->wc->op          =GNI_OP_SEND_REQUEST;
+    gni_wr->wc->byte_len    =reg_buf->payload_size;
+    gni_wr->wc->byte_offset =0;
+    gni_wr->wc->src_offset  =0;
+    gni_wr->wc->dest_offset =0;
 
-    if (rc == -1) {
-    	log_debug(nnti_debug_level, "fetch_add_buffer failed: rc=%d", rc);
+    gni_wr->last_op =GNI_OP_SEND_REQUEST;
+    gni_wr->state=NNTI_GNI_WR_STATE_STARTED;
+
+    gni_wr->sge_list =&gni_wr->sge;
+    gni_wr->sge_count=1;
+
+    gni_wr->sge_list[0].gni_wr=gni_wr;
+    gni_wr->sge_list[0].state=NNTI_GNI_SGE_STATE_STARTED;
+
+    memset(&gni_wr->sge_list[0].post_desc, 0, sizeof(gni_post_descriptor_t));
+
+    gni_wr->sge_list[0].post_desc.type   =GNI_POST_FMA_PUT;
+    gni_wr->sge_list[0].post_desc.cq_mode=GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+
+//    gni_wr->sge_list[0].post_desc.src_cq_hndl=transport_global_data.ep_cq_hdl;
+
+    gni_wr->sge_list[0].post_desc.local_addr            =reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.buf;
+    gni_wr->sge_list[0].post_desc.local_mem_hndl.qword1 =reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
+    gni_wr->sge_list[0].post_desc.local_mem_hndl.qword2 =reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
+    gni_wr->sge_list[0].post_desc.remote_addr           =0;
+    gni_wr->sge_list[0].post_desc.remote_mem_hndl.qword1=conn->send_mbox->mbox_mem_hdl.qword1;
+    gni_wr->sge_list[0].post_desc.remote_mem_hndl.qword2=conn->send_mbox->mbox_mem_hdl.qword2;
+    gni_wr->sge_list[0].post_desc.length                =reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size + gni_mem_hdl->extra;
+
+    gni_wr->sge_list[0].post_desc.dlvr_mode=GNI_DLVMODE_IN_ORDER;
+
+    gni_wr->peer_instance=peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id;
+    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
+
+    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+    gni_mem_hdl->wr_queue->push_back(gni_wr);
+    nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+
+    insert_sge_sgehash(&gni_wr->sge_list[0]);
+
+    rc=execute_send_wr(gni_wr);
+    if (rc == GNI_RC_SUCCESS) {
+        log_debug(nnti_debug_level, "execute_send_wr(conn->send_mbox) success: %d", rc);
+    } else if (rc == GNI_RC_NOT_DONE) {
+        log_warn(nnti_debug_level, "execute_send_wr(conn->send_mbox) dropped: %d", rc);
+        insert_resend(gni_wr);
     } else {
-    	gni_wr->reg_buf         =reg_buf;
-    	gni_wr->wc              =GNI_WC_ADDRESS(reg_buf, 0);
-    	gni_wr->wc->ack_received=0;
-    	gni_wr->wc->inst_id     =transport_global_data.instance;
-    	gni_wr->wc->op          =GNI_OP_SEND_REQUEST;
-    	gni_wr->wc->byte_len    =reg_buf->payload_size;
-    	gni_wr->wc->byte_offset =offset*(server_q->req_size+gni_mem_hdl->extra);
-    	gni_wr->wc->src_offset  =0;
-    	gni_wr->wc->dest_offset =offset*(server_q->req_size+gni_mem_hdl->extra);
-
-    	nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    	gni_mem_hdl->wr_queue->push_back(gni_wr);
-    	nthread_unlock(&gni_mem_hdl->wr_queue_lock);
-
-//    	insert_wr_wrhash(gni_wr);
-
-    	log_debug(nnti_debug_level, "calling send_req()");
-    	trios_start_timer(call_time);
-    	rc=send_req(peer_hdl, client_q, server_q, offset*(server_q->req_size+gni_mem_hdl->extra), reg_buf, gni_wr);
-    	trios_stop_timer("send_req", call_time);
-    	if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "send_req() failed: %d", rc);
-
-    	gni_wr->last_op      =GNI_OP_SEND_REQUEST;
-    	gni_wr->peer_instance=peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id;
-    	log_debug(nnti_event_debug_level, "gni_wr->last_peer==%lu", gni_wr->peer_instance);
+        log_warn(nnti_debug_level, "execute_send_wr(conn->send_mbox) failed: %d", rc);
+        gni_wr->sge_list[0].state=NNTI_GNI_SGE_STATE_ERROR;
+        gni_wr->state            =NNTI_GNI_WR_STATE_ERROR;
+        gni_wr->nnti_wr->result  =NNTI_EIO;
     }
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -7178,6 +7452,7 @@ static int request_send(
 
 static int send_buffer(
         const NNTI_peer_t       *peer_hdl,
+        nnti_gni_connection_t   *conn,
         const NNTI_buffer_t     *src_hdl,
         const NNTI_buffer_t     *dest_hdl,
         nnti_gni_work_request_t *gni_wr)
@@ -7219,15 +7494,12 @@ static int send_buffer(
     gni_wr->sge_list[0].post_desc.remote_mem_hndl.qword2=dest_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
     gni_wr->sge_list[0].post_desc.length                =src_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size + gni_mem_hdl->extra;
 
-//    gni_wr->sge_list[0].post_desc.rdma_mode=GNI_RDMAMODE_FENCE;
     gni_wr->sge_list[0].post_desc.dlvr_mode=GNI_DLVMODE_IN_ORDER;
 
     print_raw_buf((void *)gni_wr->sge_list[0].post_desc.local_addr, gni_wr->sge_list[0].post_desc.length);
 
     insert_sge_sgehash(&gni_wr->sge_list[0]);
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
-    assert(conn);
     ep_hdl=conn->ep_hdl;
 
     if (config.rdma_mode==RDMA_CROSSOVER) {
@@ -7272,6 +7544,7 @@ nthread_unlock(&nnti_gni_lock);
 
 static int buffer_send(
         const NNTI_peer_t       *peer_hdl,
+        nnti_gni_connection_t   *conn,
         const NNTI_buffer_t     *src_hdl,
         const NNTI_buffer_t     *dest_hdl,
         nnti_gni_work_request_t *gni_wr)
@@ -7306,7 +7579,7 @@ static int buffer_send(
 
     log_debug(nnti_debug_level, "calling send_buffer()");
     trios_start_timer(call_time);
-    rc=send_buffer(peer_hdl, src_hdl, dest_hdl, gni_wr);
+    rc=send_buffer(peer_hdl, conn, src_hdl, dest_hdl, gni_wr);
     trios_stop_timer("send_buffer", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "send_buffer() failed: %d", rc);
 
@@ -7324,60 +7597,40 @@ static void client_req_queue_init(
 {
     int rc;
 
-    nnti_gni_client_queue_t  *q              =&c->queue_local_attrs;
-    alpsAppGni_t           *server_params  =&c->peer_alps_info;
-    uint64_t                server_instance=c->peer_instance;
-
     log_debug(nnti_debug_level, "enter");
 
-    q->last_offset=0;
-
-    q->req_index=0;
-    q->req_index_addr=(uint64_t)&q->req_index;
-
-    log_debug(nnti_debug_level, "client_req_queue->req_index_addr=%llu", (uint64_t)q->req_index_addr);
+    rc=GNI_EpCreate (
+            c->nic_hdl,
+            transport_global_data.req_send_ep_cq_hdl,
+            &c->send_mbox->ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(req_ep_hdl) failed: %d", rc);
+    rc=GNI_EpBind (
+            c->send_mbox->ep_hdl,
+            c->peer_alps_info.local_addr,
+            c->peer_instance);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(req_ep_hdl) failed: %d", rc);
 
     rc=GNI_CqCreate (
-            c->nic_hdl,
+            transport_global_data.nic_hdl,
             1,
             0,
             GNI_CQ_BLOCKING,
             NULL,
             NULL,
-            &q->req_index_cq_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqCreate() failed: %d", rc);
-
-    rc=GNI_MemRegister (
-            c->nic_hdl,
-            q->req_index_addr,
-            sizeof(uint64_t),
-            NULL,
-            GNI_MEM_READWRITE,
-            (uint32_t)-1,
-            &q->req_index_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
-
+            &c->send_mbox->amo_cq_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqCreate(amo_cq_hdl) failed: %d", rc);
     rc=GNI_EpCreate (
             c->nic_hdl,
-            transport_global_data.ep_cq_hdl,
-            &q->req_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(req_ep_hdl) failed: %d", rc);
+            c->send_mbox->amo_cq_hdl,
+            &c->send_mbox->amo_ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(amo_ep_hdl) failed: %d", rc);
     rc=GNI_EpBind (
-            q->req_ep_hdl,
-            server_params->local_addr,
-            server_instance);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(req_ep_hdl) failed: %d", rc);
+            c->send_mbox->amo_ep_hdl,
+            transport_global_data.alps_info.local_addr,
+            transport_global_data.instance);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(amo_ep_hdl) failed: %d", rc);
 
-    rc=GNI_EpCreate (
-            c->nic_hdl,
-            q->req_index_cq_hdl,
-            &q->req_index_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(req_index_ep_hdl) failed: %d", rc);
-    rc=GNI_EpBind (
-            q->req_index_ep_hdl,
-            server_params->local_addr,
-            server_instance);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(req_index_ep_hdl) failed: %d", rc);
+    log_debug(nnti_debug_level, "new connection send_mbox->ep_hdl(%llu)", c->send_mbox->ep_hdl);
 
     log_debug(nnti_debug_level, "exit");
 }
@@ -7390,23 +7643,15 @@ static void client_req_queue_destroy(
 
     log_debug(debug_level, "enter");
 
-    nnti_gni_client_queue_t     *q=&c->queue_local_attrs;
+    if (c->send_mbox) {
+        rc=GNI_EpUnbind (c->send_mbox->ep_hdl);
+        if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "EpUnbind() failed: %d", rc);
+        rc=GNI_EpDestroy (c->send_mbox->ep_hdl);
+        if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "EpDestroy() failed: %d", rc);
 
-    rc=GNI_MemDeregister (c->nic_hdl, &q->req_index_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "MemDeregister(1) failed: %d", rc);
-
-    rc=GNI_EpUnbind (q->req_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "EpUnbind() failed: %d", rc);
-    rc=GNI_EpDestroy (q->req_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "EpDestroy() failed: %d", rc);
-
-    rc=GNI_EpUnbind (q->req_index_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "EpUnbind() failed: %d", rc);
-    rc=GNI_EpDestroy (q->req_index_ep_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "EpDestroy() failed: %d", rc);
-
-    rc=GNI_CqDestroy (q->req_index_cq_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqDestroy() failed: %d", rc);
+//        free(c->send_mbox->mbox_buf);
+        free(c->send_mbox);
+    }
 
     log_debug(debug_level, "exit");
 }
@@ -7428,32 +7673,80 @@ static void server_req_queue_init(
     q->req_count      =req_count;
     q->req_buffer_size=req_count*(req_size+extra);
 
-    q->req_index     =0;
-    q->req_index_addr=(uint64_t)&q->req_index;
-
-    log_debug(nnti_debug_level, "server_req_queue->req_index_addr=%llu", (uint64_t)q->req_index_addr);
+    nthread_counter_init(&q->req_index);
 
     q->head=0;
     q->tail=0;
 
-    rc=GNI_MemRegister (
+    log_debug(nnti_debug_level, "exit");
+}
+
+static void server_req_queue_add_client(
+        nnti_gni_connection_t *c)
+{
+    int rc;
+
+    log_debug(nnti_debug_level, "enter");
+
+    log_debug(nnti_debug_level, "c->peer_alps_info.local_addr(%lld) c->peer_instance(%llu) transport_global_data.ep_cq_hdl(%llu) transport_global_data.mem_cq_hdl(%llu)",
+                (long long)c->peer_alps_info.local_addr,
+                (unsigned long long)c->peer_instance,
+                (unsigned long long)transport_global_data.ep_cq_hdl,
+                (unsigned long long)transport_global_data.mem_cq_hdl);
+
+    rc=GNI_EpCreate (
+            c->nic_hdl,
+            transport_global_data.req_recv_ep_cq_hdl,
+            &c->recv_mbox->ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(req_ep_hdl) failed: %d", rc);
+    rc=GNI_EpBind (
+            c->recv_mbox->ep_hdl,
+            c->peer_alps_info.local_addr,
+            c->peer_instance);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(req_ep_hdl) failed: %d", rc);
+
+    rc=GNI_CqCreate (
             transport_global_data.nic_hdl,
-            (uint64_t)q->req_buffer,
-            q->req_buffer_size,
-            transport_global_data.mem_cq_hdl,
-            GNI_MEM_READWRITE,
-            (uint32_t)-1,
-            &gni_mem_hdl->mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
-    rc=GNI_MemRegister (
-            transport_global_data.nic_hdl,
-            q->req_index_addr,
-            sizeof(uint64_t),
+            1,
+            0,
+            GNI_CQ_BLOCKING,
             NULL,
-            GNI_MEM_READWRITE,
-            (uint32_t)-1,
-            &q->req_index_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
+            NULL,
+            &c->recv_mbox->amo_cq_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqCreate(amo_cq_hdl) failed: %d", rc);
+    rc=GNI_EpCreate (
+            c->nic_hdl,
+            c->recv_mbox->amo_cq_hdl,
+            &c->recv_mbox->amo_ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpCreate(amo_ep_hdl) failed: %d", rc);
+    rc=GNI_EpBind (
+            c->recv_mbox->amo_ep_hdl,
+            c->peer_alps_info.local_addr,
+            c->peer_instance);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(amo_ep_hdl) failed: %d", rc);
+
+    log_debug(nnti_debug_level, "new connection recv_mbox->ep_hdl(%llu)", c->recv_mbox->ep_hdl);
+
+    log_debug(nnti_debug_level, "exit");
+}
+
+static void server_req_queue_remove_client(
+        nnti_gni_connection_t *c)
+{
+    int rc;
+
+    log_debug(nnti_debug_level, "enter");
+
+    rc=GNI_EpUnbind (c->recv_mbox->ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpUnbind() failed: %d", rc);
+    rc=GNI_EpDestroy (c->recv_mbox->ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpDestroy() failed: %d", rc);
+
+    rc=GNI_MemDeregister (c->nic_hdl, &c->recv_mbox->mbox_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemDeregister(1) failed: %d", rc);
+
+    free(c->recv_mbox->mbox_buf);
+    free(c->recv_mbox);
 
     log_debug(nnti_debug_level, "exit");
 }
@@ -7466,23 +7759,20 @@ static void server_req_queue_destroy(
 
     log_debug(nnti_debug_level, "enter");
 
-    rc=GNI_MemDeregister (
-            transport_global_data.nic_hdl,
-            &gni_mem_hdl->mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemDeregister(1) failed: %d", rc);
-    rc=GNI_MemDeregister (
-            transport_global_data.nic_hdl,
-            &q->req_index_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemDeregister(1) failed: %d", rc);
+    nthread_counter_fini(&q->req_index);
 
     log_debug(nnti_debug_level, "exit");
 }
 
 
-#define EP_CQ_INDEX        0
-#define MEM_CQ_INDEX       1
-#define INTERRUPT_CQ_INDEX 2
-#define CQ_COUNT 3
+#define EP_CQ_INDEX           0
+#define MEM_CQ_INDEX          1
+#define INTERRUPT_CQ_INDEX    2
+#define REQ_SEND_EP_CQ_INDEX  3
+#define REQ_SEND_MEM_CQ_INDEX 4
+#define REQ_RECV_EP_CQ_INDEX  5
+#define REQ_RECV_MEM_CQ_INDEX 6
+#define CQ_COUNT 7
 static NNTI_result_t progress(int timeout)
 {
     int           rc     =0;
@@ -7500,8 +7790,13 @@ static NNTI_result_t progress(int timeout)
     uint32_t         which_cq=0;
     gni_cq_entry_t   ev_data;
 
+    uint32_t cq_count=CQ_COUNT;
 
-    gni_post_descriptor_t   *post_desc_ptr=NULL;
+    gni_post_descriptor_t *post_desc_ptr=NULL;
+
+    void *header=NULL;
+
+    nnti_gni_connection_t *conn=NULL;
 
     long entry_time  =trios_get_time_ms();
     long elapsed_time=0;
@@ -7522,9 +7817,13 @@ static NNTI_result_t progress(int timeout)
 
     trios_start_timer(total_time);
 
-    cq_list[EP_CQ_INDEX]       =transport_global_data.ep_cq_hdl;
-    cq_list[MEM_CQ_INDEX]      =transport_global_data.mem_cq_hdl;
-    cq_list[INTERRUPT_CQ_INDEX]=transport_global_data.interrupt_mem_cq_hdl;
+    cq_list[EP_CQ_INDEX]          =transport_global_data.ep_cq_hdl;
+    cq_list[MEM_CQ_INDEX]         =transport_global_data.mem_cq_hdl;
+    cq_list[INTERRUPT_CQ_INDEX]   =transport_global_data.interrupt_mem_cq_hdl;
+    cq_list[REQ_SEND_EP_CQ_INDEX] =transport_global_data.req_send_ep_cq_hdl;
+    cq_list[REQ_SEND_MEM_CQ_INDEX]=transport_global_data.req_send_mem_cq_hdl;
+    cq_list[REQ_RECV_EP_CQ_INDEX] =transport_global_data.req_recv_ep_cq_hdl;
+    cq_list[REQ_RECV_MEM_CQ_INDEX]=transport_global_data.req_recv_mem_cq_hdl;
 
     /*
      * Only one thread is allowed to make progress at a time.  All others
@@ -7590,31 +7889,73 @@ static NNTI_result_t progress(int timeout)
         	gni_timeout=timeout-elapsed_time;
         }
 
-        log_debug(nnti_cq_debug_level, "checking for events on any CQ (timeout=%d)", gni_timeout);
+        log_debug(nnti_cq_debug_level, "checking for events on any CQ (cq_count=%d ; timeout=%d)", cq_count, gni_timeout);
         trios_start_timer(call_time);
-//        nthread_lock(&nnti_gni_lock);
-        gni_rc=GNI_CqVectorWaitEvent_wrapper(cq_list, CQ_COUNT, gni_timeout, &ev_data, &which_cq);
-        if (gni_cq_get_source(ev_data) == 1) {
-            DEQUEUE_POST_DESCRIPTOR(cq_list[which_cq], &ev_data, &post_desc_ptr);
-        }
-//        nthread_unlock(&nnti_gni_lock);
-        trios_stop_timer("progress - CqVectorWaitEvent", call_time);
-
-        print_cq_event(&ev_data, false);
-        print_post_desc(post_desc_ptr);
-        log_debug(nnti_event_debug_level, "CqWaitEvent(progress) complete");
-        if (gni_rc!=GNI_RC_SUCCESS) log_debug(nnti_debug_level, "CqWaitEvent() on cq_list(%p) failed: %d", cq_list, gni_rc);
-
+        gni_rc=GNI_CqVectorMonitor(cq_list, cq_count, gni_timeout, &which_cq);
+        trios_stop_timer("progress - CqVectorMonitor", call_time);
         /* case 1: success */
         if (gni_rc == GNI_RC_SUCCESS) {
-        	if (which_cq == INTERRUPT_CQ_INDEX) {
-                log_debug(nnti_debug_level, "GNI_CqVectorWaitEvent() interrupted by NNTI_gni_interrupt");
-        		interrupted=true;
-                nnti_rc = NNTI_EINTR;
-        		continue;
-        	}
-            gni_sge=decode_sge(&ev_data);
-            process_event(gni_sge->gni_wr->reg_buf, gni_sge, cq_list[which_cq], &ev_data, post_desc_ptr);
+            nthread_lock(&nnti_gni_lock);
+            rc=GNI_CqGetEvent(cq_list[which_cq], &ev_data);
+            nthread_unlock(&nnti_gni_lock);
+            if (gni_rc!=GNI_RC_SUCCESS) log_debug(nnti_debug_level, "CqGetEvent() on cq_list(%p) failed: %d", cq_list, gni_rc);
+            if ((gni_cq_get_source(ev_data) == 1) && (GNI_CQ_GET_TYPE(ev_data) != GNI_CQ_EVENT_TYPE_SMSG)) {
+                log_debug(nnti_debug_level, "calling GetComplete(progress)");
+                nthread_lock(&nnti_gni_lock);
+                rc=GNI_GetCompleted (cq_list[which_cq], ev_data, &post_desc_ptr);
+                nthread_unlock(&nnti_gni_lock);
+                if (rc!=GNI_RC_SUCCESS) {
+                    log_error(nnti_debug_level, "GetCompleted(progress post_desc_ptr(%p)) failed: %d", post_desc_ptr, rc);
+                } else {
+                    log_debug(nnti_debug_level, "GetCompleted(progress post_desc_ptr(%p)) success", post_desc_ptr);
+                }
+                print_post_desc(post_desc_ptr);
+            }
+
+            print_cq_event(&ev_data, false);
+            print_post_desc(post_desc_ptr);
+            log_debug(nnti_event_debug_level, "CqGetEvent(progress) complete");
+
+            switch (which_cq) {
+
+                case INTERRUPT_CQ_INDEX:
+                    log_debug(nnti_debug_level, "CqVectorMonitor() interrupted by NNTI_gni_interrupt");
+                    interrupted=true;
+                    nnti_rc = NNTI_EINTR;
+                    continue;
+
+                case REQ_RECV_EP_CQ_INDEX:
+                    print_cq_event(&ev_data, true);
+                    log_error(nnti_debug_level, "CqVectorMonitor(req_recv_ep_cq_hdl) unknown event received at receiver");
+                    continue;
+
+                case REQ_RECV_MEM_CQ_INDEX:
+                    print_cq_event(&ev_data, false);
+                    log_debug(nnti_debug_level, "CqVectorMonitor(req_send_ep_cq_hdl) request receive complete event received at receiver");
+                    break;
+
+                case REQ_SEND_EP_CQ_INDEX:
+                    print_cq_event(&ev_data, false);
+                    log_debug(nnti_debug_level, "CqVectorMonitor(req_send_ep_cq_hdl) request send complete event received at sender");
+                    break;
+
+                case REQ_SEND_MEM_CQ_INDEX:
+                    print_cq_event(&ev_data, true);
+                    log_error(nnti_debug_level, "CqVectorMonitor(req_send_mem_cq_hdl) unknown event received at sender");
+                    continue;
+
+                default:
+                    print_cq_event(&ev_data, false);
+                    log_debug(nnti_debug_level, "CqVectorMonitor() RDMA event received");
+                    break;
+            }
+            gni_sge=decode_sge(&ev_data, cq_list[which_cq]);
+            if (gni_sge) {
+                rc=process_event(gni_sge->gni_wr->reg_buf, gni_sge, header, cq_list[which_cq], &ev_data, post_desc_ptr);
+                if (rc != NNTI_OK) {
+                    continue;
+                }
+            }
 
             nnti_rc = NNTI_OK;
 
@@ -7626,13 +7967,13 @@ static NNTI_result_t progress(int timeout)
 
             /* if the caller asked for a legitimate timeout, we need to exit */
             if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
-                log_debug(nnti_debug_level, "CqVectorWaitEvent timed out...timeout(%d) elapsed_time(%d) exit_now(%d)",
+                log_debug(nnti_debug_level, "CqVectorMonitor timed out...timeout(%d) elapsed_time(%d) exit_now(%d)",
                         timeout, elapsed_time, trios_exit_now());
                 nnti_rc = NNTI_ETIMEDOUT;
                 break;
             }
             /* continue if the timeout has not expired */
-            log_debug(nnti_event_debug_level, "CqWaitEvent timedout...retrying...timeout(%d) elapsed_time(%d) exit_now(%d)",
+            log_debug(nnti_event_debug_level, "CqVectorMonitor timedout...retrying...timeout(%d) elapsed_time(%d) exit_now(%d)",
                     timeout, elapsed_time, trios_exit_now());
 
             continue;
@@ -7645,12 +7986,12 @@ static NNTI_result_t progress(int timeout)
             GNI_CqErrorStr(ev_data, errstr, 1023);
             GNI_CqErrorRecoverable(ev_data, &recoverable);
 
-            log_error(nnti_debug_level, "CqWaitEvent failed (gni_rc=%d) (recoverable=%llu) : %s",
+            log_error(nnti_debug_level, "CqVectorMonitor failed (gni_rc=%d) (recoverable=%llu) : %s",
                     gni_rc, (uint64_t)recoverable, errstr);
             print_cq_event(&ev_data, false);
 
-            gni_sge=decode_sge(&ev_data);
-            process_event(gni_sge->gni_wr->reg_buf, gni_sge, cq_list[which_cq], &ev_data, post_desc_ptr);
+            gni_sge=decode_sge(&ev_data, cq_list[which_cq]);
+            process_event(gni_sge->gni_wr->reg_buf, gni_sge, NULL, cq_list[which_cq], &ev_data, post_desc_ptr);
 
             nnti_rc = NNTI_EIO;
 
@@ -7723,19 +8064,20 @@ static NNTI_result_t get_ipaddr(
 
 static void config_init(nnti_gni_config_t *c)
 {
-    c->min_atomics_vars       =512;
-    c->use_alps_ptag          =true;
-    c->use_wr_pool            =false;
-    c->wr_pool_initial_size   =50;
-    c->wr_pool_max_size       =1000;
-    c->wr_pool_create_if_empty=false;
-    c->use_rdma_target_ack    =false;
-    c->use_rdma_events        =false;
-    c->use_rdma_fence         =false;
-    c->pi_ordering            =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
-    c->rdma_mode              =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
-    c->fma_bte_crossover_size =4096;
-    c->max_timeout_ms         =-1;
+    c->min_atomics_vars             =512;
+    c->use_alps_ptag                =true;
+    c->use_wr_pool                  =false;
+    c->wr_pool_initial_size         =50;
+    c->wr_pool_max_size             =1000;
+    c->wr_pool_create_if_empty      =false;
+    c->use_rdma_target_ack          =false;
+    c->use_rdma_events              =false;
+    c->use_rdma_fence               =false;
+    c->pi_ordering                  =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
+    c->rdma_mode                    =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
+    c->fma_bte_crossover_size       =4096;
+    c->max_timeout_ms               =-1;
+    c->queue_elements_per_connection=10;
 }
 
 static void config_get_from_env(nnti_gni_config_t *c)
@@ -7905,6 +8247,18 @@ static void config_get_from_env(nnti_gni_config_t *c)
     } else {
         log_debug(nnti_debug_level, "TRIOS_NNTI_MIN_ATOMIC_VARS is undefined.  using c->min_atomics_vars default");
     }
+    if ((env_str=getenv("TRIOS_NNTI_QUEUE_ELEMENTS_PER_CONNECTION")) != NULL) {
+        errno=0;
+        uint32_t qelem=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(nnti_debug_level, "setting c->queue_elements_per_connection to %lu", qelem);
+            c->queue_elements_per_connection=qelem;
+        } else {
+            log_debug(nnti_debug_level, "TRIOS_NNTI_QUEUE_ELEMENTS_PER_CONNECTION value conversion failed (%s).  using c->queue_elements_per_connection default.", strerror(errno));
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_QUEUE_ELEMENTS_PER_CONNECTION is undefined.  using c->queue_elements_per_connection default");
+    }
 }
 
 inline int DEQUEUE_POST_DESCRIPTOR(
@@ -7917,8 +8271,12 @@ inline int DEQUEUE_POST_DESCRIPTOR(
     *post_desc_ptr=NULL;
 
     log_debug(nnti_debug_level, "calling GetComplete(DEQUEUE_POST_DESCRIPTOR)");
-    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, post_desc_ptr);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(DEQUEUE_POST_DESCRIPTOR post_desc_ptr(%p)) failed: %d", *post_desc_ptr, rc);
+    rc=GNI_GetCompleted (cq_hdl, *ev_data, post_desc_ptr);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "GetCompleted(DEQUEUE_POST_DESCRIPTOR post_desc_ptr(%p)) failed: %d", *post_desc_ptr, rc);
+    } else {
+        log_debug(nnti_debug_level, "GetCompleted(DEQUEUE_POST_DESCRIPTOR post_desc_ptr(%p)) success", *post_desc_ptr);
+    }
     print_post_desc(*post_desc_ptr);
 
     return(rc);
