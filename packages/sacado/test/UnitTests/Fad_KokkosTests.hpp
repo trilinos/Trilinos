@@ -347,7 +347,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   typedef typename FadType::value_type value_type;
 
   const size_type num_rows = global_num_rows;
-  const size_type num_cols = global_num_cols;
   const size_type fad_size = global_fad_size;
 
   // Create and fill view
@@ -490,6 +489,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Check
   FadType f3 = f0 * f1;
   success = checkFads(f3, f2, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Rank8, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*******,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", 100, 1, 2, 3, 4, 5, 6, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  typename host_view_type::array_type h_a = h_v;
+  Kokkos::deep_copy(h_a, 1.0);
+
+  FadType f1 = FadType(fad_size, 2.0);
+  h_v(99,0,1,2,3,4,5) = f1;
+  FadType f2 = h_v(99,0,1,2,3,4,5);
+
+  // Check
+  success = checkFads(f1, f2, out);
 }
 
 // Tests that require view spec
@@ -754,6 +776,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Multiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
