@@ -62,11 +62,11 @@ namespace stk {
   void get_max_min_avg(MPI_Comm comm, T this_proc, T& max, T& min, T& avg)
   {
     int num_procs = stk::parallel_machine_size(comm);
-    T this_proc_average = this_proc / num_procs;
 
     stk::all_reduce_max(comm, &this_proc, &max, 1);
     stk::all_reduce_min(comm, &this_proc, &min, 1);
-    stk::all_reduce_sum(comm, &this_proc_average, &avg, 1);
+    stk::all_reduce_sum(comm, &this_proc, &avg, 1);
+    avg /= static_cast<T>(num_procs);
   }
 }
 #endif /* STK_MEMORY_UTIL_H */
