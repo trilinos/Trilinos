@@ -22,7 +22,7 @@ struct TestBitset
     : m_bitset(bitset)
   {}
 
-  unsigned apply(unsigned collisions)
+  unsigned testit(unsigned collisions)
   {
     device_type::fence();
 
@@ -70,7 +70,7 @@ struct TestBitsetTest
     : m_bitset(bitset)
   {}
 
-  unsigned apply()
+  unsigned testit()
   {
     device_type::fence();
 
@@ -107,7 +107,7 @@ struct TestBitsetAny
     : m_bitset(bitset)
   {}
 
-  unsigned apply()
+  unsigned testit()
   {
     device_type::fence();
 
@@ -178,7 +178,7 @@ void test_bitset()
     // nothing should be set
     {
       Impl::TestBitsetTest< bitset_type > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ(0u, count);
       EXPECT_EQ(count, bitset.count());
     }
@@ -188,7 +188,7 @@ void test_bitset()
     // everything should be set
     {
       Impl::TestBitsetTest< const_bitset_type > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ(bitset.size(), count);
       EXPECT_EQ(count, bitset.count());
     }
@@ -201,7 +201,7 @@ void test_bitset()
     // test setting bits
     {
       Impl::TestBitset< bitset_type, true > f(bitset);
-      uint32_t count = f.apply(10u);
+      uint32_t count = f.testit(10u);
       EXPECT_EQ( bitset.size(), bitset.count());
       EXPECT_EQ( bitset.size(), count );
     }
@@ -210,7 +210,7 @@ void test_bitset()
     // test resetting bits
     {
       Impl::TestBitset< bitset_type, false > f(bitset);
-      uint32_t count = f.apply(10u);
+      uint32_t count = f.testit(10u);
       EXPECT_EQ( bitset.size(), count);
       EXPECT_EQ( 0u, bitset.count() );
     }
@@ -220,7 +220,7 @@ void test_bitset()
     // test setting any bits
     {
       Impl::TestBitsetAny< bitset_type, true > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ( bitset.size(), bitset.count());
       EXPECT_EQ( bitset.size(), count );
     }
@@ -229,7 +229,7 @@ void test_bitset()
     // test resetting any bits
     {
       Impl::TestBitsetAny< bitset_type, false > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ( bitset.size(), count);
       EXPECT_EQ( 0u, bitset.count() );
     }

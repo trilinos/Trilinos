@@ -256,7 +256,7 @@ template <typename scalar_t>
  *   \param offset  the offset at which calculation will begin.
  *   \param min  on return, min will hold the minimum of the values.
  *   \param max  on return, max will hold the maximum of the values.
- *   \param sum on return, max will hold the sum of the values.
+ *   \param sum on return, sum will hold the sum of the values.
  */
 template <typename scalar_t>
  void getStridedStats(const ArrayView<scalar_t> &v, int stride, 
@@ -471,7 +471,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
 
   if (numMetrics > 1){
 
-    scalar_t *wgt = localBuf + nparts; // single normed weight
+    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
     try{
       normedPartWeights<scalar_t, pnum_t, lno_t, part_t>(env, nparts, 
         part, vwgts, mcNorm, wgt);
@@ -502,7 +502,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = localBuf + nparts; // single normed weight
+    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
     scalar_t total = 0.0;
   
     for (int p=0; p < nparts; p++){
@@ -563,7 +563,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = sumBuf + nparts;        // single normed weight
+    scalar_t *wgt = sumBuf + nparts;        // single normed weight or weight 1
   
     ArrayView<scalar_t> normedWVec(wgt, nparts);
     getStridedStats<scalar_t>(normedWVec, 1, 0, min, max, sum);
@@ -598,10 +598,10 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   numParts = nparts;
   obj = sumBuf;               // # of objects
 
-  for (part_t p=nparts-1; p > 0; p--){
+  /*for (part_t p=nparts-1; p > 0; p--){
     if (obj[p] > 0) break;
     numParts--;
-  }
+    }*/
 
   numNonemptyParts = numParts; 
 

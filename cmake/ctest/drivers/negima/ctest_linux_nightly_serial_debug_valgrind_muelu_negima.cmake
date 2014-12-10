@@ -75,7 +75,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
 )
 
 SET(CTEST_DO_MEMORY_TESTING TRUE)
-SET(CTEST_MEMORYCHECK_COMMAND /home/aprokop/local/opt/valgrind-3.9.0/bin/valgrind)
+SET(CTEST_MEMORYCHECK_COMMAND /home/aprokop/local/opt/valgrind-3.10.1/bin/valgrind)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

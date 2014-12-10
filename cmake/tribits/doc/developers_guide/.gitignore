@@ -1,0 +1,12 @@
+# Ignore generated files
+/checkin-test-help.txt
+/gitdist-help.txt
+/snapshot-dir-help.txt
+/TribitsHelloWorldDirAndFiles.txt
+/TribitsStandardTPLsList.txt
+/TribitsCommonTPLsList.txt
+/TribitsMacroFunctionDoc.rst
+/UtilsMacroFunctionDoc.rst
+/TriBITS.README.DIRECTORY_CONTENTS.rst
+/TribitsDevelopersGuide.html
+/TribitsDevelopersGuide.pdf

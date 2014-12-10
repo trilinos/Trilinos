@@ -469,8 +469,8 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-// TODO:  Later may allow user to not implement second adjacencies and,
-// TODO:  if we want them, we compute A^T A, where A is matrix of first adjacencies.
+  // allow user to not implement second adjacencies and,
+  // if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,

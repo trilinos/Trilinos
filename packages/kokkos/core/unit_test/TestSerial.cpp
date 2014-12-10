@@ -69,6 +69,7 @@
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -324,6 +325,14 @@ TEST_F( serial , task_policy )
 }
 
 //----------------------------------------------------------------------------
+
+TEST_F( serial , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Serial >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
 TEST_F( serial , cxx11 )
 {
@@ -345,6 +354,11 @@ TEST_F( serial , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(4) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(10) ) );
 }
 #endif
 } // namespace test

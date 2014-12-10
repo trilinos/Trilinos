@@ -1,4 +1,6 @@
 
+#cmakedefine TEUCHOS_STANDALONE_PACKAGE
+
 #cmakedefine BUILD_SHARED_LIBS
 
 #cmakedefine HAVE_TEUCHOS_PARAMETERLIST

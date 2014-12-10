@@ -412,10 +412,16 @@ struct Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars<8> {
   typedef int64_t type;
 };
 
+// Must be non-const, atomic access trait, and 32 or 64 bit type for true atomics.
 template<class ViewTraits>
-class ViewDataHandle<ViewTraits,
-typename enable_if<(!is_same<typename ViewTraits::const_value_type,typename ViewTraits::value_type>::value) &&
-                   (ViewTraits::memory_traits::Atomic) >::type> {
+class ViewDataHandle<
+  ViewTraits ,
+  typename enable_if<
+    ( ! is_same<typename ViewTraits::const_value_type,typename ViewTraits::value_type>::value) &&
+    ( ViewTraits::memory_traits::Atomic )
+  >::type >
+{
+private:
 //  typedef typename if_c<(sizeof(typename ViewTraits::const_value_type)==4) || 
 //                        (sizeof(typename ViewTraits::const_value_type)==8), 
 //                         int, Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars >::type 
@@ -424,23 +430,27 @@ typename enable_if<(!is_same<typename ViewTraits::const_value_type,typename View
   typedef ViewDataHandle self_type;
 
 public:
-  enum {ReferenceAble = 0};
-  typedef Impl::AtomicViewDataHandle<ViewTraits> type;
-  typedef Impl::AtomicDataElement<ViewTraits> return_type;
+  enum {  ReturnTypeIsReference = false };
 
-  static type allocate(std::string label, size_t count) {
-    return type((typename ViewTraits::value_type*)
-                ViewTraits::memory_space::allocate( label ,
-                typeid(typename ViewTraits::value_type) ,
-                sizeof(typename ViewTraits::value_type) ,
-                count ));
+  typedef Impl::AtomicViewDataHandle<ViewTraits> handle_type;
+  typedef Impl::AtomicDataElement<ViewTraits>    return_type;
+
+  static handle_type allocate(std::string label, size_t count)
+  {
+    return handle_type((typename ViewTraits::value_type*)
+      ViewTraits::memory_space::allocate( label ,
+      typeid(typename ViewTraits::value_type) ,
+      sizeof(typename ViewTraits::value_type) ,
+      count ));
   }
 
   KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr(type handle) {
+  static typename ViewTraits::value_type* get_raw_ptr(handle_type handle) {
     return handle.ptr;
   }
 };
+
 }
 }
+
 #endif

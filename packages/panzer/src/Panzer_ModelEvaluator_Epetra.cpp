@@ -513,12 +513,12 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   // Transient or steady-state evaluation is determined by the x_dot
   // vector.  If this RCP is null, then we are doing a steady-state
   // fill.
-  bool is_transient = false;
+  bool has_x_dot = false;
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot ))
-    is_transient = nonnull(inArgs.get_x_dot());
+    has_x_dot = nonnull(inArgs.get_x_dot());
 
   // Make sure construction built in transient support
-  TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(has_x_dot && !build_transient_support_, std::runtime_error,
 		     "ModelEvaluator was not built with transient support enabled!");
 
   //
@@ -557,7 +557,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   ae_inargs.alpha = 0.0;
   ae_inargs.beta = 1.0;
   ae_inargs.evaluate_transient_terms = false;
-  if (is_transient) {
+  if (build_transient_support_) {
     x_dot = inArgs.get_x_dot();
     ae_inargs.alpha = inArgs.get_alpha();
     ae_inargs.beta = inArgs.get_beta();
@@ -632,7 +632,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
   epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(x));
-  if (is_transient)
+  if (has_x_dot)
     epGlobalContainer->set_dxdt(Teuchos::rcp_const_cast<Epetra_Vector>(x_dot));
 
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {

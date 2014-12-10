@@ -261,7 +261,11 @@ private:
 
   Array<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;
 
-  void assertInitialized() const;
+  inline void assertInitialized() const;
+  inline std::string getClassName() const;
+  inline Ordinal getRangeDim() const;
+  inline Ordinal getDomainDim() const;
+
   void validateOps();
   void setupDefaultObjectLabel();
 
@@ -354,20 +358,6 @@ multiply(
   const RCP<const LinearOpBase<Scalar> > &C,
   const std::string &M_label = ""
   );
-
-
-// /////////////////////////////////
-// Inline members
-
-
-template<class Scalar>
-inline
-void DefaultMultipliedLinearOp<Scalar>::assertInitialized() const
-{
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( !( numOps() > 0 ) );
-#endif
-}
 
 
 }	// end namespace Thyra

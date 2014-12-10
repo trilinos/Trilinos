@@ -61,6 +61,13 @@ namespace Amesos2 {
     // Go through all implemented solvers.  If the name matches one of
     // them, return true; else return false.
     //
+#ifdef HAVE_AMESOS2_BASKER
+    if (solverName == "amesos2_basker" ||
+        solverName == "basker") {
+      return true;
+    }
+#endif
+
 #ifdef HAVE_AMESOS2_KLU2
     if (solverName == "amesos2_klu2" ||
         solverName == "klu2" ||

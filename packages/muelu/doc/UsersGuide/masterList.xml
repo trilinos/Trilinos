@@ -6,10 +6,10 @@
       <name>problem: type</name>
       <type>string</type>
       <default>"unknown"</default>
-      <description>Type of problem to be solved.  Possible values: see Table~\ref{t:problem_types}.</description>
+      <description>Type of problem to be solved. Possible values: see Table~\ref{t:problem_types}.</description>
       <name-ML>default values</name-ML>
       <comment-ML>needs special treatment in ML. problem types have different names in ML and MueLu</comment-ML>
-      <type-ML>string</type-ML>      
+      <type-ML>string</type-ML>
     </parameter>
 
     <parameter>
@@ -36,9 +36,9 @@
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
       <name-ML>PDE equations</name-ML>
       <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
-      <description-ML>Number of PDE equations at each grid node. Only constant block size is considered.</description-ML>      
+      <description-ML>Number of PDE equations at each grid node. Only constant block size is considered.</description-ML>
     </parameter>
-    
+
     <parameter>
       <name>max levels</name>
       <type>int</type>
@@ -80,7 +80,7 @@
       <default>"both"</default>
       <description>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).</description>
       <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
-      <description-ML>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers).</description-ML>    
+      <description-ML>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers).</description-ML>
     </parameter>
 
     <parameter>
@@ -218,7 +218,7 @@
     </parameter>
 
     <parameter>
-      <name>coarse: max size</name>    
+      <name>coarse: max size</name>
       <type>int</type>
       <default>2000</default>
       <description>Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.</description>
@@ -295,7 +295,7 @@
       <type>double</type>
       <default>0.0</default>
       <description>Connectivity dropping threshold for a graph used in aggregation.</description>
-      <name-ML>aggregation: threshold</name-ML>      
+      <name-ML>aggregation: threshold</name-ML>
     </parameter>
 
     <parameter>
@@ -304,7 +304,7 @@
       <default>2</default>
       <description>Minimum size of an aggregate.</description>
       <visible>true</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -313,7 +313,7 @@
       <default>-1</default>
       <description>Maximum size of an aggregate (-1 means unlimited).</description>
       <visible>true</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -322,7 +322,7 @@
       <default>0</default>
       <description>Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -330,7 +330,7 @@
       <type>double</type>
       <default>0.0</default>
       <description>Threshold for determining whether entries are zero during Dirichlet row detection.</description>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -339,7 +339,7 @@
       <default>true</default>
       <description>Turn on/off phase 1 of aggregation</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -348,7 +348,7 @@
       <default>true</default>
       <description>Turn on/off phase 2a of aggregation</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -357,7 +357,7 @@
       <default>true</default>
       <description>Turn on/off phase 2b of aggregation</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -366,7 +366,7 @@
       <default>true</default>
       <description>Turn on/off phase 3 of aggregation</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -375,7 +375,7 @@
       <default>false</default>
       <description>Turn on/off Dirichlet points preservation</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -383,7 +383,7 @@
       <type>bool</type>
       <default>false</default>
       <description>Export data for visualization post-processing.</description>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -398,7 +398,7 @@
       <ConvectionDiffusion>"new"</ConvectionDiffusion>
       <description>old = Tobias, new = ML</description>
       <visible>false</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>      
+      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
   </aggregation>
@@ -429,7 +429,7 @@
       <description>Print parameters unused during a hierarchy construction.</description>
       <name-ML>print unused</name-ML>
       <type-ML>int</type-ML>
-      <default-ML>-2</default-ML>     
+      <default-ML>-2</default-ML>
     </parameter>
 
     <parameter>
@@ -478,7 +478,7 @@
       <default>1.33</default>
       <description>Damping factor for smoothed aggregation.</description>
       <name-ML>aggregation: damping factor</name-ML>
-      <default-ML>1.33</default-ML>      
+      <default-ML>1.33</default-ML>
       <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
       <description-ML>Damping factor for smoothed aggregation.</description-ML>
     </parameter>
@@ -614,15 +614,15 @@
       <name-ML>repartition: start level</name-ML>
       <default-ML>1</default-ML>
       <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
-      <description-ML>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description-ML>      
+      <description-ML>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description-ML>
     </parameter>
 
     <parameter>
-      <name>repartition: min rows per proc</name> 
+      <name>repartition: min rows per proc</name>
       <type>int</type>
       <default>800</default>
       <description>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description>
-      <name-ML>repartition: min per proc</name-ML>  
+      <name-ML>repartition: min per proc</name-ML>
       <default-ML>512</default-ML>
       <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
       <description-ML>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description-ML>
@@ -668,11 +668,23 @@
     <parameter>
       <name>repartition: rebalance P and R</name>
       <type>bool</type>
-      <default>true</default>
+      <default>false</default>
       <description>Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
   </rebalancing>
+
+  <reuse>
+
+    <parameter>
+      <name>reuse: type</name>
+      <type>string</type>
+      <default>"none"</default>
+      <description>Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+  </reuse>
 
 </masterlist>

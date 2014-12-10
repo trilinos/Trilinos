@@ -52,17 +52,21 @@ namespace Impl {
 
 template<class DstHandleType, class SrcHandleType>
 KOKKOS_INLINE_FUNCTION
-void static assign_from_handle(typename DstHandleType::type& dst_handle,
-    typename enable_if< !is_same<DstHandleType,SrcHandleType>::value ,
-    const typename SrcHandleType::type& >::type src_handle) {
+void static assign_from_handle(
+  typename DstHandleType::handle_type& dst_handle,
+  typename enable_if< !is_same<DstHandleType,SrcHandleType>::value ,
+                      const typename SrcHandleType::handle_type& >::type src_handle)
+{
   dst_handle = SrcHandleType::get_raw_ptr(src_handle);
 }
 
 template<class DstHandleType, class SrcHandleType>
 KOKKOS_INLINE_FUNCTION
-void static assign_from_handle(typename DstHandleType::type& dst_handle,
-    typename enable_if< is_same<DstHandleType,SrcHandleType>::value ,
-          const typename SrcHandleType::type& >::type src_handle) {
+void static assign_from_handle(
+  typename DstHandleType::handle_type& dst_handle,
+  typename enable_if< is_same<DstHandleType,SrcHandleType>::value ,
+                      const typename SrcHandleType::handle_type& >::type src_handle)
+{
   dst_handle = src_handle;
 }
 
@@ -98,8 +102,8 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
     dst.m_tracking = src.m_tracking ;
 
-    assign_from_handle<typename View<DT,DL,DD,DM,Specialize>::data_handle_type,
-                       typename View<ST,SL,SD,SM,Specialize>::data_handle_type>
+    assign_from_handle<typename View<DT,DL,DD,DM,Specialize>::view_data_handle_type,
+                       typename View<ST,SL,SD,SM,Specialize>::view_data_handle_type>
     (dst.m_ptr_on_device,src.m_ptr_on_device);
 
     dst.m_tracking.increment( dst.ptr_on_device() );

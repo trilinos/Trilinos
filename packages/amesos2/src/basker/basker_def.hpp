@@ -48,12 +48,15 @@ namespace Basker{
   Basker<Int, Entry>::Basker()
   {
 
-    A = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
-
-    L = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    //A = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    A = new basker_matrix<Int,Entry>;
+    
+    //L = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    L = new basker_matrix<Int, Entry>;
     L->nnz = 0;
 
-    U = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    //U = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    U = new basker_matrix<Int,Entry>;
     U->nnz = 0;
 
     been_fact = false;
@@ -65,10 +68,13 @@ namespace Basker{
   Basker<Int, Entry>::Basker(Int nnzL, Int nnzU)
   {
 
-    A = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
-    L = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    //A = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    A = new basker_matrix<Int, Entry>;
+    //L = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    L = new basker_matrix<Int, Entry>;
     L->nnz = nnzL;
-    U = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    //U = (basker_matrix<Int, Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
+    U = new basker_matrix<Int, Entry>;
     U->nnz = nnzU;
 
     been_fact = false;
@@ -87,11 +93,15 @@ namespace Basker{
       }
     if(perm_flag)
       {
-        free_perm_matrix();
+        //free_perm_matrix();
       }
-    FREE(A);
-    FREE(L);
-    FREE(U);
+    //FREE(A);
+    delete A;
+    //FREE(L);
+    delete L;
+    //FREE(U);
+    delete U;
+    
 
   }
 
@@ -107,7 +117,7 @@ namespace Basker{
    Int *pattern, /* o/p */
    Int *top,       /* o/p */
    Int k,
-   Int *pinv,
+   Int *tpinv,
    Int *stack
   )
   {
@@ -126,7 +136,7 @@ namespace Basker{
 #ifdef BASKER_DEBUG
         //std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
 #endif
-        t = pinv [j] ;
+        t = tpinv [j] ;
         if (color[j] == 0)
           {
             /* Seeing this column for first time */
@@ -203,9 +213,12 @@ namespace Basker{
       {
         L->nnz = 2*A->nnz;
       }
-    L->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
-    L->row_idx = (Int *) CALLOC(L->nnz, sizeof(Int));
-    L->val =     (Entry *) CALLOC(L->nnz, sizeof(Entry));
+    //L->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
+    L->col_ptr = new Int[ncol+1]();
+    //L->row_idx = (Int *) CALLOC(L->nnz, sizeof(Int));
+    L->row_idx = new Int[L->nnz]();
+    //L->val =     (Entry *) CALLOC(L->nnz, sizeof(Entry));
+    L->val =  new Entry[L->nnz]();
 
     U->nrow = nrow;
     U->ncol = ncol;
@@ -213,10 +226,12 @@ namespace Basker{
       {
         U->nnz = 2*A->nnz;
       }
-    U->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
-    U->row_idx = (Int *) CALLOC(U->nnz, sizeof(Int));
-    U->val =     (Entry *) CALLOC(U->nnz, sizeof(Entry));
-
+    //U->col_ptr = (Int *) CALLOC(ncol+1, sizeof(Int));
+    U->col_ptr = new Int[ncol+1]();
+    //U->row_idx = (Int *) CALLOC(U->nnz, sizeof(Int));
+    U->row_idx = new Int[U->nnz]();
+    //U->val =     (Entry *) CALLOC(U->nnz, sizeof(Entry));
+    U->val = new Entry[U->nnz]();
 
     if((L->col_ptr == NULL) || (L->row_idx == NULL) || (L->val == NULL) ||
        (U->col_ptr == NULL) || (U->row_idx == NULL) || (U->val == NULL))
@@ -229,9 +244,13 @@ namespace Basker{
     /*Creating working space*/
     Int *tptr;
     Entry *X;
-    tptr = (Int *)   CALLOC( (ncol)+(4*nrow), sizeof(Int));
-    X =    (Entry *) CALLOC(2*nrow, sizeof(Entry));
-    pinv = (Int * )  CALLOC(ncol+1, sizeof(Int)); //Note extra pad
+    //tptr = (Int *)   CALLOC( (ncol)+(4*nrow), sizeof(Int));
+    tptr = new Int[(ncol)+(4*nrow)]();
+    //X =    (Entry *) CALLOC(2*nrow, sizeof(Entry));
+    X = new Entry[2*nrow]();
+    //pinv = (Int * )  CALLOC(ncol+1, sizeof(Int)); //Note extra pad
+    pinv = new Int[ncol+1]();
+
 
     if( (tptr == NULL) || (X == NULL) || (pinv == NULL) )
       {
@@ -389,14 +408,16 @@ namespace Basker{
 #ifdef BASKER_DEBUG
             cout << "Out of memory -- Reallocating.  Old Size: " << L->nnz << " New Size: " << newsize << endl;
 #endif
-            L->row_idx = (Int *) REALLOC(L->row_idx, newsize*sizeof(Int));
+            //L->row_idx = (Int *) REALLOC(L->row_idx, newsize*sizeof(Int));
+            L->row_idx = int_realloc(L->row_idx , L->nnz, newsize);              
             if(!(L->row_idx))
               {
                 cout << "WARNING: Cannot Realloc Memory" << endl;
                 ierr = -3;
                 return ierr;
               }
-            L->val = (Entry *) REALLOC(L->val, newsize*sizeof(Entry));
+            //L->val = (Entry *) REALLOC(L->val, newsize*sizeof(Entry));
+            L->val = entry_realloc(L->val, L->nnz, newsize);
             if(!(L->val))
               {
                 cout << "WARNING: Cannot Realloc Memory" << endl;
@@ -411,9 +432,10 @@ namespace Basker{
           {
             newsize = U->nnz*1.1 + 2*nrow + 1;
 #ifdef BASKER_DEBUG
-            cout << "Out of memory -- Reallocating.  Old Size: " << L->nnz << " New Size: " << newsize << endl;
+            cout << "Out of memory -- Reallocating.  Old Size: " << U->nnz << " New Size: " << newsize << endl;
 #endif
-            U->row_idx = (Int *) REALLOC(U->row_idx, newsize*sizeof(Int));
+            //U->row_idx = (Int *) REALLOC(U->row_idx, newsize*sizeof(Int));
+            U->row_idx = int_realloc(U->row_idx, U->nnz, newsize);
             if(!(U->row_idx))
               {
                 cout << "WARNING: Cannot Realloc Memory" << endl;
@@ -421,7 +443,8 @@ namespace Basker{
                 return ierr;
               }
 
-            U->val = (Entry *) REALLOC(U->val, newsize*sizeof(Entry));
+            //U->val = (Entry *) REALLOC(U->val, newsize*sizeof(Entry));
+            U->val = entry_realloc(U->val, U->nnz, newsize);
             if(!(U->val))
               {
                 cout << "WARNING: Cannot Realloc Memory" << endl;
@@ -436,12 +459,15 @@ namespace Basker{
         L->val[lnnz] = 1.0;
         lnnz++;
 
+        Entry last_v_temp = 0;
+
         for(i = top; i < nrow; i++)
           {
             j = pattern[i];
             t = pinv[j];
 
             /* check for numerical cancellations */
+            
 
             if(X[j] != ((Entry)0))
               {
@@ -450,20 +476,30 @@ namespace Basker{
                   {
                     if(unnz >= U->nnz)
                       {
-                        cout << "BASKER: Insufficent memroy for U" << endl;
+                        cout << "BASKER: Insufficent memory for U" << endl;
                         ierr = -3;
                         return ierr;
                       }
-                    U->row_idx[unnz] = pinv[j];
-                    U->val[unnz] = X[j];
-                    unnz++;
+                    if(t < k)
+                    //if(true)
+                      {
+                        U->row_idx[unnz] = pinv[j];
+                        U->val[unnz] = X[j];
+                        unnz++;
+                      }
+                    else
+                      {
+                        
+                        last_v_temp = X[j];
+                        //cout << "Called.  t: " << t << "Val: " << last_v_temp << endl; 
+                      }
 
                   }
                 else if (t ==  ncol)
                   {
                     if(lnnz >= L->nnz)
                       {
-                        cout << "BASKER: Insufficent memroy for L" << endl;
+                        cout << "BASKER: Insufficent memory for L" << endl;
                         ierr = -3;
                         return ierr;
                       }
@@ -476,9 +512,15 @@ namespace Basker{
                   }
 
               }
+            
+            
             X[j] = 0;
 
           }
+        //cout << "Value added at end: " << last_v_temp << endl;
+        U->row_idx[unnz] = k; 
+        U->val[unnz] = last_v_temp;
+        unnz++;
 
         xnnz = 0;
         top = ncol;
@@ -510,6 +552,25 @@ namespace Basker{
         printf("p[%d]=%d", k, pinv[k]);
       }
     cout << endl;
+    cout << endl;
+    
+    for(k = 0; k < ncol; k++)
+      {
+        printf("Up[%d]=%d", k, U->col_ptr[k]);
+      }
+    cout << endl;
+
+    for(k = 0; k < unnz; k++)
+      {
+        printf("U[%d]=%g" , k , U->val[k]);
+      }
+    cout << endl;
+    for(k = 0; k < unnz; k++)
+      {
+        printf("Ui[%d]=%d", k, U->row_idx[k]);
+      }
+    cout << endl;
+    
 
 #endif
     /*  Repermute   */
@@ -517,12 +578,12 @@ namespace Basker{
       {
         for(k = L->col_ptr[i]; k < L->col_ptr[i+1]; k++)
           {
-            L->row_idx[k] = pinv[L->row_idx[k]];
+            //L->row_idx[k] = pinv[L->row_idx[k]];
           }
       }
     //Max sure correct location of min in L and max in U for CSC format//
     //Speeds up tri-solve//
-    sort_factors();
+    //sort_factors();
 
 #ifdef BASKER_DEBUG
     cout << "After Permuting" << endl;
@@ -548,9 +609,13 @@ namespace Basker{
 
     /*Does a bad copy*/
 
-    *col_ptr = (Int *)   CALLOC(L->nrow+1, sizeof(Int));
-    *row_idx = (Int *)   CALLOC(L->nnz, sizeof(Int));
-    *val     = (Entry *) CALLOC(L->nnz, sizeof(Entry));
+    //*col_ptr = (Int *)   CALLOC(L->nrow+1, sizeof(Int));
+    *col_ptr = new Int[L->nrow+1];
+    //*row_idx = (Int *)   CALLOC(L->nnz, sizeof(Int));
+    *row_idx = new Int[L->nnz];
+    //*val     = (Entry *) CALLOC(L->nnz, sizeof(Entry));
+    *val = new Entry[L->nnz];
+
     if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
       {
         return -1;
@@ -563,7 +628,7 @@ namespace Basker{
 
     for(i = 0; i < L->nnz; i++)
       {
-        (*row_idx)[i] = L->row_idx[i];
+        (*row_idx)[i] = pinv[L->row_idx[i]];
         (*val)[i]     = L->val[i];
       }
     return 0;
@@ -577,9 +642,12 @@ namespace Basker{
     *dim = U->nrow;
     *nnz = U->nnz;
     /*Does a bad copy*/
-    *col_ptr = (Int *)   CALLOC(U->nrow+1, sizeof(Int));
-    *row_idx = (Int *)   CALLOC(U->nnz, sizeof(Int));
-    *val     = (Entry *) CALLOC(U->nnz, sizeof(Entry));
+    //*col_ptr = (Int *)   CALLOC(U->nrow+1, sizeof(Int));
+    *col_ptr = new Int[U->nrow+1];
+    //*row_idx = (Int *)   CALLOC(U->nnz, sizeof(Int));
+    *row_idx = new Int[U->nnz];
+    //*val     = (Entry *) CALLOC(U->nnz, sizeof(Entry));
+    *val = new Entry[U->nnz];
 
     if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
       {
@@ -602,8 +670,9 @@ namespace Basker{
   int Basker<Int, Entry>::returnP(Int** p)
   {
     Int i;
-    *p = (Int *) CALLOC(A->nrow, sizeof(Int));
-
+    //*p = (Int *) CALLOC(A->nrow, sizeof(Int));
+    *p = new Int[A->nrow];
+    
     if( (*p == NULL ) )
       {
         return -1;
@@ -620,23 +689,28 @@ namespace Basker{
   void Basker<Int, Entry>::free_factor()
   {
     //FREE L
-    FREE(L->col_ptr);
-    FREE(L->row_idx);
-    FREE(L->val);
-
+    //FREE(L->col_ptr);
+    delete[] L->col_ptr;
+    //FREE(L->row_idx);
+    delete[] L->row_idx;
+    //FREE(L->val);
+    delete[] L->val;
 
     //FREE U
-    FREE(U->col_ptr);
-    FREE(U->row_idx);
-    FREE(U->val);
+    //FREE(U->col_ptr);
+    delete[] U->col_ptr;
+    //FREE(U->row_idx);
+    delete[] U->row_idx;
+    //FREE(U->val);
+    delete[] U->val;
 
   }
   template <class Int, class Entry>
   void Basker<Int, Entry>::free_perm_matrix()
   {
-    FREE(A->col_ptr);
-    FREE(A->row_idx);
-    FREE(A->val);
+    //FREE(A->col_ptr);
+    //FREE(A->row_idx);
+    //FREE(A->val);
   }
 
   template <class Int, class Entry>
@@ -665,7 +739,8 @@ namespace Basker{
       {
         return -10;
       }
-    Entry* temp = (Entry *)CALLOC(A->nrow, sizeof(Entry));
+    //Entry* temp = (Entry *)CALLOC(A->nrow, sizeof(Entry));
+    Entry* temp = new Entry[A->nrow]();
     Int i;
     int result = 0;
     for(i = 0 ; i < A->ncol; i++)
@@ -681,7 +756,8 @@ namespace Basker{
       }
 
 
-    FREE(temp);
+    //FREE(temp);
+    delete[] temp;
     return 0;
   }
 
@@ -704,7 +780,7 @@ namespace Basker{
 
         for(j = col_ptr[i]+1; j < (col_ptr[i+1]); j++) //update all rows
           {
-            b[row_idx[j]] = b[row_idx[j]] - (val[j]*x[i]);
+            b[pinv[row_idx[j]]] = b[pinv[row_idx[j]]] - (val[j]*x[i]);
           }
       }
     return 0;
@@ -723,6 +799,7 @@ namespace Basker{
 #else
         if(val[col_ptr[i]-1] == (Entry) 0)
           {
+            cout << "Dig(" << i << ") = " << val[col_ptr[i]-1] << endl;
             return i;
           }
 #endif
@@ -871,6 +948,32 @@ namespace Basker{
 
     return 0;
   }
+
+  template <class Int, class Entry>
+  Entry*  Basker <Int, Entry>::entry_realloc(Entry *old , Int old_size, Int new_size)
+  {
+    Entry *new_entry = new Entry[new_size];    
+    for(Int i = 0; i < old_size; i++)
+      {
+        //BASKER_ScalarTraits<Entry>::approxABS(value);
+        new_entry[i] = BASKER_ScalarTraits<Entry>::copyConstruct(old[i]);
+      }
+    return new_entry;
+    delete[] old;
+
+  }
+  template <class Int, class Entry>
+  Int* Basker <Int, Entry>::int_realloc(Int *old, Int old_size, Int new_size)
+  {
+    Int *new_int = new Int[new_size];
+    for(Int i =0; i < old_size; i++)
+      {
+        new_int[i] = old[i];
+      }
+    return new_int;
+    delete[] old;
+  }
+
 
 }//end namespace
 #endif

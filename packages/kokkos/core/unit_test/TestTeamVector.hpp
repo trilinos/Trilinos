@@ -68,6 +68,13 @@ struct my_complex {
   }
 
   KOKKOS_INLINE_FUNCTION
+  my_complex(const volatile my_complex& src) {
+    re = src.re;
+    im = src.im;
+    dummy = src.dummy;
+  }
+
+  KOKKOS_INLINE_FUNCTION
   my_complex(const double& val) {
     re = val;
     im = 0.0;
@@ -141,7 +148,7 @@ struct my_complex {
 
 template<typename Scalar, class ExecutionSpace>
 struct functor_team_for {
-  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace> policy_type;
+  typedef Kokkos::TeamPolicy<ExecutionSpace> policy_type;
   typedef ExecutionSpace execution_space;
 
   Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
@@ -164,11 +171,135 @@ struct functor_team_for {
               static_cast<unsigned int> (shmemSize));
     }
     else {
+      values(team.team_rank ()) = 0;
+
+      Kokkos::parallel_for(Kokkos::TeamThreadLoop(team,131),[&] (int i) {
+        values(team.team_rank ()) += i - team.league_rank () + team.league_size () + team.team_size ();
+      });
+
+      team.team_barrier ();
+      if (team.team_rank () == 0) {
+            Scalar test = 0;
+            Scalar value = 0;
+            for (int i = 0; i < 131; ++i) {
+              test += i - team.league_rank () + team.league_size () + team.team_size ();
+            }
+            for (int i = 0; i < team.team_size (); ++i) {
+              value += values(i);
+            }
+            if (test != value) {
+              printf ("FAILED team_parallel_for %i %i %lf %lf\n",
+                      team.league_rank (), team.team_rank (),
+                      static_cast<double> (test), static_cast<double> (value));
+              flag() = 1;
+            }
+      }
+    }
+  }
+};
+
+template<typename Scalar, class ExecutionSpace>
+struct functor_team_reduce {
+  typedef Kokkos::TeamPolicy<ExecutionSpace> policy_type;
+  typedef ExecutionSpace execution_space;
+
+  Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
+  functor_team_reduce(Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag_):flag(flag_) {}
+
+  unsigned team_shmem_size(int team_size) const {return team_size*13*sizeof(Scalar)+8;}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+
+    Scalar value = Scalar();
+#ifdef __CUDA_ARCH__
+    Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(team,131),[&] (int i, Scalar& val) {
+        val += i - team.league_rank () + team.league_size () + team.team_size ();
+    },value);
+
+    team.team_barrier ();
+    if (team.team_rank () == 0) {
+         Scalar test = 0;
+         for (int i = 0; i < 131; ++i) {
+           test += i - team.league_rank () + team.league_size () + team.team_size ();
+         }
+         if (test != value) {
+           if(team.league_rank() == 0)
+           printf ("FAILED team_parallel_reduce %i %i %lf %lf %i\n",
+             team.league_rank (), team.team_rank (),
+             static_cast<double> (test), static_cast<double> (value),sizeof(Scalar));
+              flag() = 1;
+         }
+    }
+#endif
+  }
+};
+
+template<typename Scalar, class ExecutionSpace>
+struct functor_team_reduce_join {
+  typedef Kokkos::TeamPolicy<ExecutionSpace> policy_type;
+  typedef ExecutionSpace execution_space;
+
+  Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
+  functor_team_reduce_join(Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag_):flag(flag_) {}
+
+  unsigned team_shmem_size(int team_size) const {return team_size*13*sizeof(Scalar)+8;}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+
+    Scalar value = 0;
+#ifdef __CUDA_ARCH__
+    Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(team,131),[&] (int i, Scalar& val) {
+        val += i - team.league_rank () + team.league_size () + team.team_size ();
+    },value, [&] (volatile Scalar& val, const volatile Scalar& src) {val+=src;});
+
+    team.team_barrier ();
+    if (team.team_rank () == 0) {
+         Scalar test = 0;
+         for (int i = 0; i < 131; ++i) {
+           test += i - team.league_rank () + team.league_size () + team.team_size ();
+         }
+         if (test != value) {
+           printf ("FAILED team_vector_parallel_reduce_join %i %i %lf %lf\n",
+             team.league_rank (), team.team_rank (),
+             static_cast<double> (test), static_cast<double> (value));
+              flag() = 1;
+         }
+    }
+#endif
+  }
+};
+template<typename Scalar, class ExecutionSpace>
+struct functor_team_vector_for {
+  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace> policy_type;
+  typedef ExecutionSpace execution_space;
+
+  Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
+  functor_team_vector_for(Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag_):flag(flag_) {}
+
+  unsigned team_shmem_size(int team_size) const {return team_size*13*sizeof(Scalar)+8;}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+
+    typedef typename ExecutionSpace::scratch_memory_space shmem_space ;
+    typedef Kokkos::View<Scalar*,shmem_space,Kokkos::MemoryUnmanaged> shared_int;
+    typedef typename shared_int::size_type size_type;
+
+    const size_type shmemSize = team.team_size () * 13;
+    shared_int values = shared_int (team.team_shmem (), shmemSize);
+
+    if (values.ptr_on_device () == NULL || values.dimension_0 () < shmemSize) {
+      printf ("FAILED to allocate shared memory of size %u\n",
+              static_cast<unsigned int> (shmemSize));
+    }
+    else {
       team.vector_single ([&] () {
           values(team.team_rank ()) = 0;
       });
 
-      Kokkos::parallel_for(Kokkos::ThreadLoop(team,131),[&] (int i) {
+      Kokkos::parallel_for(Kokkos::TeamThreadLoop(team,131),[&] (int i) {
           team.vector_single ([&] () {
               values(team.team_rank ()) += i - team.league_rank () + team.league_size () + team.team_size ();
           });
@@ -186,7 +317,7 @@ struct functor_team_for {
               value += values(i);
             }
             if (test != value) {
-              printf ("FAILED vector_par_for %i %i %lf %lf\n",
+              printf ("FAILED team_vector_parallel_for %i %i %lf %lf\n",
                       team.league_rank (), team.team_rank (),
                       static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
@@ -194,6 +325,83 @@ struct functor_team_for {
           });
       }
     }
+  }
+};
+
+template<typename Scalar, class ExecutionSpace>
+struct functor_team_vector_reduce {
+  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace> policy_type;
+  typedef ExecutionSpace execution_space;
+
+  Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
+  functor_team_vector_reduce(Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag_):flag(flag_) {}
+
+  unsigned team_shmem_size(int team_size) const {return team_size*13*sizeof(Scalar)+8;}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+
+    Scalar value = Scalar();
+#ifdef __CUDA_ARCH__
+    Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(team,131),[&] (int i, Scalar& val) {
+        val += i - team.league_rank () + team.league_size () + team.team_size ();
+    },value);
+
+    team.team_barrier ();
+    if (team.team_rank () == 0) {
+      team.vector_single ([&] () {
+         Scalar test = 0;
+         for (int i = 0; i < 131; ++i) {
+           test += i - team.league_rank () + team.league_size () + team.team_size ();
+         }
+         if (test != value) {
+           if(team.league_rank() == 0)
+           printf ("FAILED team_vector_parallel_reduce %i %i %lf %lf %i\n",
+             team.league_rank (), team.team_rank (),
+             static_cast<double> (test), static_cast<double> (value),sizeof(Scalar));
+              flag() = 1;
+         }
+      });
+    }
+#endif
+  }
+};
+
+template<typename Scalar, class ExecutionSpace>
+struct functor_team_vector_reduce_join {
+  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace> policy_type;
+  typedef ExecutionSpace execution_space;
+
+  Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
+  functor_team_vector_reduce_join(Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag_):flag(flag_) {}
+
+  unsigned team_shmem_size(int team_size) const {return team_size*13*sizeof(Scalar)+8;}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+
+    Scalar value = 0;
+#ifdef __CUDA_ARCH__
+    Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(team,131),[&] (int i, Scalar& val) {
+        val += i - team.league_rank () + team.league_size () + team.team_size ();
+    },value, [&] (volatile Scalar& val, const volatile Scalar& src) {val+=src;});
+
+    team.team_barrier ();
+    if (team.team_rank () == 0) {
+      team.vector_single ([&] () {
+         Scalar test = 0;
+         for (int i = 0; i < 131; ++i) {
+           test += i - team.league_rank () + team.league_size () + team.team_size ();
+         }
+         if (test != value) {
+           printf ("FAILED team_vector_parallel_reduce_join %i %i %lf %lf\n",
+             team.league_rank (), team.team_rank (),
+             static_cast<double> (test), static_cast<double> (value));
+              flag() = 1;
+         }
+      });
+    }
+#endif
   }
 };
 
@@ -209,7 +417,7 @@ struct functor_vec_single {
   void operator() (typename policy_type::member_type team) const {
     Scalar value = 0;
 
-    Kokkos::parallel_for(Kokkos::VectorLoop(team,13),[&] (int i) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorLoop(team,13),[&] (int i) {
       value = i;
     });
 
@@ -217,12 +425,12 @@ struct functor_vec_single {
     },value);
 
     Scalar value2 = 0;
-    Kokkos::parallel_reduce(Kokkos::VectorLoop(team,13), [&] (int i, Scalar& val) {
+    Kokkos::parallel_reduce(Kokkos::ThreadVectorLoop(team,13), [&] (int i, Scalar& val) {
       val += value;
     },value2);
 
     if(value2!=(value*13)) {
-      printf("FAILED vector_single broadcast %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
+      printf("FAILED vector_single broadcast %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
       flag()=1;
     }
   }
@@ -246,13 +454,13 @@ struct functor_vec_for {
     shared_int values = shared_int(team.team_shmem(),team.team_size()*13);
 
     if (values.ptr_on_device () == NULL ||
-        values.dimension_0 () < team.team_size () * 13) {
+        values.dimension_0() < (unsigned) team.team_size() * 13) {
       printf ("FAILED to allocate memory of size %i\n",
               static_cast<int> (team.team_size () * 13));
       flag() = 1;
     }
     else {
-      Kokkos::parallel_for(Kokkos::VectorLoop(team,13), [&] (int i) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorLoop(team,13), [&] (int i) {
         values(13*team.team_rank() + i) = i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
       });
 
@@ -264,7 +472,7 @@ struct functor_vec_for {
             value += values(13*team.team_rank() + i);
           }
           if (test != value) {
-            printf ("FAILED vector_par_for %i %i %lf %lf\n",
+            printf ("FAILED vector_par_for %i %i %f %f\n",
                     team.league_rank (), team.team_rank (),
                     static_cast<double> (test), static_cast<double> (value));
             flag() = 1;
@@ -286,7 +494,7 @@ struct functor_vec_red {
   void operator() (typename policy_type::member_type team) const {
     Scalar value = 0;
 
-    Kokkos::parallel_reduce(Kokkos::VectorLoop(team,13),[&] (int i, Scalar& val) {
+    Kokkos::parallel_reduce(Kokkos::ThreadVectorLoop(team,13),[&] (int i, Scalar& val) {
       val += i;
     }, value);
 
@@ -296,7 +504,7 @@ struct functor_vec_red {
         test+=i;
       }
       if(test!=value) {
-        printf("FAILED vector_par_reduce %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        printf("FAILED vector_par_reduce %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
         flag()=1;
       }
     });
@@ -315,8 +523,8 @@ struct functor_vec_red_join {
   void operator() (typename policy_type::member_type team) const {
     Scalar value = 1;
 
-    Kokkos::parallel_reduce(Kokkos::VectorLoop(team,13),[&] (int i, Scalar& val) {
-                                val = i+1; }
+    Kokkos::parallel_reduce(Kokkos::ThreadVectorLoop(team,13),[&] (int i, Scalar& val) {
+                                val *= i; }
       , value ,
       [&] (Scalar& val, const Scalar& src) {val*=src;}
     );
@@ -324,10 +532,10 @@ struct functor_vec_red_join {
     team.vector_single([&] () {
       Scalar test = 1;
       for(int i = 0; i < 13; i++) {
-        test*=i+1;
+        test*=i;
       }
       if(test!=value) {
-        printf("FAILED vector_par_reduce_join %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        printf("FAILED vector_par_reduce_join %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
         flag()=1;
       }
     });
@@ -344,7 +552,7 @@ struct functor_vec_scan {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (typename policy_type::member_type team) const {
-    Kokkos::parallel_scan(Kokkos::VectorLoop(team,13),[&] (int i, Scalar& val, bool final) {
+    Kokkos::parallel_scan(Kokkos::ThreadVectorLoop(team,13),[&] (int i, Scalar& val, bool final) {
       val += i;
       if(final) {
         Scalar test = 0;
@@ -352,7 +560,7 @@ struct functor_vec_scan {
           test+=k;
         }
         if(test!=val) {
-          printf("FAILED vector_par_scan %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) val);
+          printf("FAILED vector_par_scan %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) val);
           flag()=1;
         }
       }
@@ -360,6 +568,20 @@ struct functor_vec_scan {
   }
 };
 
+template<typename Scalar, class ExecutionSpace>
+struct functor_reduce {
+  typedef double value_type;
+  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace> policy_type;
+  typedef ExecutionSpace execution_space;
+
+  Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag;
+  functor_reduce(Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> flag_):flag(flag_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team, double& sum) const {
+    sum += team.league_rank() * 100 + team.thread_rank();
+  }
+};
 #endif
 
 template<typename Scalar,class ExecutionSpace>
@@ -385,8 +607,23 @@ bool test_scalar(int nteams, int team_size, int test) {
   Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace>(nteams,team_size),
       functor_vec_single<Scalar, ExecutionSpace>(d_flag));
   if(test==5)
-  Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace>(nteams,team_size),
+  Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),
       functor_team_for<Scalar, ExecutionSpace>(d_flag));
+  if(test==6)
+  Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),
+      functor_team_reduce<Scalar, ExecutionSpace>(d_flag));
+  if(test==7)
+  Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),
+      functor_team_reduce_join<Scalar, ExecutionSpace>(d_flag));
+  if(test==8)
+  Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace>(nteams,team_size),
+      functor_team_vector_for<Scalar, ExecutionSpace>(d_flag));
+  if(test==9)
+  Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace>(nteams,team_size),
+      functor_team_vector_reduce<Scalar, ExecutionSpace>(d_flag));
+  if(test==10)
+  Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,ExecutionSpace>(nteams,team_size),
+      functor_team_vector_reduce_join<Scalar, ExecutionSpace>(d_flag));
   #endif
   Kokkos::deep_copy(h_flag,d_flag);
 

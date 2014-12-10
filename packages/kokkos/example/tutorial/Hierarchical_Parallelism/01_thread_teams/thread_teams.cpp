@@ -63,7 +63,7 @@ int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
   // 12 teams of the maximum number of threads per team
-  const team_policy policy( 12 , team_policy::execution_space::team_max() );
+  const team_policy policy( 12 , team_policy::team_size_max( hello_world() ) );
   
   int sum = 0;
   Kokkos::parallel_reduce( policy , hello_world() , sum );

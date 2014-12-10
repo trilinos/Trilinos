@@ -43,6 +43,7 @@
 
 /*! \file  example_01.cpp
     \brief Shows how to minimize Rosenbrock's function using Newton-Krylov.
+    \addtogroup examples_group
 */
 
 #define USE_HESSVEC 1

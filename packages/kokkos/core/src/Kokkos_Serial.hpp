@@ -55,6 +55,7 @@
 #include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
+#include <impl/Kokkos_FunctorAdapter.hpp>
 
 #if defined( KOKKOS_HAVE_SERIAL )
 
@@ -157,9 +158,6 @@ public:
 
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }
   inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
-
-  static inline int team_max()         { return thread_pool_size(1) ; }
-  static inline int team_recommended() { return thread_pool_size(2); }
 
   //--------------------------------------------------------------------------
 
@@ -310,6 +308,7 @@ public:
   KOKKOS_INLINE_FUNCTION void team_barrier() const {}
 
   template< class JoinOp >
+  KOKKOS_INLINE_FUNCTION
   typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
                                          , const JoinOp & ) const
     { return value ; }
@@ -489,6 +488,18 @@ public:
     Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;
 
+  //----------------------------------------
+
+  template< class FunctorType >
+  static
+  int team_size_max( const FunctorType & ) { return 1 ; }
+
+  template< class FunctorType >
+  static
+  int team_size_recommended( const FunctorType & ) { return 1 ; }
+
+  //----------------------------------------
+
   inline int team_size() const { return 1 ; }
   inline int league_size() const { return m_league_size ; }
 
@@ -500,10 +511,6 @@ public:
   TeamPolicy( int league_size_request , int /* team_size_request */ )
     : m_league_size( league_size_request )
     { }
-
-  template< class FunctorType >
-  static
-  int team_size_max( const FunctorType & ) { return 1 ; }
 
   typedef Impl::SerialTeamMember  member_type ;
 };
@@ -605,9 +612,12 @@ class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Ko
 {
 public:
   typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
+  typedef typename Policy::work_tag                                  WorkTag ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , WorkTag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   FunctorType , WorkTag >  ValueInit ;
 
-  typedef ReduceAdapter< FunctorType >  Reduce ;
-  typedef typename Reduce::pointer_type pointer_type ;
+  typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::reference_type  reference_type ;
 
   // Work tag is void
   template< class ViewType , class PType >
@@ -625,17 +635,17 @@ public:
 
       if ( ! result_ptr ) {
         result_ptr = (pointer_type)
-          Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+          Kokkos::Serial::scratch_memory_resize( ValueTraits::value_size( functor ) , 0 );
       }
 
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      reference_type update = ValueInit::init( functor , result_ptr );
 
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update );
       }
 
-      Reduce::final( functor , result_ptr );
+      Kokkos::Impl::FunctorFinal< FunctorType , WorkTag >::final( functor , result_ptr );
     }
 
   // Work tag is non-void
@@ -654,17 +664,17 @@ public:
 
       if ( ! result_ptr ) {
         result_ptr = (pointer_type)
-          Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+          Kokkos::Serial::scratch_memory_resize( ValueTraits::value_size( functor ) , 0 );
       }
 
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      typename ValueTraits::reference_type update = ValueInit::init( functor , result_ptr );
 
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( typename PType::work_tag() , i , update );
       }
 
-      Reduce::final( functor , result_ptr );
+      Kokkos::Impl::FunctorFinal< FunctorType , WorkTag >::final( functor , result_ptr );
     }
 };
 
@@ -674,11 +684,14 @@ class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokk
 private:
 
   typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
-  typedef ReduceAdapter< FunctorType >  Reduce ;
+
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename Policy::work_tag > ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   FunctorType , typename Policy::work_tag > ValueInit ;
 
 public:
 
-  typedef typename Reduce::pointer_type pointer_type ;
+  typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::reference_type  reference_type ;
 
   // work tag is void
   template< class PType >
@@ -690,16 +703,16 @@ public:
              , const PType & policy )
     {
       pointer_type result_ptr = (pointer_type)
-        Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+        Kokkos::Serial::scratch_memory_resize( ValueTraits::value_size( functor ) , 0 );
 
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      reference_type update = ValueInit::init( functor , result_ptr );
 
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update , true );
       }
 
-      Reduce::final( functor , result_ptr );
+      Kokkos::Impl::FunctorFinal<  FunctorType , typename Policy::work_tag >::final( functor , result_ptr );
     }
 
   // work tag is non-void
@@ -712,16 +725,16 @@ public:
              , const PType & policy )
     {
       pointer_type result_ptr = (pointer_type)
-        Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+        Kokkos::Serial::scratch_memory_resize( ValueTraits::value_size( functor ) , 0 );
 
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      reference_type update = ValueInit::init( functor , result_ptr );
 
       const typename PType::member_type e = policy.end();
       for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( typename PType::work_tag() , i , update , true );
       }
 
-      Reduce::final( functor , result_ptr );
+      Kokkos::Impl::FunctorFinal<  FunctorType , typename Policy::work_tag >::final( functor , result_ptr );
     }
 };
 
@@ -816,14 +829,22 @@ class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Se
 private:
 
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
-  typedef ReduceAdapter< FunctorType >  Reduce ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename Policy::work_tag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueInit<   FunctorType , typename Policy::work_tag >  ValueInit ;
+
+public:
+
+  typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::reference_type  reference_type ;
+
+private:
 
   template< class TagType >
   KOKKOS_FORCEINLINE_FUNCTION static
   void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
                  const FunctorType & >::type functor
              , const typename Policy::member_type  & member
-             ,       typename Reduce::reference_type update )
+             ,       reference_type                  update )
     { functor( member , update ); }
 
   template< class TagType >
@@ -831,12 +852,10 @@ private:
   void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
                  const FunctorType & >::type functor
              , const typename Policy::member_type  & member
-             ,       typename Reduce::reference_type update )
+             ,       reference_type                  update )
     { functor( TagType() , member , update ); }
 
 public:
-
-  typedef typename Reduce::pointer_type pointer_type ;
 
   template< class ViewType >
   ParallelReduce( const FunctorType  & functor
@@ -844,7 +863,7 @@ public:
                 , const ViewType     & result
                 )
     {
-      const int reduce_size = Reduce::value_size( functor );
+      const int reduce_size = ValueTraits::value_size( functor );
       const int shared_size = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
       void * const scratch_reduce = Kokkos::Serial::scratch_memory_resize( reduce_size , shared_size );
 
@@ -852,14 +871,14 @@ public:
         result.ptr_on_device() ? result.ptr_on_device()
                                : (pointer_type) scratch_reduce ;
 
-      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      reference_type update = ValueInit::init( functor , result_ptr );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
         ParallelReduce::template driver< typename Policy::work_tag >
           ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
       }
 
-      Reduce::final( functor , result_ptr );
+      Kokkos::Impl::FunctorFinal< FunctorType , typename Policy::work_tag >::final( functor , result_ptr );
     }
 };
 
@@ -872,7 +891,7 @@ namespace Kokkos {
 
 namespace Impl {
   template<typename iType>
-  struct ThreadLoopBoundariesStruct<iType,SerialTeamMember> {
+  struct TeamThreadLoopBoundariesStruct<iType,SerialTeamMember> {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
@@ -880,14 +899,14 @@ namespace Impl {
     const SerialTeamMember& thread;
 
     KOKKOS_INLINE_FUNCTION
-    ThreadLoopBoundariesStruct (const SerialTeamMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const SerialTeamMember& thread_, const iType& count):
       end(count),
       thread(thread_)
     {}
   };
 
   template<typename iType>
-  struct ThreadLoopBoundariesStruct<iType,SerialTeamVectorMember> {
+  struct TeamThreadLoopBoundariesStruct<iType,SerialTeamVectorMember> {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
@@ -895,21 +914,21 @@ namespace Impl {
     const SerialTeamVectorMember& thread;
 
     KOKKOS_INLINE_FUNCTION
-    ThreadLoopBoundariesStruct (const SerialTeamVectorMember& thread_, const iType& count):
+    TeamThreadLoopBoundariesStruct (const SerialTeamVectorMember& thread_, const iType& count):
       end(count),
       thread(thread_)
     {}
   };
 
   template<typename iType>
-  struct VectorLoopBoundariesStruct<iType,SerialTeamVectorMember> {
+  struct ThreadVectorLoopBoundariesStruct<iType,SerialTeamVectorMember> {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
     enum {increment = 1};
 
     KOKKOS_INLINE_FUNCTION
-    VectorLoopBoundariesStruct (const SerialTeamVectorMember& thread, const iType& count):
+    ThreadVectorLoopBoundariesStruct (const SerialTeamVectorMember& thread, const iType& count):
       end( count )
     {}
   };
@@ -917,23 +936,23 @@ namespace Impl {
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>
-  ThreadLoop(const Impl::SerialTeamMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>
+  TeamThreadLoop(const Impl::SerialTeamMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
-  ThreadLoop(const Impl::SerialTeamVectorMember& thread, const iType& count) {
-  return Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
+  TeamThreadLoop(const Impl::SerialTeamVectorMember& thread, const iType& count) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
-  VectorLoop(Impl::SerialTeamVectorMember thread, const iType count) {
-  return Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
+  ThreadVectorLoop(Impl::SerialTeamVectorMember thread, const iType count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
 }
 
 } // namespace Kokkos
@@ -946,7 +965,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -957,7 +976,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamM
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
   result = ValueType();
@@ -968,7 +987,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
     result+=tmp;
   }
 
-  result = loop_boundaries.thread.team_reduce(result);
+  result = loop_boundaries.thread.team_reduce(result,Impl::JoinAdd<ValueType>());
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -980,7 +999,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -991,7 +1010,7 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTe
     join(result,tmp);
   }
 
-  init_result = loop_boundaries.thread.team_reduce(result,join);
+  init_result = loop_boundaries.thread.team_reduce(result,Impl::JoinLambdaAdapter<ValueType,JoinType>(join));
 }
 
 } //namespace Kokkos
@@ -1004,7 +1023,7 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries, const Lambda& lambda) {
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
@@ -1015,7 +1034,7 @@ void parallel_for(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamV
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
   result = ValueType();
@@ -1026,7 +1045,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
     result+=tmp;
   }
 
-  result = loop_boundaries.thread.team_reduce(result);
+  result = loop_boundaries.thread.team_reduce(result,Impl::JoinAdd<ValueType>());
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -1038,7 +1057,7 @@ ValueType parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::Ser
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1049,7 +1068,7 @@ void parallel_reduce(const Impl::ThreadLoopBoundariesStruct<iType,Impl::SerialTe
     join(result,tmp);
   }
 
-  init_result = loop_boundaries.thread.team_reduce(result,join);
+  init_result = loop_boundaries.thread.team_reduce(result,Impl::JoinLambdaAdapter<ValueType,JoinType>(join));
 }
 
 } //namespace Kokkos
@@ -1061,7 +1080,7 @@ namespace Kokkos {
  * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
     loop_boundaries, const Lambda& lambda) {
   #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
   #pragma ivdep
@@ -1076,7 +1095,7 @@ void parallel_for(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamV
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& result) {
   result = ValueType();
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -1098,7 +1117,7 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTe
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
       loop_boundaries, const Lambda & lambda, ValueType& init_result, const JoinType& join) {
 
   ValueType result = init_result;
@@ -1123,13 +1142,13 @@ void parallel_reduce(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTe
  * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
  * to the final sum value over all vector lanes.
  * This functionality requires C++11 support.*/
-template< typename iType, class Lambda >
+template< typename iType, class FunctorType >
 KOKKOS_INLINE_FUNCTION
-void parallel_scan(const Impl::VectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
-      loop_boundaries, const Lambda & lambda) {
+void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >&
+      loop_boundaries, const FunctorType & lambda) {
 
-  typedef decltype( & Lambda::operator() ) function_pointer_type ;
-  typedef typename Impl::ScanAdapterFunctorOperatorArgType< function_pointer_type >::type value_type ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
+  typedef typename ValueTraits::value_type value_type ;
 
   value_type scan_val = value_type();
 

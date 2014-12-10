@@ -47,6 +47,7 @@
 
 //----------------------------------------------------------------------------
 #include <TestRandom.hpp>
+#include <TestSort.hpp>
 #include <iomanip>
 
 namespace Test {
@@ -84,12 +85,18 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::OpenMP> >(num_draws);                                   \
   }
 
+#define OPENMP_SORT_UNSIGNED( size )                                \
+  TEST_F( openmp, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::OpenMP, unsigned >(size);                                   \
+  }
+
 OPENMP_RANDOM_XORSHIFT64( 10240000 )
 OPENMP_RANDOM_XORSHIFT1024( 10130144 )
+OPENMP_SORT_UNSIGNED(171)
 
 #undef OPENMP_RANDOM_XORSHIFT64
 #undef OPENMP_RANDOM_XORSHIFT1024
-
+#undef OPENMP_SORT_UNSIGNED
 #endif
 } // namespace test
 

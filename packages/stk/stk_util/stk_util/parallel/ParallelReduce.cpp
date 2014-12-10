@@ -66,7 +66,6 @@ void all_write_string( ParallelMachine arg_comm ,
 
   int * const recv_count_ptr = & recv_count[0] ;
 
-  BABBLE_STK_PARALLEL_COMM(arg_comm, "                      calling MPI_Gather from all_write_string");
   result = MPI_Gather( & send_count , 1 , MPI_INT ,
                        recv_count_ptr , 1 , MPI_INT ,
                        p_root , arg_comm );
@@ -94,7 +93,6 @@ void all_write_string( ParallelMachine arg_comm ,
     char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    BABBLE_STK_PARALLEL_COMM(arg_comm, "                      calling MPI_Gatherv from all_write_string");
     result = MPI_Gatherv( const_cast<char*>(send_ptr), send_count, MPI_CHAR ,
                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                           p_root, arg_comm );
@@ -164,12 +162,10 @@ void all_reduce_impl( ParallelMachine comm ,
   size_t * tmp = const_cast<size_t*>( local );
 
   if ( sizeof(size_t) == sizeof(unsigned) ) {
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
     MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , op , comm );
 
   }
   else if ( sizeof(size_t) == sizeof(unsigned long) ) {
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
     MPI_Allreduce( tmp , global , count , MPI_UNSIGNED_LONG , op , comm );
   }
   else {
@@ -177,7 +173,6 @@ void all_reduce_impl( ParallelMachine comm ,
     unsigned long * const out = new unsigned long[ count ];
 
     for ( unsigned i = 0 ; i < count ; ++i ) { in[i] = local[i] ; }
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
     MPI_Allreduce( in , out , count , MPI_UNSIGNED_LONG , op , comm );
     for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = out[i] ; }
 
@@ -191,7 +186,6 @@ void all_reduce_bor( ParallelMachine comm ,
                      unsigned * global , unsigned count )
 {
   unsigned * tmp = const_cast<unsigned*>( local );
-  BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce_bor");
   MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_BOR , comm );
 }
 //----------------------------------------------------------------------

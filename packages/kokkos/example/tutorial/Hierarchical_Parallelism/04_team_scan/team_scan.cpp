@@ -110,7 +110,7 @@ int main(int narg, char* args[]) {
 
   srand(1231093);
 
-  for(int i = 0; i < data.dimension_0(); i++) {
+  for(int i = 0; i < (int) data.dimension_0(); i++) {
     data.h_view(i) = rand()%TEAM_SIZE;
   }
   data.modify<Host>();
@@ -128,7 +128,7 @@ int main(int narg, char* args[]) {
 
   histogram.sync<Host>();
 
-  printf("Time: %lf \n\n",time);
+  printf("Time: %f \n\n",time);
   int sum = 0;
   for(int k=0; k<TEAM_SIZE; k++) {
     for(int l=0; l<TEAM_SIZE; l++) {

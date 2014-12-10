@@ -52,6 +52,9 @@ do
   --std=c++11|-std=c++11)
     cuda_args="$cuda_args $1"
     ;;
+  #strip of -std=c++98 due to nvcc warnings and Tribits will place both -std=c++11 and -std=c++98
+  -std=c++98|--std=c++98)
+    ;;
   #Handle known nvcc args that have an argument
   -o|-rdc|-maxrregcount)
     cuda_args="$cuda_args $1 $2"

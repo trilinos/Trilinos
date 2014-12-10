@@ -41,6 +41,9 @@
 // @HEADER
 
 #include "Panzer_ConfigDefs.hpp"
+
+#ifdef PANZER_HAVE_FEI
+
 #include "Panzer_Traits.hpp"
 
 #include "Panzer_DOFManagerFEI_decl.hpp"
@@ -92,4 +95,6 @@ template class panzer::DOFManagerFEI<short,int>;
 #ifndef PANZER_ORDINAL64_IS_INT
 template class panzer::DOFManagerFEI<char,panzer::Ordinal64>;
 template class panzer::DOFManagerFEI<int,panzer::Ordinal64>;
+#endif
+
 #endif

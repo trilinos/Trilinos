@@ -62,8 +62,8 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
   echo
   echo "Extracting TriBITS documentation from *.cmake files ..."
   echo
-  ../../python/extract_rst_cmake_doc.py \
-    --extract-from=../../package_arch/,../../utils/,../../ctest/ \
+  ../../python_utils/extract_rst_cmake_doc.py \
+    --extract-from=../../core/package_arch/,../../core/utils/,../../ctest_driver/ \
     --rst-file-pairs=TribitsMacroFunctionDocTemplate.rst:TribitsMacroFunctionDoc.rst,UtilsMacroFunctionDocTemplate.rst:UtilsMacroFunctionDoc.rst \
     $TRIBITS_DEV_GUIDE_EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
   
@@ -74,28 +74,53 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   echo
   echo "Generating list of Standard TriBITS TPLs ..."
   echo
-  ls -w 1 ../../tpls/ &> TribitsStandardTPLsList.txt
+  ls -w 1 ../../core/std_tpls/ &> TribitsStandardTPLsList.txt
+
+  echo
+  echo "Generating list of Common TriBITS TPLs ..."
+  echo
+  ls -w 1 ../../common_tpls/ &> TribitsCommonTPLsList.txt
 
   echo
   echo "Generating Directory structure of TribitsHelloWorld ..."
   echo
-  ../../common_tools/python/tree.py -f -c -x ../examples/TribitsHelloWorld/ \
+  ../../python_utils/tree.py -f -c -x ../../examples/TribitsHelloWorld/ \
     &> TribitsHelloWorldDirAndFiles.txt
 
   echo
   echo "Generating output for 'checkin-test.py --help' ..."
   echo
-  ../../checkin-test.py --help &> checkin-test-help.txt
+  ../../ci_support/checkin-test.py --help &> checkin-test-help.txt
 
   echo
   echo "Generating output for 'gitdist --help' ..."
   echo
-  ../../common_tools/git/gitdist --help &> gitdist-help.txt
+  ../../python_utils/gitdist --help &> gitdist-help.txt
 
   echo
   echo "Generating output for 'snapshot-dir.py --help' ..."
   echo
-  env SNAPSHOT_DIR_DUMMY_DEFAULTS=1 ../../snapshot-dir.py --help &> snapshot-dir-help.txt
+  env SNAPSHOT_DIR_DUMMY_DEFAULTS=1 ../../python_utils/snapshot-dir.py --help \
+   &> snapshot-dir-help.txt
+
+fi
+
+if [ -e "../../../README.DIRECTORY_CONTENTS.rst" ] ; then
+
+  echo
+  echo "Copy TriBITS/README.DIRECTORY_CONTENTS.rst to TriBITS.README.DIRECTORY_CONTENTS.rst ..."
+  echo
+
+  cp ../../../README.DIRECTORY_CONTENTS.rst TriBITS.README.DIRECTORY_CONTENTS.rst
+
+else
+
+
+  echo
+  echo "TriBITS/README.DIRECTORY_CONTENTS.rst does not exist to copy!"
+  echo
+
+  touch TriBITS.README.DIRECTORY_CONTENTS.rst
 
 fi
 
@@ -103,7 +128,7 @@ fi
 echo
 echo "Generating HTML and PDF files ..."
 echo
-../../python/generate-docutils-output.py \
+../../python_utils/generate-docutils-output.py \
   --file-base=TribitsDevelopersGuide \
-  --generate-latex-options="--stylesheet-path=../environment/latex/rst2latex.tex" \
+  --generate-latex-options="--stylesheet-path=rst2latex.tex" \
   $ARGS

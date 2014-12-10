@@ -379,10 +379,12 @@ namespace MueLu {
       level.Release(*smootherFact);
     }
 
-    if (isLastLevel == true && isOrigLastLevel == false) {
-      // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
-      // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
-      Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+    if (isLastLevel == true) {
+      if (isOrigLastLevel == false) {
+        // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
+        // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
+        Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+      }
       Levels_.resize(nextLevelID);
     }
 

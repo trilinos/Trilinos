@@ -54,7 +54,6 @@ template<typename T>
 void all_reduce_impl( ParallelMachine comm , const T * local , T * global , unsigned count, MPI_Op op )
 {
   T * tmp = const_cast<T*>( local );
-  BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
   MPI_Allreduce( tmp , global , count , sierra::MPI::Datatype<T>::type() , op , comm );
 }
 

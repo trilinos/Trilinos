@@ -106,8 +106,7 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
-  return_failed_on_max_steps(true),
-  call_printSolution(true)
+  return_failed_on_max_steps(true)
 {
   reset(global_data, initialGuess, lt, nt, p );
 }
@@ -149,8 +148,7 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
-  return_failed_on_max_steps(true),
-  call_printSolution(true)
+  return_failed_on_max_steps(true)
 {
   reset(global_data, initialGuess, nt, p );
 }
@@ -398,10 +396,8 @@ LOCA::Stepper::start() {
   if (solverStatus != NOX::StatusTest::Converged)
     return LOCA::Abstract::Iterator::Failed;
 
-  if (call_printSolution) {
-    // Save initial solution
-    curGroupPtr->printSolution();
-  }
+  // Save initial solution
+  curGroupPtr->printSolution();
 
   // Compute eigenvalues/eigenvectors if requested
   if (calcEigenvalues) {
@@ -537,8 +533,8 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     printEndStep(LOCA::Abstract::Iterator::Successful);
 
-    if (call_printSolution)
-      curGroupPtr->printSolution();
+    curGroupPtr->printSolution();
+
   }
 
   return LOCA::Abstract::Iterator::Finished;
@@ -645,10 +641,8 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
     }
   }
 
-  if (call_printSolution) {
-    // Print (save) solution
-    curGroupPtr->printSolution();
-  }
+  // Print (save) solution
+  curGroupPtr->printSolution();
 
   // Compute eigenvalues/eigenvectors
   if (calcEigenvalues) {
@@ -1042,16 +1036,4 @@ LOCA::Stepper::withinThreshold()
   double conParam = curGroupPtr->getContinuationParameter();
 
   return (fabs(conParam-targetValue) < relt*fabs(initialStep));
-}
-
-void
-LOCA::Stepper::setCallerWillCallPrintSolution(bool will_call)
-{
-  call_printSolution = ! will_call;
-}
-
-void
-LOCA::Stepper::callPrintSolution()
-{
-  curGroupPtr->printSolution(); 
 }

@@ -717,8 +717,8 @@ namespace Kokkos {
 
 Threads & Threads::instance(int)
 {
-  static Threads * const t = 0 ;
-  return *t ;
+  static Threads t ;
+  return t ;
 }
 
 int Threads::thread_pool_size( int depth )

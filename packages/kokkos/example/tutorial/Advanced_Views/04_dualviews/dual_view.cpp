@@ -126,7 +126,7 @@ struct localsum {
   KOKKOS_INLINE_FUNCTION
   void operator() (const int i) const {
     double tmp = 0.0;
-    for (int j = 0; j < idx.dimension_1(); ++j) {
+    for (int j = 0; j < (int) idx.dimension_1(); ++j) {
       const double val = src(idx(i,j));
       tmp += val*val + 0.5*(idx.dimension_0()*val -idx.dimension_1()*val);
     }
@@ -187,8 +187,8 @@ int main (int narg, char* arg[]) {
   Kokkos::fence();
   double sec2_host = timer.seconds();
 
-  printf("Device Time with Sync: %lf without Sync: %lf \n",sec1_dev,sec2_dev);
-  printf("Host   Time with Sync: %lf without Sync: %lf \n",sec1_host,sec2_host);
+  printf("Device Time with Sync: %f without Sync: %f \n",sec1_dev,sec2_dev);
+  printf("Host   Time with Sync: %f without Sync: %f \n",sec1_host,sec2_host);
 
   Kokkos::finalize();
 }

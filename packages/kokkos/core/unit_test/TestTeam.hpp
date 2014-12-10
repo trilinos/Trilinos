@@ -227,7 +227,7 @@ public:
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    const unsigned team_size   = device_type::team_max();
+    const unsigned team_size   = policy_type::team_size_recommended( functor_type(nwork) );
     const unsigned league_size = ( nwork + team_size - 1 ) / team_size ;
 
     policy_type team_exec( league_size , team_size );
@@ -350,9 +350,9 @@ public:
     const unsigned REPEAT = 100000 ;
     const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
 
-    policy_type team_exec( nteam , device_type::team_max() );
-
     functor_type functor ;
+
+    policy_type team_exec( nteam , policy_type::team_size_max( functor ) );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       long int accum = 0 ;
@@ -449,7 +449,9 @@ struct TestSharedTeam {
     typedef Test::SharedTeamFunctor<ExecSpace> Functor ;
     typedef Kokkos::View< typename Functor::value_type , Kokkos::HostSpace , Kokkos::MemoryUnmanaged >  result_type ;
 
-    Kokkos::TeamPolicy< ExecSpace > team_exec( 8192 / ExecSpace::team_max() , ExecSpace::team_max() );
+    const size_t team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( Functor() );
+
+    Kokkos::TeamPolicy< ExecSpace > team_exec( 8192 / team_size , team_size );
 
     typename Functor::value_type error_count = 0 ;
 

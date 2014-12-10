@@ -42,6 +42,7 @@ struct BASKER_ScalarTraits
   static inline magnitudeType approxABS(double a){return 0;}
   static inline magnitudeType abs(double a){return 0;}
   static inline bool gt (double a, double b){return 0;}
+  static inline T copyConstruct(T& a){return 0;}
 };
 
 //double
@@ -57,6 +58,7 @@ struct BASKER_ScalarTraits<double>
   static inline magnitudeType abs(double a)
   { return (SCALAR_ABS(a));}
   static inline bool gt (double a, double b){return (a>b);}
+  static inline double copyConstruct(double& a){return a;} 
 };
 
 //float
@@ -72,6 +74,7 @@ struct BASKER_ScalarTraits<float>
   static inline magnitudeType abs(float a)
   { return (SCALAR_ABS(a));}
   static inline bool gt (float a, float b){return (a>b);}
+  static inline float copyConstruct(float& a){return a;}
 };
 
 
@@ -197,6 +200,9 @@ struct BASKER_ScalarTraits< std::complex<T> >
     return (   (Teuchos::ScalarTraits<ComplexT>::real(a)+Teuchos::ScalarTraits<ComplexT>::imag(a)) > (Teuchos::ScalarTraits<ComplexT>::real(b)+Teuchos::ScalarTraits<ComplexT>::imag(b)));
   }
 
+  static inline ComplexT copyConstruct(ComplexT& a){return a;}
+
+
 };
 
 #else  //C++ complexx
@@ -320,6 +326,9 @@ struct BASKER_ScalarTraits< std::complex<T> >
   {
     return (   (std::real(a)+std::imag(a)) > (std::real(b)+std::imag(b)));
   }
+
+  static inline ComplexT copyConstruct(ComplexT& a){return a;}
+
 };
 
 

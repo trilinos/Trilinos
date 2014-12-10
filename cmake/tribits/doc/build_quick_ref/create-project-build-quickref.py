@@ -52,8 +52,10 @@ thisFileRealAbsBasePath = \
 #print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
 
 tribitsBaseDir = os.path.abspath(os.path.join(thisFileRealAbsBasePath, '../..'))
+pythonUtilsDir = os.path.join(tribitsBaseDir, 'python_utils')
+ciSupportDir = os.path.join(tribitsBaseDir, 'ci_support')
 
-sys.path.append(os.path.join(tribitsBaseDir, 'python'))
+sys.path = [ciSupportDir, pythonUtilsDir] + sys.path
 #print "sys.path =", sys.path
 
 from GeneralScriptSupport import *

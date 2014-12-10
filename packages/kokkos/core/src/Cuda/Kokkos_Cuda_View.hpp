@@ -307,26 +307,26 @@ class ViewDataHandle< ViewTraits ,
                     >::type >
 {
 public:
-  enum { ReferenceAble = 0 };
+  enum { ReturnTypeIsReference = false };
 
   typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
-                                , typename ViewTraits::memory_space > type;
+                                , typename ViewTraits::memory_space > handle_type;
 
   typedef typename ViewTraits::value_type return_type;
 
-  static type allocate( const std::string & label , size_t count )
+  static handle_type allocate( const std::string & label , size_t count )
     {
-      return type( (typename ViewTraits::value_type*)
-                    ViewTraits::memory_space::allocate(
-                      label ,
-                      typeid(typename ViewTraits::value_type) ,
-                      sizeof(typename ViewTraits::value_type) ,
-                      count )
-                 );
+      return handle_type(
+       (typename ViewTraits::value_type*)
+         ViewTraits::memory_space::allocate( label ,
+                                             typeid(typename ViewTraits::value_type) ,
+                                             sizeof(typename ViewTraits::value_type) ,
+                                             count )
+      );
     }
 
   KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr( const type & handle )
+  static typename ViewTraits::value_type* get_raw_ptr( const handle_type & handle )
     { return handle.raw_ptr(); }
 };
 

@@ -240,7 +240,11 @@ private:
 
   std::vector<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > >   Ops_;
 
-  void assertInitialized() const;
+  inline void assertInitialized() const;
+  inline std::string getClassName() const;
+  inline Ordinal getRangeDim() const;
+  inline Ordinal getDomainDim() const;
+
   void validateOps();
   void setupDefaultObjectLabel();
 
@@ -249,6 +253,16 @@ private:
   DefaultAddedLinearOp& operator=(const DefaultAddedLinearOp&);
 
 };
+
+
+/** \brief Non-member constructor. */
+template<class Scalar>
+inline
+RCP<DefaultAddedLinearOp<Scalar> >
+defaultAddedLinearOp()
+{
+  return Teuchos::rcp(new DefaultAddedLinearOp<Scalar>);
+}
 
 
 /** \brief Non-member constructor. */
@@ -321,20 +335,6 @@ subtract(
   const RCP<const LinearOpBase<Scalar> > &B,
   const std::string &label = ""
   );
-
-
-// /////////////////////////////////
-// Inline members
-
-
-template<class Scalar>
-inline
-void DefaultAddedLinearOp<Scalar>::assertInitialized() const
-{
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( !( numOps() > 0 ) );
-#endif
-}
 
 
 }	// end namespace Thyra

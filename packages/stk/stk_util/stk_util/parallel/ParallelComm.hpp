@@ -38,22 +38,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <boost/static_assert.hpp>
 
-// #define TRACKABLE_STK_PARALLEL_COMM
-
-#ifdef TRACKABLE_STK_PARALLEL_COMM
-#define BABBLE_STK_PARALLEL_COMM(comm, msg)                                              \
-{                                                                                        \
-  if (stk::CommAll::sm_verbose                                                           \
-      && !(CommAll::sm_verbose_proc0_only && (stk::parallel_machine_rank(comm) != 0))) { \
-    std::ostringstream string_maker;                                                     \
-    string_maker << "P" << stk::parallel_machine_rank(comm) << ": " << msg << "\n";      \
-    std::cout << string_maker.str();                                                     \
-  }                                                                                      \
-}
-#else
-#define BABBLE_STK_PARALLEL_COMM(comm, msg)
-#endif
-
 namespace stk { template <unsigned int N> struct CommBufferAlign; }
 
 //------------------------------------------------------------------------
