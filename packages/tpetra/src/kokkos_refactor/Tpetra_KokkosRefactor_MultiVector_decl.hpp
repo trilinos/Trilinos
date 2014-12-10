@@ -1946,9 +1946,9 @@ namespace Tpetra {
         numVecs_ (dst.dimension_1 ())
       {
         TEUCHOS_TEST_FOR_EXCEPTION(
-                                   ! DstConstStride || ! SrcConstStride, std::logic_error,
-                                   "Tpetra::DeepCopySelectedVectors: You may not use the constant-stride "
-                                   "constructor if either of the Boolean template parameters is false.");
+          ! DstConstStride || ! SrcConstStride, std::logic_error,
+          "Tpetra::DeepCopySelectedVectors: You may not use the constant-stride "
+          "constructor if either of the Boolean template parameters is false.");
       }
 
       void KOKKOS_INLINE_FUNCTION operator () (const IndexType i) const {
