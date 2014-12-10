@@ -78,12 +78,11 @@ int main(int argc, char* argv[]) {
     // Number of (interior) interpolation points 
     int ni = 5;
     // Number of quadrature points
-    int nq = 6;
+    int nq = 7;
 
     const Teuchos::LAPACK<int,RealT> * const lapack = new Teuchos::LAPACK<int,RealT>();
-    NodalBasis<RealT> nb(lapack,ni,nq);
+    NodalBasis<RealT> nb(lapack,ni+2,nq);
  
-//    // Restrict basis to functions based on interior points
     std::vector<RealT> L(ni*nq,0);
     std::copy(nb.L_.begin()+nq,nb.L_.end()-nq,L.begin()); 
     std::vector<RealT> Lp(ni*nq,0);
@@ -99,35 +98,38 @@ int main(int argc, char* argv[]) {
     std::vector<RealT> v(nq,0);   
     
     for(int i=0;i<nq;++i){
-        v[i] = 100*x[i]*x[i]*w[i];
+        v[i] = 100*x[i]*x[i];
     }
 
     // Mass matrix
-    InnerProductMatrix<RealT> *mass      = new InnerProductMatrixSolver<RealT>(lapack,L,L,w);
+    InnerProductMatrix<RealT> *mass      = new InnerProductMatrixSolver<RealT>(lapack,L,L,w,1);
 
     // Kinetic energy matrix
-    InnerProductMatrix<RealT> *kinetic   = new InnerProductMatrixSolver<RealT>(lapack,Lp,Lp,w);
+    InnerProductMatrix<RealT> *kinetic   = new InnerProductMatrixSolver<RealT>(lapack,Lp,Lp,w,1);
 
     // Iteration Vector (pointer to optimzation vector)
+    Teuchos::RCP<std::vector<RealT> > psi_rcp = Teuchos::rcp( new std::vector<RealT> (ni+2, 0.0) );
     Teuchos::RCP<std::vector<RealT> > psii_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
-   
-    // Non-normalized initial guess 
-    for(int i=0;i<ni;++i){
-        (*psii_rcp)[i]=(1+nb.xi_[i])*(1-nb.xi_[i]); 
+    
+    // Normalized initial guess 
+    for(int i=0;i<ni+2;++i){
+        (*psi_rcp)[i]=(1+nb.xi_[i])*(1-nb.xi_[i])*sqrt(15.0/16.0);
     } 
 
     // Interpolate onto the quadrature points
     Teuchos::RCP<std::vector<RealT> > psiq2_rcp = Teuchos::rcp( new std::vector<RealT> (nq, 0.0) );
     nb.lagrange_->interp(*psii_rcp,*psiq2_rcp); 
-
+        
     // Square it
     for(int j=0;j<nq;++j) {
         (*psiq2_rcp)[j] *= (*psiq2_rcp)[j];
     }  
-     
     
-    InnerProductMatrix<RealT> *potential = new InnerProductMatrix<RealT>(L,L,v); 
-    InnerProductMatrix<RealT> *nonlinear = new InnerProductMatrix<RealT>(L,L,*psiq2_rcp); 
+    InnerProductMatrix<RealT> *nonlinear = new InnerProductMatrix<RealT>(L,L,w,*psiq2_rcp); 
+    InnerProductMatrix<RealT> *potential = new InnerProductMatrix<RealT>(L,L,w,v); 
+
+//    std::cout << S << std::endl;
+//    std::cout << nonlinear->inner(psii_rcp,psii_rcp) << std::endl;
 
     delete mass;
     delete kinetic;

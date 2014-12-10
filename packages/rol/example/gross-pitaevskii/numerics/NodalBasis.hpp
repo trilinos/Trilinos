@@ -73,6 +73,7 @@ NodalBasis<Real>::NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, con
         lagrange_->interpolant(i,ell);
 
         std::copy(ell.begin(),ell.end(),L_.begin()+i*nq_);
+      
 
         lagrange_->derivative(i,ell);
         std::copy(ell.begin(),ell.end(),Lp_.begin()+i*nq_);

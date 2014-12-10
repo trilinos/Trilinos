@@ -462,6 +462,8 @@ const Vector<Real> & dual() const {
 
 
 
+
+
 /** Objective Function Class */
 template<class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real> >
 class Objective_GrossPitaevskii : public Objective<Real> {
@@ -469,21 +471,26 @@ class Objective_GrossPitaevskii : public Objective<Real> {
     private:
 
         /** \var int nx_ Number of interior nodes  */ 
-        int  nx_;     
 
+        const int  nx_;     
+        const Real gnl_;
+        Teuchos::RCP<std::vector<Real> > psi_;
         InnerProductMatrix<Real> *kinetic_;
         InnerProductMatrix<Real> *potential_;
         InnerProductMatrix<Real> *nonlinear_;
-        InnerProductMatrix<Real> *mass_;
-            
-           
+        
+         
     public: 
 
-        Objective_GrossPitaevskii(InnerProductMatrix<Real> *kinetic,
+        Objective_GrossPitaevskii(const int nx, const Real gnl, 
+                                  InnerProductMatrix<Real> *kinetic, 
                                   InnerProductMatrix<Real> *potential,
-                                  InnerProductMatrix<Real> *nonlinear,
-                                  InnerProductMatrix<Real> *mass ) :
-                                  kinetic_(kinetic),potential_(potential),nonlinear_(nonlinear),mass_(mass) {
+                                  InnerProductMatrix<Real> *nonlinear ) :
+                                  nx_(nx), gnl_(gnl), psi_(nx_,0), 
+                                  kinetic_(kinetic), potential_(potential), 
+                                  nonlinear_(nonlinear) {
+
+                 
 
         }     
 
@@ -493,7 +500,13 @@ class Objective_GrossPitaevskii : public Objective<Real> {
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
-        Real J = 0;
+        // Update the nonlinear inner product to use new psi
+         
+        
+        // Compute objective function value
+        Real J = 0.5*( kinetic_->inner(psip,psip) + 
+                       potential_->inner(psip,psip) +
+                       gnl_*nonlinear_->inner(psip,psip) );
     
         return J;
     }

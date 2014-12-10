@@ -9,15 +9,19 @@
 
 template<class Real>
 class InnerProductMatrix{
-
     public:
         InnerProductMatrix(const std::vector<Real> &U,
                            const std::vector<Real> &V,
-                           const std::vector<Real> &w);
+                           const std::vector<Real> &w,
+                           int a);
 
-        void update(const std::vector<Real> &U,
-                    const std::vector<Real> &V,
-                    const std::vector<Real> &w);
+        InnerProductMatrix(const std::vector<Real> &U,
+                           const std::vector<Real> &V,
+                           const std::vector<Real> &w,
+                           const std::vector<Real> &a);
+
+
+        void update(const std::vector<Real> &a);
 
         virtual ~InnerProductMatrix(); 
 
@@ -39,6 +43,10 @@ class InnerProductMatrix{
     protected:
         const int nq_;
         const int ni_;
+        const std::vector<Real> U_;
+        const std::vector<Real> V_;
+        const std::vector<Real> w_;  
+
         std::vector<Real> M_;     
 
 
@@ -48,12 +56,30 @@ class InnerProductMatrix{
 template<class Real>
 InnerProductMatrix<Real>::InnerProductMatrix( const std::vector<Real> &U, 
                                               const std::vector<Real> &V,  
-                                              const std::vector<Real> &w) : 
-                                              nq_(w.size()), ni_(U.size()/nq_), M_(ni_*ni_,0) {
+                                              const std::vector<Real> &w,
+                                              const int a=1 ) : 
+                                              nq_(w.size()), ni_(U.size()/nq_), 
+                                              U_(U),V_(V),w_(w),M_(ni_*ni_,0) {
     for(int i=0;i<ni_;++i) {
         for(int j=0;j<ni_;++j) {
             for(int k=0;k<nq_;++k) { 
-                M_[i+j*ni_] += w[k]*U[k+i*nq_]*V[k+j*nq_];
+                M_[i+j*ni_] += a*w_[k]*U_[k+i*nq_]*V_[k+j*nq_];
+            }
+        }
+    }
+}
+
+template<class Real>
+InnerProductMatrix<Real>::InnerProductMatrix( const std::vector<Real> &U, 
+                                              const std::vector<Real> &V,  
+                                              const std::vector<Real> &w,
+                                              const std::vector<Real> &a ) : 
+                                              nq_(w.size()), ni_(U.size()/nq_),
+                                              U_(U),V_(V),w_(w),M_(ni_*ni_,0) {
+    for(int i=0;i<ni_;++i) {
+        for(int j=0;j<ni_;++j) {
+            for(int k=0;k<nq_;++k) { 
+                M_[i+j*ni_] += a[k]*w_[k]*U_[k+i*nq_]*V_[k+j*nq_];
             }
         }
     }
@@ -76,18 +102,21 @@ void InnerProductMatrix<Real>::apply(Teuchos::RCP<const std::vector<Real> > xp,
 }         
 
 template<class Real>
-void InnerProductMatrix<Real>::update( const std::vector<Real> &U,
-                                       const std::vector<Real> &V,
-                                       const std::vector<Real> &w ){
+void InnerProductMatrix<Real>::update( const std::vector<Real> &a ){
+
     std::fill(M_.begin(),M_.end(),0);
     for(int i=0;i<ni_;++i) {
         for(int j=0;j<ni_;++j) {
             for(int k=0;k<nq_;++k) { 
-                M_[i+j*ni_] += w[k]*U[k+i*nq_]*V[k+j*nq_];
+                M_[i+j*ni_] += a[k]*w_[k]*U_[k+i*nq_]*V_[k+j*nq_];
             }
         }
     }
 }
+
+
+
+
 
 //! Compute the inner product \f$u^\top M v\f$
 template<class Real>
@@ -126,7 +155,14 @@ class InnerProductMatrixSolver : public InnerProductMatrix<Real> {
        InnerProductMatrixSolver(const Teuchos::LAPACK<int,Real> * const lapack,
                                 const std::vector<Real> &U, 
                                 const std::vector<Real> &V,  
-                                const std::vector<Real> &w);
+                                const std::vector<Real> &w,
+                                const int a );
+
+       InnerProductMatrixSolver(const Teuchos::LAPACK<int,Real> * const lapack,
+                                const std::vector<Real> &U, 
+                                const std::vector<Real> &V,  
+                                const std::vector<Real> &w,
+                                const std::vector<Real> &a);
 
        void solve(Teuchos::RCP<const std::vector<Real> > bp, 
                   Teuchos::RCP<std::vector<Real> > xp);    
@@ -140,8 +176,9 @@ template<class Real>
 InnerProductMatrixSolver<Real>::InnerProductMatrixSolver(const Teuchos::LAPACK<int,Real> *lapack=NULL,  
                                                          const std::vector<Real> &U=std::vector<Real>(), 
                                                          const std::vector<Real> &V=std::vector<Real>(),  
-                                                         const std::vector<Real> &w=std::vector<Real>()):
-                                                         InnerProductMatrix<Real>(U,V,w),
+                                                         const std::vector<Real> &w=std::vector<Real>(),
+                                                         const int a=1 ):
+                                                         InnerProductMatrix<Real>(U,V,w,a),
                                                          lapack_(lapack),   
                                                          ni_(InnerProductMatrix<Real>::ni_),
                                                          nq_(InnerProductMatrix<Real>::nq_),
@@ -155,6 +192,25 @@ InnerProductMatrixSolver<Real>::InnerProductMatrixSolver(const Teuchos::LAPACK<i
 
 } 
 
+template<class Real>
+InnerProductMatrixSolver<Real>::InnerProductMatrixSolver(const Teuchos::LAPACK<int,Real> *lapack=NULL,  
+                                                         const std::vector<Real> &U=std::vector<Real>(), 
+                                                         const std::vector<Real> &V=std::vector<Real>(),  
+                                                         const std::vector<Real> &w=std::vector<Real>(),
+                                                         const std::vector<Real> &a=std::vector<Real>()):
+                                                         InnerProductMatrix<Real>(U,V,w,a),
+                                                         lapack_(lapack),   
+                                                         ni_(InnerProductMatrix<Real>::ni_),
+                                                         nq_(InnerProductMatrix<Real>::nq_),
+                                                         M_(InnerProductMatrix<Real>::M_),  
+                                                         TRANS_('N'), ipiv_(ni_,0), PLU_(ni_*ni_,0), 
+                                                         nrhs_(1),info_(0){
+    PLU_ = M_;
+
+    // Do matrix factorization
+    lapack->GETRF(ni_,ni_,&PLU_[0],ni_,&ipiv_[0],&info_);
+
+} 
 
 //! \brief solve \f$Mx=b\f$ for \f$x\f$ 
 template<class Real>
@@ -170,7 +226,7 @@ void InnerProductMatrixSolver<Real>::solve(Teuchos::RCP<const std::vector<Real> 
 
 }
 
-//! \brief Compute the inner product \f$u^\top M^{-1} v\f$
+//! Compute the inner product \f$u^\top M^{-1} v\f$
 template<class Real>
 Real InnerProductMatrixSolver<Real>::inv_inner( Teuchos::RCP<const std::vector<Real> > up,
                                                 Teuchos::RCP<const std::vector<Real> > vp ) {
