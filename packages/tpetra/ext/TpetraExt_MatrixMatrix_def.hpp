@@ -1501,7 +1501,6 @@ void jacobi_A_B_newmatrix(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
   using Teuchos::TimeMonitor;
-  using Teuchos::TimeMonitor;
   RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix+std::string("Jacobi M5 Cmap")))));
 #endif
   size_t ST_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
