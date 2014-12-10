@@ -1975,6 +1975,74 @@ namespace Tpetra {
         }
       }
     };
+
+    template<class DstViewType,
+             class SrcViewType,
+             class IndexType>
+    struct LocalDeepCopy {
+      typedef Kokkos::View<const IndexType*, typename DstViewType::memory_space> dst_wv_type;
+      typedef Kokkos::View<const IndexType*, typename SrcViewType::memory_space> src_wv_type;
+
+      static void
+      run (const DstViewType& dst, const SrcViewType& src,
+           const bool dstConstStride, const bool srcConstStride,
+           const dst_wv_type& dstWhichVecs, const src_wv_type& srcWhichVecs)
+      {
+        typedef typename DstViewType::execution_space execution_space;
+
+        // FIXME (mfh 22 Jul 2014, 10 Dec 2014) Currently, it doesn't
+        // work to do a 2-D copy, even if both MultiVectors have
+        // constant stride.  This is because Kokkos can't currently
+        // tell the difference between padding (which permits a single
+        // deep_copy for the whole 2-D View) and stride > numRows
+        // (which does NOT permit a single deep_copy for the whole 2-D
+        // View).  Carter is working on this, but for now, the
+        // temporary fix is to copy one column at a time.
+        const bool deepCopyWorks = false;
+
+        if (dstConstStride) {
+          if (srcConstStride) {
+            if (deepCopyWorks) {
+              Kokkos::deep_copy (dst, src);
+            }
+            else {
+              typedef DeepCopySelectedVectors<DstViewType, SrcViewType, IndexType, execution_space, true, true> functor_type;
+              functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
+              Kokkos::parallel_for (dst.dimension_0 (), f);
+            }
+          }
+          else { // ! srcConstStride
+            typedef DeepCopySelectedVectors<DstViewType, SrcViewType, IndexType, execution_space, true, false> functor_type;
+            functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
+            Kokkos::parallel_for (dst.dimension_0 (), f);
+          }
+        }
+        else { // ! dstConstStride
+          if (srcConstStride) {
+            typedef DeepCopySelectedVectors<DstViewType, SrcViewType, IndexType, execution_space, false, true> functor_type;
+            functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
+            Kokkos::parallel_for (dst.dimension_0 (), f);
+          }
+          else { // ! srcConstStride
+            typedef DeepCopySelectedVectors<DstViewType, SrcViewType, IndexType, execution_space, false, false> functor_type;
+            functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
+            Kokkos::parallel_for (dst.dimension_0 (), f);
+          }
+        }
+      }
+    };
+
+    template<class DstViewType,
+             class SrcViewType,
+             class IndexType>
+    void
+    localDeepCopy (const DstViewType& dst, const SrcViewType& src,
+                   const bool dstConstStride, const bool srcConstStride,
+                   const Kokkos::View<const IndexType*, typename DstViewType::memory_space>& dstWhichVecs,
+                   const Kokkos::View<const IndexType*, typename SrcViewType::memory_space>& srcWhichVecs)
+    {
+      LocalDeepCopy<DstViewType, SrcViewType, IndexType>::run (dst, src, dstConstStride, srcConstStride, dstWhichVecs, srcWhichVecs);
+    }
   } // namespace (anonymous)
 
 

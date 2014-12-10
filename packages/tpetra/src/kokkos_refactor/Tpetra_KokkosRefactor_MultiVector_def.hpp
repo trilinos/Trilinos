@@ -2383,15 +2383,13 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source)
   {
-    // KR FIXME This is just the assignment operator.
-
     if (this != &source) {
       base_type::operator= (source);
       //
       // operator= implements view semantics (shallow copy).
       //
 
-      // OK: Kokkos::View operator= also implements view semantics.
+      // Kokkos::View operator= also implements view semantics.
       view_ = source.view_;
       origView_ = source.origView_;
 
@@ -2414,76 +2412,28 @@ namespace Tpetra {
   subCopy (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef typename dual_view_type::host_mirror_space
-      host_mirror_space;
-    typedef typename dual_view_type::t_host host_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
     // Check whether the index set in cols is contiguous.  If it is,
     // use the more efficient Range1D version of subCopy.
-    {
-      bool contiguous = true;
-      const size_t numCopyVecs = static_cast<size_t> (cols.size ());
-      for (size_t j = 1; j < numCopyVecs; ++j) {
-        if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
-          contiguous = false;
-          break;
-        }
-      }
-      if (contiguous && numCopyVecs > 0) {
-        return this->subCopy (Teuchos::Range1D (cols[0], cols[numCopyVecs-1]));
+    bool contiguous = true;
+    const size_t numCopyVecs = static_cast<size_t> (cols.size ());
+    for (size_t j = 1; j < numCopyVecs; ++j) {
+      if (cols[j] != cols[j-1] + static_cast<size_t> (1)) {
+        contiguous = false;
+        break;
       }
     }
-
-    // Sync the source MultiVector (*this) to host first.  Copy it to
-    // the output View on host, then sync the output View (only) to
-    // device.  Doing copies on host saves us the trouble of copying
-    // whichVecsSrc and whichVecsDst over to the device.
-    view_.template sync<host_mirror_space> ();
-
-    const size_t numRows = this->getLocalLength ();
-    const size_t numCols = this->getNumVectors ();
-    const std::pair<size_t, size_t> rowRange (0, numRows);
-    const std::pair<size_t, size_t> colRange (0, numCols);
-    const size_t numColsToCopy = static_cast<size_t> (cols.size ());
-
-    // Create a DualView which will be a contiguously stored deep copy of this MV's view.
-    dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsDst ("whichVecsDst", numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsSrc ("whichVecsSrc", numColsToCopy);
-
-    if (! this->isConstantStride ()) {
-      for (size_t j = 0; j < numColsToCopy; ++j) {
-        whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[cols[j]]);
-      }
+    if (contiguous && numCopyVecs > 0) {
+      return this->subCopy (Teuchos::Range1D (cols[0], cols[numCopyVecs-1]));
     }
     else {
-      for (size_t j = 0; j < numColsToCopy; ++j) {
-        whichVecsSrc(j) = static_cast<LocalOrdinal> (cols[j]);
-      }
+      RCP<const MV> X_sub = this->subView (cols);
+      RCP<MV> Y (new MV (this->getMap (), numCopyVecs, false));
+      Y->assign (*X_sub);
+      return Y;
     }
-    for (size_t j = 0; j < numColsToCopy; ++j) {
-      whichVecsDst(j) = static_cast<LocalOrdinal> (j);
-    }
-
-    //
-    // Do the copy on host first.
-    //
-    host_view_type srcView =
-      Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
-    DeepCopySelectedVectors<host_view_type, host_view_type, LocalOrdinal,
-      host_mirror_space, false, false> f (dstView.h_view, srcView,
-                                                whichVecsDst, whichVecsSrc);
-    Kokkos::parallel_for (numRows, f);
-
-    // Sync the output DualView (only) back to device.
-    dstView.template sync<device_type> ();
-
-    // Create and return a MultiVector using the new DualView.
-    return rcp (new MV (this->getMap (), dstView));
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
@@ -2491,67 +2441,12 @@ namespace Tpetra {
   subCopy (const Teuchos::Range1D &colRng) const
   {
     using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef typename dual_view_type::host_mirror_space
-      host_mirror_space;
-    typedef typename dual_view_type::t_host host_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
-    // Sync the source MultiVector (*this) to host first.  Copy it to
-    // the output View on host, then sync the output View (only) to
-    // device.  Doing copies on host saves us the trouble of copying
-    // whichVecsSrc and whichVecsDst over to the device.
-    view_.template sync<host_mirror_space> ();
-
-    const size_t numRows = this->getLocalLength ();
-    const size_t numCols = this->getNumVectors ();
-    const std::pair<size_t, size_t> rowRange (0, numRows);
-    const std::pair<size_t, size_t> colRange (0, numCols);
-
-    // Range1D is an inclusive range.  If the upper bound is less then
-    // the lower bound, that signifies an invalid range, which we
-    // interpret as "copy zero columns."
-    const size_t numColsToCopy = (colRng.ubound () >= colRng.lbound ()) ?
-      static_cast<size_t> (colRng.size ()) :
-      static_cast<size_t> (0);
-
-    // Create a DualView which will be a contiguously stored deep copy of this MV's view.
-    dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsDst ("whichVecsDst", numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsSrc ("whichVecsSrc", numColsToCopy);
-
-    if (! this->isConstantStride ()) {
-      for (size_t j = 0; j < numColsToCopy; ++j) {
-        const size_t col = static_cast<size_t> (colRng.lbound ()) + j;
-        whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[col]);
-      }
-    }
-    else {
-      for (size_t j = 0; j < numColsToCopy; ++j) {
-        const size_t col = static_cast<size_t> (colRng.lbound ()) + j;
-        whichVecsSrc(j) = static_cast<LocalOrdinal> (col);
-      }
-    }
-    for (size_t j = 0; j < numColsToCopy; ++j) {
-      whichVecsDst(j) = static_cast<LocalOrdinal> (j);
-    }
-
-    //
-    // Do the copy on host first.
-    //
-    // FIXME (mfh 10 Jul 2014) Exploit contiguity of the desired columns.
-    host_view_type srcView =
-      Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
-    DeepCopySelectedVectors<host_view_type, host_view_type, LocalOrdinal,
-      host_mirror_space, false, false> f (dstView.h_view, srcView,
-                                                whichVecsDst, whichVecsSrc);
-    Kokkos::parallel_for (numRows, f);
-
-    // Sync the output DualView (only) back to device.
-    dstView.template sync<device_type> ();
-
-    // Create and return a MultiVector using the new DualView.
-    return rcp (new MV (this->getMap (), dstView));
+    RCP<const MV> X_sub = this->subView (colRng);
+    RCP<MV> Y (new MV (this->getMap (), static_cast<size_t> (colRng.size ()), false));
+    Y->assign (*X_sub);
+    return Y;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -2827,11 +2722,17 @@ namespace Tpetra {
     // The user's array is column major ("LayoutLeft").
     typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft,
       host_mirror_space, Kokkos::MemoryUnmanaged> input_col_type;
+    // Types of views of this MultiVector's data.
     typedef typename dual_view_type::t_host host_view_type;
+    typedef typename dual_view_type::t_dev dev_view_type;
     typedef Kokkos::View<scalar_type*,
       typename host_view_type::array_layout,
       typename host_view_type::device_type,
       Kokkos::MemoryUnmanaged> host_col_type;
+    typedef Kokkos::View<scalar_type*,
+      typename dev_view_type::array_layout,
+      typename dev_view_type::device_type,
+      Kokkos::MemoryUnmanaged> dev_col_type;
     const char tfecfFuncName[] = "get1dCopy";
 
     const size_t numRows = this->getLocalLength ();
@@ -2848,40 +2749,15 @@ namespace Tpetra {
       static_cast<size_t> (A.size ()) < LDA * (numCols - 1) + numRows,
       std::runtime_error,
       ": A.size() = " << A.size () << ", but its size must be at least "
-      << LDA * (numCols - 1) * numRows << " to hold all the entries.");
+      << (LDA * (numCols - 1) + numRows) << " to hold all the entries.");
 
-    // This does a deep copy into A, which is column major with
-    // leading dimension LDA.  We assume A is big enough to hold
-    // everything.  Copy directly from host mirror of the data, if it
-    // exists.
-
-    // Start by sync'ing to host.
-    view_.template sync<host_mirror_space> ();
-
-    // FIXME (mfh 22 Jul 2014) These actually should be strided views.
-    // This causes a run-time error with deep copy.  The temporary fix
-    // is to copy one column at a time.
-
-    //input_view_type dstWholeView (A.getRawPtr (), LDA, numCols);
-    // input_view_type dstView =
-    //   Kokkos::subview<input_view_type> (dstWholeView, rowRange, Kokkos::ALL ());
-    // host_view_type srcView =
-    //   Kokkos::subview<host_view_type> (view_.h_view, rowRange, Kokkos::ALL ());
-
-    // if (this->isConstantStride ()) {
-    //   Kokkos::deep_copy (dstView, srcView);
-    // }
-    // else {
-    //   Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsDst ("whichVecsDst", numCols);
-    //   Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsSrc ("whichVecsSrc", numCols);
-    //   for (size_t j = 0; j < numCols; ++j) {
-    //     whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[j]);
-    //     whichVecsDst(j) = static_cast<LocalOrdinal> (j);
-    //   }
-    //   DeepCopySelectedVectors<input_view_type, host_view_type, LocalOrdinal,
-    //     host_mirror_space, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
-    //   Kokkos::parallel_for (numRows, f);
-    // }
+    // FIXME (mfh 22 Jul 2014, 10 Dec 2014) Currently, it doesn't work
+    // to do a 2-D copy, even if this MultiVector has constant stride.
+    // This is because Kokkos can't currently tell the difference
+    // between padding (which permits a single deep_copy for the whole
+    // 2-D View) and stride > numRows (which does NOT permit a single
+    // deep_copy for the whole 2-D View).  Carter is working on this,
+    // but for now, the temporary fix is to copy one column at a time.
 
     for (size_t j = 0; j < numCols; ++j) {
       const size_t srcCol = this->isConstantStride () ? j : this->whichVectors_[j];
@@ -2894,15 +2770,28 @@ namespace Tpetra {
         "all the data.  Please report this bug to the Tpetra developers.");
 
       input_col_type dstColView (dstColRaw, numRows);
-      host_col_type srcColView =
-        subview<host_col_type> (view_.h_view, ALL (), srcCol);
 
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        dstColView.dimension_0 () != srcColView.dimension_0 (),
-        std::logic_error, ": srcColView and dstColView have different "
-        "dimensions.  Please report this bug to the Tpetra developers.");
-
-      Kokkos::deep_copy (dstColView, srcColView);
+      // Use the most recently updated version of this MultiVector's
+      // data.  This avoids sync'ing, which could violate users'
+      // expectations.
+      if (view_.modified_host >= view_.modified_device) {
+        host_col_type srcColView =
+          subview<host_col_type> (view_.h_view, ALL (), srcCol);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          dstColView.dimension_0 () != srcColView.dimension_0 (),
+          std::logic_error, ": srcColView and dstColView have different "
+          "dimensions.  Please report this bug to the Tpetra developers.");
+        Kokkos::deep_copy (dstColView, srcColView);
+      }
+      else {
+        dev_col_type srcColView =
+          subview<dev_col_type> (view_.d_view, ALL (), srcCol);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          dstColView.dimension_0 () != srcColView.dimension_0 (),
+          std::logic_error, ": srcColView and dstColView have different "
+          "dimensions.  Please report this bug to the Tpetra developers.");
+        Kokkos::deep_copy (dstColView, srcColView);
+      }
     }
   }
 
@@ -2912,15 +2801,8 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > ArrayOfPtrs) const
   {
-    typedef typename dual_view_type::host_mirror_space
-      host_mirror_space;
-    typedef typename dual_view_type::t_host host_view_type;
-    typedef Kokkos::View<scalar_type**,
-      typename host_view_type::array_layout,
-      typename dual_view_type::host_mirror_space,
-      Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> V;
     const char tfecfFuncName[] = "get2dCopy";
-
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
 
@@ -2931,9 +2813,6 @@ namespace Tpetra {
       << ArrayOfPtrs.size () << " != getNumVectors() = " << numCols << ".");
 
     if (numRows != 0 && numCols != 0) {
-      // Start by sync'ing to host.
-      view_.template sync<host_mirror_space> ();
-
       // No side effects until we've validated the input.
       for (size_t j = 0; j < numCols; ++j) {
         const size_t dstLen = static_cast<size_t> (ArrayOfPtrs[j].size ());
@@ -2946,13 +2825,9 @@ namespace Tpetra {
 
       // We've validated the input, so it's safe to start copying.
       for (size_t j = 0; j < numCols; ++j) {
-        const size_t col = isConstantStride () ? j : whichVectors_[j];
-        host_view_type src =
-          Kokkos::subview<host_view_type> (view_.h_view, Kokkos::ALL (), col);
-        unmanaged_host_view_type dst (ArrayOfPtrs[j].getRawPtr (),
-                                      ArrayOfPtrs[j].size (),
-                                      static_cast<size_t> (1));
-        Kokkos::deep_copy (dst, src);
+        RCP<const V> X_j = this->getVector (j);
+        const size_t LDA = static_cast<size_t> (ArrayOfPtrs[j].size ());
+        X_j->get1dCopy (ArrayOfPtrs[j], LDA);
       }
     }
   }
