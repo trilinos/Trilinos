@@ -391,6 +391,20 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("sign(7)", 1));
   EXPECT_TRUE(test_one_value("sign(-5)", -1));
 
+  //
+  //  Test some composite functions
+  //
+  EXPECT_TRUE(test_one_value("pow(pow(2,2), pow(2,2))", 256));
+  EXPECT_TRUE(test_one_value("pow(2^2, 2^2)", 256));
+  EXPECT_TRUE(test_one_value("(2^2)^(2^2)", 256));
+  EXPECT_TRUE(test_one_value("(2^2)^pow(2,2)", 256));
+  EXPECT_TRUE(test_one_value("sin(pow(2,2))", sin(4)));
+  EXPECT_TRUE(test_one_value("sin(sin(sin(sin(100))))",sin(sin(sin(sin(100.0))))));
+  EXPECT_TRUE(test_one_value("sin(sin(sin(sin(pow(2,2)))))",sin(sin(sin(sin(4.0))))));
+
+
+
+
 #ifndef __PATHSCALE__
   double weibull_gold_value = 3.6787944117144233402;
   EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));

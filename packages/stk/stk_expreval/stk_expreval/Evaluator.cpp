@@ -57,6 +57,9 @@
 #include <stk_expreval/Evaluator.hpp>
 #include <stk_expreval/Lexer.hpp>
 
+using std::cout;
+using std::endl;
+
 namespace {
 struct expression_evaluation_exception : public virtual std::exception
 {
@@ -358,6 +361,8 @@ parseExpression(
   LexemVector::const_iterator unary_it = to;		// First +,- at plevel 0 for positive,negative
   LexemVector::const_iterator last_unary_it = to;	// Last +,- found at plevel for for positive,negative
 
+
+
   // Scan the expression for the instances of the above tokens
   for (LexemVector::const_iterator it = from; it != to; ++it) {
     switch((*it).getToken()) {
@@ -375,8 +380,9 @@ parseExpression(
 	  && brack_level == 0 && lbrack_close_it == to)
 	lparen_close_it = it;
 
-      if (paren_level < 0)
+      if (paren_level < 0) {
 	throw std::runtime_error("mismatched parenthesis");
+      }
       break;
 
     case TOKEN_LBRACK:
@@ -472,8 +478,9 @@ parseExpression(
     }
   }
 
-  if (paren_level != 0) // paren_level should now be zero */
+  if (paren_level != 0) { // paren_level should now be zero */
     throw std::runtime_error("mismatched parenthesis");
+  }
 
   // This implement the operator hiearchy
   // Assignment
@@ -512,8 +519,9 @@ parseExpression(
   // Parenthetical
   if (lparen_open_it != to) {
     if (lparen_open_it == from) {
-      if (lparen_close_it == to - 1 && lparen_close_it - lparen_open_it > 1)
+      if (lparen_close_it == to - 1 && lparen_close_it - lparen_open_it > 1) {
 	return parseExpression(eval, lparen_open_it + 1, lparen_close_it);
+      }
       else
 	throw std::runtime_error("syntax error parsing parentheses");
     }
@@ -565,10 +573,12 @@ parseAssign(
 
     assign->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
     assign->m_data.variable.variable->setDependent();
+
     assign->m_right = parseExpression(eval, assign_it + 1, to);
 
-    if ((*(from + 1)).getToken() == TOKEN_LBRACK)
+    if ((*(from + 1)).getToken() == TOKEN_LBRACK) {
       assign->m_left = parseExpression(eval, from + 2, assign_it - 1);
+    }
   }
   else
     throw std::runtime_error("syntax error");
@@ -610,7 +620,6 @@ parseFactor(
       )
      )
     );
-
   factor->m_left = parseExpression(eval, from, factor_it);
   factor->m_right = parseExpression(eval, factor_it + 1, to);
 
@@ -657,7 +666,6 @@ parseRelation(
   }
 
   Node *relation = eval.newNode(relation_opcode);
-
   relation->m_left = parseExpression(eval, from, relation_it);
   relation->m_right = parseExpression(eval, relation_it + 1, to);
 
@@ -709,8 +717,9 @@ parseUnary(
   LexemVector::const_iterator	unary_it,
   LexemVector::const_iterator	to)
 {
+
   /* If it is a positive, just parse the internal of it */
-  if ((*unary_it).getToken() == TOKEN_PLUS)
+  if ((*unary_it).getToken() == TOKEN_PLUS) 
     return parseExpression(eval, unary_it + 1, to);
   else if ((*unary_it).getToken() == TOKEN_MINUS) {
     Node *unary = eval.newNode(OPCODE_UNARY_MINUS);
@@ -735,6 +744,7 @@ parseFunction(
   LexemVector::const_iterator	rparen,
   LexemVector::const_iterator	to)
 {
+
   if ((*from).getToken() != TOKEN_IDENTIFIER)
     throw std::runtime_error("syntax error parsing function");
 
@@ -756,9 +766,6 @@ parseFunction(
   } else {
     std::pair<CFunctionMap::iterator, CFunctionMap::iterator> ppp;
     ppp = getCFunctionMap().equal_range(function_name);
-
-    using std::cout;
-    using std::endl;
     //cout << endl << "Range of \"function_name\" elements:" << endl;
     int iCount=0;
     for (CFunctionMap::iterator it2 = ppp.first;
@@ -778,6 +785,7 @@ parseFunction(
       throw std::runtime_error(std::string("Exceeded maximum number of overloaded function names for function named= ") + function_name);
     }
   }
+
   function->m_right = parseFunctionArg(eval, lparen + 1, rparen);
 
   if (!c_function) {
@@ -813,17 +821,54 @@ parseFunctionArg(
   LexemVector::const_iterator	from,
   LexemVector::const_iterator	to)
 {
-  if (from == to)
+  if (from == to) {
     return NULL;
+  }
 
-  LexemVector::const_iterator it;
-  for (it = from; it != to && (*it).getToken() != TOKEN_COMMA; ++it)
-    ;
+  //
+  //  Identify the first argument by looking for the first argument.  However, keep anything inside a bracket together and
+  //  ignore commas inside those brackets
+  //
+  int paren_level=0;
+  int brack_level=0;
+
+  LexemVector::const_iterator endIterator = to;
+
+
+  LexemVector::const_iterator it = from;
+  while(it != to) {
+    Token curToken = (*it).getToken();
+    if(curToken == TOKEN_LPAREN) {
+      paren_level++;
+    } else if (curToken == TOKEN_RPAREN) {
+      paren_level--;
+      if (paren_level < 0) {
+	throw std::runtime_error("mismatched parenthesis");
+      }
+    } else if (curToken ==TOKEN_LBRACK) {
+      brack_level++;
+    } else if(curToken == TOKEN_RBRACK) {
+      brack_level--;
+      if (brack_level < 0) {
+	throw std::runtime_error("mismatched bracket");
+      }
+    } else if (curToken == TOKEN_COMMA) {
+      if(paren_level == 0 && brack_level == 0) {
+        endIterator = it;
+        break;
+      }
+    } else {
+    }
+    ++it;
+  }
 
   Node *argument = eval.newNode(OPCODE_ARGUMENT);
-  argument->m_left = parseExpression(eval, from, it);
-  if (it != to)
-    argument->m_right = parseFunctionArg(eval, it + 1, to);
+  argument->m_left = parseExpression(eval, from, endIterator);
+  if (endIterator != to) {
+    argument->m_right = parseFunctionArg(eval, endIterator + 1, to);
+
+  }
+
   return argument;
 }
 
