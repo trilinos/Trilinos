@@ -419,7 +419,7 @@ public:
     }
   }
 
-  void initialize( Vector<Real> &x, Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Step<Real>::initialize(x,g,obj,con,algo_state);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();

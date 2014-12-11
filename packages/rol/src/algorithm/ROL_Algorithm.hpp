@@ -79,6 +79,7 @@ public:
   }
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
+             This is the primary Type-U interface.
   */
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
@@ -86,35 +87,40 @@ public:
                                         std::ostream      &outStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
-    return run(x,x,obj,con,print,outStream);
+    return run(x,x.dual(),obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
+             This general interface supports the use of dual optimization vector spaces,
+             where the user does not define the dual() method.
   */
-  virtual std::vector<std::string> run( Vector<Real>      &x,
-                                        Vector<Real>      &g, 
-                                        Objective<Real>   &obj,
-                                        bool              print = false,
-                                        std::ostream      &outStream = std::cout ) {
+  virtual std::vector<std::string> run( Vector<Real>       &x,
+                                        const Vector<Real> &g, 
+                                        Objective<Real>    &obj,
+                                        bool               print = false,
+                                        std::ostream       &outStream = std::cout ) {
     BoundConstraint<Real> con;
     con.deactivate();
     return run(x,g,obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
+             This is the primary Type-B interface.
   */
   virtual std::vector<std::string> run( Vector<Real>          &x, 
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
                                         bool                  print = false,
                                         std::ostream          &outStream = std::cout ) {
-    return run(x,x,obj,con,print,outStream);
+    return run(x,x.dual(),obj,con,print,outStream);
   }
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
+             This general interface supports the use of dual optimization vector spaces,
+             where the user does not define the dual() method.
   */
   virtual std::vector<std::string> run( Vector<Real>          &x, 
-                                        Vector<Real>          &g, 
+                                        const Vector<Real>    &g, 
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &con,
                                         bool                  print = false,
@@ -149,12 +155,30 @@ public:
     return output;
   }
 
+
   /** \brief Run algorithm on equality constrained problems (Type-E).
+             This is the primary Type-E interface.
   */
   virtual std::vector<std::string> run( Vector<Real>             &x,
-                                        Vector<Real>             &g, 
                                         Vector<Real>             &l, 
-                                        Vector<Real>             &c, 
+                                        Objective<Real>          &obj,
+                                        EqualityConstraint<Real> &con,
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
+
+    return run(x, x.dual(), l, l.dual(), obj, con, print, outStream);
+
+  }
+
+
+  /** \brief Run algorithm on equality constrained problems (Type-E).
+             This general interface supports the use of dual optimization and
+             constraint vector spaces, where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>             &x,
+                                        const Vector<Real>       &g, 
+                                        Vector<Real>             &l, 
+                                        const Vector<Real>       &c, 
                                         Objective<Real>          &obj,
                                         EqualityConstraint<Real> &con,
                                         bool                     print = false,

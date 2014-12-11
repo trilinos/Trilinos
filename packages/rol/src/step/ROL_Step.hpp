@@ -80,7 +80,7 @@ public:
 
   /** \brief Initialize step with bound constraint.
   */
-  virtual void initialize( Vector<Real> &x, Vector<Real> &g, 
+  virtual void initialize( Vector<Real> &x, const Vector<Real> &g, 
                            Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
@@ -113,7 +113,7 @@ public:
 
   /** \brief Initialize step with equality constraint.
   */
-  virtual void initialize( Vector<Real> &x, Vector<Real> &g, Vector<Real> &l, Vector<Real> &c,
+  virtual void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                            Objective<Real> &obj, EqualityConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
   }
