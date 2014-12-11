@@ -3587,10 +3587,8 @@ namespace Tpetra {
   {
     using Kokkos::parallel_for;
     typedef LocalOrdinal LO;
-    typedef DeviceType DT;
+    typedef typename DeviceType::memory_space DT;
     typedef typename dual_view_type::host_mirror_space HMDT;
-    typedef typename dual_view_type::t_host host_view_type;
-    typedef typename dual_view_type::t_dev dev_view_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       this->getGlobalLength () != src.getGlobalLength () ||
@@ -3607,7 +3605,21 @@ namespace Tpetra {
       << " and *this has " << this->getLocalLength () << " row(s).");
 
     if (src.isConstantStride () && this->isConstantStride ()) {
-      Kokkos::deep_copy (this->getDualView (), src.getDualView ());
+      if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+        // Device memory has the most recent version of src.
+        this->template modify<DT> (); // We are about to modify dst on device.
+        // Copy from src to dst on device.
+        localDeepCopyConstStride (this->getDualView ().template view<DT> (),
+                                  src.getDualView ().template view<DT> ());
+        this->template sync<HMDT> (); // Sync dst from device to host.
+      }
+      else { // Host memory has the most recent version of src.
+        this->template modify<HMDT> (); // We are about to modify dst on host.
+        // Copy from src to dst on host.
+        localDeepCopyConstStride (this->getDualView ().template view<HMDT> (),
+                                  src.getDualView ().template view<HMDT> ());
+        this->template sync<DT> (); // Sync dst from host to device.
+      }
     }
     else {
       if (this->isConstantStride ()) {
@@ -3623,24 +3635,23 @@ namespace Tpetra {
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and sync to device.
           typedef Kokkos::DualView<LO*, DT> whichvecs_type;
-          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          whichVecs.template modify<HMDT> ();
+          whichvecs_type srcWhichVecs (whichVecsLabel, numWhichVecs);
+          srcWhichVecs.template modify<HMDT> ();
           for (LO i = 0; i < numWhichVecs; ++i) {
-            whichVecs.h_view(i) = static_cast<LO> (src.whichVectors_[i]);
+            srcWhichVecs.h_view(i) = static_cast<LO> (src.whichVectors_[i]);
           }
-          // Sync the host version of whichVecs to the device.
-          whichVecs.template sync<DT> ();
+          // Sync the host version of srcWhichVecs to the device.
+          srcWhichVecs.template sync<DT> ();
 
           // Mark the device version of dst's DualView as modified.
           this->template modify<DT> ();
+
           // Copy from the selected vectors of src to dst, on the
-          // device.  The functor ignores its 3rd arg in this case.
-          typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
-            LO, DT, true, false> functor_type;
-          functor_type f (this->getDualView ().template view<DT> (),
-                          src.getDualView ().template view<DT> (),
-                          whichVecs.d_view, whichVecs.d_view);
-          Kokkos::parallel_for (src.getLocalLength (), f);
+          // device.  The function ignores its dstWhichVecs argument
+          // in this case.
+          localDeepCopy (this->getDualView ().template view<DT> (),
+                         src.getDualView ().template view<DT> (),
+                         true, false, srcWhichVecs.d_view, srcWhichVecs.d_view);
           // Sync *this' DualView to the host.  This is cheaper than
           // repeating the above copy from src to *this on the host.
           this->template sync<HMDT> ();
@@ -3651,18 +3662,16 @@ namespace Tpetra {
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and use it there.
           typedef Kokkos::View<LO*, HMDT> whichvecs_type;
-          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+          whichvecs_type srcWhichVecs (whichVecsLabel, numWhichVecs);
           for (LO i = 0; i < numWhichVecs; ++i) {
-            whichVecs(i) = static_cast<LO> (src.whichVectors_[i]);
+            srcWhichVecs(i) = static_cast<LO> (src.whichVectors_[i]);
           }
-          // Copy from the selected vectors of src to dst, on the host.
-          // The functor ignores its 3rd arg in this case.
-          typedef DeepCopySelectedVectors<host_view_type, host_view_type,
-            LO, HMDT, true, false> functor_type;
-          functor_type f (this->getDualView ().template view<HMDT> (),
-                          src.getDualView ().template view<HMDT> (),
-                          whichVecs, whichVecs);
-          Kokkos::parallel_for (src.getLocalLength (), f);
+          // Copy from the selected vectors of src to dst, on the
+          // host.  The function ignores its dstWhichVecs argument in
+          // this case.
+          localDeepCopy (this->getDualView ().template view<HMDT> (),
+                         src.getDualView ().template view<HMDT> (),
+                         true, false, srcWhichVecs, srcWhichVecs);
           // Sync dst back to the device, since we only copied on the host.
           this->template sync<DT> ();
         }
@@ -3686,13 +3695,10 @@ namespace Tpetra {
             whichVecs.template sync<DT> ();
 
             // Copy src to the selected vectors of dst, on the device.
-            // The functor ignores its 4th arg in this case.
-            typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
-              LO, DT, false, true> functor_type;
-            functor_type f (this->getDualView ().template view<DT> (),
-                            src.getDualView ().template view<DT> (),
-                            whichVecs.d_view, whichVecs.d_view);
-            Kokkos::parallel_for (src.getLocalLength (), f);
+            localDeepCopy (this->getDualView ().template view<DT> (),
+                           src.getDualView ().template view<DT> (),
+                           this->isConstantStride (), src.isConstantStride (),
+                           whichVecs.d_view, whichVecs.d_view);
             // We can't sync src and repeat the above copy on the
             // host, so sync dst back to the host.
             //
@@ -3713,12 +3719,10 @@ namespace Tpetra {
             }
             // Copy from src to the selected vectors of dst, on the
             // host.  The functor ignores its 4th arg in this case.
-            typedef DeepCopySelectedVectors<host_view_type, host_view_type,
-              LO, HMDT, false, true> functor_type;
-            functor_type f (this->getDualView ().template view<HMDT> (),
-                            src.getDualView ().template view<HMDT> (),
-                            whichVecs, whichVecs);
-            Kokkos::parallel_for (src.getLocalLength (), f);
+            localDeepCopy (this->getDualView ().template view<HMDT> (),
+                           src.getDualView ().template view<HMDT> (),
+                           this->isConstantStride (), src.isConstantStride (),
+                           whichVecs, whichVecs);
             // Sync dst back to the device, since we only copied on the host.
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
@@ -3759,12 +3763,10 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the device.
-            typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
-              LO, DT, false, false> functor_type;
-            functor_type f (this->getDualView ().template view<DT> (),
-                            src.getDualView ().template view<DT> (),
-                            whichVecsDst.d_view, whichVecsSrc.d_view);
-            Kokkos::parallel_for (src.getLocalLength (), f);
+            localDeepCopy (this->getDualView ().template view<DT> (),
+                           src.getDualView ().template view<DT> (),
+                           this->isConstantStride (), src.isConstantStride (),
+                           whichVecsDst.d_view, whichVecsSrc.d_view);
           }
           else {
             const LO dstNumWhichVecs = static_cast<LO> (this->whichVectors_.size ());
@@ -3780,12 +3782,12 @@ namespace Tpetra {
               whichVectorsSrc(i) = src.whichVectors_[i];
             }
 
-            typedef DeepCopySelectedVectors<host_view_type, host_view_type,
-              LO, HMDT, false, false> functor_type;
-            functor_type f (this->getDualView ().template view<HMDT> (),
-                            src.getDualView ().template view<HMDT> (),
-                            whichVectorsDst, whichVectorsSrc);
-            Kokkos::parallel_for (src.getLocalLength (), f);
+            // Copy from the selected vectors of src to the selected
+            // vectors of dst, on the host.
+            localDeepCopy (this->getDualView ().template view<HMDT> (),
+                           src.getDualView ().template view<HMDT> (),
+                           this->isConstantStride (), src.isConstantStride (),
+                           whichVectorsDst, whichVectorsSrc);
 
             // We can't sync src and repeat the above copy on the
             // host, so sync dst back to the host.
