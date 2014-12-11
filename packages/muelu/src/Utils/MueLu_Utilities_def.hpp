@@ -354,11 +354,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(Scalar omega,
-                                                                        const Vector& Dinv,
-                                                                        const Matrix& A,
-                                                                        const Matrix& B,
-                                                                        RCP<Matrix> C_in,
-                                                                        Teuchos::FancyOStream &fos) {
+							   const Vector& Dinv,
+							   const Matrix& A,
+							   const Matrix& B,
+							   RCP<Matrix> C_in,
+							   Teuchos::FancyOStream &fos,
+							   const std::string & label) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -370,7 +371,7 @@ namespace MueLu {
     if (C == Teuchos::null)
       C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
 
-    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true);
+    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true,label);
     C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
     return C;
   } //Jacobi
@@ -383,7 +384,8 @@ namespace MueLu {
                                                                           RCP<Matrix> C_in,
                                                                           Teuchos::FancyOStream& fos,
                                                                           bool doFillComplete,
-                                                                          bool doOptimizeStorage) {
+							                  bool doOptimizeStorage,
+							                  const std::string & label) {
 
     TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
     TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
@@ -441,7 +443,7 @@ namespace MueLu {
       fos << "Reuse C pattern" << std::endl;
     }
 
-    Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);
+    Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage,label);
 
     return C;
   }

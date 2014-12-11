@@ -344,7 +344,11 @@ public:
                                 sizeof(fad_value_type) ,
                                 m_offset_map.capacity() );
 
-      Alloc::initialize( array_type( *this ) );
+      if ( Alloc::initialize() ) {
+        (void) Kokkos::Impl::DefaultConstruct
+          < typename traits::execution_space , fad_value_type >
+            ( m_ptr_on_device , m_offset_map.capacity() );
+      }
     }
 
   //------------------------------------

@@ -143,28 +143,42 @@ private:
 
   enum { GranularityMask = IntType(Granularity) - 1 };
 
-  IntType m_begin ;
-  IntType m_end ;
+  ExecSpace m_space ;
+  IntType   m_begin ;
+  IntType   m_end ;
 
 public:
 
   //! Tag this class as an execution policy
-  typedef RangePolicy  execution_policy ;
   typedef ExecSpace    execution_space ;
-  typedef IntType      member_type ;
+  typedef RangePolicy  execution_policy ;
   typedef WorkTag      work_tag ;
+  typedef IntType      member_type ;
 
+  KOKKOS_INLINE_FUNCTION const execution_space & space() const { return m_space ; }
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
   KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
 
-  KOKKOS_INLINE_FUNCTION RangePolicy() : m_begin(0), m_end(0) {}
+  inline RangePolicy() : m_space(), m_begin(0), m_end(0) {}
 
   /** \brief  Total range */
-  KOKKOS_INLINE_FUNCTION
+  inline
   RangePolicy( const member_type work_begin
              , const member_type work_end
              )
-    : m_begin( work_begin < work_end ? work_begin : 0 )
+    : m_space()
+    , m_begin( work_begin < work_end ? work_begin : 0 )
+    , m_end(   work_begin < work_end ? work_end : 0 )
+    {}
+
+  /** \brief  Total range */
+  inline
+  RangePolicy( const execution_space & work_space
+             , const member_type work_begin
+             , const member_type work_end
+             )
+    : m_space( work_space )
+    , m_begin( work_begin < work_end ? work_begin : 0 )
     , m_end(   work_begin < work_end ? work_end : 0 )
     {}
 
@@ -172,26 +186,44 @@ public:
    *
    *  Typically used to partition a range over a group of threads.
    */
-  KOKKOS_INLINE_FUNCTION
-  RangePolicy( const RangePolicy & range
+  struct WorkRange {
+    typedef RangePolicy::work_tag     work_tag ;
+    typedef RangePolicy::member_type  member_type ;
+
+    KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
+    KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
+
+    /** \brief  Subrange for a partition's rank and size.
+     *
+     *  Typically used to partition a range over a group of threads.
+     */
+    KOKKOS_INLINE_FUNCTION
+    WorkRange( const RangePolicy & range
              , const int part_rank
              , const int part_size
              )
-    : m_begin(0), m_end(0)
-    {
-      if ( part_size ) {
+      : m_begin(0), m_end(0)
+      {
+        if ( part_size ) {
+  
+          // Split evenly among partitions, then round up to the granularity.
+          const member_type work_part =
+            ( ( ( ( range.end() - range.begin() ) + ( part_size - 1 ) ) / part_size )
+              + GranularityMask ) & ~member_type(GranularityMask);
 
-        // Split evenly among partitions, then round up to the granularity.
-        const member_type work_part =
-          ( ( ( ( range.m_end - range.m_begin ) + ( part_size - 1 ) ) / part_size ) + GranularityMask ) & ~member_type(GranularityMask);
-
-        m_begin = range.m_begin + work_part * part_rank ;
-        m_end   = m_begin       + work_part ;
-
-        if ( range.m_end < m_begin ) m_begin = range.m_end ;
-        if ( range.m_end < m_end )   m_end   = range.m_end ;
+          m_begin = range.begin() + work_part * part_rank ;
+          m_end   = m_begin       + work_part ;
+  
+          if ( range.end() < m_begin ) m_begin = range.end() ;
+          if ( range.end() < m_end )   m_end   = range.end() ;
+        }
       }
-    }
+  private:
+     member_type m_begin ;
+     member_type m_end ;
+     WorkRange();
+     WorkRange & operator = ( const WorkRange & );
+  };
 };
 
 } // namespace Kokkos
@@ -266,7 +298,7 @@ public:
 
   //----------------------------------------
   /** \brief  Construct policy with the given instance of the execution space */
-  TeamPolicy( execution_space & , int league_size_request , int team_size_request );
+  TeamPolicy( const execution_space & , int league_size_request , int team_size_request );
 
   /** \brief  Construct policy with the default instance of the execution space */
   TeamPolicy( int league_size_request , int team_size_request );

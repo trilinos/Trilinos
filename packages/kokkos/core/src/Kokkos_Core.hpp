@@ -76,19 +76,15 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-  void initialize();
 
-  void initialize(int& narg, char* arg[]);
+void initialize();
 
-  void initialize(const int arg1);
+void initialize(int& narg, char* arg[]);
 
-  void initialize(const int arg1, const int arg2);
+void finalize();
 
-  void initialize(const int arg1, const int arg2, const int arg3);
+void fence();
 
-  void finalize();
-
-  void fence();
 }
 
 #endif

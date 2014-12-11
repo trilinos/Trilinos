@@ -296,6 +296,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_MMM_Timings
+  HAVE_TPETRA_MMM_TIMINGS
+  "Enable the timings for the MMM kernels"
+  OFF
+)
+
+
 # The "Kokkos refactor" version of Tpetra currently requires that
 # several Kokkos subpackages be enabled.  These subpackages are not
 # enabled by default, because they are not currently (as of August

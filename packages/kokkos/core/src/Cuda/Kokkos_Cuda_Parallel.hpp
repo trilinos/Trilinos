@@ -1051,6 +1051,7 @@ class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Ko
 private:
 
   typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda >         Policy ;
+  typedef typename Policy::WorkRange                                 work_range ;
   typedef typename Policy::work_tag                                  work_tag ;
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag > ValueTraits ;
   typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag > ValueInit ;
@@ -1114,9 +1115,9 @@ public:
       // Accumulate the values for this block.
       // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
 
-      const Policy range( m_policy , blockIdx.x , gridDim.x );
+      const work_range range( m_policy , blockIdx.x , gridDim.x );
 
-      for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
+      for ( typename work_range::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
             iwork < iwork_end ; iwork += blockDim.y ) {
         ParallelReduce::template driver< work_tag >( m_functor , iwork , value );
       }
@@ -1282,7 +1283,7 @@ public:
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      ParallelReduce::template driver< typename Policy::work_tag >
+      ParallelReduce::template driver< work_tag >
         ( typename Policy::member_type( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
                                         , m_shmem_begin
                                         , m_shmem_size
@@ -1376,6 +1377,7 @@ class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokk
 private:
 
   typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda >          Policy ;
+  typedef typename Policy::WorkRange                                  work_range ;
   typedef typename Policy::work_tag                                   work_tag ;
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag >  ValueTraits ;
   typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag >  ValueInit ;
@@ -1450,11 +1452,11 @@ public:
     // Accumulate the values for this block.
     // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
 
-    const Policy range( m_policy , blockIdx.x , gridDim.x );
+    const work_range range( m_policy , blockIdx.x , gridDim.x );
 
     for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
           iwork < iwork_end ; iwork += blockDim.y ) {
-      ParallelScan::template driver< typename Policy::work_tag >
+      ParallelScan::template driver< work_tag >
         ( m_functor , iwork , ValueOps::reference( shared_value ) , false );
     }
 
@@ -1486,7 +1488,7 @@ public:
       ValueInit::init( m_functor , shared_accum );
     }
 
-    const Policy range( m_policy , blockIdx.x , gridDim.x );
+    const work_range range( m_policy , blockIdx.x , gridDim.x );
 
     for ( typename Policy::member_type iwork_base = range.begin(); iwork_base < range.end() ; iwork_base += blockDim.y ) {
 
@@ -1505,7 +1507,7 @@ public:
 
       // Call functor to accumulate inclusive scan value for this work item
       if ( iwork < range.end() ) {
-        ParallelScan::template driver< typename Policy::work_tag >
+        ParallelScan::template driver< work_tag >
           ( m_functor , iwork , ValueOps::reference( shared_prefix + word_count.value ) , false );
       }
 
@@ -1519,7 +1521,7 @@ public:
 
       // Call functor with exclusive scan value
       if ( iwork < range.end() ) {
-        ParallelScan::template driver< typename Policy::work_tag >
+        ParallelScan::template driver< work_tag >
           ( m_functor , iwork , ValueOps::reference( shared_prefix ) , true );
       }
     }

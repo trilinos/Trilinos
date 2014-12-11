@@ -55,6 +55,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
+#include <string>
 
 //#include "XpetraExt_MatrixMatrix.hpp"
 
@@ -258,7 +259,8 @@ void Multiply(
   bool transposeB,
   Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result = true,
-  bool doOptimizeStorage = true) {
+  bool doOptimizeStorage = true,
+  const std::string & label = std::string()) {
 
     if(transposeA == false && C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
       std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as row map of A";
@@ -312,7 +314,7 @@ void Multiply(
 
       //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
       //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -474,7 +476,8 @@ void Jacobi(
   const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result = true,
-  bool doOptimizeStorage = true) {
+  bool doOptimizeStorage = true,
+  const std::string & label = std::string()) {
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -505,7 +508,7 @@ void Jacobi(
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
 
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
+    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif

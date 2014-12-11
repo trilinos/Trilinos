@@ -42,12 +42,14 @@
 #ifndef TPETRA_MATRIXMATRIX_DECL_HPP
 #define TPETRA_MATRIXMATRIX_DECL_HPP
 
+#include <string>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "TpetraExt_MMHelpers.hpp"
+
 
 /*! \file TpetraExt_MatrixMatrix_decl.hpp
 
@@ -98,7 +100,8 @@ void Multiply(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  bool call_FillComplete_on_result=true);
+  bool call_FillComplete_on_result=true,
+  const std::string & label = std::string());
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
      * Currently not functional.
@@ -242,7 +245,8 @@ void Add(
               const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
               const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-              bool call_FillComplete_on_result=true);
+              bool call_FillComplete_on_result=true,
+	      const std::string & label = std::string());
 
 } // namespace MatrixMatrix
 
@@ -255,7 +259,8 @@ template<class Scalar,
 void mult_AT_B_newmatrix(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string & label = std::string());
 
 
 template<class Scalar,
@@ -265,7 +270,8 @@ template<class Scalar,
 void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
+  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string & label = std::string());
 
 template<class Scalar,
          class LocalOrdinal,
@@ -274,7 +280,8 @@ template<class Scalar,
 void mult_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string & label = std::string());
 
 
 template<class Scalar,
@@ -286,7 +293,8 @@ void jacobi_A_B_newmatrix(
   const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string & label = std::string());
 
 
 template<class Scalar,
@@ -298,7 +306,8 @@ void import_and_extract_views(
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
   RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
-  bool userAssertsThereAreNoRemotes=false);
+  bool userAssertsThereAreNoRemotes=false,
+  const std::string & label = std::string());
 
 template<class Scalar,
          class LocalOrdinal,
