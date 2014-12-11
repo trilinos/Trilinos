@@ -535,7 +535,8 @@ inline void JacobiT(
   const Xpetra::Matrix<double,int,GlobalOrdinal> & B,
   Xpetra::Matrix<double,int,GlobalOrdinal> &C,
   bool call_FillComplete_on_result,
-  bool doOptimizeStorage) {
+  bool doOptimizeStorage,
+  const std::string & label) {
 
   typedef double        SC;
   typedef int           LO;
@@ -609,8 +610,9 @@ inline void Jacobi(
   const Xpetra::Matrix<double,int,int> & B,
   Xpetra::Matrix<double,int,int> &C,
   bool call_FillComplete_on_result,
-  bool doOptimizeStorage) {
-  JacobiT<int>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
+  bool doOptimizeStorage,
+  const std::string & label) {
+  JacobiT<int>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
 #endif
 
@@ -622,8 +624,9 @@ inline void Jacobi(
   const Xpetra::Matrix<double,int,long long> & B,
   Xpetra::Matrix<double,int,long long> &C,
   bool call_FillComplete_on_result,
-  bool doOptimizeStorage) {
-  JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
+  bool doOptimizeStorage,
+  const std::string & label) {
+  JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
 #endif
 
