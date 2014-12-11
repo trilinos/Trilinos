@@ -959,8 +959,9 @@ namespace Basker{
         /*Assumption that Entry was own defined copy constructor*/
         new_entry[i] = old[i];
       }
-    return new_entry;
     delete[] old;
+    return new_entry;
+    
 
   }
   template <class Int, class Entry>
@@ -972,8 +973,9 @@ namespace Basker{
         /*Assumption that Int was own defined copy constructor*/
         new_int[i] = old[i];
       }
-    return new_int;
     delete[] old;
+    return new_int;
+    
   }
 
 
