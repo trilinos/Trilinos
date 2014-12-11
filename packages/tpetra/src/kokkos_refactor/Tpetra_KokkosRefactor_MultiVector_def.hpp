@@ -1542,12 +1542,25 @@ namespace Tpetra {
   {
     typedef typename dual_view_type::host_mirror_space host_mirror_space;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
-    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout, host_mirror_space, Kokkos::MemoryUnmanaged> host_norms_view_type;
+    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout,
+      host_mirror_space, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
     dev_norms_view_type normsDevView ("MV::normInf tmp", numNorms);
     this->normInf (normsDevView); // Do the computation on the device.
+
+    const bool debug = false;
+    if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+      std::cout << "*** normInf: normsDevView = [";
+      for (size_t j = 0; j < numNorms; ++j) {
+        std::cout << normsDevView(j);
+        if (j + 1 < numNorms) {
+          std::cout << ", ";
+        }
+      }
+      std::cout << "]" << std::endl;
+    }
     Kokkos::deep_copy (normsHostView, normsDevView); // Bring back result to host
   }
 
@@ -1568,10 +1581,8 @@ namespace Tpetra {
     // View of a MultiVector's local data (all columns).
     typedef typename dual_view_type::t_dev mv_view_type;
     // View of a single column of a MultiVector's local data.
-    //
-    // FIXME (mfh 14 Jul 2014) It would be better to get this typedef
-    // from mv_view_type itself, in case the layout changes.
-    typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
+    typedef Kokkos::View<scalar_type*, typename mv_view_type::array_layout,
+      typename mv_view_type::memory_space> vec_view_type;
     // View of all the norm results.
     typedef Kokkos::View<mag_type*, device_type> norms_view_type;
     // Scalar view; view of a single norm result.
@@ -1768,19 +1779,78 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::Impl::ViewFill;
     using Kokkos::subview;
+    typedef typename dual_view_type::t_dev::memory_space device_memory_space;
+    typedef typename dual_view_type::t_host::memory_space host_memory_space;
+    const bool debug = false;
 
     const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+    // const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
-    if (isConstantStride ()) {
-      ViewFill<typename dual_view_type::t_dev> (view_.d_view, theAlpha);
+
+    if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+      std::cout << "*** putScalar(alpha = " << theAlpha << "): "
+                << "X_host(0,0) before = " << this->getDualView ().h_view(0,0);
     }
-    else {
-      typedef Kokkos::View<scalar_type*, DeviceType> view_type;
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t col = whichVectors_[k];
-        view_type vector_k = subview<view_type> (view_.d_view, ALL (), col);
-        ViewFill<view_type> (vector_k, theAlpha);
+
+    // Modify the most recently updated version of the data.  This
+    // avoids sync'ing, which could violate users' expectations.
+    if (view_.modified_device >= view_.modified_host) {
+      // Last modified in device memory, so modify data there.
+      this->template modify<device_memory_space> ();
+      if (isConstantStride ()) {
+        typedef ViewFill<typename dual_view_type::t_dev> functor_type;
+        functor_type vf (view_.template view<device_memory_space> (), theAlpha);
+        //Kokkos::parallel_for (lclNumRows, vf);
       }
+      else {
+        if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+          std::cout << ", nonconst stride, modify device";
+        }
+        typedef Kokkos::View<scalar_type*,
+          typename dual_view_type::t_dev::array_layout,
+          device_memory_space> col_view_type;
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t col = whichVectors_[k];
+          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+            std::cout << ", col = " << col;
+          }
+          col_view_type vector_k =
+            subview<col_view_type> (view_.d_view, ALL (), col);
+          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+            std::cout << ", numRows = " << vector_k.dimension_0 ();
+          }
+          ViewFill<col_view_type> vf (vector_k, theAlpha);
+          //Kokkos::parallel_for (lclNumRows, vf);
+        }
+      }
+    }
+    else { // last modified in host memory, so modify data there.
+      this->template modify<host_memory_space> ();
+      if (isConstantStride ()) {
+        typedef ViewFill<typename dual_view_type::t_host> functor_type;
+        functor_type vf (view_.template view<host_memory_space> (), theAlpha);
+        //Kokkos::parallel_for (lclNumRows, vf);
+      }
+      else {
+        if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+          std::cout << ", nonconst stride, modify host";
+        }
+        typedef Kokkos::View<scalar_type*,
+          typename dual_view_type::t_host::array_layout,
+          host_memory_space> col_view_type;
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t col = whichVectors_[k];
+          col_view_type vector_k =
+            subview<col_view_type> (view_.h_view, ALL (), col);
+          ViewFill<col_view_type> vf (vector_k, theAlpha);
+          //Kokkos::parallel_for (lclNumRows, vf);
+        }
+      }
+    }
+
+    if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+      std::cout << ", X_host(0,0) after = "
+                << this->getDualView ().h_view(0,0) << std::endl;
     }
   }
 
@@ -3589,6 +3659,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef typename DeviceType::memory_space DT;
     typedef typename dual_view_type::host_mirror_space HMDT;
+    const bool debug = false;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       this->getGlobalLength () != src.getGlobalLength () ||
@@ -3604,7 +3675,15 @@ namespace Tpetra {
       "objects do not match.  src has " << src.getLocalLength () << " row(s) "
       << " and *this has " << this->getLocalLength () << " row(s).");
 
+    if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+      std::cout << "*** MultiVector::assign: ";
+    }
+
     if (src.isConstantStride () && this->isConstantStride ()) {
+      if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+        std::cout << "Both *this and src have constant stride" << std::endl;
+      }
+
       if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
         // Device memory has the most recent version of src.
         this->template modify<DT> (); // We are about to modify dst on device.
@@ -3623,6 +3702,10 @@ namespace Tpetra {
     }
     else {
       if (this->isConstantStride ()) {
+        if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+          std::cout << "Only *this has constant stride";
+        }
+
         const LO numWhichVecs = static_cast<LO> (src.whichVectors_.size ());
         const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
 
@@ -3630,6 +3713,9 @@ namespace Tpetra {
         // Thus, we have to use the most recently modified version of
         // src, device or host.
         if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+            std::cout << "; Copy from device version of src" << std::endl;
+          }
           // Copy from the device version of src.
           //
           // whichVecs tells the kernel which vectors (columns) of src
@@ -3657,6 +3743,9 @@ namespace Tpetra {
           this->template sync<HMDT> ();
         }
         else { // host version of src was the most recently modified
+          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+            std::cout << "; Copy from host version of src" << std::endl;
+          }
           // Copy from the host version of src.
           //
           // whichVecs tells the kernel which vectors (columns) of src
@@ -3678,6 +3767,10 @@ namespace Tpetra {
       }
       else { // dst is NOT constant stride
         if (src.isConstantStride ()) {
+          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+            std::cout << "Only src has constant stride" << std::endl;
+          }
+
           if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
             // Copy from the device version of src.
             //
@@ -3731,6 +3824,10 @@ namespace Tpetra {
           }
         }
         else { // neither src nor dst have constant stride
+          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
+            std::cout << "Neither *this nor src has constant stride" << std::endl;
+          }
+
           if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
             // Copy from the device version of src.
             //
