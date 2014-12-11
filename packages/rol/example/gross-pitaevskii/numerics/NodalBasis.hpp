@@ -1,4 +1,5 @@
 #include<iostream>
+#include"ROL_StdVector.hpp"
 #include"OrthogonalPolynomials.hpp"
 #include"Lagrange.hpp"
 #include"LinearAlgebra.hpp"
@@ -11,7 +12,7 @@ template<class Real>
 struct NodalBasis{
 
         //! \param lapack_ pointer to LAPACK interface
-        const Teuchos::LAPACK<int,Real> * const lapack_;
+        Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack_;
  
         //! \param ni_ Number of interpolation points
         const int ni_;
@@ -19,7 +20,7 @@ struct NodalBasis{
         //! \param nq_ Number of quadrature points
         const int nq_;
 
-        NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, const int ni, const int nq);    
+        NodalBasis(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack, const int ni, const int nq);    
         ~NodalBasis();
 
          //! \param xi_ Vector of interpolation points
@@ -36,15 +37,15 @@ struct NodalBasis{
         std::vector<Real> Lp_;
         
         //! Object for working with Lagrange polynomials and their derivatives 
-        Lagrange<Real> *lagrange_; 
+        Teuchos::RCP<Lagrange<Real> > lagrange_; 
 
-      
+         
 };
 
 /** \brief Set up quantities we will need repeatedly
 */
 template<class Real>
-NodalBasis<Real>::NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, const int ni, const int nq): 
+NodalBasis<Real>::NodalBasis(Teuchos::RCP<Teuchos::LAPACK<int,Real> > const lapack, const int ni, const int nq): 
     lapack_(lapack), ni_(ni), nq_(nq), xi_(ni_,0), xq_(nq_,0), wq_(nq_,0), L_(ni_*nq_,0), Lp_(ni_*nq_,0)
     {
 
@@ -65,7 +66,7 @@ NodalBasis<Real>::NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, con
     std::vector<Real> e(ni_,0);
     std::vector<Real> ell(nq,0);
 
-    lagrange_ = new Lagrange<Real>(xi_,xq_);
+    lagrange_ = Teuchos::rcp(new Lagrange<Real>(xi_,xq_));
 
     // Loop over canonical vectors
     for(int i=0;i<ni_;++i) {
@@ -86,7 +87,6 @@ NodalBasis<Real>::NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, con
 
 template<class Real>
 NodalBasis<Real>::~NodalBasis(){
-    delete lagrange_;
 }
 
 #endif

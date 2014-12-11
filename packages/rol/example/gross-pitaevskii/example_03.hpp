@@ -64,7 +64,6 @@
     \author Greg von Winckel
     \date   Mon Dec  8 11:01:24 MST 2014
 */
-
 #include <iostream>
 
 #include "Teuchos_oblackholestream.hpp"
@@ -107,11 +106,11 @@ private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<OptDualStdVector<Real> >  dual_vec_;
 bool useRiesz_; 
-InnerProductMatrix<Real>* ipmat_;
+Teuchos::RCP<InnerProductMatrix<Real> > ipmat_;
 
 public:
 
-OptStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, InnerProductMatrix<Real> *ipmat) : 
+OptStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, Teuchos::RCP<InnerProductMatrix<Real> > ipmat) : 
     std_vec_(std_vec), dual_vec_(Teuchos::null), useRiesz_(useRiesz), ipmat_(ipmat) {}
 
 void plus( const Vector<Real> &x ) {
@@ -138,11 +137,6 @@ Real dot( const Vector<Real> &x ) const {
   Teuchos::RCP<const std::vector<Element> > xvalptr = ex.getVector();
   unsigned dimension  = std_vec_->size();
   if(useRiesz_){ 
-//      Teuchos::RCP<std::vector<Real> > kxvalptr = Teuchos::rcp( new std::vector<Real> (std_vec_->size(), 0.0) );
-//      this->ipmap_->apply(xvalptr,kxvalptr);
-//      for (unsigned i=0; i<dimension; i++) {
-//          val += (*std_vec_)[i]*(*kxvalptr)[i];
-//      }
       val = ipmat_->inner(std_vec_,xvalptr);
   } 
   for (unsigned i=0; i<dimension; i++) {
@@ -190,6 +184,8 @@ const Vector<Real> & dual() const {
 }; // class OptStdVector
 
 
+
+
 // Dual optimization space.
 template <class Real, class Element>
 class OptDualStdVector : public Vector<Real> {
@@ -198,11 +194,11 @@ private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<OptStdVector<Real> >  dual_vec_;
 bool useRiesz_;
-InnerProductMatrix<Real> *ipmat_;
+Teuchos::RCP<InnerProductMatrix<Real> >ipmat_;
 
 public:
 
-OptDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, InnerProductMatrix<Real> *ipmat) : 
+OptDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, Teuchos::RCP<InnerProductMatrix<Real> > ipmat) : 
     std_vec_(std_vec), dual_vec_(Teuchos::null), useRiesz_(useRiesz), ipmat_(ipmat) {}
 
 void plus( const Vector<Real> &x ) {
@@ -228,11 +224,6 @@ Real dot( const Vector<Real> &x ) const {
   unsigned dimension  = std_vec_->size();
   if(useRiesz_)
   {
-//      Teuchos::RCP<std::vector<Real> > xvalptr = Teuchos::rcp( new std::vector<Real> (std_vec_->size(), 0.0) );
-//      this->ipmat_->solve(kxvalptr,xvalptr);
-//      for (unsigned i=0; i<dimension; i++) {
-//          val += (*std_vec_)[i]*(*xvalptr)[i];
-//      }  
       val = ipmat_->inv_inner(std_vec_,kxvalptr); 
   }
   else {
@@ -291,10 +282,10 @@ private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<ConDualStdVector<Real> >  dual_vec_;
 bool useRiesz_;
-InnerProductMatrix<Real> *ipmat_;
+Teuchos::RCP<InnerProductMatrix<Real> > ipmat_;
 
 public:
-ConStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, InnerProductMatrix<Real> *ipmat) : 
+ConStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, Teuchos::RCP<InnerProductMatrix<Real> > ipmat) : 
              std_vec_(std_vec), dual_vec_(Teuchos::null), useRiesz_(useRiesz), ipmat_(ipmat) {}
 
 void plus( const Vector<Real> &x ) {
@@ -320,11 +311,6 @@ Real dot( const Vector<Real> &x ) const {
   unsigned dimension  = std_vec_->size();
 
   if(useRiesz_){ 
-//      Teuchos::RCP<std::vector<Real> > kxvalptr = Teuchos::rcp( new std::vector<Real> (std_vec_->size(), 0.0) );
-//      this->ipmap_->apply(xvalptr,kxvalptr);
-//      for (unsigned i=0; i<dimension; i++) {
-//          val += (*std_vec_)[i]*(*kxvalptr)[i];
-//      }
       val = ipmat_->inner(xvalptr,std_vec_);
   }
   else{
@@ -332,6 +318,7 @@ Real dot( const Vector<Real> &x ) const {
           val += (*std_vec_)[i]*(*xvalptr)[i];
       }
   }
+  return val;
 }
 
 Real norm() const {
@@ -371,6 +358,7 @@ const Vector<Real> & dual() const {
 }; // class ConStdVector
 
 
+
 // Dual constraint space.
 template <class Real, class Element>
 class ConDualStdVector : public Vector<Real> {
@@ -379,10 +367,10 @@ private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<ConStdVector<Real> >  dual_vec_;
 bool useRiesz_;
-InnerProductMatrix<Real> *ipmat_; 
+Teuchos::RCP<InnerProductMatrix<Real> > ipmat_; 
 public:
 
-ConDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, InnerProductMatrix<Real> *ipmat) : 
+ConDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec, bool useRiesz, Teuchos::RCP<InnerProductMatrix<Real> > ipmat) : 
          std_vec_(std_vec), dual_vec_(Teuchos::null), useRiesz_(useRiesz), ipmat_(ipmat) {}
 
 void plus( const Vector<Real> &x ) {
@@ -470,29 +458,40 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 
     private:
 
-        /** \var int nx_ Number of interior nodes  */ 
+        /** \var int ni_ Number of interior nodes  */ 
 
-        const int  nx_;     
+        const int  ni_;     
         const Real gnl_;
-        Teuchos::RCP<std::vector<Real> > psi_;
-        InnerProductMatrix<Real> *kinetic_;
-        InnerProductMatrix<Real> *potential_;
-        InnerProductMatrix<Real> *nonlinear_;
-        
+        Teuchos::RCP<NodalBasis<Real> > nb_;
          
+        Teuchos::RCP<InnerProductMatrix<Real> > kinetic_;
+        Teuchos::RCP<InnerProductMatrix<Real> > potential_;
+        Teuchos::RCP<InnerProductMatrix<Real> > nonlinear_;
+
+        void updateNonlinear(Teuchos::RCP<const std::vector<Real> > psip) {
+
+             // This should be a member variable instead of reallocating each time
+             Teuchos::RCP<std::vector<Real> > psi2q = 
+                 Teuchos::rcp( new std::vector<Real> (nb_->nq_, 0.0) );
+
+             nb_->lagrange_->dinterp(*psip,*psi2q);
+
+             for(int i=0;i<nb_->nq_;++i) {
+                 (*psi2q)[i] *= (*psi2q)[i];
+             }
+             nonlinear_->update(*psi2q);
+        } 
+        
     public: 
 
-        Objective_GrossPitaevskii(const int nx, const Real gnl, 
-                                  InnerProductMatrix<Real> *kinetic, 
-                                  InnerProductMatrix<Real> *potential,
-                                  InnerProductMatrix<Real> *nonlinear ) :
-                                  nx_(nx), gnl_(gnl), psi_(nx_,0), 
-                                  kinetic_(kinetic), potential_(potential), 
-                                  nonlinear_(nonlinear) {
+        Objective_GrossPitaevskii(const int ni, const Real gnl, 
+                                  Teuchos::RCP<NodalBasis<Real> > nb,
+                                  Teuchos::RCP<InnerProductMatrix<Real> > kinetic,
+                                  Teuchos::RCP<InnerProductMatrix<Real> > potential,
+                                  Teuchos::RCP<InnerProductMatrix<Real> > nonlinear):
+                                  ni_(ni), gnl_(gnl), nb_(nb), kinetic_(kinetic),
+                                  potential_(potential), nonlinear_(nonlinear) {}
 
-                 
-
-        }     
 
    Real value( const Vector<Real> &psi, Real &tol ) {
 
@@ -500,16 +499,16 @@ class Objective_GrossPitaevskii : public Objective<Real> {
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
-        // Update the nonlinear inner product to use new psi
-         
-        
+        this->updateNonlinear(psip);
+
         // Compute objective function value
-        Real J = 0.5*( kinetic_->inner(psip,psip) + 
-                       potential_->inner(psip,psip) +
-                       gnl_*nonlinear_->inner(psip,psip) );
-    
+        Real J =  0.5*( kinetic_->inner(psip,psip) + 
+                        potential_->inner(psip,psip) + 
+                        gnl_*nonlinear_->inner(psip,psip) );
+   
         return J;
     }
+
 
     void gradient( Vector<Real> &g, const Vector<Real> &psi, Real &tol ) {
 
@@ -517,10 +516,15 @@ class Objective_GrossPitaevskii : public Objective<Real> {
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
-
         // Pointer to gradient vector 
-        Teuchos::RCP<std::vector<Real> > gp = Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(g)).getVector());
+        Teuchos::RCP<std::vector<Real> > gp = 
+            Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(g)).getVector());
 
+        this->updateNonlinear(psip);
+
+        kinetic_->apply(psip,gp);
+        potential_->applyadd(psip,gp);     
+        nonlinear_->applyaddtimes(psip,gp,2*gnl_);  
     }
 
 };
@@ -532,12 +536,12 @@ template<class Real, class XPrim=StdVector<Real>, class XDual=StdVector<Real>, c
 class Normalization_Constraint : public EqualityConstraint<Real> {
 
     private:     
-    InnerProductMatrix<Real> *ipmat_;
+    Teuchos::RCP<InnerProductMatrix<Real> > mass_;
     bool exactsolve_; 
 
     public:
-    Normalization_Constraint(InnerProductMatrix<Real> *ipmat, bool exactsolve) : 
-        ipmat_(ipmat), exactsolve_(exactsolve) {}          
+    Normalization_Constraint(Teuchos::RCP<InnerProductMatrix<Real> > mass, bool exactsolve) : 
+        mass_(mass), exactsolve_(exactsolve) {}          
 
     void value(Vector<Real> &c, const Vector<Real> &psi, Real &tol){
 
@@ -547,6 +551,8 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         // Pointer to opt vector 
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
+
+        (*cp)[0] = mass_->inner(psip,psip)-1.0;
 
     }
 
@@ -562,6 +568,7 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
+        (*jvp)[0] = 2.0*mass_->inner(psip,vp);
 
     }
 
@@ -576,6 +583,11 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         // Pointer to opt vector 
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
+
+        mass_->apply(psip,ajvp);
+        for(int i=0;i<psip->size();++i) {
+            (*ajvp)[i] *= 2.0*(*vp)[0];
+        }
 
     }
 
@@ -595,9 +607,13 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
         Teuchos::RCP<const std::vector<Real> > psip =
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
+        mass_->apply(vp,ahuvp);
+        for(int i=0;i<psip->size();++i) {
+            (*ahuvp)[i] *= 2.0*(*up)[0];
+        }
     }
      
-    std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, 
+ /*   std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, 
                                            const Vector<Real> &b2, const Vector<Real> &psi, Real &tol) {
         if(exactsolve_) {
 	    Teuchos::RCP<std::vector<Real> > v1p =
@@ -618,7 +634,7 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
 	else{
 	    return EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,psi,tol);
 	}
-    }
+    }*/
 };
 
 

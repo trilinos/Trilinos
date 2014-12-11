@@ -71,69 +71,134 @@
 
 typedef double RealT;
 
-int main(int argc, char* argv[]) {
-  
-    bool useRiesz = true;
+int main(int argc, char* argv[]) { 
 
-    // Number of (interior) interpolation points 
-    int ni = 5;
-    // Number of quadrature points
-    int nq = 7;
+    // Set up MPI
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-    const Teuchos::LAPACK<int,RealT> * const lapack = new Teuchos::LAPACK<int,RealT>();
-    NodalBasis<RealT> nb(lapack,ni+2,nq);
+    // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+    int iprint     = argc - 1;
+    Teuchos::RCP<std::ostream> outStream;
+    Teuchos::oblackholestream bhs; // outputs nothing
+    if (iprint > 0)
+        outStream = Teuchos::rcp(&std::cout, false);
+    else
+        outStream = Teuchos::rcp(&bhs, false);
+
+    int errorFlag = 0;
  
+
+    Teuchos::ParameterList parlist;
+    std::string paramfile = "parameters.xml";
+    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
+       
+    int    ni         = parlist.get("Interior Grid Points",20);
+    double gnl        = parlist.get("Nonlinearity Coefficient g",50.0);
+    bool   exactsolve = parlist.get("Solve Exact Augmented System",false);
+    bool   useRiesz   = parlist.get("Use Riesz Map",true);
+
+    // Number of quadrature points
+    int nq = 2*ni;
+
+    Teuchos::RCP<Teuchos::LAPACK<int,RealT> >lapack = 
+        Teuchos::rcp( new Teuchos::LAPACK<int,RealT>() );
+    Teuchos::RCP<NodalBasis<RealT> > nb = Teuchos::rcp(new NodalBasis<RealT>(lapack,ni+2,nq));
+
+    // Exclude end point interpolants to impose Dirichlet condition 
     std::vector<RealT> L(ni*nq,0);
-    std::copy(nb.L_.begin()+nq,nb.L_.end()-nq,L.begin()); 
+    std::copy(nb->L_.begin()+nq,nb->L_.end()-nq,L.begin()); 
     std::vector<RealT> Lp(ni*nq,0);
-    std::copy(nb.Lp_.begin()+nq,nb.Lp_.end()-nq,Lp.begin()); 
+    std::copy(nb->Lp_.begin()+nq,nb->Lp_.end()-nq,Lp.begin()); 
 
     // Quadrature points 
-    std::vector<RealT> x(nb.xq_); 
+    std::vector<RealT> x(nb->xq_); 
 
     // Quadrature weights
-    std::vector<RealT> w(nb.wq_); 
+    std::vector<RealT> w(nb->wq_); 
+
+    // Mass matrix
+    Teuchos::RCP<InnerProductMatrix<RealT> > mass =    
+        Teuchos::rcp( new InnerProductMatrixSolver<RealT>(lapack,L,L,w,1) );
+
+    // Kinetic energy matrix
+    Teuchos::RCP<InnerProductMatrix<RealT> > kinetic = 
+        Teuchos::rcp( new InnerProductMatrixSolver<RealT>(lapack,Lp,Lp,w,1) );
+
+    // Nonlinear (quartic) term. Set \f$\psi\f$ later
+    Teuchos::RCP<InnerProductMatrix<RealT> > nonlinear = 
+        Teuchos::rcp( new InnerProductMatrix<RealT>(L,L,w,1) ); 
 
     // Confinement Potential 
     std::vector<RealT> v(nq,0);   
-    
     for(int i=0;i<nq;++i){
         v[i] = 100*x[i]*x[i];
     }
 
-    // Mass matrix
-    InnerProductMatrix<RealT> *mass      = new InnerProductMatrixSolver<RealT>(lapack,L,L,w,1);
-
-    // Kinetic energy matrix
-    InnerProductMatrix<RealT> *kinetic   = new InnerProductMatrixSolver<RealT>(lapack,Lp,Lp,w,1);
+    Teuchos::RCP<InnerProductMatrix<RealT> > potential = 
+        Teuchos::rcp( new InnerProductMatrix<RealT>(L,L,w,v) ); 
 
     // Iteration Vector (pointer to optimzation vector)
-    Teuchos::RCP<std::vector<RealT> > psi_rcp = Teuchos::rcp( new std::vector<RealT> (ni+2, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > psii_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > psi_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
     
     // Normalized initial guess 
-    for(int i=0;i<ni+2;++i){
-        (*psi_rcp)[i]=(1+nb.xi_[i])*(1-nb.xi_[i])*sqrt(15.0/16.0);
+    for(int i=0;i<ni;++i){
+        (*psi_rcp)[i]=(1+nb->xi_[i+1])*(1-nb->xi_[i+1])*sqrt(15.0/16.0);
     } 
+    OptStdVector<RealT> psi(psi_rcp,useRiesz,kinetic);
+  
+    // Equality constraint value (scalar)  
+    Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
+    ConStdVector<RealT> c(c_rcp,useRiesz,mass);
 
-    // Interpolate onto the quadrature points
-    Teuchos::RCP<std::vector<RealT> > psiq2_rcp = Teuchos::rcp( new std::vector<RealT> (nq, 0.0) );
-    nb.lagrange_->interp(*psii_rcp,*psiq2_rcp); 
-        
-    // Square it
-    for(int j=0;j<nq;++j) {
-        (*psiq2_rcp)[j] *= (*psiq2_rcp)[j];
-    }  
-    
-    InnerProductMatrix<RealT> *nonlinear = new InnerProductMatrix<RealT>(L,L,w,*psiq2_rcp); 
-    InnerProductMatrix<RealT> *potential = new InnerProductMatrix<RealT>(L,L,w,v); 
+    // Lagrange multiplier value (scalar)   
+    Teuchos::RCP<std::vector<RealT> > lam_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
+    ConDualStdVector<RealT> lam(lam_rcp,useRiesz,mass);
 
-//    std::cout << S << std::endl;
-//    std::cout << nonlinear->inner(psii_rcp,psii_rcp) << std::endl;
+    // Gradient   
+    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
+    OptDualStdVector<RealT> g(g_rcp,useRiesz,kinetic);
 
-    delete mass;
-    delete kinetic;
-    delete potential; 
-    delete nonlinear; 
+    // Instantiate objective function  
+    Objective_GrossPitaevskii<RealT,OptStdVector<RealT>,OptDualStdVector<RealT> > 
+        obj(ni,gnl,nb,kinetic,potential,nonlinear);
+
+    // Instantiate normalization constraint
+    Normalization_Constraint<RealT,OptStdVector<RealT>,OptDualStdVector<RealT>, 
+             ConStdVector<RealT>,ConDualStdVector<RealT> > constr(mass,exactsolve);
+
+   // Define Step
+    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
+    parlist.set("Maximum Number of Krylov Iterations",80);
+    parlist.set("Absolute Krylov Tolerance",1e-4);
+
+    CompositeStepSQP<RealT> step(parlist);
+
+
+    // Define Status Test
+    RealT gtol  = 1e-12;  // norm of gradient tolerance
+    RealT ctol  = 1e-12;  // norm of constraint tolerance
+    RealT stol  = 1e-14;  // norm of step tolerance
+    int   maxit = 100;    // maximum number of iterations
+    StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
+
+    // Define Algorithm
+    DefaultAlgorithm<RealT> algo(step,status,false);
+
+    // Run Algorithm
+    std::vector<std::string> output = algo.run(psi, g, lam, c, obj, constr, false);
+  
+    for ( unsigned i = 0; i < output.size(); i++ ) {
+      *outStream << output[i];
+    }
+
+    if(algo.getState()->gnorm>1e-6) {
+        errorFlag += 1; 
+    }
+
+    if (errorFlag != 0)
+        std::cout << "End Result: TEST FAILED\n";
+    else
+        std::cout << "End Result: TEST PASSED\n";
+
     return 0;
 }

@@ -1,5 +1,5 @@
 #include<vector>
-
+#include<iostream>
 #ifndef __LAGRANGE__
 #define __LAGRANGE__
 
@@ -11,6 +11,8 @@ class Lagrange{
 
         // Interpolate from the interpolation to the evaluation points
         void interp(const std::vector<Real> &f, std::vector<Real> &p);
+
+        void dinterp(const std::vector<Real> &f, std::vector<Real> &p);
 
         // Evaluate the kth interpolant on the evaluation points
         void interpolant(const int k, std::vector<Real> &l);
@@ -42,6 +44,8 @@ class Lagrange{
         // \param ell_ Vector conatining barycentric multiplicative polynomial on evaluation points
         std::vector<Real> ell_;
 
+        // Pseudospectral differentiation matrix on interpolation points (column stacked)
+        std::vector<Real> D_; 
 };
 
 
@@ -51,7 +55,7 @@ class Lagrange{
     @param[in]  xev  vector of evaluation points */ 
 template<class Real>
 Lagrange<Real>::Lagrange(const std::vector<Real> &xin, const std::vector<Real> &xev):
-    xin_(xin), xev_(xev), nin_(xin.size()), nev_(xev.size()), w_(nin_,0), ell_(nev_,0) {
+    xin_(xin), xev_(xev), nin_(xin.size()), nev_(xev.size()), w_(nin_,0), ell_(nev_,0), D_(nin_*nin_,0) {
 
     // For storing displacements between interpolation points
     double d;
@@ -86,8 +90,26 @@ Lagrange<Real>::Lagrange(const std::vector<Real> &xin, const std::vector<Real> &
     {
         ell_[j] = 1.0/ell_[j];
     }
- 
-}
+
+    for(int k=0;k<nin_;++k) {
+        for(int i=0;i<nin_;++i) {
+            if(i!=k) {  
+                D_[i+k*nin_] = (w_[k]/w_[i])/(xin_[i]-xin_[k]); 
+            }
+        }       
+
+   }
+   for(int k=0;k<nin_;++k){ 
+        for(int i=0;i<nin_;++i) {
+            if(i!=k){
+                D_[k+k*nin_] -= D_[k+i*nin_];  
+            }
+        }
+    }
+} 
+
+
+
 
 template<class Real>
 Lagrange<Real>::~Lagrange(){}
@@ -131,6 +153,22 @@ void Lagrange<Real>::interp(const std::vector<Real> &f, std::vector<Real> &p){
     }    
 }
 
+template<class Real>
+void Lagrange<Real>::dinterp(const std::vector<Real> &f, std::vector<Real> &p){ 
+    std::vector<Real> fb(nin_,0);
+
+    std::copy(f.begin(),f.end(),fb.begin()+1);
+
+    this->bi_sum(fb,p);
+
+    for(int j=0;j<nev_;++j)
+    {
+        p[j] *= ell_[j];
+    }    
+}
+
+
+
 /** \brief Evaluate the kth interpolant on the evaluation points 
     @param[in]  k  vector of function values sampled at xin 
     @param[out] y  vector of interpolating polynomial values evaluated ay xev */
@@ -147,23 +185,14 @@ void Lagrange<Real>::interpolant(const int k, std::vector<Real> &l){
     }    
 }
 
+
 /** \brief Derivative of the \f$k\f$th interpolant on the interpolation points */
 template<class Real>
 void Lagrange<Real>::derivative(const int k, std::vector<Real> &d ) {
     std::vector<Real> lp(nin_,0);
     std::fill(d.begin(),d.end(),0);
+    std::copy(D_.begin()+k*nin_,D_.begin()+(k+1)*nin_,lp.begin());
 
-    for(int i=0;i<nin_;++i) {
-        if(i!=k) {  
-            lp[i] = w_[k]/(w_[i]*(xin_[i]-xin_[k])); 
-        }
-    }     
-    for(int i=0;i<nin_;++i) {
-        if(i!=k){
-            lp[k] -= lp[i];  
-        }
-    }
- 
     // Interpolate the derivative
     this->interp(lp,d);
 }
