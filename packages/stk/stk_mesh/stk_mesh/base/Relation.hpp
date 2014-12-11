@@ -314,8 +314,7 @@ void get_entities_through_relations(
 void induced_part_membership( const Part & part ,
                               EntityRank entity_rank_from ,
                               EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts,
-                              bool include_supersets=true);
+                              OrdinalVector & induced_parts);
 
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities.  Do not include and parts in the 'omit' list.

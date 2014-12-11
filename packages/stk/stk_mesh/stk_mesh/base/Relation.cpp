@@ -118,29 +118,6 @@ void get_entities_through_relations(
   }
 }
 
-inline
-void insert_part_and_supersets(OrdinalVector& induced_parts,
-                               const Part& part,
-                               bool include_supersets)
-{
-  insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
-
-  // In order to preserve superset/subset consistency we should add supersets of
-  // induced parts to the induced part lists. Unfortunately, this opens up an ambiguity
-  // where, when a relation is removed, we cannot know if an unranked superset
-  // part should be removed.
-  if (include_supersets) {
-    const PartVector & supersets = part.supersets();
-    for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
-        const bool skip_induction = ((*itr)->primary_entity_rank() == stk::topology::INVALID_RANK) || (*itr)->force_no_induce();
-        if (skip_induction) {
-            continue;
-        }
-        insert_ordinal( induced_parts, (*itr)->mesh_meta_data_ordinal() );
-    }
-  }
-}
-
 } // namespace
 
 void get_entities_through_relations(
@@ -214,12 +191,11 @@ void get_entities_through_relations(
 void induced_part_membership( const Part & part ,
                               EntityRank entity_rank_from ,
                               EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts,
-                              bool include_supersets)
+                              OrdinalVector & induced_parts)
 {
   if ( entity_rank_to < entity_rank_from && part.should_induce(entity_rank_from) ) {
     // Direct relationship:
-    insert_part_and_supersets( induced_parts , part, include_supersets );
+    insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
   }
 }
 
@@ -262,8 +238,7 @@ void induced_part_membership(const BulkData& mesh,
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,
-                                 induced_parts,
-                                 include_supersets);
+                                 induced_parts);
       }
     }
   }
