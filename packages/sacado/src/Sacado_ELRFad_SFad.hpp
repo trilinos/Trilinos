@@ -55,6 +55,8 @@
 #include "Sacado_ELRFad_SFadTraits.hpp"
 #include "Sacado_ELRFad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
+#include "Sacado_mpl_range_c.hpp"
+#include "Sacado_mpl_for_each.hpp"
 
 namespace Sacado {
 
@@ -119,7 +121,14 @@ namespace Sacado {
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const T & x);
+      Expr(const int sz, const T & x) : val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "SELRFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -128,7 +137,18 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const int i, const T & x);
+      Expr(const int sz, const int i, const T & x) :
+        val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "SELRFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+        if (i >= Num)
+          throw "SELRFad::SFad() Error:  Invalid derivative index.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[i]=1.;
+      }
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
@@ -141,7 +161,38 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL);
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
+        update_val_(x.updateValue()) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SELRFad::SFad() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = op.t;
+
+        }
+
+        if (update_val_)
+          this->val() = x.val();
+        else
+          this->val() = T(0.);
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -155,7 +206,15 @@ namespace Sacado {
        * constructor.
        */
       KOKKOS_INLINE_FUNCTION
-      void diff(const int ith, const int n);
+      void diff(const int ith, const int n) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (n != Num)
+          throw "SELRFad::diff() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[ith] = T(1.);
+      }
 
       //! Resize derivative array to length \c sz
       /*!
@@ -163,7 +222,12 @@ namespace Sacado {
        * throws an error if compiled with SACADO_DEBUG defined.
        */
       KOKKOS_INLINE_FUNCTION
-      void resize(int sz);
+      void resize(int sz) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "SELRFad::resize() Error:  Cannot resize fixed derivative array dimension";
+#endif
+      }
 
       //! Expand derivative array to size sz
       /*!
@@ -302,12 +366,55 @@ namespace Sacado {
 
       //! Assignment with Expr right-hand-side
       KOKKOS_INLINE_FUNCTION
-      Expr& operator=(const Expr& x);
+      Expr& operator=(const Expr& x) {
+        // Copy value
+        val_ = x.val_;
+
+        // Copy dx_
+        //ss_array<T>::copy(x.dx_, dx_, Num);
+        for (int i=0; i<Num; i++)
+          dx_[i] = x.dx_[i];
+
+        update_val_ = x.update_val_;
+
+        return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SELRFad::operator=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = op.t;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ = x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -355,22 +462,152 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SELRFad::operator+=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] += op.t;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SELRFad::operator-=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] -= op.t;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ -= x.val();
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x) {
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SELRFad::operator*=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = val_ * op.t + dx_[i] * xval;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ *= xval;
+
+        return *this;
+      }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x) {
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SELRFad::operator/=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        T xval2 = xval*xval;
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = (dx_[i] * xval - val_ * op.t) / xval2;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ /= xval;
+
+        return *this;
+      }
 
       //@}
 
@@ -426,7 +663,6 @@ namespace Sacado {
 #undef FAD_NS
 
 #include "Sacado_ELRFad_ViewFad.hpp"
-#include "Sacado_ELRFad_SFadImp.hpp"
 #include "Sacado_ELRFad_Ops.hpp"
 
 #endif // SACADO_ELRFAD_SFAD_HPP

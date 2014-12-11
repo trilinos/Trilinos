@@ -137,7 +137,24 @@ namespace Sacado {
 
       //! Copy constructor from any Expression object
       template <typename S>
-      LogicalSparseImp(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL);
+      LogicalSparseImp(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
+        Storage(value_type(0)) {
+        int sz = x.size();
+
+        if (sz != this->size())
+          this->resize(sz);
+
+        if (sz) {
+          if (x.hasFastAccess())
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          else
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.dx(i);
+        }
+
+        this->val() = x.val();
+      }
 
       //! Destructor
       ~LogicalSparseImp() {}
@@ -149,7 +166,13 @@ namespace Sacado {
        * Implementation(const int sz, const int i, const T & x)
        * constructor.
        */
-      void diff(const int ith, const int n);
+      void diff(const int ith, const int n) {
+        if (this->size() != n)
+          this->resize(n);
+
+        this->zero();
+        this->fastAccessDx(ith) = logical_type(1);
+      }
 
       //! Returns whether two Fad objects have the same values
       template <typename S>
@@ -200,11 +223,34 @@ namespace Sacado {
       }
 
       //! Assignment with Expr right-hand-side
-      LogicalSparseImp& operator=(const LogicalSparseImp& x);
+      LogicalSparseImp& operator=(const LogicalSparseImp& x) {
+        // Copy value & dx_
+        Storage::operator=(x);
+
+        return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
-      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator=(const Expr<S>& x) {
+        int sz = x.size();
+
+        if (sz != this->size())
+          this->resize(sz);
+
+        if (sz) {
+          if (x.hasFastAccess())
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          else
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.dx(i);
+        }
+
+        this->val() = x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -213,7 +259,7 @@ namespace Sacado {
        */
       //@{
 
-     //! Addition-assignment operator with constant right-hand-side
+      //! Addition-assignment operator with constant right-hand-side
       template <typename S>
       SACADO_ENABLE_VALUE_FUNC(LogicalSparseImp&) operator += (const S& v) {
         this->val() += v;
@@ -242,32 +288,250 @@ namespace Sacado {
       }
 
       //! Addition-assignment operator with LogicalSparseImp right-hand-side
-      LogicalSparseImp& operator += (const LogicalSparseImp& x);
+      LogicalSparseImp& operator += (const LogicalSparseImp& x) {
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+          }
+          else {
+            this->resize(xsz);
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          }
+        }
+
+        this->val() += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with LogicalSparseImp right-hand-side
-      LogicalSparseImp& operator -= (const LogicalSparseImp& x);
+      LogicalSparseImp& operator -= (const LogicalSparseImp& x) {
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+          }
+          else {
+            this->resize(xsz);
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          }
+        }
+
+        this->val() -= x.val();
+
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with LogicalSparseImp right-hand-side
-      LogicalSparseImp& operator *= (const LogicalSparseImp& x);
+      LogicalSparseImp& operator *= (const LogicalSparseImp& x) {
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+          }
+          else {
+            this->resize(xsz);
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          }
+        }
+
+        this->val() *= x.val();
+
+        return *this;
+      }
 
       //! Division-assignment operator with LogicalSparseImp right-hand-side
-      LogicalSparseImp& operator /= (const LogicalSparseImp& x);
+      LogicalSparseImp& operator /= (const LogicalSparseImp& x) {
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+          }
+          else {
+            this->resize(xsz);
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          }
+        }
+
+        this->val() /= x.val();
+
+        return *this;
+      }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator += (const Expr<S>& x){
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
+          }
+          else {
+            this->resize(xsz);
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.dx(i);
+          }
+        }
+
+        this->val() += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator -= (const Expr<S>& x){
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
+          }
+          else {
+            this->resize(xsz);
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.dx(i);
+          }
+        }
+
+        this->val() -= x.val();
+
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator *= (const Expr<S>& x){
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
+          }
+          else {
+            this->resize(xsz);
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.dx(i);
+          }
+        }
+
+        this->val() *= x.val();
+
+        return *this;
+      }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparseImp&) operator /= (const Expr<S>& x){
+        int xsz = x.size(), sz = this->size();
+
+#ifdef SACADO_DEBUG
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "LFad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
+          }
+          else {
+            this->resize(xsz);
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.dx(i);
+          }
+        }
+
+        this->val() /= x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -422,10 +686,10 @@ namespace Sacado {
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       SACADO_ENABLE_EXPR_FUNC(LogicalSparse&) operator=(const Expr<S>& x)
-      {
-        ImplType::operator=(x);
-        return *this;
-      }
+        {
+          ImplType::operator=(x);
+          return *this;
+        }
 
       //! Addition-assignment operator with constant right-hand-side
       template <typename S>
@@ -479,7 +743,7 @@ namespace Sacado {
         return *this;
       }
 
-       //! Addition-assignment operator with Expr right-hand-side
+      //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       SACADO_ENABLE_VALUE_FUNC(LogicalSparse&) operator += (const Expr<S>& x) {
         ImplType::operator+=(x);
@@ -539,7 +803,6 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#include "Sacado_LFad_LogicalSparseImp.hpp"
 #include "Sacado_LFad_LogicalSparseOps.hpp"
 
 #endif // SACADO_LFAD_LOGICALSPARSE_HPP

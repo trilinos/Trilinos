@@ -114,7 +114,14 @@ namespace Sacado {
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const T & x);
+      Expr(const int sz, const T & x)  : val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "CacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -123,16 +130,47 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const int i, const T & x);
+      Expr(const int sz, const int i, const T & x) :
+        val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "CacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+        if (i >= Num)
+          throw "CacheFad::SFad() Error:  Invalid derivative index.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[i]=1.;
+      }
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr& x);
+      Expr(const Expr& x)  :
+        val_(x.val()), update_val_(x.update_val_) {
+        for (int i=0; i<Num; i++)
+          dx_[i] = x.dx_[i];
+      }
 
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL);
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
+        update_val_(x.updateValue()) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "CacheFad::SFad() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        if (update_val_)
+          this->val() = x.val();
+        else
+          this->val() = T(0.);
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = x.fastAccessDx(i);
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -146,7 +184,15 @@ namespace Sacado {
        * constructor.
        */
       KOKKOS_INLINE_FUNCTION
-      void diff(const int ith, const int n);
+      void diff(const int ith, const int n) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (n != Num)
+          throw "CacheFad::diff() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[ith] = T(1.);
+      }
 
       //! Resize derivative array to length \c sz
       /*!
@@ -154,7 +200,12 @@ namespace Sacado {
        * throws an error if compiled with SACADO_DEBUG defined.
        */
       KOKKOS_INLINE_FUNCTION
-      void resize(int sz);
+      void resize(int sz) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "CacheFad::resize() Error:  Cannot resize fixed derivative array dimension";
+#endif
+      }
 
       //! Expand derivative array to size sz
       /*!
@@ -271,12 +322,39 @@ namespace Sacado {
 
       //! Assignment with Expr right-hand-side
       KOKKOS_INLINE_FUNCTION
-      Expr& operator=(const Expr& x);
+      Expr& operator=(const Expr& x) {
+        // Copy value
+        val_ = x.val_;
+
+        // Copy dx_
+        for (int i=0; i<Num; i++)
+          dx_[i] = x.dx_[i];
+
+        update_val_ = x.update_val_;
+
+        return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "CacheFad::operator=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = x.fastAccessDx(i);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ = x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -285,7 +363,7 @@ namespace Sacado {
        */
       //@{
 
-       //! Addition-assignment operator with constant right-hand-side
+      //! Addition-assignment operator with constant right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator += (const S& v) {
@@ -324,22 +402,90 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "CacheFad::operator+=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        for (int i=0; i<Num; ++i)
+          dx_[i] += x.fastAccessDx(i);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "CacheFad::operator-=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] -= x.fastAccessDx(i);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ -= x.val();
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x) {
+        x.cache();
+
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "CacheFad::operator*=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = val_ * x.fastAccessDx(i) + dx_[i] * xval;
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ *= xval;
+
+        return *this;
+      }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x) {
+        x.cache();
+
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "CacheFad::operator/=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = ( dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ /= xval;
+
+        return *this;
+      }
 
       //@}
 
@@ -365,7 +511,6 @@ namespace Sacado {
 #undef FAD_NS
 
 #include "Sacado_CacheFad_ViewFad.hpp"
-#include "Sacado_CacheFad_SFadImp.hpp"
 #include "Sacado_CacheFad_Ops.hpp"
 
 #endif // SACADO_CACHEFAD_SFAD_HPP

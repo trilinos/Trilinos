@@ -126,7 +126,24 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL);
+      GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
+        Storage(x.size(), T(0.)),
+        update_val_(x.updateValue())
+      {
+        const int sz = x.size();
+
+        if (sz) {
+          if (x.hasFastAccess())
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          else
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.dx(i);
+        }
+
+        if (update_val_)
+          this->val() = x.val();
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -140,7 +157,13 @@ namespace Sacado {
        * constructor.
        */
       KOKKOS_INLINE_FUNCTION
-      void diff(const int ith, const int n);
+      void diff(const int ith, const int n) {
+        if (this->size() != n)
+          this->resize(n);
+
+        this->zero();
+        this->fastAccessDx(ith) = T(1.);
+      }
 
       //! Set whether this Fad object should update values
       KOKKOS_INLINE_FUNCTION
@@ -210,12 +233,44 @@ namespace Sacado {
       //! Assignment with GeneralFad right-hand-side
       KOKKOS_INLINE_FUNCTION
       GeneralFad&
-      operator=(const GeneralFad& x);
+      operator=(const GeneralFad& x) {
+        // Copy value & dx_
+        Storage::operator=(x);
+        update_val_ = x.update_val_;
+        return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator=(const Expr<S>& x) {
+        const int xsz = x.size();
+
+        if (xsz != this->size())
+          this->resizeAndZero(xsz);
+
+        const int sz = this->size();
+
+        // For ViewStorage, the resize above may not in fact resize the
+        // derivative array, so it is possible that sz != xsz at this point.
+        // The only valid use case here is sz > xsz == 0, so we use sz in the
+        // assignment below
+
+        if (sz) {
+          if (x.hasFastAccess())
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          else
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = x.dx(i);
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() = x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -264,39 +319,306 @@ namespace Sacado {
 
       //! Addition-assignment operator with GeneralFad right-hand-side
       KOKKOS_INLINE_FUNCTION
-      GeneralFad& operator += (const GeneralFad& x);
+      GeneralFad& operator += (const GeneralFad& x) {
+        const int xsz = x.size(), sz = this->size();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for (int i=0; i<sz; ++i)
+              this->fastAccessDx(i) += x.fastAccessDx(i);
+          }
+          else {
+            this->resizeAndZero(xsz);
+            for (int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = x.fastAccessDx(i);
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with GeneralFad right-hand-side
       KOKKOS_INLINE_FUNCTION
-      GeneralFad& operator -= (const GeneralFad& x);
+      GeneralFad& operator -= (const GeneralFad& x) {
+        const int xsz = x.size(), sz = this->size();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) -= x.fastAccessDx(i);
+          }
+          else {
+            this->resizeAndZero(xsz);
+            for(int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = -x.fastAccessDx(i);
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() -= x.val();
+
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with GeneralFad right-hand-side
       KOKKOS_INLINE_FUNCTION
-      GeneralFad& operator *= (const GeneralFad& x);
+      GeneralFad& operator *= (const GeneralFad& x) {
+        const int xsz = x.size(), sz = this->size();
+        T xval = x.val();
+        T v = this->val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
+          }
+          else {
+            this->resizeAndZero(xsz);
+            for(int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = v*x.fastAccessDx(i);
+          }
+        }
+        else {
+          if (sz) {
+            for (int i=0; i<sz; ++i)
+              this->fastAccessDx(i) *= xval;
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() *= xval;
+
+        return *this;
+      }
 
       //! Division-assignment operator with GeneralFad right-hand-side
       KOKKOS_INLINE_FUNCTION
-      GeneralFad& operator /= (const GeneralFad& x);
+      GeneralFad& operator /= (const GeneralFad& x) {
+        const int xsz = x.size(), sz = this->size();
+        T xval = x.val();
+        T v = this->val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            for(int i=0; i<sz; ++i)
+              this->fastAccessDx(i) =
+                ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
+          }
+          else {
+            this->resizeAndZero(xsz);
+            for(int i=0; i<xsz; ++i)
+              this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
+          }
+        }
+        else {
+          if (sz) {
+            for (int i=0; i<sz; ++i)
+              this->fastAccessDx(i) /= xval;
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() /= xval;
+
+        return *this;
+      }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator += (const Expr<S>& x) {
+        const int xsz = x.size(), sz = this->size();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for (int i=0; i<sz; ++i)
+                this->fastAccessDx(i) += x.fastAccessDx(i);
+            else
+              for (int i=0; i<sz; ++i)
+                this->fastAccessDx(i) += x.dx(i);
+          }
+          else {
+            this->resizeAndZero(xsz);
+            if (x.hasFastAccess())
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = x.dx(i);
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() += x.val();
+ 
+        return *this;
+      }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator -= (const Expr<S>& x) {
+        const int xsz = x.size(), sz = this->size();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for(int i=0; i<sz; ++i)
+                this->fastAccessDx(i) -= x.fastAccessDx(i);
+            else
+              for (int i=0; i<sz; ++i)
+                this->fastAccessDx(i) -= x.dx(i);
+          }
+          else {
+            this->resizeAndZero(xsz);
+            if (x.hasFastAccess())
+              for(int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = -x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = -x.dx(i);
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() -= x.val();
+
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator *= (const Expr<S>& x) {
+        const int xsz = x.size(), sz = this->size();
+        T xval = x.val();
+        T v = this->val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for(int i=0; i<sz; ++i)
+                this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
+            else
+              for (int i=0; i<sz; ++i)
+                this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
+          }
+          else {
+            this->resizeAndZero(xsz);
+            if (x.hasFastAccess())
+              for(int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = v*x.fastAccessDx(i);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = v*x.dx(i);
+          }
+        }
+        else {
+          if (sz) {
+            for (int i=0; i<sz; ++i)
+              this->fastAccessDx(i) *= xval;
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() *= xval;
+
+        return *this;
+      }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator /= (const Expr<S>& x) {
+        const int xsz = x.size(), sz = this->size();
+        T xval = x.val();
+        T v = this->val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        if (xsz) {
+          if (sz) {
+            if (x.hasFastAccess())
+              for(int i=0; i<sz; ++i)
+                this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
+            else
+              for (int i=0; i<sz; ++i)
+                this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
+          }
+          else {
+            this->resizeAndZero(xsz);
+            if (x.hasFastAccess())
+              for(int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
+            else
+              for (int i=0; i<xsz; ++i)
+                this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
+          }
+        }
+        else {
+          if (sz) {
+            for (int i=0; i<sz; ++i)
+              this->fastAccessDx(i) /= xval;
+          }
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() /= xval;
+
+        return *this;
+      }
 
       //@}
 
@@ -310,7 +632,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
-#include "Sacado_Fad_GeneralFadImp.hpp"
 
 #endif // SACADO_FAD_GENERALFAD_HPP
