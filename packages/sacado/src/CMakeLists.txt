@@ -22,7 +22,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # FAD
 SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralFad.hpp
-  Sacado_Fad_GeneralFadImp.hpp
   Sacado_Fad_GeneralFadExpr.hpp
   Sacado_Fad_ExpressionTraits.hpp
   Sacado_Fad_Expression.hpp
@@ -34,7 +33,6 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_SLFad.hpp
   Sacado_Fad_SLFadTraits.hpp
   Sacado_Fad_SFad.hpp
-  Sacado_Fad_SFadImp.hpp
   Sacado_Fad_SFadTraits.hpp
   Sacado_Fad_MemPool.hpp
   Sacado_Fad_MemPoolImp.hpp
@@ -64,7 +62,6 @@ SET(HEADERS ${HEADERS}
 # ELRFAD
 SET(HEADERS ${HEADERS}
   Sacado_ELRFad_GeneralFad.hpp
-  Sacado_ELRFad_GeneralFadImp.hpp
   Sacado_ELRFad_GeneralFadExpr.hpp
   Sacado_ELRFad_ExpressionTraits.hpp
   Sacado_ELRFad_Expression.hpp
@@ -74,7 +71,6 @@ SET(HEADERS ${HEADERS}
   Sacado_ELRFad_SLFad.hpp
   Sacado_ELRFad_SLFadTraits.hpp
   Sacado_ELRFad_SFad.hpp
-  Sacado_ELRFad_SFadImp.hpp
   Sacado_ELRFad_SFadTraits.hpp
   Sacado_ELRFad_ViewFad.hpp
   Sacado_ELRFad_ViewFadTraits.hpp
@@ -83,7 +79,6 @@ SET(HEADERS ${HEADERS}
 # LFAD
 SET(HEADERS ${HEADERS}
   Sacado_LFad_LogicalSparse.hpp
-  Sacado_LFad_LogicalSparseImp.hpp
   Sacado_LFad_LogicalSparseOps.hpp
   Sacado_LFad_LogicalSparseTraits.hpp
   Sacado_LFad_ExpressionTraits.hpp
@@ -92,7 +87,6 @@ SET(HEADERS ${HEADERS}
 # CACHEFAD
 SET(HEADERS ${HEADERS}
   Sacado_CacheFad_GeneralFad.hpp
-  Sacado_CacheFad_GeneralFadImp.hpp
   Sacado_CacheFad_GeneralFadExpr.hpp
   Sacado_CacheFad_ExpressionTraits.hpp
   Sacado_CacheFad_Expression.hpp
@@ -101,7 +95,6 @@ SET(HEADERS ${HEADERS}
   Sacado_CacheFad_DFad.hpp
   Sacado_CacheFad_SFadTraits.hpp
   Sacado_CacheFad_SFad.hpp
-  Sacado_CacheFad_SFadImp.hpp
   Sacado_CacheFad_SLFadTraits.hpp
   Sacado_CacheFad_SLFad.hpp
   Sacado_CacheFad_ViewFad.hpp
@@ -111,7 +104,6 @@ SET(HEADERS ${HEADERS}
 # ELRCacheFAD
 SET(HEADERS ${HEADERS}
   Sacado_ELRCacheFad_GeneralFad.hpp
-  Sacado_ELRCacheFad_GeneralFadImp.hpp
   Sacado_ELRCacheFad_GeneralFadExpr.hpp
   Sacado_ELRCacheFad_ExpressionTraits.hpp
   Sacado_ELRCacheFad_Expression.hpp
@@ -121,7 +113,6 @@ SET(HEADERS ${HEADERS}
   Sacado_ELRCacheFad_SLFad.hpp
   Sacado_ELRCacheFad_SLFadTraits.hpp
   Sacado_ELRCacheFad_SFad.hpp
-  Sacado_ELRCacheFad_SFadImp.hpp
   Sacado_ELRCacheFad_SFadTraits.hpp
   Sacado_ELRCacheFad_ViewFad.hpp
   Sacado_ELRCacheFad_ViewFadTraits.hpp
