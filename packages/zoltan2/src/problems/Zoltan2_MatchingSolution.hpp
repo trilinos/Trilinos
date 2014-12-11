@@ -1,3 +1,4 @@
+#if 0
 // @HEADER
 //
 // ***********************************************************************
@@ -43,12 +44,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_ColoringSolution.hpp
-    \brief Defines the ColoringSolution class.
+/*! \file Zoltan2_MatchingSolution.hpp
+    \brief Defines the MatchingSolution class.
 */
 
-#ifndef _ZOLTAN2_COLORINGSOLUTION_HPP_
-#define _ZOLTAN2_COLORINGSOLUTION_HPP_
+#ifndef _ZOLTAN2_MATCHINGSOLUTION_HPP_
+#define _ZOLTAN2_MATCHINGSOLUTION_HPP_
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Solution.hpp>
@@ -61,13 +62,13 @@ namespace Zoltan2 {
     \li \c adapter    input adapter
 
 The coloring solution contains an array of colors, one per id.
-Colors are represented as int (sufficient for any reasonable use case). 
+Matchs are represented as int (sufficient for any reasonable use case). 
 A special value, currently 0, is used for vertices that have not been colored.
 
 */
 
 template <typename Adapter>
-  class ColoringSolution : public Solution
+  class MatchingSolution : public Solution
 {
 private: 
   typedef typename Adapter::gno_t gno_t;
@@ -79,7 +80,7 @@ public:
 
   /*! \brief Constructor allocates memory for the solution.
    */
-  ColoringSolution(
+  MatchingSolution(
     size_t length // This should be equal to nlids. TODO: Optional?
   )
   {
@@ -95,15 +96,15 @@ public:
 
   /*! \brief Get (local) size of color array.
    */
-  inline size_t getColorsSize() {return length_;} // TODO Deprecate or rename? Should always be numVertices?
+  inline size_t getMatchsSize() {return length_;}
 
   /*! \brief Get (local) color array by RCP.
    */
-  inline ArrayRCP<int>  &getColorsRCP()  {return colors_;}
+  inline ArrayRCP<int>  &getMatchsRCP()  {return colors_;}
 
   /*! \brief Get (local) color array by raw pointer (no RCP).
    */
-  inline int * getColors()  {return &(*colors_);}
+  inline int * getMatchs()  {return &(*colors_);}
 
   /*! \brief Get local number of colors.
    *  This is computed from the coloring each time, as this is cheap.
@@ -123,13 +124,14 @@ public:
   //int getGlobalNumColors(); // TODO
  
 protected:
-  // Coloring solution consists of permutation vector(s).
+  // Matching solution consists of permutation vector(s).
   size_t length_;
   ArrayRCP<int> colors_;   // zero-based local color array
-  //int numColors_;        // Number of colors (local on this proc)
-  //int numColorsGlobal_;  // For future distributed coloring
+  //int numMatchs_;        // Number of colors (local on this proc)
+  //int numMatchsGlobal_;  // For future distributed coloring
 };
 
 }
 
+#endif
 #endif
