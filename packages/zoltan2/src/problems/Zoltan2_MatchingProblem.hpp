@@ -1,3 +1,4 @@
+#if 0
 // @HEADER
 //
 // ***********************************************************************
@@ -301,4 +302,5 @@ void MatchingProblem<Adapter>::createMatchingProblem()
 }
 } //namespace Zoltan2
 
+#endif
 #endif
