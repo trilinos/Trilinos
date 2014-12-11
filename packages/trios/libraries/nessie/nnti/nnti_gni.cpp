@@ -638,7 +638,10 @@ static int buffer_send(
         const NNTI_buffer_t     *dest_hdl,
         nnti_gni_work_request_t *gni_wr);
 
-static NNTI_result_t progress(int timeout);
+static NNTI_result_t progress(
+        int                   timeout,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count);
 
 static void config_init(
         nnti_gni_config_t *c);
@@ -3321,7 +3324,7 @@ NNTI_result_t NNTI_gni_wait (
         log_debug(nnti_debug_level, "wr NOT complete (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, &wr, 1);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3552,7 +3555,7 @@ NNTI_result_t NNTI_gni_waitany (
         log_debug(nnti_debug_level, "any wr NOT complete");
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3758,7 +3761,7 @@ NNTI_result_t NNTI_gni_waitall (
         log_debug(nnti_debug_level, "all work requests NOT complete");
 
         while (1) {
-            rc=progress(timeout-elapsed_time);
+            rc=progress(timeout-elapsed_time, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -7773,11 +7776,16 @@ static void server_req_queue_destroy(
 #define REQ_RECV_EP_CQ_INDEX  5
 #define REQ_RECV_MEM_CQ_INDEX 6
 #define CQ_COUNT 7
-static NNTI_result_t progress(int timeout)
+static NNTI_result_t progress(
+        int                   timeout,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
 {
     int           rc     =0;
     gni_return_t  gni_rc =GNI_RC_SUCCESS;
     NNTI_result_t nnti_rc=NNTI_OK;
+
+    uint32_t which=0;
 
     nnti_gni_memory_handle_t        *gni_mem_hdl=NULL;
     nnti_gni_sge_t                  *gni_sge=NULL;
@@ -7830,6 +7838,10 @@ static NNTI_result_t progress(int timeout)
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
+    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
+        nthread_unlock(&nnti_progress_lock);
+        goto cleanup;
+    }
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
