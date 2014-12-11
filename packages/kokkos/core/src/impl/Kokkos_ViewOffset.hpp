@@ -194,7 +194,7 @@ struct ViewOffset< ShapeType , LayoutLeft
 
   KOKKOS_INLINE_FUNCTION
   size_type stride_7() const
-    { return shape_type::N0 * shape_type::N1 * shape_type::N2 * shape_type::N3 * shape_type::N4 * shape_type::N5 * shape_type::N7 ; }
+    { return shape_type::N0 * shape_type::N1 * shape_type::N2 * shape_type::N3 * shape_type::N4 * shape_type::N5 * shape_type::N6 ; }
 
   // rank 1
   template< typename I0 >
@@ -399,7 +399,7 @@ struct ViewOffset< ShapeType , LayoutLeft
 
   KOKKOS_INLINE_FUNCTION
   size_type stride_7() const
-    { return S0 * shape_type::N1 * shape_type::N2 * shape_type::N3 * shape_type::N4 * shape_type::N5 * shape_type::N7 ; }
+    { return S0 * shape_type::N1 * shape_type::N2 * shape_type::N3 * shape_type::N4 * shape_type::N5 * shape_type::N6 ; }
 
   // rank 2
   template < typename I0 , typename I1 >
