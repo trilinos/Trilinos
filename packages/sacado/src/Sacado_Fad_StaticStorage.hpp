@@ -47,9 +47,13 @@ namespace Sacado {
 
     public:
 
+       typedef T value_type;
+
       //! Default constructor
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      StaticStorage(const T & x) : val_(x), sz_(0) {}
+      StaticStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        val_(x), sz_(0) {}
 
       //! Constructor with size \c sz
       /*!

@@ -139,7 +139,7 @@ By default, this script does the following:
 2) Asserts that the git repo for <some-dest-dir>/ is clean (see above).  This
    can be disabled by passing in --allow-dirty-dest-dir.
 
-3) Run 'rsync -av --delete' to copy the contents from 'orig-dir' to
+3) Run 'rsync -cav --delete' to copy the contents from 'orig-dir' to
    'dest-dir', excluding the '.git/' directory if it exists in either git repo
    dir.  After this runs, <some-dest-dir>/ should be an exact duplicate of
    <some-orig-dir>/ (except for otherwise noted excluded files).  This rsync
@@ -149,7 +149,7 @@ By default, this script does the following:
    repo as well.
 
 4) Run 'git add .' in <some-dest-dir>/ to stage any new files.  Note that git
-   will automatically stage deletes for any files removed by the 'rsync -av
+   will automatically stage deletes for any files removed by the 'rsync -cav
    --delete' command!
 
 5) Get the git remote URL from the orig-dir git repo, and the git log for the
@@ -358,7 +358,7 @@ def snapshotDir(inOptions):
     #    --exclude=\.hg --exclude=.hgignore --exclude=.hgtags
   
     rtn = echoRunSysCmnd(
-      r"rsync -av --delete "+excludes+" "+inOptions.origDir+" "+inOptions.destDir,
+      r"rsync -cav --delete "+excludes+" "+inOptions.origDir+" "+inOptions.destDir,
       throwExcept=False,
       timeCmnd=True
       )

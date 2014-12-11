@@ -55,7 +55,6 @@
 #include "Sacado_Fad_SFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
-#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -65,6 +64,9 @@ namespace Sacado {
     //! A tag for specializing Expr for SFad expressions
     template <typename T, int Num>
     struct SFadExprTag {};
+
+    // Forward declaration
+    template <typename T, int Num> class SFad;
 
     /*!
      * \brief Expression template forward-mode AD class with static memory
@@ -84,6 +86,9 @@ namespace Sacado {
       //! Typename of scalar's (which may be different from T)
       typedef typename ScalarType<value_type>::type scalar_type;
 
+      //! Typename of base-expressions
+      typedef SFad<T,Num> base_expr_type;
+
       /*!
        * @name Initialization methods
        */
@@ -98,16 +103,26 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array is empty
        */
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const T & x) : val_(x), update_val_(true)  {
-        ss_array<T>::zero(dx_, Num); }
+      Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        val_(x), update_val_(true) {
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const T & x);
+      Expr(const int sz, const T & x)  : val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "SFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -116,16 +131,45 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const int i, const T & x);
+      Expr(const int sz, const int i, const T & x) :
+        val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "SFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+        if (i >= Num)
+          throw "SFad::SFad() Error:  Invalid derivative index.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[i]=1.;
+      }
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr& x);
+      Expr(const Expr& x) :
+        val_(x.val()), update_val_(x.update_val_) {
+        for (int i=0; i<Num; i++)
+          dx_[i] = x.dx_[i];
+      }
 
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x);
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
+        update_val_(x.updateValue()) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SFad::SFad() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = x.fastAccessDx(i);
+
+        if (update_val_)
+          this->val() = x.val();
+        else
+          this->val() = T(0.);
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -139,7 +183,15 @@ namespace Sacado {
        * constructor.
        */
       KOKKOS_INLINE_FUNCTION
-      void diff(const int ith, const int n);
+      void diff(const int ith, const int n) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (n != Num)
+          throw "SFad::diff() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[ith] = T(1.);
+      }
 
       //! Resize derivative array to length \c sz
       /*!
@@ -147,7 +199,12 @@ namespace Sacado {
        * throws an error if compiled with SACADO_DEBUG defined.
        */
       KOKKOS_INLINE_FUNCTION
-      void resize(int sz);
+      void resize(int sz) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "SFad::resize() Error:  Cannot resize fixed derivative array dimension";
+#endif
+      }
 
       //! Expand derivative array to size sz
       /*!
@@ -172,7 +229,7 @@ namespace Sacado {
       //! Returns whether two Fad objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      bool isEqualTo(const Expr<S>& x) const {
+      SACADO_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& x) const {
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
         bool eq = IE::eval(x.val(), this->val());
@@ -250,18 +307,47 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator=(const T& val);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator=(const S& v) {
+        val_ = v;
+        ss_array<T>::zero(dx_, Num);
+        return *this;
+      }
 
       //! Assignment with Expr right-hand-side
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >&
-      operator=(const Expr< SFadExprTag<T,Num> >& x);
+      Expr& operator=(const Expr& x) {
+        // Copy value
+        val_ = x.val_;
+
+        // Copy dx_
+        for (int i=0; i<Num; i++)
+          dx_[i] = x.dx_[i];
+
+        update_val_ = x.update_val_;
+
+        return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SFad::operator=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = x.fastAccessDx(i);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ = x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -271,40 +357,120 @@ namespace Sacado {
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator += (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator += (const S& v) {
+        if (update_val_) this->val() += v;
+        return *this;
+      }
 
       //! Subtraction-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator -= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator -= (const S& v) {
+        if (update_val_) this->val() -= v;
+        return *this;
+      }
 
       //! Multiplication-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator *= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator *= (const S& v) {
+        if (update_val_) this->val() *= v;
+        for (int i=0; i<Num; ++i)
+          dx_[i] *= v;
+        return *this;
+      }
 
       //! Division-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator /= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator /= (const S& v) {
+        if (update_val_) this->val() /= v;
+        for (int i=0; i<Num; ++i)
+          dx_[i] /= v;
+        return *this;
+      }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SFad::operator+=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for (int i=0; i<Num; ++i)
+          dx_[i] += x.fastAccessDx(i);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SFad::operator-=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] -= x.fastAccessDx(i);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ -= x.val();
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x) {
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SFad::operator*=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = val_ * x.fastAccessDx(i) + dx_[i] * xval;
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ *= xval;
+
+        return *this;
+      }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x) {
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "SFad::operator/=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        for(int i=0; i<Num; ++i)
+          dx_[i] = ( dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ /= xval;
+
+        return *this;
+      }
 
       //@}
 
@@ -321,240 +487,15 @@ namespace Sacado {
 
     }; // class Expr<SFadExprTag>
 
-    //! Forward-mode AD class using static memory allocation
-    /*!
-     * This is the user-level class for forward mode AD with static
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is known at compile time.  The size
-     * of the derivative array is fixed by the template parameter \c Num.
-     */
-    template <typename ValueT, int Num>
-    class SFad :
-      public Expr< SFadExprTag<ValueT,Num > > {
-
-    public:
-
-      //! Typename of scalar's (which may be different from ValueT)
-      typedef typename ScalarType<ValueT>::type ScalarT;
-
-      //! Turn SFad into a meta-function class usable with mpl::apply
-      template <typename T>
-      struct apply {
-        typedef SFad<T,Num> type;
-      };
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad() :
-        Expr< SFadExprTag< ValueT,Num > >() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
-      /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        Expr< SFadExprTag< ValueT,Num > >(ValueT(x)) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const int sz, const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const int sz, const int i, const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(sz,i,x) {}
-
-      //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      SFad(const SFad& x) :
-        Expr< SFadExprTag< ValueT,Num > >(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x)) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SFad(const Expr<S>& x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //@}
-
-      //! Destructor
-      KOKKOS_INLINE_FUNCTION
-      ~SFad() {}
-
-      //! Assignment operator with constant right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const ValueT& v) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(v));
-        return *this;
-      }
-
-      //! Assignment operator with DFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const SFad& x) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x));
-        return *this;
-      }
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const Expr<S>& x)
-      {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(x);
-        return *this;
-      }
-
-    }; // class SFad<ValueT,Num>
-
   } // namespace Fad
 
 } // namespace Sacado
 
-#include "Sacado_Fad_SFadImp.hpp"
-#include "Sacado_Fad_Ops.hpp"
+#define FAD_NS Fad
+#include "Sacado_Fad_SFad_tmpl.hpp"
+#undef FAD_NS
 
-//
-// Classes needed for Kokkos::View< SFad<...> ... > specializations
-//
-// Users can disable these view specializations either at configure time or
-// by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
-//
-
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#include "impl/Kokkos_AnalyzeShape.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Sacado_Fad_ViewFad.hpp"
-
-namespace Kokkos {
-namespace Impl {
-
-// Forward declarations
-struct ViewSpecializeSacadoFad;
-template <typename T,unsigned,unsigned> struct ViewFadType;
-
-//! The View Fad type associated with this type
-template< class ValueType, int N, unsigned length, unsigned stride >
-struct ViewFadType< Sacado::Fad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::Fad::ViewFad<ValueType,length,stride> type;
-};
-
-//! The View Fad type associated with this type
-template< class ValueType, int N, unsigned length, unsigned stride >
-struct ViewFadType< const Sacado::Fad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::Fad::ViewFad<const ValueType,length,stride> type;
-};
-
-/** \brief  Analyze the array shape of a Sacado::Fad::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::Fad::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, int N >
-struct AnalyzeShape< Sacado::Fad::SFad< ValueType, N > >
-  : Shape< sizeof(Sacado::Fad::SFad< ValueType, N >) , 0 > // Treat as a scalar
-{
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef Shape< sizeof(Sacado::Fad::SFad< ValueType, N >) , 0 > shape ;
-
-  typedef       Sacado::Fad::SFad< ValueType, N >        array_intrinsic_type ;
-  typedef const Sacado::Fad::SFad< ValueType, N >  const_array_intrinsic_type ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::Fad::SFad< ValueType, N >  type ;
-  typedef const Sacado::Fad::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::Fad::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::Fad::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::Fad::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::Fad::SFad< ValueType, N >  non_const_value_type ;
-};
-
-/** \brief  Analyze the array shape of a Sacado::Fad::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::Fad::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, class Layout, int N >
-struct AnalyzeSacadoShape< Sacado::Fad::SFad< ValueType, N >, Layout >
-  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape , N+1 >::type
-{
-private:
-
-  typedef AnalyzeSacadoShape< ValueType, Layout > nested ;
-
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef typename ShapeInsert< typename nested::shape , N+1 >::type shape ;
-
-  typedef typename nested::array_intrinsic_type         array_intrinsic_type [N+1];
-  typedef typename nested::const_array_intrinsic_type   const_array_intrinsic_type [N+1] ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::Fad::SFad< ValueType, N >  type ;
-  typedef const Sacado::Fad::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::Fad::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::Fad::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::Fad::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::Fad::SFad< ValueType, N >  non_const_value_type ;
-
-  typedef typename nested::type           flat_array_type ;
-  typedef typename nested::const_type     const_flat_array_type ;
-  typedef typename nested::non_const_type non_const_flat_array_type ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif
+#include "Sacado_Fad_Ops.hpp"
 
 #endif // SACADO_FAD_SFAD_HPP

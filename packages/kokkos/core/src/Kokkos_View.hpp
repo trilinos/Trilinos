@@ -268,7 +268,7 @@ namespace Impl {
  *          (ii)  Use special data handle type (e.g. add Cuda Texture Object)
  *          (iii) Use special access intrinsics (e.g. texture fetch and non-caching loads)
  */
-template<class ViewTraits , class Enable = void>
+template< class ViewTraits , class Enable = void >
 class ViewDataHandle {
 public:
 
@@ -277,13 +277,21 @@ public:
   typedef typename ViewTraits::value_type * handle_type;
   typedef typename ViewTraits::value_type & return_type;
 
-  static handle_type allocate(std::string label, size_t count)
+  static handle_type allocate(std::string label, size_t count , bool default_construct )
   {
-    return (handle_type)
+    const handle_type ptr = (handle_type)
       ViewTraits::memory_space::allocate( label ,
                                           typeid(typename ViewTraits::value_type) ,
                                           sizeof(typename ViewTraits::value_type) ,
                                           count );
+
+    if ( default_construct ) {
+      // Default construct within the view's execution space.
+      (void) DefaultConstruct< typename ViewTraits::execution_space
+                             , typename ViewTraits::value_type >( ptr , count );
+    }
+
+    return ptr ;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -641,9 +649,7 @@ public:
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = view_data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() );
-
-      Alloc::initialize( *this );
+      m_ptr_on_device = view_data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() , Alloc::initialize() );
     }
 
   template< class AllocationProperties >
@@ -660,9 +666,7 @@ public:
       m_offset_map.assign( layout );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = view_data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() );
-
-      Alloc::initialize( *this );
+      m_ptr_on_device = view_data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() , Alloc::initialize() );
     }
 
   //------------------------------------

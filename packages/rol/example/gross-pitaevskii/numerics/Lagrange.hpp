@@ -92,10 +92,12 @@ Lagrange<Real>::Lagrange(const std::vector<Real> &xin, const std::vector<Real> &
 template<class Real>
 Lagrange<Real>::~Lagrange(){}
 
+/** \brief This routine evaluates sums of the form shown in equation (4.2) in 
+            the paper by J-P Berrut and L.N. Trefethen.  
+    @param[in]   f  vector of values appearing in the sum
+    @param[out]  y  the result */
 template<class Real>
 void Lagrange<Real>::bi_sum(const std::vector<Real> &f, std::vector<Real> &y){
-    /* This routine evaluates sums of the form shown in equation (4.2) in 
-       the paper by J-P Berrut and L.N. Trefethen */
 
     for(int j=0;j<nev_;++j)
     {
@@ -135,20 +137,22 @@ void Lagrange<Real>::interp(const std::vector<Real> &f, std::vector<Real> &p){
 template<class Real>
 void Lagrange<Real>::interpolant(const int k, std::vector<Real> &l){ 
     std::vector<Real> f(nin_,0);
+    std::fill(l.begin(),l.end(),0);
     f[k] = 1.0; 
     this->bi_sum(f,l);
 
     for(int j=0;j<nev_;++j)
     {
-        l[j] *= ell_[j];
+        l[j] = ell_[j]*w_[k]/(xev_[j]-xin_[k]);
     }    
 }
 
-
+/** \brief Derivative of the \f$k\f$th interpolant on the interpolation points */
 template<class Real>
 void Lagrange<Real>::derivative(const int k, std::vector<Real> &d ) {
-    // Derivative of the interpolant on the interpolation points
     std::vector<Real> lp(nin_,0);
+    std::fill(d.begin(),d.end(),0);
+
     for(int i=0;i<nin_;++i) {
         if(i!=k) {  
             lp[i] = w_[k]/(w_[i]*(xin_[i]-xin_[k])); 

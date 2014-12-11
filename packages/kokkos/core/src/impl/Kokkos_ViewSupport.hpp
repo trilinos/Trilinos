@@ -262,6 +262,24 @@ struct ViewRemap< OutputView ,  InputView , 0 >
 
 //----------------------------------------------------------------------------
 
+template< class ExecSpace , class Type >
+struct DefaultConstruct
+{
+  Type * const m_ptr ;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const typename ExecSpace::size_type i ) const
+    { new( m_ptr + i ) Type(); }
+
+  DefaultConstruct( Type * pointer , size_t capacity )
+    : m_ptr( pointer )
+    {
+      Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+      parallel_for( range , *this );
+      ExecSpace::fence();
+    }
+};
+
 template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewFill
 {
@@ -359,11 +377,6 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocate
   static bool managed( property_type ) { return true ; }
 
   static bool initialize() { return true ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & view )
-    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
 };
 
 template< class Traits >
@@ -383,11 +396,6 @@ struct ViewAllocProp< Traits , std::string
   static bool managed( property_type ) { return true ; }
 
   static bool initialize() { return true ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & view )
-    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
 };
 
 template< class Traits , unsigned N >
@@ -412,11 +420,6 @@ public:
 
   inline
   static bool initialize() { return true ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & view )
-    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
 };
 
 template< class Traits >
@@ -437,10 +440,6 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocateWithoutInitializing
 
   inline
   static bool initialize() { return false ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & ) {}
 };
 
 } // namespace Impl

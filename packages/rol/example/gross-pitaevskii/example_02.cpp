@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     RealT dx = 1.0/(nx+1);
 
     // Finite difference class
-    FiniteDifference<RealT> *fd = new FiniteDifference<RealT>(nx,dx);
+    Teuchos::RCP<FiniteDifference<RealT> > fd = Teuchos::rcp(new FiniteDifference<RealT>(nx,dx));
 
     // Pointer to linspace type vector \f$x_i = \frac{i+1}{n_x+1}\f$ where \f$i=0,\hdots,n_x\f$
     Teuchos::RCP<std::vector<RealT> > xi_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 0.0) );
@@ -174,7 +174,6 @@ int main(int argc, char **argv) {
              ConStdVector<RealT>,ConDualStdVector<RealT> > constr(nx,dx,fd,exactsolve);
 
 
-
     // Define Step
     parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
     parlist.set("Maximum Number of Krylov Iterations",80);
@@ -208,8 +207,6 @@ int main(int argc, char **argv) {
         std::cout << "End Result: TEST FAILED\n";
     else
         std::cout << "End Result: TEST PASSED\n";
-
-    delete fd;
 
     return 0;
 }

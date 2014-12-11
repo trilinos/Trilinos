@@ -90,6 +90,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SPPARKS:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_ENABLE_CppUnit:BOOL=ON"
+  "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
+  "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
   )
 
 #

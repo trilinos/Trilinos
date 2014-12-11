@@ -55,7 +55,8 @@
 #include "Sacado_ELRCacheFad_SFadTraits.hpp"
 #include "Sacado_ELRCacheFad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
-#include "Sacado_dummy_arg.hpp"
+#include "Sacado_mpl_range_c.hpp"
+#include "Sacado_mpl_for_each.hpp"
 
 namespace Sacado {
 
@@ -64,6 +65,9 @@ namespace Sacado {
     //! A tag for specializing Expr for SFad expressions
     template <typename T, int Num>
     struct SFadExprTag {};
+
+    // Forward declaration
+    template <typename T, int Num> class SFad;
 
     /*!
      * \brief Expression template forward-mode AD class with static memory
@@ -84,7 +88,7 @@ namespace Sacado {
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Typename of base-expressions
-      typedef Expr< SFadExprTag<T,Num> > base_expr_type;
+      typedef SFad<T,Num> base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -105,16 +109,26 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array is empty
        */
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const T & x) : val_(x), update_val_(true)  {
-        ss_array<T>::zero(dx_, Num); }
+      Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        val_(x), update_val_(true) {
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const T & x);
+      Expr(const int sz, const T & x)  : val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "ELRCacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+      }
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -123,7 +137,18 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const int i, const T & x);
+      Expr(const int sz, const int i, const T & x) :
+        val_(x), update_val_(true) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "ELRCacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+        if (i >= Num)
+          throw "ELRCacheFad::SFad() Error:  Invalid derivative index.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[i]=1.;
+      }
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
@@ -136,7 +161,40 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x);
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
+        update_val_(x.updateValue()) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "ELRCacheFad::SFad() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        if (update_val_)
+          this->val() = x.val();
+        else
+          this->val() = T(0.);
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = op.t;
+
+        }
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -150,7 +208,15 @@ namespace Sacado {
        * constructor.
        */
       KOKKOS_INLINE_FUNCTION
-      void diff(const int ith, const int n);
+      void diff(const int ith, const int n) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (n != Num)
+          throw "ELRCacheFad::diff() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+        ss_array<T>::zero(dx_, Num);
+        dx_[ith] = T(1.);
+      }
 
       //! Resize derivative array to length \c sz
       /*!
@@ -158,7 +224,12 @@ namespace Sacado {
        * throws an error if compiled with SACADO_DEBUG defined.
        */
       KOKKOS_INLINE_FUNCTION
-      void resize(int sz);
+      void resize(int sz) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz != Num)
+          throw "ELRCacheFad::resize() Error:  Cannot resize fixed derivative array dimension";
+#endif
+      }
 
       //! Expand derivative array to size sz
       /*!
@@ -187,7 +258,7 @@ namespace Sacado {
       //! Returns whether two Fad objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      bool isEqualTo(const Expr<S>& x) const {
+      SACADO_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& x) const {
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
         bool eq = IE::eval(x.val(), this->val());
@@ -279,8 +350,9 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       T getTangent(int i) const { return this->dx_[i]; }
 
+      //! Get dx array
       KOKKOS_INLINE_FUNCTION
-      const Expr& getArg(int j) const { return *this; }
+      const value_type* getDx(int j) const { return this->dx(); }
 
       //@}
 
@@ -290,18 +362,66 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator=(const T& val);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator=(const S& v) {
+        val_ = v;
+        ss_array<T>::zero(dx_, Num);
+        return *this;
+      }
 
       //! Assignment with Expr right-hand-side
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >&
-      operator=(const Expr< SFadExprTag<T,Num> >& x);
+      Expr& operator=(const Expr& x) {
+        // Copy value
+        val_ = x.val_;
+
+        // Copy dx_
+        //ss_array<T>::copy(x.dx_, dx_, Num);
+        for (int i=0; i<Num; i++)
+          dx_[i] = x.dx_[i];
+
+        update_val_ = x.update_val_;
+
+        return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator=(const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "ELRCacheFad::operator=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = op.t;
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() = x.val();
+
+        return *this;
+      }
 
       //@}
 
@@ -311,40 +431,196 @@ namespace Sacado {
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator += (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator += (const S& v) {
+        if (update_val_) this->val() += v;
+        return *this;
+      }
 
       //! Subtraction-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator -= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator -= (const S& v) {
+        if (update_val_) this->val() -= v;
+        return *this;
+      }
 
       //! Multiplication-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator *= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator *= (const S& v) {
+        if (update_val_) this->val() *= v;
+        for (int i=0; i<Num; ++i)
+          dx_[i] *= v;
+        return *this;
+      }
 
       //! Division-assignment operator with constant right-hand-side
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator /= (const T& x);
+      SACADO_ENABLE_VALUE_FUNC(Expr&) operator /= (const S& v) {
+        if (update_val_) this->val() /= v;
+        for (int i=0; i<Num; ++i)
+          dx_[i] /= v;
+        return *this;
+      }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator += (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "ELRCacheFad::operator+=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] += op.t;
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() += x.val();
+
+        return *this;
+      }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator -= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "ELRCacheFad::operator-=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        x.cache();
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] -= op.t;
+        }
+
+        update_val_ = x.updateValue();
+        if (update_val_)
+          this->val() -= x.val();
+
+        return *this;
+      }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator *= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x) {
+        x.cache();
+
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "ELRCacheFad::operator*=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = val_ * op.t + dx_[i] * xval;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ *= xval;
+
+        return *this;
+      }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr< SFadExprTag<T,Num> >& operator /= (const Expr<S>& x);
+      SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x) {
+        x.cache();
+
+        T xval = x.val();
+
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (x.size() != Num)
+          throw "ELRCacheFad::operator/=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
+        // Number of arguments
+        const int N = Expr<S>::num_args;
+
+        // Compute partials
+        LocalAccumOp< Expr<S> > op(x);
+
+        T xval2 = xval*xval;
+
+        // Compute each tangent direction
+        for(int i=0; i<Num; ++i) {
+          op.t = T(0.);
+          op.i = i;
+
+          // Automatically unrolled loop that computes
+          // for (int j=0; j<N; j++)
+          //   op.t += op.partials[j] * x.getTangent<j>(i);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+
+          dx_[i] = (dx_[i] * xval - val_ * op.t) / xval2;
+        }
+
+        // Compute value
+        update_val_ = x.updateValue();
+        if (update_val_)
+          val_ /= xval;
+
+        return *this;
+      }
 
       //@}
 
@@ -361,6 +637,11 @@ namespace Sacado {
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative
+      //
+      // We use getTangent<>() to get dx components from expression
+      // arguments instead of getting the argument directly or extracting
+      // the dx array due to striding in ViewFad (or could use striding
+      // directly here if we need to get dx array).
       template <typename ExprT>
       struct LocalAccumOp {
         typedef typename ExprT::value_type value_type;
@@ -370,8 +651,9 @@ namespace Sacado {
         value_type partials[N];
         int i;
         KOKKOS_INLINE_FUNCTION
-        LocalAccumOp(const ExprT& x_) :
-          x(x_) { x.computePartials(value_type(1.), partials); }
+        LocalAccumOp(const ExprT& x_) : x(x_) {
+          x.computePartials(value_type(1.), partials);
+        }
         template <typename ArgT>
         KOKKOS_INLINE_FUNCTION
         void operator () (ArgT arg) const {
@@ -383,271 +665,15 @@ namespace Sacado {
 
     }; // class Expr<SFadExprTag>
 
-    /*!
-     * \brief Forward-mode AD class using static memory allocation,
-     * caching expression templates, and expression-level reverse mode.
-     */
-    /*!
-     * This is the user-level class for forward mode AD with static
-     * memory allocation, and is appropriate for whenever the number
-     * of derivative components is known at compile time.  The size
-     * of the derivative array is fixed by the template parameter \c Num.
-     * It is similar to Sacado::ELRFad::SFad, except it uses the
-     * caching expression templates that cache the results of val()
-     * calculations for later dx() calculations.
-     */
-    template <typename ValueT, int Num>
-    class SFad :
-      public Expr< SFadExprTag<ValueT,Num > > {
-
-    public:
-
-      //! Typename of scalar's (which may be different from ValueT)
-      typedef typename ScalarType<ValueT>::type ScalarT;
-
-      //! Turn SFad into a meta-function class usable with mpl::apply
-      template <typename T>
-      struct apply {
-        typedef SFad<T,Num> type;
-      };
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad() :
-        Expr< SFadExprTag< ValueT,Num > >() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //! Constructor with supplied value \c x of type ScalarT
-      /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty.
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const typename dummy<ValueT,ScalarT>::type& x) :
-        Expr< SFadExprTag< ValueT,Num > >(ValueT(x)) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const int sz, const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad(const int sz, const int i, const ValueT & x) :
-        Expr< SFadExprTag< ValueT,Num > >(sz,i,x) {}
-
-      //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      SFad(const SFad& x) :
-        Expr< SFadExprTag< ValueT,Num > >(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x)) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SFad(const Expr<S>& x) :
-        Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //@}
-
-      //! Destructor
-      KOKKOS_INLINE_FUNCTION
-      ~SFad() {}
-
-      //! Assignment operator with constant right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const ValueT& v) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(v);
-        return *this;
-      }
-
-      //! Assignment operator with constant right-hand-side
-      /*!
-       * Creates a dummy overload when ValueT and ScalarT are the same type.
-       */
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(v));
-        return *this;
-      }
-
-      //! Assignment operator with DFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const SFad& x) {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x));
-        return *this;
-      }
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      SFad& operator=(const Expr<S>& x)
-      {
-        Expr< SFadExprTag< ValueT,Num > >::operator=(x);
-        return *this;
-      }
-
-    }; // class SFad<ValueT,Num>
-
-    //! Specialization of %ExprPromote to Expr<SFadExprTag> types
-    template <typename T, int Num>
-    struct ExprPromote< Expr< SFadExprTag<T,Num> >, T > {
-      typedef Expr< SFadExprTag<T,Num> > type;
-    };
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, int Num>
-    struct ExprPromote< T, Expr< SFadExprTag<T,Num> > > {
-      typedef Expr< SFadExprTag<T,Num> > type;
-    };
-
-    template <typename T, int Num>
-    std::ostream& operator << (std::ostream& os,
-                               const Expr< SFadExprTag<T,Num> >& x) {
-      os << x.val() << " [";
-
-      for (int i=0; i< x.size(); i++) {
-        os << " " << x.dx(i);
-      }
-
-      os << " ]";
-      return os;
-    }
-
   } // namespace ELRCacheFad
 
 } // namespace Sacado
 
-#include "Sacado_ELRCacheFad_SFadImp.hpp"
-#include "Sacado_ELRCacheFad_Ops.hpp"
+#define FAD_NS ELRCacheFad
+#include "Sacado_Fad_SFad_tmpl.hpp"
+#undef FAD_NS
 
-//
-// Classes needed for Kokkos::View< SFad<...> ... > specializations
-//
-// Users can disable these view specializations either at configure time or
-// by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
-//
-
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#include "impl/Kokkos_AnalyzeShape.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Sacado_ELRCacheFad_ViewFad.hpp"
-
-namespace Kokkos {
-namespace Impl {
-
-// Forward declarations
-struct ViewSpecializeSacadoFad;
-template <typename T,unsigned,unsigned> struct ViewFadType;
-
-//! The View Fad type associated with this type
-template< class ValueType, int N, unsigned length, unsigned stride >
-struct ViewFadType< Sacado::ELRCacheFad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::ELRCacheFad::ViewFad<ValueType,length,stride> type;
-};
-
-//! The View Fad type associated with this type
-template< class ValueType, int N, unsigned length, unsigned stride >
-struct ViewFadType< const Sacado::ELRCacheFad::SFad< ValueType, N >, length, stride > {
-  typedef Sacado::ELRCacheFad::ViewFad<const ValueType,length,stride> type;
-};
-
-/** \brief  Analyze the array shape of a Sacado::ELRCacheFad::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::ELRCacheFad::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, int N >
-struct AnalyzeShape< Sacado::ELRCacheFad::SFad< ValueType, N > >
-  : Shape< sizeof(Sacado::ELRCacheFad::SFad< ValueType, N >) , 0 > // Treat as a scalar
-{
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef Shape< sizeof(Sacado::ELRCacheFad::SFad< ValueType, N >) , 0 > shape ;
-
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >        array_intrinsic_type ;
-  typedef const Sacado::ELRCacheFad::SFad< ValueType, N >  const_array_intrinsic_type ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  type ;
-  typedef const Sacado::ELRCacheFad::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::ELRCacheFad::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  non_const_value_type ;
-};
-
-/** \brief  Analyze the array shape of a Sacado::ELRCacheFad::SFad<T,N>.
- *
- *  This specialization is required so that the array shape of
- *  Kokkos::View< Sacado::ELRCacheFad::SFad<T,N>, ... >
- *  can be determined at compile-time.
- *
- *  We add one to the SFad dimension (N) to store the value component.
- */
-template< class ValueType, class Layout, int N >
-struct AnalyzeSacadoShape< Sacado::ELRCacheFad::SFad< ValueType, N >, Layout >
-  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape , N+1 >::type
-{
-private:
-
-  typedef AnalyzeSacadoShape< ValueType, Layout > nested ;
-
-public:
-
-  typedef ViewSpecializeSacadoFad specialize ;
-
-  typedef typename ShapeInsert< typename nested::shape , N+1 >::type shape ;
-
-  typedef typename nested::array_intrinsic_type         array_intrinsic_type [N+1];
-  typedef typename nested::const_array_intrinsic_type   const_array_intrinsic_type [N+1] ;
-  typedef array_intrinsic_type non_const_array_intrinsic_type ;
-
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  type ;
-  typedef const Sacado::ELRCacheFad::SFad< ValueType, N >  const_type ;
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  non_const_type ;
-
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  value_type ;
-  typedef const Sacado::ELRCacheFad::SFad< ValueType, N >  const_value_type ;
-  typedef       Sacado::ELRCacheFad::SFad< ValueType, N >  non_const_value_type ;
-
-  typedef typename nested::type           flat_array_type ;
-  typedef typename nested::const_type     const_flat_array_type ;
-  typedef typename nested::non_const_type non_const_flat_array_type ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif
+#include "Sacado_ELRCacheFad_Ops.hpp"
 
 #endif // SACADO_ELRCACHEFAD_SFAD_HPP

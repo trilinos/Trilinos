@@ -41,7 +41,7 @@ struct BASKER_ScalarTraits
   static inline double divideConjugate(double a, double b){return 0;}
   static inline magnitudeType approxABS(double a){return 0;}
   static inline magnitudeType abs(double a){return 0;}
-  static inline bool gt (double a, double b){return 0;}
+  static inline bool gt (double a, double b){return 0;}  
 };
 
 //double
@@ -57,6 +57,7 @@ struct BASKER_ScalarTraits<double>
   static inline magnitudeType abs(double a)
   { return (SCALAR_ABS(a));}
   static inline bool gt (double a, double b){return (a>b);}
+ 
 };
 
 //float
@@ -71,7 +72,9 @@ struct BASKER_ScalarTraits<float>
   { return (SCALAR_ABS(a));}
   static inline magnitudeType abs(float a)
   { return (SCALAR_ABS(a));}
-  static inline bool gt (float a, float b){return (a>b);}
+  static inline bool gt(float a, float b){return (a>b);}
+
+  
 };
 
 
@@ -194,9 +197,10 @@ struct BASKER_ScalarTraits< std::complex<T> >
     }
   static inline bool gt(ComplexT a, ComplexT b)
   {
-    return (   (Teuchos::ScalarTraits<ComplexT>::real(a)+Teuchos::ScalarTraits<ComplexT>::imag(a)) > (Teuchos::ScalarTraits<ComplexT>::real(b)+Teuchos::ScalarTraits<ComplexT>::imag(b)));
+    return( (Teuchos::ScalarTraits<ComplexT>::real(a)+Teuchos::ScalarTraits<ComplexT>::imag(a)) > (Teuchos::ScalarTraits<ComplexT>::real(b) + Teuchos::ScalarTraits<ComplexT>::imag(b)));
   }
 
+ 
 };
 
 #else  //C++ complexx
@@ -318,8 +322,9 @@ struct BASKER_ScalarTraits< std::complex<T> >
     }
   static inline bool gt(ComplexT a, ComplexT b)
   {
-    return (   (std::real(a)+std::imag(a)) > (std::real(b)+std::imag(b)));
+    return ((std::real(a)+std::imag(a)) > (std::real(b) + std::imag(b)));
   }
+ 
 };
 
 

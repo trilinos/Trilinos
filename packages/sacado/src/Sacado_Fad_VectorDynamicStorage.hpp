@@ -1,5 +1,3 @@
-// $Id$
-// $Source$
 // @HEADER
 // ***********************************************************************
 //
@@ -40,14 +38,17 @@ namespace Sacado {
   namespace Fad {
 
     //! Derivative array storage class using dynamic memory allocation
-    template <typename T, typename S = T>
+    template <typename T, typename U = T>
     class VectorDynamicStorage {
 
     public:
 
+      typedef T value_type;
+
       //! Default constructor
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      VectorDynamicStorage(const T & x) :
+      VectorDynamicStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
       {}
 
@@ -58,12 +59,12 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       VectorDynamicStorage(const int sz, const T & x) :
         v_(x), owns_mem(true), sz_(sz), len_(sz), stride_(1), val_(&v_) {
-        dx_ = ds_array<S>::get_and_fill(sz_);
+        dx_ = ds_array<U>::get_and_fill(sz_);
       }
 
       //! Constructor with supplied memory
       KOKKOS_INLINE_FUNCTION
-      VectorDynamicStorage(const int sz, T* x, S* dx_p, const int stride,
+      VectorDynamicStorage(const int sz, T* x, U* dx_p, const int stride,
                            bool zero_out) :
         v_(), owns_mem(false), sz_(sz), len_(sz), stride_(stride),
         val_(x), dx_(dx_p) {
@@ -76,7 +77,7 @@ namespace Sacado {
       VectorDynamicStorage(const VectorDynamicStorage& x) :
         v_(*x.val_), owns_mem(true), sz_(x.sz_), len_(x.sz_),
         stride_(1), val_(&v_)  {
-        dx_ = ds_array<S>::strided_get_and_fill(x.dx_, x.stride_, sz_);
+        dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
       }
 
       //! Destructor
@@ -84,7 +85,7 @@ namespace Sacado {
       ~VectorDynamicStorage() {
         if (owns_mem) {
           if (len_ != 0)
-            ds_array<S>::destroy_and_release(dx_, len_);
+            ds_array<U>::destroy_and_release(dx_, len_);
         }
       }
 
@@ -100,15 +101,15 @@ namespace Sacado {
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
             if (len_ != 0)
-              ds_array<S>::destroy_and_release(dx_, len_);
+              ds_array<U>::destroy_and_release(dx_, len_);
             len_ = x.sz_;
-            dx_ = ds_array<S>::strided_get_and_fill(x.dx_, x.stride_, sz_);
+            dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
           }
           else
-            ds_array<S>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
+            ds_array<U>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
         }
         else
-          ds_array<S>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
+          ds_array<U>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
 
         return *this;
       }
@@ -133,9 +134,9 @@ namespace Sacado {
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
           if (len_ != 0)
-            ds_array<S>::destroy_and_release(dx_, len_);
+            ds_array<U>::destroy_and_release(dx_, len_);
           len_ = sz;
-          dx_ = ds_array<S>::get_and_fill(len_);
+          dx_ = ds_array<U>::get_and_fill(len_);
         }
         sz_ = sz;
       }
@@ -153,12 +154,12 @@ namespace Sacado {
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
           if (len_ != 0)
-            ds_array<S>::destroy_and_release(dx_, len_);
+            ds_array<U>::destroy_and_release(dx_, len_);
           len_ = sz;
-          dx_ = ds_array<S>::get_and_fill(len_);
+          dx_ = ds_array<U>::get_and_fill(len_);
         }
         else if (sz > sz_)
-          ds_array<S>::strided_zero(dx_+stride_*sz_, stride_, sz-sz_);
+          ds_array<U>::strided_zero(dx_+stride_*sz_, stride_, sz-sz_);
         sz_ = sz;
       }
 
@@ -174,32 +175,32 @@ namespace Sacado {
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
-          S* dx_new = ds_array<S>::get_and_fill(sz);
-          ds_array<S>::copy(dx_, dx_new, sz_);
+          U* dx_new = ds_array<U>::get_and_fill(sz);
+          ds_array<U>::copy(dx_, dx_new, sz_);
           if (len_ > 0)
-            ds_array<S>::destroy_and_release(dx_, len_);
+            ds_array<U>::destroy_and_release(dx_, len_);
           dx_ = dx_new;
           len_ = sz;
         }
         else if (sz > sz_)
-          ds_array<S>::strided_zero(dx_+stride_*sz_, stride_, sz-sz_);
+          ds_array<U>::strided_zero(dx_+stride_*sz_, stride_, sz-sz_);
         sz_ = sz;
       }
 
       //! Zero out derivative array
       KOKKOS_INLINE_FUNCTION
       void zero() {
-        ds_array<S>::strided_zero(dx_, stride_, sz_);
+        ds_array<U>::strided_zero(dx_, stride_, sz_);
       }
 
       //! Set value/derivative array memory
       KOKKOS_INLINE_FUNCTION
-      void setMemory(int sz, T* x, S* dx_p, int stride) {
+      void setMemory(int sz, T* x, U* dx_p, int stride) {
 
         // Destroy old memory
         if (owns_mem) {
           if (len_ != 0)
-            ds_array<S>::destroy_and_release(dx_, len_);
+            ds_array<U>::destroy_and_release(dx_, len_);
         }
 
         // Set new values
@@ -221,19 +222,19 @@ namespace Sacado {
 
       //! Returns derivative array
       KOKKOS_INLINE_FUNCTION
-      const S* dx() const { return dx_;}
+      const U* dx() const { return dx_;}
 
       //! Returns derivative component \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
-      S dx(int i) const { return sz_ ? dx_[i*stride_] : T(0.); }
+      U dx(int i) const { return sz_ ? dx_[i*stride_] : T(0.); }
 
       //! Returns derivative component \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
-      S& fastAccessDx(int i) { return dx_[i*stride_];}
+      U& fastAccessDx(int i) { return dx_[i*stride_];}
 
       //! Returns derivative component \c i without bounds checking
       KOKKOS_INLINE_FUNCTION
-      const S& fastAccessDx(int i) const { return dx_[i*stride_];}
+      const U& fastAccessDx(int i) const { return dx_[i*stride_];}
 
     private:
 
@@ -257,7 +258,7 @@ namespace Sacado {
       T* val_;
 
       //! Derivative array
-      S* dx_;
+      U* dx_;
 
     }; // class VectorDynamicStorage
 

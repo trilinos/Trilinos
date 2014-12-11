@@ -58,17 +58,15 @@ namespace Sacado {
 
   namespace ELRCacheFad {
 
-    //! Base template specification for %ExprPromote
+    //! Meta-function for determining concrete base expression
     /*!
-     * The %ExprPromote classes provide a mechanism for computing the
-     * promoted expression-type of a binary operation.
+     * This determines the concrete base expression type of each leaf in
+     * an expression tree.  The Promote meta-function is then used to promote
+     * all of the leaves to a single expression type that the whole expression
+     * can be assigned/promoted to.  This allows Promote to operate on
+     * expressions as well as AD types.
      */
-    template <typename A, typename B> struct ExprPromote {};
-
-    //! Specialization of %ExprPromote for a single type
-    template <typename A> struct ExprPromote<A,A> {
-      typedef A type;
-    };
+    template <typename> struct BaseExpr {};
 
     //! Wrapper for a generic expression template
     /*!
@@ -77,6 +75,34 @@ namespace Sacado {
      */
     template <typename ExprT>
     class Expr {};
+
+    //! Meta-function for determining nesting with an expression
+    /*!
+     * This determines the level of nesting within nested Fad types.
+     * The default implementation works for any type that isn't a Fad type
+     * or an expression of Fad types.
+     */
+    template <typename T>
+    struct ExprLevel {
+      static const unsigned value = 0;
+    };
+
+    template <typename T>
+    struct ExprLevel< Expr<T> > {
+      static const unsigned value =
+        ExprLevel< typename Expr<T>::value_type >::value + 1;
+    };
+
+    //! Determine whether a given type is an expression
+    template <typename T>
+    struct IsFadExpr {
+      static const bool value = false;
+    };
+
+    template <typename T>
+    struct IsFadExpr< Expr<T> > {
+      static const bool value = true;
+    };
 
     //! Constant expression template
     /*!
@@ -90,8 +116,8 @@ namespace Sacado {
       //! Typename of argument values
       typedef ConstT value_type;
 
-      //! Typename of scalar values
-      typedef ConstT scalar_type;
+      //! Typename of scalar's (which may be different from ConstT)
+      typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Typename of base-expressions
       typedef ConstT base_expr_type;
@@ -158,6 +184,18 @@ namespace Sacado {
 
   } // namespace ELRCacheFad
 
+  template <typename T>
+  struct IsExpr< ELRCacheFad::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< ELRCacheFad::Expr<T> > {
+    typedef typename ELRCacheFad::Expr<T>::base_expr_type type;
+  };
+
 } // namespace Sacado
+
+#include "Sacado_SFINAE_Macros.hpp"
 
 #endif // SACADO_ELRCACHEFAD_EXPRESSION_HPP

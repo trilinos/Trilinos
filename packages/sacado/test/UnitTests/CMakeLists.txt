@@ -166,3 +166,12 @@ IF (Sacado_ENABLE_CXX11)
     STANDARD_PASS_OUTPUT
   )
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ConversionTests
+  SOURCES ConversionTests.cpp
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )

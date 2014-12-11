@@ -77,6 +77,11 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   ls -w 1 ../../core/std_tpls/ &> TribitsStandardTPLsList.txt
 
   echo
+  echo "Generating list of Common TriBITS TPLs ..."
+  echo
+  ls -w 1 ../../common_tpls/ &> TribitsCommonTPLsList.txt
+
+  echo
   echo "Generating Directory structure of TribitsHelloWorld ..."
   echo
   ../../python_utils/tree.py -f -c -x ../../examples/TribitsHelloWorld/ \

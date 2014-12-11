@@ -55,7 +55,7 @@
 #include <Cuda/Kokkos_CudaExec.hpp>
 #include <Cuda/Kokkos_Cuda_ReduceScan.hpp>
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
-
+#include <Kokkos_Vectorization.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -1051,6 +1051,7 @@ class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Ko
 private:
 
   typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda >         Policy ;
+  typedef typename Policy::WorkRange                                 work_range ;
   typedef typename Policy::work_tag                                  work_tag ;
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag > ValueTraits ;
   typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag > ValueInit ;
@@ -1058,6 +1059,7 @@ private:
 public:
 
   typedef typename ValueTraits::pointer_type    pointer_type ;
+  typedef typename ValueTraits::value_type      value_type ;
   typedef typename ValueTraits::reference_type  reference_type ;
   typedef FunctorType                           functor_type ;
   typedef Cuda::size_type                       size_type ;
@@ -1097,6 +1099,7 @@ public:
              , reference_type value )
     { functor( Tag() , iwork , value ); }
 
+#ifndef KOKKOS_EXPERIMENTAL_CUDA_SHFL_REDUCTION
   __device__ inline
   void operator()(void) const
   {
@@ -1112,9 +1115,9 @@ public:
       // Accumulate the values for this block.
       // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
 
-      const Policy range( m_policy , blockIdx.x , gridDim.x );
+      const work_range range( m_policy , blockIdx.x , gridDim.x );
 
-      for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
+      for ( typename work_range::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
             iwork < iwork_end ; iwork += blockDim.y ) {
         ParallelReduce::template driver< work_tag >( m_functor , iwork , value );
       }
@@ -1139,7 +1142,38 @@ public:
       for ( unsigned i = threadIdx.y ; i < word_count.value ; i += blockDim.y ) { global[i] = shared[i]; }
     }
   }
+#else
+  __device__ inline
+   void operator()(void) const
+   {
 
+     value_type value = 0;
+
+     // Number of blocks is bounded so that the reduction can be limited to two passes.
+     // Each thread block is given an approximately equal amount of work to perform.
+     // Accumulate the values for this block.
+     // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
+
+     const Policy range( m_policy , blockIdx.x , gridDim.x );
+
+     for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
+           iwork < iwork_end ; iwork += blockDim.y ) {
+       ParallelReduce::template driver< work_tag >( m_functor , iwork , value );
+     }
+
+     pointer_type const result = (pointer_type) (m_unified_space ? m_unified_space : m_scratch_space) ;
+     int max_active_thread = range.end()-range.begin() < blockDim.y ? range.end() - range.begin():blockDim.y;
+     max_active_thread = max_active_thread == 0?blockDim.y:max_active_thread;
+     if(Impl::cuda_inter_block_reduction<FunctorType,Impl::JoinAdd<value_type> >
+            (value,Impl::JoinAdd<value_type>(),m_scratch_space,result,m_scratch_flags,max_active_thread)) {
+       const unsigned id = threadIdx.y*blockDim.x + threadIdx.x;
+       if(id==0) {
+         Kokkos::Impl::FunctorFinal< FunctorType , work_tag >::final( m_functor , (void*) &value );
+         *result = value;
+       }
+     }
+   }
+#endif
   template< class HostViewType >
   ParallelReduce( const FunctorType  & functor 
                 , const Policy       & policy 
@@ -1162,7 +1196,11 @@ public:
 
     const dim3 grid( block_count , 1 , 1 );
     const dim3 block( 1 , block_size , 1 ); // REQUIRED DIMENSIONS ( 1 , N , 1 )
+#ifdef KOKKOS_EXPERIMENTAL_CUDA_SHFL_REDUCTION
+    const int shmem = 0;
+#else
     const int shmem = cuda_single_inter_block_reduce_scan_shmem<false,FunctorType,work_tag>( m_functor , block.y );
+#endif
 
     CudaParallelLaunch< ParallelReduce >( *this, grid, block, shmem ); // copy to device and execute
 
@@ -1245,7 +1283,7 @@ public:
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      ParallelReduce::template driver< typename Policy::work_tag >
+      ParallelReduce::template driver< work_tag >
         ( typename Policy::member_type( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
                                         , m_shmem_begin
                                         , m_shmem_size
@@ -1339,6 +1377,7 @@ class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokk
 private:
 
   typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda >          Policy ;
+  typedef typename Policy::WorkRange                                  work_range ;
   typedef typename Policy::work_tag                                   work_tag ;
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , work_tag >  ValueTraits ;
   typedef Kokkos::Impl::FunctorValueInit<   FunctorType , work_tag >  ValueInit ;
@@ -1413,11 +1452,11 @@ public:
     // Accumulate the values for this block.
     // The accumulation ordering does not match the final pass, but is arithmatically equivalent.
 
-    const Policy range( m_policy , blockIdx.x , gridDim.x );
+    const work_range range( m_policy , blockIdx.x , gridDim.x );
 
     for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
           iwork < iwork_end ; iwork += blockDim.y ) {
-      ParallelScan::template driver< typename Policy::work_tag >
+      ParallelScan::template driver< work_tag >
         ( m_functor , iwork , ValueOps::reference( shared_value ) , false );
     }
 
@@ -1449,7 +1488,7 @@ public:
       ValueInit::init( m_functor , shared_accum );
     }
 
-    const Policy range( m_policy , blockIdx.x , gridDim.x );
+    const work_range range( m_policy , blockIdx.x , gridDim.x );
 
     for ( typename Policy::member_type iwork_base = range.begin(); iwork_base < range.end() ; iwork_base += blockDim.y ) {
 
@@ -1468,7 +1507,7 @@ public:
 
       // Call functor to accumulate inclusive scan value for this work item
       if ( iwork < range.end() ) {
-        ParallelScan::template driver< typename Policy::work_tag >
+        ParallelScan::template driver< work_tag >
           ( m_functor , iwork , ValueOps::reference( shared_prefix + word_count.value ) , false );
       }
 
@@ -1482,7 +1521,7 @@ public:
 
       // Call functor with exclusive scan value
       if ( iwork < range.end() ) {
-        ParallelScan::template driver< typename Policy::work_tag >
+        ParallelScan::template driver< work_tag >
           ( m_functor , iwork , ValueOps::reference( shared_prefix ) , true );
       }
     }
@@ -1943,6 +1982,180 @@ void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::Cuda
 } // namespace Kokkos
 
 #endif // KOKKOS_HAVE_CXX11
+
+namespace Kokkos {
+template<int N>
+struct Vectorization<Cuda,N> {
+  typedef Kokkos::TeamPolicy< Cuda >         team_policy ;
+  typedef typename team_policy::member_type  team_member ;
+  enum {increment = N};
+
+#ifdef __CUDA_ARCH__
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int begin() { return threadIdx.y%N;}
+#else
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int begin() { return 0;}
+#endif
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int thread_rank(const team_member &dev) {
+    return dev.team_rank()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int team_rank(const team_member &dev) {
+    return dev.team_rank()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int team_size(const team_member &dev) {
+    return dev.team_size()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int global_thread_rank(const team_member &dev) {
+    return (dev.league_rank()*dev.team_size()+dev.team_rank())/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static bool is_lane_0(const team_member &dev) {
+    return (dev.team_rank()%increment)==0;
+  }
+
+  template<class Scalar>
+  KOKKOS_INLINE_FUNCTION
+  static Scalar reduce(const Scalar& val) {
+    #ifdef __CUDA_ARCH__
+    __shared__ Scalar result[256];
+    Scalar myresult;
+    for(int k=0;k<blockDim.y;k+=256) {
+      const int tid = threadIdx.y - k;
+      if(tid > 0 && tid<256) {
+        result[tid] = val;
+        if ( (N > 1) && (tid%2==0) )
+          result[tid] += result[tid+1];
+        if ( (N > 2) && (tid%4==0) )
+          result[tid] += result[tid+2];
+        if ( (N > 4) && (tid%8==0) )
+          result[tid] += result[tid+4];
+        if ( (N > 8) && (tid%16==0) )
+          result[tid] += result[tid+8];
+        if ( (N > 16) && (tid%32==0) )
+          result[tid] += result[tid+16];
+        myresult = result[tid];
+      }
+      if(blockDim.y>256)
+        __syncthreads();
+    }
+    return myresult;
+    #else
+    return val;
+    #endif
+  }
+
+#ifdef __CUDA_ARCH__
+  #if (__CUDA_ARCH__ >= 300)
+  KOKKOS_INLINE_FUNCTION
+  static int reduce(const int& val) {
+    int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static unsigned int reduce(const unsigned int& val) {
+    unsigned int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static long int reduce(const long int& val) {
+    long int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static unsigned long int reduce(const unsigned long int& val) {
+    unsigned long int result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static float reduce(const float& val) {
+    float result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static double reduce(const double& val) {
+    double result = val;
+    if (N > 1)
+      result += shfl_down(result, 1,N);
+    if (N > 2)
+      result += shfl_down(result, 2,N);
+    if (N > 4)
+      result += shfl_down(result, 4,N);
+    if (N > 8)
+      result += shfl_down(result, 8,N);
+    if (N > 16)
+      result += shfl_down(result, 16,N);
+    return result;
+  }
+  #endif
+#endif
+
+};
+}
 
 #endif /* defined( __CUDACC__ ) */
 

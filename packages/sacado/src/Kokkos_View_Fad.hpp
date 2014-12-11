@@ -69,7 +69,6 @@ namespace Kokkos {
 namespace Impl {
 
 struct ViewSpecializeSacadoFad {};
-template <typename T,unsigned,unsigned> struct ViewFadType {};
 
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
@@ -164,7 +163,7 @@ private:
 public:
 
   // This needs to be public so that we know what the return type of () is
-  typedef typename Impl::ViewFadType<fad_type, FadStaticDimension, FadStaticStride>::type fad_view_type ;
+  typedef typename Sacado::ViewFadType<fad_type, FadStaticDimension, FadStaticStride>::type fad_view_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -344,7 +343,11 @@ public:
                                 sizeof(fad_value_type) ,
                                 m_offset_map.capacity() );
 
-      Alloc::initialize( array_type( *this ) );
+      if ( Alloc::initialize() ) {
+        (void) Kokkos::Impl::DefaultConstruct
+          < typename traits::execution_space , fad_value_type >
+            ( m_ptr_on_device , m_offset_map.capacity() );
+      }
     }
 
   //------------------------------------

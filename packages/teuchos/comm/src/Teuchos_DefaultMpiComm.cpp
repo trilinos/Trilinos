@@ -47,15 +47,15 @@
 namespace Teuchos {
 
   std::string
-  mpiErrorCodeToString (const int err)
+  mpiErrorCodeToString (const int errCode)
   {
-    if (err == MPI_SUCCESS) {
+    if (errCode == MPI_SUCCESS) {
       return "MPI_SUCCESS";
     }
     else {
       char rawErrString[MPI_MAX_ERROR_STRING];
       int len = 0;
-      int err = MPI_Error_string (err, rawErrString, &len);
+      int err = MPI_Error_string (errCode, rawErrString, &len);
       if (err != MPI_SUCCESS) {
         // Assume that the string wasn't written.  This means it might
         // not be null terminated, so make it a valid empty string by
@@ -70,6 +70,12 @@ namespace Teuchos {
 
   namespace details {
     void safeCommFree (MPI_Comm* comm) {
+      // FIXME (mfh 08 Dec 2014) Use the MPI_Finalize hook trick to
+      // call MPI_Comm_free at MPI_Finalize automatically, if it
+      // hasn't already been called on the object.  Store the MPI_Comm
+      // (by allocated pointer) as the value of the (key,value) pair
+      // (used in the hook), and be sure to free the pair if the free
+      // function is called before MPI_Finalize.
       int finalized = 0;
       const int err = MPI_Finalized (&finalized);
       // Just to be safe, don't do anything if calling MPI_Finalized

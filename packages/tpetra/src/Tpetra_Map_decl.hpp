@@ -1189,10 +1189,12 @@ bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
 { return ! map1.isSameAs (map2); }
 
 
-#if defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
 // Include KokkosRefactor partial specialization if enabled
+#if defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
 #  if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #    include "Tpetra_KokkosRefactor_Map_decl.hpp"
+#  else
+#    error "The Kokkos refactor version of Tpetra must be enabled if the Kokkos refactor version of Tpetra::Map is enabled."
 #  endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #endif // defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
 
