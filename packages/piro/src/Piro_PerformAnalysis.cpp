@@ -313,7 +313,8 @@ Piro::PerformROLAnalysis(
 
   bool print = rolParams.get<bool>("Print Output", false);
 
-  rol_p.putScalar(rolParams.get<double>("parameter scalar guess", 2.0));
+  if(rolParams.isParameter("Parameter Scalar Guess"))
+    rol_p.putScalar(rolParams.get<double>("Parameter Scalar Guess", 2.0));
 
   int seed = rolParams.get<int>("Seed For Thyra Randomize", 42);
 
