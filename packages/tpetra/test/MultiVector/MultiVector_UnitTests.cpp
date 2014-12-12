@@ -1983,6 +1983,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyConst, LO , GO , Scalar , Node )
   {
     using std::endl;
+    using Teuchos::toString;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1991,9 +1992,15 @@ namespace {
     typedef Teuchos::ScalarTraits<Mag> STM;
 
     const Mag M0 = STM::zero ();
+    // This test should even pass in the field of the integers mod 2.
+    // In that case, TWO == ZERO, THREE == ONE, and FOUR == TWO,
+    // though, so the test won't be very conclusive.
     const Scalar ZERO = STS::zero ();
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
+    const Scalar THREE = TWO + ONE;
+    const Scalar FOUR = THREE + ONE;
+    const Scalar FIVE = FOUR + ONE;
 
     // Create a Map
     const size_t numLocal = 13;
@@ -2005,16 +2012,24 @@ namespace {
 
     out << "Part 1:" << endl;
     {
-      // create random MV
+      Teuchos::OSTab tab1 (out);
+
+      // Create original MultiVector.  Fill it with nonzero initial
+      // data.  Thus, if we see zeros in the inf-norms below, we know
+      // that something is wrong.
+      out << "Create original MultiVector (mvorig)" << endl;
       MV mvorig (map, numVectors);
-      mvorig.randomize ();
+      out << "Fill all entries of mvorig with " << FIVE << endl;
+      mvorig.putScalar (FIVE);
 
       // Remember the inf-norms of all of the columns of mvorig.
       Array<Mag> norig (numVectors);
       mvorig.normInf (norig ());
+      out << "Inf-norms of mvorig's columns: " << toString (norig ()) << endl;
 
       // Create nonconst strided (noncontiguous) subview of mvorig.
       Tuple<size_t,3> inds = tuple<size_t> (1,3,5);
+      out << "mvview = mvorig.subViewNonConst(" << toString (inds) << ")" << endl;
       RCP<MV> mvview = mvorig.subViewNonConst (inds);
 
       Array<Mag> nsub (inds.size ());
@@ -2022,33 +2037,76 @@ namespace {
         nsub[j] = norig[inds[j]];
       }
 
-      // Make a deep copy of mvview.
+      out << "Make three different deep copies of mvview" << endl;
+
+      // Make a deep copy of mvview, in three different ways.  All
+      // three copies should be independent of mvview and of each
+      // other.
+
+      out << "  MV mvcopy (*mvview, Teuchos::Copy);" << endl;
       MV mvcopy (*mvview, Teuchos::Copy);
+
+      out << "  MV mvcopy2 = Tpetra::createCopy (*mvview);" << endl;
+      MV mvcopy2 = Tpetra::createCopy (*mvview);
+
+      out << "  MV mvcopy3 (map, numVecs, false); mvcopy3.randomize (); "
+        "Tpetra::deep_copy (mvcopy3, *mvview);" << endl;
+      MV mvcopy3 (mvview->getMap (), mvview->getNumVectors (), false);
+      mvcopy3.randomize ();
+      Tpetra::deep_copy (mvcopy3, *mvview);
+
+      out << "Deep copy must preserve norms of the copied columns" << endl;
 
       // Deep copy must preserve norms of the copied columns.
       Array<Mag> ncopy (inds.size ());
       mvcopy.normInf (ncopy ());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
+      out << "  Inf-norms of mvcopy's columns: " << toString (ncopy ()) << endl;
 
-      // reset both the view and the copy of the view, ensure that they are independent
+      Array<Mag> ncopy2 (inds.size ());
+      mvcopy2.normInf (ncopy2 ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy2,nsub,M0);
+      out << "  Inf-norms of mvcopy2's columns: " << toString (ncopy2 ()) << endl;
+
+      Array<Mag> ncopy3 (inds.size ());
+      mvcopy3.normInf (ncopy3 ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy3,nsub,M0);
+      out << "  Inf-norms of mvcopy3's columns: " << toString (ncopy3 ()) << endl;
+
+      out << "Test whether the copies are independent of their source, "
+        "and of each other" << endl;
+
+      // Change all the entries in both the view, and in all copies of
+      // the view.  We will test below whether all of these
+      // MultiVectors are independent.
       mvview->putScalar (ONE);
       mvcopy.putScalar (TWO);
+      mvcopy2.putScalar (THREE);
+      mvcopy3.putScalar (FOUR);
 
       Array<Mag> nsub_aft (inds.size ());
       mvview->normInf (nsub_aft ());
-      out << "inf-norms of mvview's columns: "
-          << Teuchos::toString (nsub_aft ()) << endl;
+      out << "  Inf-norms of mvview's columns: " << toString (nsub_aft ()) << endl;
       Array<Mag> ones (inds.size (), STM::one ());
-      TEST_COMPARE_FLOATING_ARRAYS(nsub_aft,ones,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(nsub_aft, ones, M0);
 
       Array<Mag> ncopy_aft (inds.size ());
       mvcopy.normInf (ncopy_aft ());
-      out << "inf-norms of mvcopy's columns: "
-          << Teuchos::toString (ncopy_aft ()) << endl;
+      out << "  Inf-norms of mvcopy's columns: " << toString (ncopy_aft ()) << endl;
       Array<Mag> twos (inds.size (), STM::one () + STM::one ());
-      TEST_COMPARE_FLOATING_ARRAYS(ncopy_aft,twos,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy_aft, twos, M0);
 
-      mvcopy.describe (*Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout)), Teuchos::VERB_EXTREME);
+      Array<Mag> ncopy2_aft (inds.size ());
+      mvcopy2.normInf (ncopy2_aft ());
+      out << "  Inf-norms of mvcopy2's columns: " << toString (ncopy2_aft ()) << endl;
+      Array<Mag> threes (inds.size (), STM::one () + STM::one () + STM::one ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy2_aft,threes,M0);
+
+      Array<Mag> ncopy3_aft (inds.size ());
+      mvcopy3.normInf (ncopy3_aft ());
+      out << "  Inf-norms of mvcopy3's columns: " << toString (ncopy3_aft ()) << endl;
+      Array<Mag> fours (inds.size (), STM::one () + STM::one () + STM::one () + STM::one ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy3_aft,fours,M0);
     }
 
     out << "Part 2:" << endl;
