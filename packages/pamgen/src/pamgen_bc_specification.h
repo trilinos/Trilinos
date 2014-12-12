@@ -1,9 +1,10 @@
-#ifndef bc_specificationH
-#define bc_specificationH
+#ifndef pamgen_bc_specificationH
+#define pamgen_bc_specificationH
 
-#include "StrLoopLimits.h"
+#include "PamgenStrLoopLimits.h"
 #include "topology_enum.h"
 #include <vector>
+
 
 class PG_BC_Spec_Loc{
 public:

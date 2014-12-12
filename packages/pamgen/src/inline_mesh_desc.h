@@ -10,7 +10,7 @@
 
 #include "inline_geometries.h"
 #include "topology_enum.h"
-#include "bc_specification.h"
+#include "pamgen_bc_specification.h"
 #include "element_density_function.h"
 #include "geometry_transform.h"
 #include "uns_inline_decomp.h"

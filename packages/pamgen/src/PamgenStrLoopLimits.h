@@ -1,7 +1,7 @@
 // $Id$
 
-#ifndef STRLOOPLIMITS_H
-#define STRLOOPLIMITS_H
+#ifndef PAMSTRLOOPLIMITS_H
+#define PAMSTRLOOPLIMITS_H
 
 // LoopLimits
 namespace PAMGEN_NEVADA {
