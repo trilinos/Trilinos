@@ -208,6 +208,8 @@ change.
     \begin{tabular}{p{3.0cm} p{12cm}}
       \toprule
       \verb!none!   & No reuse \\
+      \verb!emin!   & Reuse old prolongator as an initial guess to energy
+                      minimization, and reuse the prolongator pattern
       \verb!RP!     & Reuse smoothed prolongator and restrictor. Smoothers are
                       recomputed.  \ding{42} \verb!RP! should reuse matrix graphs for
                       matrix-matrix product, but currently that is disabled as only \epetra{}
