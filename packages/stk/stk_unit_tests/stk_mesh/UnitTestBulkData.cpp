@@ -4468,4 +4468,116 @@ TEST(BulkData, STK_Deimprint)
   }
 }
 
+TEST(BulkData, ChangeAuraElementPart)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int parallel_size = stk::parallel_machine_size(pm);
+  const int parallel_rank = stk::parallel_machine_rank(pm);
+
+  if (parallel_size != 4) return;
+
+  // This test will create a four element mesh (quad4 elements)
+  // in parallel.
+
+  /*  Mesh
+   *    7---8---9  P0 owns nodes 1,2,4,5; P, elem 1
+   *    | 3 | 4 |  P1 : 3,6, elem 2
+   *    4---5---6  P2 : 7,8, elem 3
+   *    | 1 | 2 |  P3 : 9,   elem 4
+   *    1---2---3
+   */
+
+  unsigned spatialDim = 2;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData mesh(meta, pm);
+
+  stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+
+  stk::mesh::Selector all_nodes = meta.universal_part();
+
+  meta.commit();
+  mesh.modification_begin();
+
+  const size_t nodesPerElem = 4;
+
+  stk::mesh::EntityId elem_nodes1[] = {1, 2, 5, 4};
+  stk::mesh::EntityId elem_nodes2[] = {2, 3, 6, 5};
+  stk::mesh::EntityId elem_nodes3[] = {4, 5, 8, 7};
+  stk::mesh::EntityId elem_nodes4[] = {5, 6, 9, 8};
+
+  stk::mesh::EntityId * elem_nodes[] = { elem_nodes1, elem_nodes2, elem_nodes3, elem_nodes4 };
+
+  int node_sharing[9][4] = { {0}, {0,1}, {1}, {0,2}, {0,1,2,3}, {1,3}, {2}, {2,3}, {3} };
+  int num_node_sharing[] = {1, 2, 1, 2, 4, 2, 1, 2, 1};
+
+  // Create nodes
+  size_t e = parallel_rank;
+  {
+    for(size_t n=0; n<nodesPerElem; ++n)
+    {
+      stk::mesh::EntityId nodeGlobalId = elem_nodes[e][n];
+
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeGlobalId);
+      if (!mesh.is_valid(node))
+      {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeGlobalId);
+      }
+    }
+  }
+
+  // Create elements
+  stk::mesh::Entity local_elem = stk::mesh::declare_element(mesh, block_1, e+1, elem_nodes[e]);
+
+  // declare node sharing
+  for(size_t n=0; n<nodesPerElem; ++n)
+  {
+    stk::mesh::EntityId nodeGlobalId = elem_nodes[e][n];
+    stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeGlobalId);
+    const int node_index = nodeGlobalId-1;
+    for (int share=0; share<num_node_sharing[node_index]; ++share)
+    {
+      const int share_proc = node_sharing[node_index][share];
+      if (parallel_rank != share_proc) mesh.add_node_sharing(node, share_proc);
+    }
+  }
+
+  mesh.modification_end();
+
+  // All nodes appear everywhere via aura
+  stk::mesh::Entity node5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
+  stk::mesh::Entity node6 = mesh.get_entity(stk::topology::NODE_RANK, 6);
+  EXPECT_TRUE(mesh.is_valid(node5));
+  EXPECT_TRUE(mesh.is_valid(node6));
+
+  mesh.modification_begin();
+  if (parallel_rank == 1 || parallel_rank == 3)
+  {
+    stk::mesh::PartVector add_parts(1, &block_2);
+    stk::mesh::PartVector remove_parts(1, &block_1);
+    mesh.change_entity_parts(local_elem, add_parts, remove_parts);
+  }
+  mesh.modification_end();
+
+  stk::mesh::Entity elem2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
+  stk::mesh::Entity elem4 = mesh.get_entity(stk::topology::ELEMENT_RANK, 4);
+  EXPECT_TRUE(mesh.is_valid(elem2));
+  EXPECT_TRUE(mesh.is_valid(elem4));
+
+  const bool expect_consistent_parts_on_aura_entities = false;
+
+  if (expect_consistent_parts_on_aura_entities)
+  {
+    EXPECT_FALSE(mesh.bucket(elem2).member(block_1));
+    EXPECT_TRUE(mesh.bucket(elem2).member(block_2));
+    EXPECT_FALSE(mesh.bucket(elem4).member(block_1));
+    EXPECT_TRUE(mesh.bucket(elem4).member(block_2));
+
+    EXPECT_TRUE(mesh.bucket(node5).member(block_1));
+    EXPECT_TRUE(mesh.bucket(node5).member(block_2));
+    EXPECT_FALSE(mesh.bucket(node6).member(block_1));
+    EXPECT_TRUE(mesh.bucket(node6).member(block_2));
+  }
+}
+
 }  // empty namespace
