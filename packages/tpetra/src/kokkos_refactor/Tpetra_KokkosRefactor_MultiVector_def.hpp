@@ -1628,7 +1628,7 @@ namespace Tpetra {
     using Kokkos::subview;
     typedef typename dual_view_type::t_dev::memory_space device_memory_space;
     typedef typename dual_view_type::t_host::memory_space host_memory_space;
-    const bool debug = true;
+    const bool debug = false;
 
     const scalar_type theAlpha = static_cast<scalar_type> (alpha);
     // const size_t lclNumRows = getLocalLength ();
@@ -3506,7 +3506,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef typename DeviceType::memory_space DT;
     typedef typename dual_view_type::host_mirror_space HMDT;
-    const bool debug = true;
+    const bool debug = false;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       this->getGlobalLength () != src.getGlobalLength () ||
