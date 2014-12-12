@@ -1977,6 +1977,28 @@ namespace Tpetra {
     /// isConstantStride() returns true.
     Teuchos::Array<size_t> whichVectors_;
 
+    //! \name Generic implementation of various norms
+    //@{
+
+    //! Input argument for normImpl() (which see).
+    enum EWhichNorm {
+      NORM_ONE, //<! Use the one-norm
+      NORM_TWO, //<! Use the two-norm
+      NORM_INF  //<! Use the infinity-norm
+    };
+
+    /// \brief Compute the norm of each vector (column), storing the
+    ///   result in a device View.
+    ///
+    /// This method consolidates all common code between the
+    /// infinity-norm, 1-norm, and 2-norm calculations.  On exit,
+    /// norms(j) is the norm (of the selected type) of column j of
+    /// this MultiVector.
+    void
+    normImpl (const Kokkos::View<mag_type*, device_type>& norms,
+              const EWhichNorm whichNorm) const;
+
+    //@}
     //! @name View constructors, used only by nonmember constructors.
     //@{
 
