@@ -54,7 +54,7 @@ public:
 
 
 
-void updateDistributedIndexUsingStkMesh(BulkDataTester &stkMeshBulkData, const int myProc, stk::parallel::DistributedIndex& distributedIndex)
+void updateDistributedIndexUsingStkMesh(BulkDataTester &stkMeshBulkData, stk::parallel::DistributedIndex& distributedIndex)
 {
     stk::parallel::DistributedIndex::KeyTypeVector local_created_or_modified; // only store locally owned/shared entities
 
@@ -66,7 +66,7 @@ void updateDistributedIndexUsingStkMesh(BulkDataTester &stkMeshBulkData, const i
     {
         stk::mesh::Entity entity = i->second;
 
-        if(stk::mesh::in_owned_closure(stkMeshBulkData, entity, myProc) &&
+        if(stkMeshBulkData.owned_closure(entity) &&
                 stkMeshBulkData.entity_rank(entity) == stk::topology::NODE_RANK )
         {
             ++num_created_or_modified;
@@ -79,7 +79,7 @@ void updateDistributedIndexUsingStkMesh(BulkDataTester &stkMeshBulkData, const i
     {
         stk::mesh::Entity entity = i->second;
 
-        if(stk::mesh::in_owned_closure(stkMeshBulkData, entity, myProc) &&
+        if(stkMeshBulkData.owned_closure(entity)  &&
                 stkMeshBulkData.entity_rank(entity) == stk::topology::NODE_RANK )
         {
             local_created_or_modified.push_back(stkMeshBulkData.entity_key(entity));
@@ -108,7 +108,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::impl::convert_entity_keys_to_spans(stkMeshMetaData);
         DistributedIndexTester distributedIndex(communicator, spans);
 
-        updateDistributedIndexUsingStkMesh(stkMeshBulkData, myProc, distributedIndex);
+        updateDistributedIndexUsingStkMesh(stkMeshBulkData, distributedIndex);
 
         const unsigned rankCount = stkMeshMetaData.entity_rank_count();
         EXPECT_EQ(4u, rankCount);

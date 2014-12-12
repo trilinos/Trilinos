@@ -3,9 +3,6 @@
 
 //----------------------------------------------------------------------
 
-// Use macro below to enable metric gathering for get_buckets memoization
-//#define GATHER_GET_BUCKETS_METRICS
-
 // Use macro below to activate counters that track calls to mesh-modification routines
 //#define STK_MESH_MODIFICATION_COUNTERS
 

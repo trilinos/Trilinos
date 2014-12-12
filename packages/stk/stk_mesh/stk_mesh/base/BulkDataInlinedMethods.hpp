@@ -43,16 +43,6 @@ size_t get_connectivity( const BulkData & mesh,
                          std::vector<Permutation> & permutation_scratch_storage );
 
 
-/** \brief  Is in owned closure of the given process,
- *          typically the local process.
- */
-inline
-bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
-{
-  const bool same_proc = mesh.parallel_rank() == proc;
-  return same_proc && mesh.owned_closure(entity);
-}
-
  /** \brief  Comparator functor for entities compares the entities' keys */
 inline
 EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}

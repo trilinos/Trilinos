@@ -72,10 +72,6 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
 
-void internal_get_processor_dependencies_shared_or_ghosted(
-          const BulkData &mesh,
-          const EntityProc                  shared_or_ghosted_entry ,
-          stk::mesh::EntityToDependentProcessorsMap & owned_node_sharing_map);
 
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
@@ -97,7 +93,6 @@ int check_no_shared_elements_or_higher(const BulkData& mesh);
 int check_for_connected_nodes(const BulkData& mesh);
 
 void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
-bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_rank );
 
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(

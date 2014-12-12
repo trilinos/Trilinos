@@ -157,40 +157,6 @@ int check_for_connected_nodes(const BulkData& mesh)
   return 0;
 }
 
-bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_rank )
-{
-  if (p_rank == mesh.parallel_owner_rank(e)) {
-    return true;
-  }
-
-  const EntityRank erank = mesh.entity_rank(e);
-  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
-
-  // Any higher ranking entities locally owned?
-  EntityVector temp_entities;
-  Entity const* rels = NULL;
-  int num_rels = 0;
-  for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > erank; --irank)
-  {
-    if (mesh.connectivity_map().valid(erank, irank)) {
-      num_rels = mesh.num_connectivity(e, irank);
-      rels     = mesh.begin(e, irank);
-    }
-    else {
-      num_rels = get_connectivity( mesh, e, irank, temp_entities);
-      rels     = &*temp_entities.begin();
-    }
-
-    for (int r = 0; r < num_rels; ++r) {
-      if (p_rank == mesh.parallel_owner_rank(rels[r]) ||  member_of_owned_closure(mesh, rels[r], p_rank) ) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
 int check_no_shared_elements_or_higher(const BulkData& mesh)
 {
   for(stk::mesh::EntityRank rank=stk::topology::ELEMENT_RANK; rank < mesh.mesh_meta_data().entity_rank_count(); ++rank) {
@@ -229,7 +195,7 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
 
             if ( num_nodes_on_entity > 1 )
             {
-                if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
+                if(mesh.owned_closure(entity))
                 {
                     Entity const * nodes = bucket.begin_nodes(entityIndex);
 
@@ -1101,7 +1067,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     const bool     shares     = M.in_shared( M.entity_key(entity) );
     const bool     recv_ghost = M.in_receive_ghost( M.entity_key(entity) );
     const bool     send_ghost = M.in_send_ghost( M.entity_key(entity) );
-    const bool     owned_closure = in_owned_closure( M, entity , p_rank );
+    const bool     owned_closure = M.owned_closure(entity);
 
     if ( ! ordered ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
@@ -1346,7 +1312,7 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
     {
       Entity e = rels[r];
 
-      bool upwardRelationOfEntityIsInClosure = in_owned_closure(mesh, e , mesh.parallel_rank());
+      bool upwardRelationOfEntityIsInClosure = mesh.owned_closure(e);
       ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, mesh.entity_rank(e) << " with id " << mesh.identifier(e) << " should not be in closure." );
 
       // Recursion
@@ -1378,7 +1344,7 @@ void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mes
 
     bool entityisValid = mesh.is_valid(entity);
     bool isSharedEntity = !mesh.entity_comm_map_shared(i->key).empty();
-    bool isNotInOwnedClosure = !in_owned_closure(mesh, entity , mesh.parallel_rank() );
+    bool isNotInOwnedClosure = !mesh.owned_closure(entity);
     bool entityIsSharedButNotInClosure =  entityisValid && isSharedEntity && isNotInOwnedClosure;
 
     if ( entityIsSharedButNotInClosure )

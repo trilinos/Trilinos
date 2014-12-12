@@ -367,13 +367,13 @@ public:
 
   bool has_permutation(EntityRank rank) const;
 
-  bool destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id );
-
-  bool declare_relation(size_type bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation);
-
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
 
 private:
+
+  bool destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id );
+
+  bool declare_relation(size_type bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation);
 
   // The following *_other* functions should not be made available externally, in
   // order to avoid external confusion with "constraint" and "other" connectivities.

@@ -374,7 +374,7 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
         }
     }
 
-  EXPECT_THROW(mesh.modification_end(), std::runtime_error);
+  EXPECT_NO_THROW(mesh.modification_end());
 
 /*
   // Make sure we know about all nodes and elements (including aura, which

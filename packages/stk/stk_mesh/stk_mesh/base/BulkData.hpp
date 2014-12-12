@@ -183,12 +183,6 @@ public:
    */
   bool modification_begin(const std::string description = std::string("UNSPECIFIED"));
 
-  /** \brief  Return the description given for the modification_begin
-   *          call that began the most recent mesh modification cycle
-   */
-  const std::string& get_modification_begin_description() const;
-
-
   /** \brief  Parallel synchronization of modifications and
    *          transition to the guaranteed parallel consistent state.
    *
@@ -518,7 +512,6 @@ public:
   bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
   bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
-  bool is_aura_ghosted_onto_proc( EntityKey key, int otherProc ) const;     // CLEANUP: used only by modification_end_for_entity_creation
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
@@ -624,7 +617,6 @@ public:
   inline unsigned num_elements(Entity entity) const;
 
   unsigned count_valid_connectivity(Entity entity, EntityRank rank) const;
-  unsigned count_valid_connectivity(Entity entity) const;
 
   inline Entity const* end(Entity entity, EntityRank rank) const;
   inline Entity const* end_nodes(Entity entity) const;
@@ -648,7 +640,10 @@ public:
   // Return index (offset) of query ordinal if found, num_connectivity otherwise.
   unsigned find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdinal ordinal) const;
   bool has_permutation(Entity entity, EntityRank rank) const;
-  bool owned_closure(Entity entity) const { return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0); }
+  bool owned_closure(Entity entity) const
+  {
+      return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0);
+  }
   void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
@@ -775,30 +770,14 @@ protected: //functions
    *  - a collective parallel operation.
    */
   void internal_regenerate_aura();
-  void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
-                           const std::vector<EntityProc> & shared_change,
-                           const std::vector<EntityProc> & ghosted_change,
-                           EntityToDependentProcessorsMap & owned_node_sharing_map);
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps();
 
-  void internal_apply_node_sharing(const EntityToDependentProcessorsMap & owned_node_sharing_map);
-  void internal_add_node_sharing( Entity node, int sharing_proc );
-  void internal_remove_node_sharing( EntityKey node, int sharing_proc );
-  void internal_compute_proposed_owned_closure_count(const std::vector<EntityProc> & local_change,
-                                                     const std::vector<EntityProc> & shared_change,
-                                                     const std::vector<EntityProc> & ghosted_change,
-                                                     std::vector<uint16_t> & new_closure_count) const;
   void internal_create_new_owner_map(const std::vector<EntityProc> & local_change,
                                      const std::vector<EntityProc> & shared_change,
                                      const std::vector<EntityProc> & ghosted_change,
                                      NewOwnerMap & new_owner_map);
-  void update_dependent_processor_map_from_closure_count(const std::vector<uint16_t> & proposed_closure_count,
-                                                         EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
-  void internal_print_comm_map( std::string title);
-  void internal_communicate_entity_to_dependent_processors_map(
-          EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
@@ -865,10 +844,6 @@ private: //functions
   BulkData();
   BulkData( const BulkData & );
   BulkData & operator = ( const BulkData & );
-
-#ifdef GATHER_GET_BUCKETS_METRICS
-  void gather_and_print_get_buckets_metrics() const;
-#endif
 
   void gather_and_print_mesh_partitioning() const;
 
@@ -1021,7 +996,6 @@ private: // data
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   std::vector<Part*> m_ghost_parts;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
-  std::string m_modification_begin_description;
   int m_num_fields;
   bool m_keep_fields_updated;
   std::vector<size_t> m_entity_sync_counts;
@@ -1038,15 +1012,6 @@ private: // data
   static unsigned m_num_bulk_data_counter;
   unsigned m_modification_counters[NumMethodTypes][NumModificationTypes];
   unsigned m_entity_modification_counters[NumMethodTypes][stk::topology::NUM_RANKS][NumEntityModificationTypes];
-#endif
-
-#ifdef GATHER_GET_BUCKETS_METRICS
-  mutable SelectorCountMap m_selector_to_count_map;
-  mutable size_t m_num_memoized_get_buckets_calls;
-  mutable size_t m_num_non_memoized_get_buckets_calls;
-  size_t m_num_buckets_inserted_in_cache;
-  size_t m_num_buckets_removed_from_cache;
-  size_t m_num_modifications;
 #endif
 
 };

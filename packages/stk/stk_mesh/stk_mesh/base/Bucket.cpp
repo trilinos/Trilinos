@@ -657,10 +657,6 @@ bool Bucket::destroy_relation(Entity e_from, Entity e_to, const RelationIdentifi
   DestroyRelationFunctor functor(from_bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id));
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
 
-  if (functor.m_modified && mesh().bucket(e_from).owned() && (mesh().entity_rank(e_from) > mesh().entity_rank(e_to)) ) {
-    --mesh().m_closure_count[e_to.local_offset()];
-  }
-
   return functor.m_modified;
 }
 
@@ -668,10 +664,6 @@ bool Bucket::declare_relation(size_type bucket_ordinal, Entity e_to, const Conne
 {
   DeclareRelationFunctor functor(bucket_ordinal, e_to, ordinal, permutation);
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
-
-  if (functor.m_modified && owned() && (entity_rank() > mesh().entity_rank(e_to)) ) {
-    ++mesh().m_closure_count[e_to.local_offset()];
-  }
 
   return functor.m_modified;
 }

@@ -115,12 +115,11 @@ void construct_communication_set( const BulkData & bulk, const std::set<Entity,E
 
 size_t count_non_used_entities( const BulkData & bulk, const EntityVector & entities)
 {
-  const unsigned proc_local = bulk.parallel_rank();
   size_t non_used_entities = 0;
 
   for ( EntityVector::const_iterator
         i = entities.begin(); i != entities.end(); ++i ) {
-    if ( ! in_owned_closure( bulk, *i , proc_local ) ) {
+    if ( ! bulk.owned_closure(*i) ) {
       ++non_used_entities;
     }
   }
