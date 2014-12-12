@@ -47,7 +47,7 @@
 #include "Stratimikos_MueluTpetraHelpers.hpp"
 
 #include "Thyra_MueLuTpetraPreconditionerFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
 #endif
 
@@ -81,7 +81,7 @@ void enableMueLuTpetra(
 }
 
 } // namespace Stratimikos
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 namespace Stratimikos {
 
 void enableMueLuTpetraQ2Q1(
