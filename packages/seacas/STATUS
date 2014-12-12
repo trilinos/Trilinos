@@ -1,9 +1,0 @@
-* C API for both nemesis and exodus installed; need to also install
-  Fortran API.  Currently waiting for minor refactoring of how the
-  fortran libraries are built in SEAMS.
-
-* Need to activate the exodus "old tests".
-
-* Add more tests
-
-* Better handling of xdmf
