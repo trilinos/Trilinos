@@ -1626,78 +1626,75 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::Impl::ViewFill;
     using Kokkos::subview;
-    typedef typename dual_view_type::t_dev::memory_space device_memory_space;
-    typedef typename dual_view_type::t_host::memory_space host_memory_space;
-    const bool debug = false;
+    typedef typename dual_view_type::t_dev::memory_space DMS;
+    typedef typename dual_view_type::t_host::memory_space HMS;
 
     const scalar_type theAlpha = static_cast<scalar_type> (alpha);
-    // const size_t lclNumRows = getLocalLength ();
+    const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
-
-    if (debug && this->getMap ()->getComm ()->getRank () == 0) {
-      std::cout << "*** putScalar(alpha = " << theAlpha << "): "
-                << "X_host(0,0) before = " << this->getDualView ().h_view(0,0);
-    }
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
 
     // Modify the most recently updated version of the data.  This
     // avoids sync'ing, which could violate users' expectations.
     if (view_.modified_device >= view_.modified_host) {
+      //
       // Last modified in device memory, so modify data there.
-      this->template modify<device_memory_space> ();
-      if (isConstantStride ()) {
-        typedef ViewFill<typename dual_view_type::t_dev> functor_type;
-        functor_type vf (view_.template view<device_memory_space> (), theAlpha);
-        //Kokkos::parallel_for (lclNumRows, vf);
+      //
+      // Type of the device memory View of the MultiVector's data.
+      typedef typename dual_view_type::t_dev mv_view_type;
+      // Type of a View of a single column of the MultiVector's data.
+      typedef Kokkos::View<scalar_type*,
+        typename mv_view_type::array_layout, DMS> vec_view_type;
+
+      this->template modify<DMS> (); // we are about to modify on the device
+      mv_view_type X =
+        subview<mv_view_type> (this->getDualView ().template view<DMS> (),
+                               rowRng, colRng);
+      if (numVecs == 1) {
+        vec_view_type X_0 =
+          subview<vec_view_type> (X, ALL (), static_cast<size_t> (0));
+        // The constructor of ViewFill invokes the functor in
+        // parallel, so we don't have to call parallel_for ourselves.
+        ViewFill<vec_view_type> vf (X_0, theAlpha);
+      }
+      else if (isConstantStride ()) {
+        ViewFill<mv_view_type> vf (X, theAlpha);
       }
       else {
-        if (debug && this->getMap ()->getComm ()->getRank () == 0) {
-          std::cout << ", nonconst stride, modify device";
-        }
-        typedef Kokkos::View<scalar_type*,
-          typename dual_view_type::t_dev::array_layout,
-          device_memory_space> col_view_type;
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t col = whichVectors_[k];
-          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
-            std::cout << ", col = " << col;
-          }
-          col_view_type vector_k =
-            subview<col_view_type> (view_.d_view, ALL (), col);
-          if (debug && this->getMap ()->getComm ()->getRank () == 0) {
-            std::cout << ", numRows = " << vector_k.dimension_0 ();
-          }
-          ViewFill<col_view_type> vf (vector_k, theAlpha);
-          //Kokkos::parallel_for (lclNumRows, vf);
+          vec_view_type X_k = subview<vec_view_type> (X, ALL (), col);
+          ViewFill<vec_view_type> vf (X_k, theAlpha);
         }
       }
     }
     else { // last modified in host memory, so modify data there.
-      this->template modify<host_memory_space> ();
-      if (isConstantStride ()) {
-        typedef ViewFill<typename dual_view_type::t_host> functor_type;
-        functor_type vf (view_.template view<host_memory_space> (), theAlpha);
-        //Kokkos::parallel_for (lclNumRows, vf);
+      typedef typename dual_view_type::t_host mv_view_type;
+      typedef Kokkos::View<scalar_type*,
+        typename mv_view_type::array_layout, HMS> vec_view_type;
+
+      this->template modify<HMS> (); // we are about to modify on the host
+      mv_view_type X =
+        subview<mv_view_type> (this->getDualView ().template view<HMS> (),
+                               rowRng, colRng);
+      if (numVecs == 1) {
+        vec_view_type X_0 =
+          subview<vec_view_type> (X, ALL (), static_cast<size_t> (0));
+        // The constructor of ViewFill invokes the functor in
+        // parallel, so we don't have to call parallel_for ourselves.
+        ViewFill<vec_view_type> vf (X_0, theAlpha);
+      }
+      else if (isConstantStride ()) {
+        ViewFill<mv_view_type> vf (X, theAlpha);
       }
       else {
-        if (debug && this->getMap ()->getComm ()->getRank () == 0) {
-          std::cout << ", nonconst stride, modify host";
-        }
-        typedef Kokkos::View<scalar_type*,
-          typename dual_view_type::t_host::array_layout,
-          host_memory_space> col_view_type;
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t col = whichVectors_[k];
-          col_view_type vector_k =
-            subview<col_view_type> (view_.h_view, ALL (), col);
-          ViewFill<col_view_type> vf (vector_k, theAlpha);
-          //Kokkos::parallel_for (lclNumRows, vf);
+          vec_view_type X_k = subview<vec_view_type> (X, ALL (), col);
+          ViewFill<vec_view_type> vf (X_k, theAlpha);
         }
       }
-    }
-
-    if (debug && this->getMap ()->getComm ()->getRank () == 0) {
-      std::cout << ", X_host(0,0) after = "
-                << this->getDualView ().h_view(0,0) << std::endl;
     }
   }
 
