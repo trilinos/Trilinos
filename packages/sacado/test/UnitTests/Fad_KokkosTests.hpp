@@ -514,6 +514,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = checkFads(f1, f2, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Roger, FadType, Layout, Device )
+{
+  const unsigned fad_size = global_fad_size;
+
+  typename ApplyView<FadType*,Layout,Device>::type a("a",4,fad_size+1);
+  typename ApplyView<FadType**,Layout,Device>::type b("b",4,4,fad_size+1);
+  typename ApplyView<FadType***,Layout,Device>::type c("c",4,4,4,fad_size+1);
+  typename ApplyView<FadType****,Layout,Device>::type d("d",4,4,4,4,fad_size+1);
+  typename ApplyView<FadType*****,Layout,Device>::type e("e",4,4,4,4,4,fad_size+1);
+  typename ApplyView<FadType******,Layout,Device>::type f("f",4,4,4,4,4,4,fad_size+1);
+  typename ApplyView<FadType*******,Layout,Device>::type g("g",4,4,4,4,4,4,4,fad_size+1);
+
+  a(0) = FadType(1.0);
+  f(0,0,0,0,0,0) = FadType(1.0);
+  g(0,0,0,0,0,0,0) = FadType(1.0);
+
+  // Check
+  success = true;
+}
+
 // Tests that require view spec
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -777,6 +798,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
