@@ -75,10 +75,6 @@ struct FunctorValueTraits
   typedef void value_type ;
   typedef void pointer_type ;
   typedef void reference_type ;
-  typedef void volatile_pointer_type ;
-  typedef void volatile_reference_type ;
-  typedef void const_volatile_pointer_type ;
-  typedef void const_volatile_reference_type ;
 
   enum { StaticValueSize = 0 };
 
@@ -108,22 +104,13 @@ struct FunctorValueTraits< FunctorType , ArgTag , true /* exists FunctorType::va
   // If not an array then what is the sizeof(value_type)
   enum { StaticValueSize = Impl::is_array< typename FunctorType::value_type >::value ? 0 : sizeof(value_type) };
 
-  typedef value_type volatile        volatile_value_type ;
-  typedef value_type const volatile  const_volatile_value_type ;
-
   typedef value_type                 * pointer_type ;
-  typedef volatile_value_type        * volatile_pointer_type ;
-  typedef const_volatile_value_type  * const_volatile_pointer_type ;
 
   // The reference_type for an array is 'value_type *'
   // The reference_type for a single value is 'value_type &'
 
   typedef typename Impl::if_c< ! StaticValueSize , value_type *
                                                  , value_type & >::type  reference_type ;
-  typedef typename Impl::if_c< ! StaticValueSize , volatile_value_type *
-                                                 , volatile_value_type & >::type  volatile_reference_type ;
-  typedef typename Impl::if_c< ! StaticValueSize , const_volatile_value_type *
-                                                 , const_volatile_value_type & >::type  const_volatile_reference_type ;
 
   // Number of values if single value
   template< class F >
@@ -180,17 +167,9 @@ private:
 
 public:
 
-  typedef typename Impl::if_c< IS_VOID , void , ValueType >::type                 value_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile >::type        volatile_value_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile >::type  const_volatile_value_type ;
-
-  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type                 pointer_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile * >::type        volatile_pointer_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile * >::type  const_volatile_pointer_type ;
-
-  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type                 reference_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile & >::type        volatile_reference_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile & >::type  const_volatile_reference_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType   >::type  value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type  pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type  reference_type ;
 
   enum { StaticValueSize = IS_VOID ? 0 : sizeof(ValueType) };
 
@@ -253,17 +232,9 @@ private:
 
 public:
 
-  typedef typename Impl::if_c< IS_VOID , void , ValueType >::type                 value_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile >::type        volatile_value_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile >::type  const_volatile_value_type ;
-
-  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type                 pointer_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile * >::type        volatile_pointer_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile * >::type  const_volatile_pointer_type ;
-
-  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type                 reference_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType volatile & >::type        volatile_reference_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType const volatile & >::type  const_volatile_reference_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType   >::type  value_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type  pointer_type ;
+  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type  reference_type ;
 
   enum { StaticValueSize = IS_VOID ? 0 : sizeof(ValueType) };
 
@@ -285,26 +256,64 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-// Function signatures for FunctorType::init function with a tag
-template< class FunctorType , class ArgTag >
+// Function signatures for FunctorType::init function with a tag and not an array
+template< class FunctorType , class ArgTag , bool IsArray = 0 == FunctorValueTraits<FunctorType,ArgTag>::StaticValueSize >
 struct FunctorValueInitFunction {
 
-  typedef typename FunctorValueTraits<FunctorType,ArgTag>::reference_type reference_type ;
+  typedef typename FunctorValueTraits<FunctorType,ArgTag>::value_type value_type ;
 
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , reference_type ) const );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , reference_type ) const );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , reference_type ) );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , reference_type ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type & ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type volatile & ) );
 };
 
-// Function signatures for FunctorType::init function without a tag
+// Function signatures for FunctorType::init function with a tag and is an array
+template< class FunctorType , class ArgTag >
+struct FunctorValueInitFunction< FunctorType , ArgTag , true > {
+
+  typedef typename FunctorValueTraits<FunctorType,ArgTag>::value_type value_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type * ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type volatile * ) );
+};
+
+// Function signatures for FunctorType::init function without a tag and not an array
 template< class FunctorType >
-struct FunctorValueInitFunction< FunctorType , void > {
+struct FunctorValueInitFunction< FunctorType , void , false > {
 
-  typedef typename FunctorValueTraits<FunctorType,void>::reference_type reference_type ;
+  typedef typename FunctorValueTraits<FunctorType,void>::reference_type value_type ;
 
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( reference_type ) const );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( reference_type ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( value_type & ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( value_type volatile & ) );
+};
+
+// Function signatures for FunctorType::init function without a tag and is an array
+template< class FunctorType >
+struct FunctorValueInitFunction< FunctorType , void , true > {
+
+  typedef typename FunctorValueTraits<FunctorType,void>::reference_type value_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( value_type * ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( value_type volatile * ) );
 };
 
 // Adapter for value initialization function.
@@ -386,14 +395,14 @@ struct FunctorValueInit
 namespace Kokkos {
 namespace Impl {
 
-// Signatures for compatible FunctorType::join with tag
-template< class FunctorType , class ArgTag >
+// Signatures for compatible FunctorType::join with tag and not an array
+template< class FunctorType , class ArgTag , bool IsArray = 0 == FunctorValueTraits<FunctorType,ArgTag>::StaticValueSize >
 struct FunctorValueJoinFunction {
 
-  typedef FunctorValueTraits<FunctorType,ArgTag>  ValueTraits ;
+  typedef typename FunctorValueTraits<FunctorType,ArgTag>::value_type value_type ;
 
-  typedef typename ValueTraits::volatile_reference_type       vref_type ;
-  typedef typename ValueTraits::const_volatile_reference_type cvref_type ;
+  typedef       volatile value_type & vref_type ;
+  typedef const volatile value_type & cvref_type ;
 
   KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , vref_type , cvref_type ) const );
   KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , vref_type , cvref_type ) const );
@@ -401,17 +410,45 @@ struct FunctorValueJoinFunction {
   KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , vref_type , cvref_type ) );
 };
 
-// Signatures for compatible FunctorType::join without tag
+// Signatures for compatible FunctorType::join with tag and is an array
+template< class FunctorType , class ArgTag >
+struct FunctorValueJoinFunction< FunctorType , ArgTag , true > {
+
+  typedef typename FunctorValueTraits<FunctorType,ArgTag>::value_type value_type ;
+
+  typedef       volatile value_type * vptr_type ;
+  typedef const volatile value_type * cvptr_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , vptr_type , cvptr_type ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , vptr_type , cvptr_type ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , vptr_type , cvptr_type ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , vptr_type , cvptr_type ) );
+};
+
+// Signatures for compatible FunctorType::join without tag and not an array
 template< class FunctorType >
-struct FunctorValueJoinFunction< FunctorType , void > {
+struct FunctorValueJoinFunction< FunctorType , void , false > {
 
-  typedef FunctorValueTraits<FunctorType,void>  ValueTraits ;
+  typedef typename FunctorValueTraits<FunctorType,void>::value_type value_type ;
 
-  typedef typename ValueTraits::volatile_reference_type       vref_type ;
-  typedef typename ValueTraits::const_volatile_reference_type cvref_type ;
+  typedef       volatile value_type & vref_type ;
+  typedef const volatile value_type & cvref_type ;
 
   KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( vref_type , cvref_type ) const );
   KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( vref_type , cvref_type ) );
+};
+
+// Signatures for compatible FunctorType::join without tag and is an array
+template< class FunctorType >
+struct FunctorValueJoinFunction< FunctorType , void , true > {
+
+  typedef typename FunctorValueTraits<FunctorType,void>::value_type value_type ;
+
+  typedef       volatile value_type * vptr_type ;
+  typedef const volatile value_type * cvptr_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( vptr_type , cvptr_type ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( vptr_type , cvptr_type ) );
 };
 
 
@@ -462,11 +499,7 @@ struct FunctorValueJoin
   KOKKOS_FORCEINLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
     {
-      typedef FunctorValueTraits<FunctorType,ArgTag>  ValueTraits ;
-      typedef typename ValueTraits::volatile_pointer_type       vptr_type ;
-      typedef typename ValueTraits::const_volatile_pointer_type cvptr_type ;
-
-      f.join( ArgTag() , *((vptr_type)lhs) , *((cvptr_type)rhs) );
+      f.join( ArgTag() , *((volatile T *)lhs) , *((const volatile T *)rhs) );
     }
 };
 
@@ -488,11 +521,7 @@ struct FunctorValueJoin
   KOKKOS_FORCEINLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
     {
-      typedef FunctorValueTraits<FunctorType,void>  ValueTraits ;
-      typedef typename ValueTraits::volatile_pointer_type       vptr_type ;
-      typedef typename ValueTraits::const_volatile_pointer_type cvptr_type ;
-
-      f.join( *((vptr_type)lhs) , *((cvptr_type)rhs) );
+      f.join( *((volatile T *)lhs) , *((const volatile T *)rhs) );
     }
 };
 
@@ -514,11 +543,7 @@ struct FunctorValueJoin
   KOKKOS_FORCEINLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
     {
-      typedef FunctorValueTraits<FunctorType,ArgTag>  ValueTraits ;
-      typedef typename ValueTraits::volatile_pointer_type       vptr_type ;
-      typedef typename ValueTraits::const_volatile_pointer_type cvptr_type ;
-
-      f.join( ArgTag() , (vptr_type)lhs , (cvptr_type)rhs );
+      f.join( ArgTag() , (volatile T *)lhs , (const volatile T *)rhs );
     }
 };
 
@@ -540,11 +565,7 @@ struct FunctorValueJoin
   KOKKOS_FORCEINLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * const lhs , const volatile void * const rhs )
     {
-      typedef FunctorValueTraits<FunctorType,void>  ValueTraits ;
-      typedef typename ValueTraits::volatile_pointer_type       vptr_type ;
-      typedef typename ValueTraits::const_volatile_pointer_type cvptr_type ;
-
-      f.join( (vptr_type)lhs , (cvptr_type)rhs );
+      f.join( (volatile T *)lhs , (const volatile T *)rhs );
     }
 };
 
@@ -602,25 +623,102 @@ struct FunctorValueOps< FunctorType , ArgTag , T * >
 namespace Kokkos {
 namespace Impl {
 
-// Compatible functions for 'final' function
-template< class FunctorType , class ArgTag
-        , class ReferenceType = typename FunctorValueTraits<FunctorType,ArgTag>::reference_type >
+// Compatible functions for 'final' function and value_type not an array
+template< class FunctorType , class ArgTag , bool IsArray = 0 == FunctorValueTraits<FunctorType,ArgTag>::StaticValueSize >
 struct FunctorFinalFunction {
 
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , ReferenceType ) const );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , ReferenceType ) const );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , ReferenceType ) );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , ReferenceType ) );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , ReferenceType ) );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , ReferenceType ) );
+  typedef typename FunctorValueTraits<FunctorType,ArgTag>::value_type value_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type & ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type volatile & ) );
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type const & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type const & ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const volatile & ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type const volatile & ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type const volatile & ) );
 };
 
-template< class FunctorType , class ReferenceType >
-struct FunctorFinalFunction< FunctorType , void , ReferenceType > {
+// Compatible functions for 'final' function and value_type is an array
+template< class FunctorType , class ArgTag >
+struct FunctorFinalFunction< FunctorType , ArgTag , true > {
 
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ReferenceType ) const );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ReferenceType ) );
-  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ReferenceType ) );
+  typedef typename FunctorValueTraits<FunctorType,ArgTag>::value_type value_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type * ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type volatile * ) );
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type const * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type const * ) );
+
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const volatile * ) const );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag         , value_type const volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( ArgTag const & , value_type const volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag         , value_type const volatile * ) );
+  // KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( ArgTag const & , value_type const volatile * ) );
+};
+
+template< class FunctorType >
+struct FunctorFinalFunction< FunctorType , void , false > {
+
+  typedef typename FunctorValueTraits<FunctorType,void>::value_type value_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( value_type & ) );
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( const value_type & ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( const value_type & ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( const value_type & ) );
+};
+
+template< class FunctorType >
+struct FunctorFinalFunction< FunctorType , void , true > {
+
+  typedef typename FunctorValueTraits<FunctorType,void>::value_type value_type ;
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( value_type * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( value_type * ) );
+
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( const value_type * ) const );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (FunctorType::*)( const value_type * ) );
+  KOKKOS_INLINE_FUNCTION static void enable_if( void (             *)( const value_type * ) );
 };
 
 /* No 'final' function provided */

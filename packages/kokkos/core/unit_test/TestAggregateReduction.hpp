@@ -105,10 +105,9 @@ struct StaticArray {
     }
 
   KOKKOS_INLINE_FUNCTION
-  volatile StaticArray & operator += ( const volatile StaticArray & rhs ) volatile
+  void operator += ( const volatile StaticArray & rhs ) volatile
     {
       for ( unsigned i = 0 ; i < N ; ++i ) value[i] += rhs.value[i] ;
-      return *this ;
     }
 };
 
