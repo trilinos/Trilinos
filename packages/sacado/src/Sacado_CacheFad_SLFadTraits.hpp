@@ -102,6 +102,7 @@ namespace Sacado {
   //! Specialization of %IsEqual to DFad types
   template <typename ValueT, int Num>
   struct IsEqual< CacheFad::SLFad<ValueT,Num> > {
+     KOKKOS_INLINE_FUNCTION
     static bool eval(const CacheFad::SLFad<ValueT,Num>& x,
                      const CacheFad::SLFad<ValueT,Num>& y) {
       return x.isEqualTo(y);
