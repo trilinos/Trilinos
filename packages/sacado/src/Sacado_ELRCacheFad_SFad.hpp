@@ -175,9 +175,6 @@ namespace Sacado {
         else
           this->val() = T(0.);
 
-        // Number of arguments
-        const int N = Expr<S>::num_args;
-
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
 
@@ -189,7 +186,7 @@ namespace Sacado {
           // Automatically unrolled loop that computes
           // for (int j=0; j<N; j++)
           //   op.t += op.partials[j] * x.getTangent<j>(i);
-          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
           dx_[i] = op.t;
 
@@ -397,9 +394,6 @@ namespace Sacado {
 
         x.cache();
 
-        // Number of arguments
-        const int N = Expr<S>::num_args;
-
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
 
@@ -411,7 +405,7 @@ namespace Sacado {
           // Automatically unrolled loop that computes
           // for (int j=0; j<N; j++)
           //   op.t += op.partials[j] * x.getTangent<j>(i);
-          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
           dx_[i] = op.t;
         }
@@ -477,9 +471,6 @@ namespace Sacado {
 
         x.cache();
 
-        // Number of arguments
-        const int N = Expr<S>::num_args;
-
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
 
@@ -491,7 +482,7 @@ namespace Sacado {
           // Automatically unrolled loop that computes
           // for (int j=0; j<N; j++)
           //   op.t += op.partials[j] * x.getTangent<j>(i);
-          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
           dx_[i] += op.t;
         }
@@ -514,9 +505,6 @@ namespace Sacado {
 
         x.cache();
 
-        // Number of arguments
-        const int N = Expr<S>::num_args;
-
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
 
@@ -528,7 +516,7 @@ namespace Sacado {
           // Automatically unrolled loop that computes
           // for (int j=0; j<N; j++)
           //   op.t += op.partials[j] * x.getTangent<j>(i);
-          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
           dx_[i] -= op.t;
         }
@@ -553,9 +541,6 @@ namespace Sacado {
           throw "ELRCacheFad::operator*=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        // Number of arguments
-        const int N = Expr<S>::num_args;
-
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
 
@@ -567,7 +552,7 @@ namespace Sacado {
           // Automatically unrolled loop that computes
           // for (int j=0; j<N; j++)
           //   op.t += op.partials[j] * x.getTangent<j>(i);
-          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
           dx_[i] = val_ * op.t + dx_[i] * xval;
         }
@@ -593,9 +578,6 @@ namespace Sacado {
           throw "ELRCacheFad::operator/=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        // Number of arguments
-        const int N = Expr<S>::num_args;
-
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
 
@@ -609,7 +591,7 @@ namespace Sacado {
           // Automatically unrolled loop that computes
           // for (int j=0; j<N; j++)
           //   op.t += op.partials[j] * x.getTangent<j>(i);
-          Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+          Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
           dx_[i] = (dx_[i] * xval - val_ * op.t) / xval2;
         }

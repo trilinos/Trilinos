@@ -151,9 +151,6 @@ namespace Sacado {
           }
           else {
 
-            // Number of arguments
-            const int N = Expr<S>::num_args;
-
             if (x.hasFastAccess()) {
               // Compute partials
               FastLocalAccumOp< Expr<S> > op(x);
@@ -165,7 +162,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) = op.t;
               }
@@ -181,7 +178,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) = op.t;
               }
@@ -321,9 +318,6 @@ namespace Sacado {
           }
           else {
 
-            // Number of arguments
-            const int N = Expr<S>::num_args;
-
             if (x.hasFastAccess()) {
               // Compute partials
               FastLocalAccumOp< Expr<S> > op(x);
@@ -335,7 +329,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) = op.t;
               }
@@ -351,7 +345,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) = op.t;
               }
@@ -583,9 +577,6 @@ namespace Sacado {
         }
         else {
 
-          // Number of arguments
-          const int N = Expr<S>::num_args;
-
           if (xsz) {
 
             if (sz != xsz)
@@ -602,7 +593,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) += op.t;
               }
@@ -618,7 +609,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) += op.t;
               }
@@ -671,9 +662,6 @@ namespace Sacado {
         }
         else {
 
-          // Number of arguments
-          const int N = Expr<S>::num_args;
-
           if (xsz) {
 
             if (sz != xsz)
@@ -690,7 +678,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) -= op.t;
               }
@@ -706,7 +694,7 @@ namespace Sacado {
                 // Automatically unrolled loop that computes
                 // for (int j=0; j<N; j++)
                 //   op.t += op.partials[j] * x.getTangent<j>(i);
-                Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                 this->fastAccessDx(op.i) -= op.t;
               }
@@ -768,9 +756,6 @@ namespace Sacado {
         }
         else {
 
-          // Number of arguments
-          const int N = Expr<S>::num_args;
-
           if (xsz) {
 
             if (sz) {
@@ -786,7 +771,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) =
                     v * op.t + this->fastAccessDx(op.i) * xval;
@@ -803,7 +788,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) =
                     v * op.t + this->fastAccessDx(op.i) * xval;
@@ -827,7 +812,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) = v * op.t;
                 }
@@ -843,7 +828,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) = v * op.t;
                 }
@@ -915,9 +900,6 @@ namespace Sacado {
         }
         else {
 
-          // Number of arguments
-          const int N = Expr<S>::num_args;
-
           if (xsz) {
 
             T xval2 = xval*xval;
@@ -935,7 +917,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) =
                     (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
@@ -952,7 +934,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) =
                     (this->fastAccessDx(op.i) * xval - v * op.t) / xval2;
@@ -976,7 +958,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) = (-v * op.t) / xval2;
                 }
@@ -992,7 +974,7 @@ namespace Sacado {
                   // Automatically unrolled loop that computes
                   // for (int j=0; j<N; j++)
                   //   op.t += op.partials[j] * x.getTangent<j>(i);
-                  Sacado::mpl::for_each< mpl::range_c< int, 0, N > > f(op);
+                  Sacado::mpl::for_each< mpl::range_c< int, 0, Expr<S>::num_args > > f(op);
 
                   this->fastAccessDx(op.i) = (-v * op.t) / xval2;
                 }
