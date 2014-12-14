@@ -1802,27 +1802,79 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
+    typedef typename dual_view_type::t_dev::memory_space DMS;
+    typedef typename dual_view_type::t_host::memory_space HMS;
+
     const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+    const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
 
     // NOTE: can't substitute putScalar(0.0) for scale(0.0), because
-    //       the former will overwrite NaNs present in the MultiVector, while the
-    //       semantics of this call require multiplying them by 0, which IEEE requires to be NaN
+    //       the former will overwrite NaNs present in the
+    //       MultiVector, while the semantics of this call require
+    //       multiplying them by 0, which IEEE requires to be NaN
 
     if (theAlpha == ATS::one ()) {
-      // do nothing
+      return; // do nothing
     }
-    else if (isConstantStride ()) {
-      view_.template sync<DeviceType> ();
-      view_.template modify<DeviceType> ();
-      Kokkos::MV_MulScalar (view_.d_view, theAlpha, view_.d_view);
+
+    // Modify the most recently updated version of the data.  This
+    // avoids sync'ing, which could violate users' expectations.
+    if (view_.modified_device >= view_.modified_host) {
+      //
+      // Last modified in device memory, so modify data there.
+      //
+      // Type of the device memory View of the MultiVector's data.
+      typedef typename dual_view_type::t_dev mv_view_type;
+      // Type of a View of a single column of the MultiVector's data.
+      typedef Kokkos::View<scalar_type*,
+        typename mv_view_type::array_layout, DMS> vec_view_type;
+
+      this->template modify<DMS> (); // we are about to modify on the device
+      mv_view_type X =
+        subview<mv_view_type> (this->getDualView ().template view<DMS> (),
+                               rowRng, colRng);
+      if (numVecs == 1) {
+        vec_view_type X_0 =
+          subview<vec_view_type> (X, ALL (), static_cast<size_t> (0));
+        Kokkos::V_MulScalar (X_0, theAlpha, X_0);
+      }
+      else if (isConstantStride ()) {
+        Kokkos::MV_MulScalar (X, theAlpha, X);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t col = whichVectors_[k];
+          vec_view_type X_col = subview<vec_view_type> (X, ALL (), col);
+          Kokkos::V_MulScalar (X_col, theAlpha, X_col);
+        }
+      }
     }
-    else {
-      typedef Kokkos::View<scalar_type*, DeviceType> view_type;
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t col = isConstantStride () ? k : whichVectors_[k];
-        view_type vector_k = subview<view_type> (view_.d_view, ALL (), col);
-        Kokkos::V_MulScalar (vector_k, theAlpha, vector_k);
+    else { // last modified in host memory, so modify data there.
+      typedef typename dual_view_type::t_host mv_view_type;
+      typedef Kokkos::View<scalar_type*,
+        typename mv_view_type::array_layout, HMS> vec_view_type;
+
+      this->template modify<HMS> (); // we are about to modify on the host
+      mv_view_type X =
+        subview<mv_view_type> (this->getDualView ().template view<HMS> (),
+                               rowRng, colRng);
+      if (numVecs == 1) {
+        vec_view_type X_0 =
+          subview<vec_view_type> (X, ALL (), static_cast<size_t> (0));
+        Kokkos::V_MulScalar (X_0, theAlpha, X_0);
+      }
+      else if (isConstantStride ()) {
+        Kokkos::MV_MulScalar (X, theAlpha, X);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t col = whichVectors_[k];
+          vec_view_type X_col = subview<vec_view_type> (X, ALL (), col);
+          Kokkos::V_MulScalar (X_col, theAlpha, X_col);
+        }
       }
     }
   }
