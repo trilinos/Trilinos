@@ -174,4 +174,61 @@ TEST(ParallelComm, comm_sizes)
   }
 }
 
+TEST(ParallelComm, CommAll)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(comm);
+  if (numProcs == 1) {
+    return;
+  }
+ 
+  int myProc = stk::parallel_machine_rank(comm);
+  int numOtherProcs = 2;
+  int numItems = 20;
+ 
+  stk::parallel_machine_barrier(comm);
+ 
+  stk::CommAll commall(comm);
+
+  for(int phase = 0; phase < 2; ++phase) {
+    for(int proc=myProc-numOtherProcs/2; proc<=myProc+numOtherProcs/2; ++proc) {
+      if (proc >= 0 && proc != myProc && proc < numProcs) {
+        stk::CommBuffer& proc_buff = commall.send_buffer(proc);
+        for(int i=0; i<numItems; ++i) {
+          proc_buff.pack<double>(myProc+1+i);
+        }
+      }
+    }
+
+    if (phase == 0) {
+      commall.allocate_buffers(numProcs/2);
+    }
+    else {
+      commall.communicate();
+    }
+  }
+
+  for(int proc=0; proc<numProcs; ++proc) {
+    if (proc != myProc && (proc >= myProc-numOtherProcs/2) && (proc <= myProc+numOtherProcs/2)) {
+      stk::CommBuffer& proc_buff = commall.recv_buffer(proc);
+
+      int remaining = proc_buff.remaining()/sizeof(double);
+      EXPECT_EQ(numItems, remaining);
+
+      for(int i=0; i<numItems; ++i) {
+        double val = 0;
+        proc_buff.unpack<double>(val);
+        double expected = proc+1+i;
+        EXPECT_EQ(expected, val);
+      }
+    }
+    else {
+      stk::CommBuffer& proc_buff = commall.recv_buffer(proc);
+
+      int remaining = proc_buff.remaining();
+      EXPECT_EQ(0, remaining);
+    }
+  }
+}
+
 #endif

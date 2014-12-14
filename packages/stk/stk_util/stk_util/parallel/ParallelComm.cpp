@@ -223,7 +223,6 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
   return MPI_SUCCESS == result ;
 }
 
-#ifdef NDEBUG
 void communicate_sparse( ParallelMachine p_comm ,
                         const CommBuffer * const send ,
                         const CommBuffer * const recv )
@@ -293,7 +292,72 @@ void communicate_sparse( ParallelMachine p_comm ,
   }
 #endif
 }
+
+void communicate_any( ParallelMachine p_comm ,
+                        const std::vector<CommBuffer > & send ,
+                        std::vector<CommBuffer > & recv,
+                        const std::vector<int>& send_procs,
+                        const std::vector<int>& recv_procs )
+{
+  static const int mpi_tag = STK_MPI_TAG_DATA ;
+
+  //------------------------------
+  // Receive count
+
+  unsigned num_recv = recv_procs.size() ;
+
+  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+    recv[recv_procs[i]].reset();
+  }
+
+  //------------------------------
+  // Post receives for specific processors with specific sizes
+
+  MPI_Request request_null = MPI_REQUEST_NULL ;
+  std::vector<MPI_Request> request(num_recv, request_null);
+
+  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+    int proc = recv_procs[i];
+    const unsigned recv_size = recv[proc].capacity();
+    void * const   recv_buf  = recv[proc].buffer();
+    if (MPI_SUCCESS != MPI_Irecv( recv_buf , recv_size , MPI_BYTE , proc , mpi_tag , p_comm , & request[i] )) {
+      std::cerr<<"stk::communicate_any ERROR in MPI_Irecv."<<std::endl;
+    }
+  }
+
+  // This sync is necessary to ensure the IRecvs happen before the Sends.
+  MPI_Barrier( p_comm );
+
+  for ( size_t i = 0 ; i < send_procs.size() ; ++i ) {
+    const unsigned send_size = send[send_procs[i]].capacity();
+    void * const   send_buf  = send[send_procs[i]].buffer();
+    MPI_Send( send_buf , send_size , MPI_BYTE , send_procs[i] , mpi_tag , p_comm );
+  }
+
+  std::vector<MPI_Status>  status(  num_recv );
+  if (MPI_SUCCESS != MPI_Waitall( num_recv , &request[0] , &status[0] )) {
+    std::cerr<<"stk::communicate_any ERROR in MPI_Waitall."<<std::endl;
+  }
+
+#ifndef NDEBUG
+  const int p_rank = parallel_machine_rank( p_comm );
+  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+    MPI_Status * const recv_status = & status[i] ;
+    const int recv_proc = recv_status->MPI_SOURCE ;
+    const int recv_tag  = recv_status->MPI_TAG ;
+    const int recv_plan = recv[recv_proc].capacity();
+    int recv_count = 0 ;
+
+    MPI_Get_count( recv_status , MPI_BYTE , & recv_count );
+
+    if ( recv_tag != mpi_tag || recv_count != recv_plan ) {
+      std::cerr << "stk::communicate_sparse LOCAL[" << p_rank << "] ERROR: Recv["
+            << recv_proc << "] Size( "
+            << recv_count << " != expected " << recv_plan << " ) , " ;
+    }
+  }
 #endif
+}
 
 }
 
@@ -1015,7 +1079,6 @@ bool comm_sizes( ParallelMachine comm ,
 
   int result = MPI_SUCCESS ;
 
-  std::ostringstream msg ;
 
   num_msg_maximum = 0 ;
 
@@ -1031,6 +1094,7 @@ bool comm_sizes( ParallelMachine comm ,
   else if (sizeof(long long) == sizeof(size_t))
     size_t_type_ = MPI_LONG_LONG;
   else {
+    std::ostringstream msg ;
     msg << method << " ERROR: No matching MPI type found for size_t argument";
     throw std::runtime_error(msg.str());
   }
@@ -1056,6 +1120,7 @@ bool comm_sizes( ParallelMachine comm ,
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == MPI_AllReduce" ;
       throw std::runtime_error( msg.str() );
     }
@@ -1064,6 +1129,7 @@ bool comm_sizes( ParallelMachine comm ,
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == 2nd MPI_AllReduce" ;
       throw std::runtime_error( msg.str() );
     }
@@ -1090,6 +1156,7 @@ bool comm_sizes( ParallelMachine comm ,
 
     if ( MPI_SUCCESS != result ) {
       // LOCAL ERROR ?
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == MPI_Alltoall" ;
       throw std::runtime_error( msg.str() );
     }
@@ -1113,6 +1180,7 @@ bool comm_sizes( ParallelMachine comm ,
                           MPI_ANY_SOURCE , mpi_tag , comm , p_request );
       if ( MPI_SUCCESS != result ) {
         // LOCAL ERROR
+    std::ostringstream msg ;
         msg << method << " ERROR: " << result << " == MPI_Irecv" ;
         throw std::runtime_error( msg.str() );
       }
@@ -1128,6 +1196,7 @@ bool comm_sizes( ParallelMachine comm ,
         result = MPI_Send( & value , 1 , size_t_type_, dst , mpi_tag , comm );
         if ( MPI_SUCCESS != result ) {
           // LOCAL ERROR
+    std::ostringstream msg ;
           msg << method << " ERROR: " << result << " == MPI_Send" ;
           throw std::runtime_error( msg.str() );
         }
@@ -1143,6 +1212,7 @@ bool comm_sizes( ParallelMachine comm ,
     }
     if ( MPI_SUCCESS != result ) {
       // LOCAL ERROR ?
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == MPI_Waitall" ;
       throw std::runtime_error( msg.str() );
     }
@@ -1158,6 +1228,7 @@ bool comm_sizes( ParallelMachine comm ,
       MPI_Get_count( recv_status , MPI_LONG_LONG , & recv_count );
 
       if ( recv_tag != mpi_tag || recv_count != 1 ) {
+    std::ostringstream msg ;
         msg << method << " ERROR: Received buffer mismatch " ;
         msg << "P" << p_rank << " <- P" << recv_proc ;
         msg << "  " << 1 << " != " << recv_count ;
@@ -1175,6 +1246,7 @@ bool comm_sizes( ParallelMachine comm ,
 
   return global_flag ;
 }
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

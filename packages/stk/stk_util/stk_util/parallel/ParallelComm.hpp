@@ -35,6 +35,7 @@
 #define stk_util_parallel_ParallelComm_hpp
 
 #include <cstddef>                      // for size_t, ptrdiff_t
+#include <vector>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <boost/static_assert.hpp>
 
@@ -53,6 +54,7 @@ namespace stk {
  *  with parallel domain decomposition.
  */
 class CommAll ;
+class CommSparse;
 
 /** Pack and unpack buffers for the sparse all-to-all communication.
  */
@@ -119,6 +121,9 @@ public:
   /** Reset the buffer to the beginning so that size() == 0 */
   void reset();
 
+  /** Reset the buffer pointers to NULL */
+  void reset_to_null();
+
   /** Size, in bytes, of the buffer.
    *  If the buffer is not yet allocated this is zero.
    */
@@ -130,6 +135,7 @@ public:
    *  number of bytes that has been attempted to pack.
    */
   size_t size() const ;
+  void set_size(size_t newsize_bytes);
 
   /** Size, in bytes, of the buffer remaining to be processed.
    *  Equal to 'capacity() - size()'.  A negative result
@@ -147,6 +153,7 @@ public:
 
 private:
   friend class CommAll ;
+  friend class CommSparse ;
   friend class CommGather ;
   friend class CommBroadcast ;
 
@@ -155,9 +162,6 @@ private:
 
   void pack_overflow() const ;
   void unpack_overflow() const ;
-
-  CommBuffer( const CommBuffer & );
-  CommBuffer & operator = ( const CommBuffer & );
 
   typedef unsigned char * ucharp ;
 
@@ -484,12 +488,20 @@ void CommBuffer::reset()
 { m_ptr = m_beg ; }
 
 inline
+void CommBuffer::reset_to_null()
+{ m_beg = NULL; m_ptr = NULL; m_end = NULL; }
+
+inline
 size_t CommBuffer::capacity() const
 { return m_end - m_beg ; }
 
 inline
 size_t CommBuffer::size() const
 { return m_ptr - m_beg ; }
+
+inline
+void CommBuffer::set_size(size_t newsize_bytes)
+{ m_beg = NULL;  m_ptr = NULL; m_ptr += newsize_bytes ; m_end = NULL; }
 
 inline
 ptrdiff_t CommBuffer::remaining() const
