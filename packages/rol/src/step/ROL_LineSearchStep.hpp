@@ -237,6 +237,9 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+
+    ls_nfval_ = 0;
+    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -295,6 +298,9 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+
+    ls_nfval_ = 0;
+    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -363,6 +369,9 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+
+    ls_nfval_ = 0;
+    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -417,6 +426,9 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
+    
+    ls_nfval_ = 0;
+    ls_ngrad_ = 0;
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
