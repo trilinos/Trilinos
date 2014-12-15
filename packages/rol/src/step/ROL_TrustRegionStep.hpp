@@ -151,6 +151,8 @@ private:
   int               CGflag_;     ///< Truncated CG termination flag.
   int               CGiter_;     ///< Truncated CG iteration count.
 
+  Real              delMax_;     ///< Maximum trust-region radius.
+
   Real              alpha_init_; ///< Initial line-search parameter for projected methods.
   int               max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
 
@@ -245,6 +247,7 @@ public:
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
     step_state->searchSize = parlist.get("Initial Trust-Region Radius", -1.0);
+    delMax_                = parlist.get("Maximum Trust-Region Radius", 1000.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -289,6 +292,7 @@ public:
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
     step_state->searchSize = parlist.get("Initial Trust-Region Radius", -1.0);
+    delMax_                = parlist.get("Maximum Trust-Region Radius", 1000.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -376,7 +380,7 @@ public:
       Real a  = fnew - algo_state.value - gs - 0.5*alpha*alpha*gBg;
       if ( std::abs(a) < ROL_EPSILON ) { 
         // a = 0 implies the objective is quadratic in the negative gradient direction
-        step_state->searchSize = alpha*algo_state.gnorm;
+        step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
       }
       else {
         Real b  = 0.5*alpha*alpha*gBg;
@@ -387,15 +391,15 @@ public:
           Real t2 = (-b+std::sqrt(b*b-3.0*a*c))/(3.0*a);
           if ( 6.0*a*t1 + 2.0*b > 0.0 ) {
             // t1 is the minimizer
-            step_state->searchSize = t1*alpha*algo_state.gnorm;          
+            step_state->searchSize = std::min(t1*alpha*algo_state.gnorm,delMax_);
           }
           else {
             // t2 is the minimizer
-            step_state->searchSize = t2*alpha*algo_state.gnorm;
+            step_state->searchSize = std::min(t2*alpha*algo_state.gnorm,delMax_);
           }
         }
         else {
-          step_state->searchSize = alpha*algo_state.gnorm;
+          step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
         }
       }
     }
@@ -528,7 +532,7 @@ public:
 
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
-    }    
+    }
   }
 
   /** \brief Print iterate header.
