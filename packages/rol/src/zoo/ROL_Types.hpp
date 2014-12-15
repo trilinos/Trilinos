@@ -1155,17 +1155,18 @@ namespace ROL {
  *  <ol>
  *  <li>\link rol/example/rosenbrock/example_01.cpp Minimizing the Rosenbrock function\endlink</li>
  *  <li>\link rol/example/zakharov/example_01.cpp Minimizing the Zakharov function\endlink</li>
- *  <li>\link rol/example/sacado/example_01.cpp Using Sacado with ROL\endlink</li>
+ *  <li>\link rol/example/sacado/example_01.hpp Using Sacado with ROL\endlink</li>
  *  <li>\link rol/example/dual-spaces/rosenbrock-1/example_01.cpp Using Dual Spaces\endlink</li>
  *  </ol>
  *  <li><b>Constrained Examples</b></li>
  *  <ol>
  *  <li>\link rol/example/dual-spaces/simple-eq-constr-1/example_01.cpp Using Dual Spaces\endlink</li>
+ *  <li>\link rol/example/sacado/example_02.hpp Using Sacado with ROL\endlink</li>
  *  <li>\link rol/example/poisson-control/example_01.cpp Poisson control\endlink</li>
  *  <li>\link rol/example/poisson-inversion/example_01.cpp Poisson inversion\endlink</li>
  *  <li>\link rol/example/burgers-control/example_01.cpp Burgers control\endlink</li>
- *  <li>\link rol/example/gross-pitaevskii/example_01.cpp Minimizing the Gross-Pitaevskii functional \endlink</li>
- *  <li>\link rol/example/gross-pitaevskii/example_02.cpp Gross-Pitaevskii functional with \f$H^1\f$ gradient \endlink</li>
+ *  <li>\link rol/example/gross-pitaevskii/example_01.hpp Minimizing the Gross-Pitaevskii functional \endlink</li>
+ *  <li>\link rol/example/gross-pitaevskii/example_02.hpp Gross-Pitaevskii functional with \f$H^1\f$ gradient \endlink</li>
  *  </ol>
  *  </ul> 
 */  
