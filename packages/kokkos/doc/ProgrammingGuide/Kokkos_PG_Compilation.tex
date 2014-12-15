@@ -1,5 +1,95 @@
 
 \chapter{Compiling}
-\section{Using the Makefiles}
+The chapter provides information regarding compilation of Kokkos. 
+After providing general build information, which should allow integration of Kokkos compilation in any arbitrary build system, the two directly supported build mechanism are explained:
+(i) Using an embedded Makefile for building Kokkos as part of an application.
+(ii) Building Kokkos as a library through Trilinos's cmake system.
+In the end specific help for building for NVIDIA GPUs.
+Note that the two explicitly supported build methods should not be mixed. 
+For example it is ill advised to include the embedded Makefile in your application build process, while explicitly linking against a pre-compiled Kokkos library in Trilinos.
+
+\section{General Information}
+Kokkos consists mainly of header files. 
+Only a few functions have to be compiled into object files outside of the applications source code.
+Those functions are contained in “cpp” files inside the subdirectories of the \lstinline|kokkos/core/src| directory. 
+The files are internally protected with macros to prevent compilation if the related execution space is not enabled. 
+Thus it is not necessary to create a compilation target specific list of included object files, one can simply compile all “cpp” files. 
+The enabled features are controlled via macros which have to be provided in the compilation line or in a “\lstinline|KokkosCore_config.h|" file. 
+A list of macros can be found in table \ref{TBL:CompileMacros}.
+\begin{table}
+\caption{Table of configuration Macros}
+\label{TBL:CompileMacros}
+\begin{small}
+\begin{tabular}[t]{p{0.25\textwidth}p{0.3\textwidth}p{0.42\textwidth}}
+\hline\hline
+Macro & Effect & Comment \\
+\hline
+{\tiny KOKKOS\_HAVE\_CUDA} & Enable the CUDA execution space. & Requires compilation with a compiler capable of understanding CUDA-C. See section … \\
+{\tiny KOKKOS\_HAVE\_OPENMP} & Enable the OpenMP execution space. & Requires compilation with openmp support (typically enabled with \newline-fopenmp). \\
+{\tiny KOKKOS\_HAVE\_PTHREADS} & Enable the Threads execution space. & Requires linking with libpthread.\\
+{\tiny KOKKOS\_HAVE\_CXX11} & Enable internal usage of C++11 features. & The code needs to be compile with the C++11 standard. Most compilers accept the -std=c++11 flag for this.\\
+{\tiny KOKKOS\_HAVE\_HWLOC} & Enable thread and memory pinning via hwloc. & Requires linking with libhwloc.\\
+{\tiny KOKKOS\_DONT\_INCLUDE \_KOKKOSCORE\_CONFIG\_H} & Do not include the KokkosCore\_config.h file. & Useful when providing all macros via the compile line instead of auto generating that file. 
+This option is set for the embedded Makefile\\
+\hline\hline
+\end{tabular}
+\end{small}
+\end{table}
+
+\section{Using the embedded Makefile}
+
+Kokkos provides an embedded Makefile (\lstinline|kokkos/Makefile.kokkos|) for inclusion in an application Makefile. 
+This embedded Makefile generates a \lstinline|KOKKOS_INC| and a \lstinline|KOKKOS_LINK| variable which need to be appended to the compile and the link line respectively in the application Makefile. 
+If you want to include dependencies (i.e. trigger a rebuild of the application object files when Kokkos files change) you can include \lstinline|KOKKOS_HEADERS| in you dependency list.
+Note that you cannot compile and link at the same time!
+Makefile.kokkos uses a number of variables which can be set either in the parent Makefile prior to including it, or on the command line.
+These variables take the form of \lstinline|SOME_VAR=yes/no| or \lstinline|SOME_PATH=/path/to/library| and control build options such as the target architecture. 
+A list can be found in table \ref{TBL:MakefileOptions}.
+Example application Makefiles can be found in the tutorial examples under kokkos/example/tutorial.
+
+
+\begin{table}
+\caption{Table of Makefile options}
+\label{TBL:MakefileOptions}
+\begin{small}
+\begin{tabular}[t]{lp{0.7\textwidth}}
+\hline\hline
+Option & Description \\
+\hline
+CUDA & Enable the CUDA execution space. \\
+OMP & Enable the OpenMP execution space. \\
+PTHREADS & Enable the Threads execution space.\\
+MIC & Enable compilation for Intel Xeon Phi. \\
+CXX11 & Enable internal usage of C++11 features.\\
+HWLOC & Enable hwloc usage.\\
+LIBRT & Enable librt usage for the \lstinline|Kokkos::Impl::Timer| class.\\
+CUDA\_PATH & Set the path to the CUDA toolkit directory.\\
+HWLOC\_PATH & Set the path to the hwloc library.\\
+\hline\hline
+\end{tabular}
+\end{small}
+\end{table}
+
 \section{Kokkos in Trilinos}
-\section{Using MPI Wrappers}
+To enable Kokkos inside of Trilinos simply activate the kokkos package via \lstinline|Trilinos_ENABLE_Kokkos|.
+Kokkos will also be enabled by other packages which depend on it, most notably Tpetra.
+Configuration macros are automatically inferred from Trilinos settings. 
+For example \lstinline|Trilinos_ENABLE_OpenMP| will set \lstinline|KOKKOS_HAVE_OPENMP|.
+The Trilinos build system will autogenerate the previously mentioned \lstinline|KokkosCore_config.h| file which contains those macros. 
+ 
+\section{Building for CUDA - The nvcc\_wrapper}
+Since CUDA code is embedded via template meta programming in any Kokkos application compiled for CUDA, usually the whole application has to be compiled with a CUDA capable compiler (at the moment NVCC from NVIDIA). 
+More precisly, every compilation unit containing a Kokkos kernel or a function called from a Kokkos kernel has to be compiled with a CUDA capable compiler. 
+This includes files containing \lstinline|Kokkos::View| allocations, which call an initialisation kernel. 
+Unfortunately NVCC has some short comings when used as the main compiler for a project, in particular when part of a complex build system.
+For example it does not understand most GCC command line options which have to be prepended by '\lstinline|-Xcompiler|'. 
+Kokkos comes with a compiler wrapper called \lstinline|nvcc_wrapper| which is intended as a drop in replacement for a normal GCC compatible compiler in your build system.
+It analysis command line options and prepends them correctly. 
+It also adds the correct flags for compiling generic C++ files containing CUDA code (i.e. '*.cpp', '*.cxx', '*.CC' etc.).
+By default \lstinline|nvcc_wrapper| calls 'g++' as the host compiler, which can be overriden by providing NVCC's '\lstinline|-ccbin|' option as a compiler flag.
+The default can be reset in the script itself. 
+When using a module system it can be useful to providing different versions for different back end compiler types (i.e. icpc, pgc++, g++ and clang).
+To use the \lstinline|nvcc_wrapper| in conjunction with MPI wrappers simply overwrite which C++ compiler is called by the MPI wrapper. 
+For example you can reset the compiler for OpenMPI by setting '\lstinline|OMPI_CXX|'.
+Make sure that \lstinline|nvcc_wrapper| is calling the host compiler which the MPI library was compiled with. 
+
