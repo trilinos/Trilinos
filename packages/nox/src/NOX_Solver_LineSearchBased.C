@@ -154,8 +154,6 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
               << "attempt to solve this system since status is "
               << "flagged as converged." << std::endl;
     }
-
-    printUpdate();
   }
 
   // First check status
