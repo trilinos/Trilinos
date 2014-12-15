@@ -41,15 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-    \brief An example combining ROL and Sacado to mimize the Zakharov 
-           function. The gradient and the action of the Hessian on a given
-           vector are computed by Sacado using automatic differentiation.    
-                    
-           This implementation is far from optimal as vectors of AD type
-           are being created repeatedly. A more efficient implementation 
-           would encapsulate the functions Zakharov, objgrad, and hessVec
-           in an object so that the AD vectors can be instantiated once. 
+/** \brief An example equality constrained problem combining ROL and Sacado 
+           This is the same problem as found in rol/examples/simple-eq-constr
+           with the objective gradient, objective Hessian direction, constraint 
+           Jacobian direction, constraint adjoint Jacobian direction, and
+           constraint adjoint Hessian direction computed via automatic 
+           differentiation with Sacado.  
 
     \author Created by G. von Winckel
 **/
