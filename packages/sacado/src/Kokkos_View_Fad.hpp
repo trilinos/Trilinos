@@ -158,7 +158,7 @@ private:
   fad_value_type                             * m_ptr_on_device ;
   offset_map_type                              m_offset_map ;
   typename traits::device_type::size_type      m_storage_size ;
-  Impl::ViewTracking< traits >                 m_tracking ;
+  Impl::ViewDataManagement< traits >           m_management ;
 
 public:
 
@@ -262,7 +262,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( m_ptr_on_device ); }
+  ~View() { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -375,7 +375,7 @@ public:
 
       m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
 
-      m_tracking = false;
+      m_management.set_unmanaged();
     }
 
   //------------------------------------
@@ -925,15 +925,15 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
                     )>::type * = 0
                   )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1006,15 +1006,15 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
     typedef View<ST,SL,SD,SM,ViewSpecializeSacadoFad>  src_type ;
     typedef typename src_type::array_type  dst_type ;
 
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 

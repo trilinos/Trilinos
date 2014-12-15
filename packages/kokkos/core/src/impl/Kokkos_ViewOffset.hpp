@@ -324,7 +324,7 @@ struct ViewOffset< ShapeType , LayoutLeft
                                   )>::type * = 0 )
     {
       shape_type::assign( *this , rhs.N0, rhs.N1, rhs.N2, rhs.N3, rhs.N4, rhs.N5, rhs.N6, rhs.N7 );
-      S0 = shape_type::N0 ;
+      S0 = shape_type::N0 ; // No padding when dynamic_rank == 0
     }
 
   template< class ShapeRHS >
@@ -338,7 +338,7 @@ struct ViewOffset< ShapeType , LayoutLeft
                                   )>::type * = 0 )
     {
       shape_type::assign( *this , rhs.N0, rhs.N1, rhs.N2, rhs.N3, rhs.N4, rhs.N5, rhs.N6, rhs.N7 );
-      S0 = rhs.S0 ;
+      S0 = rhs.S0 ; // possibly padding when dynamic rank > 0
     }
 
   KOKKOS_INLINE_FUNCTION

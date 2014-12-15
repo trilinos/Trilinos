@@ -53,8 +53,8 @@
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
 #include <impl/Kokkos_AnalyzeShape.hpp>
-#include <impl/Kokkos_ViewSupport.hpp>
 #include <impl/Kokkos_ViewOffset.hpp>
+#include <impl/Kokkos_ViewSupport.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
 //----------------------------------------------------------------------------
@@ -249,59 +249,6 @@ public:
 };
 
 } /* namespace Kokkos */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-/** \brief  ViewDataHandle provides the type of the 'data handle' which the view
- *          uses to access data with the [] operator. It also provides
- *          an allocate function and a function to extract a raw ptr from the
- *          data handle. ViewDataHandle also defines an enum ReferenceAble which
- *          specifies whether references/pointers to elements can be taken and a
- *          'return_type' which is what the view operators will give back.
- *          Specialisation of this object allows three things depending
- *          on ViewTraits and compiler options:
- *          (i)   Use special allocator (e.g. huge pages/small pages and pinned memory)
- *          (ii)  Use special data handle type (e.g. add Cuda Texture Object)
- *          (iii) Use special access intrinsics (e.g. texture fetch and non-caching loads)
- */
-template< class ViewTraits , class Enable = void >
-class ViewDataHandle {
-public:
-
-  enum { ReturnTypeIsReference = true };
-
-  typedef typename ViewTraits::value_type * handle_type;
-  typedef typename ViewTraits::value_type & return_type;
-
-  static handle_type allocate(std::string label, size_t count , bool default_construct )
-  {
-    const handle_type ptr = (handle_type)
-      ViewTraits::memory_space::allocate( label ,
-                                          typeid(typename ViewTraits::value_type) ,
-                                          sizeof(typename ViewTraits::value_type) ,
-                                          count );
-
-    if ( default_construct ) {
-      // Default construct within the view's execution space.
-      (void) DefaultConstruct< typename ViewTraits::execution_space
-                             , typename ViewTraits::value_type >( ptr , count );
-    }
-
-    return ptr ;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr(handle_type ptr) {
-    return ptr;
-  }
-};
-
-}
-}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -513,18 +460,22 @@ private:
                           , typename traits::array_layout
                           > offset_map_type ;
 
-  // Intermediary class for data allocation and access
-  typedef Impl::ViewDataHandle< traits > view_data_handle_type;
+  // Intermediary class for data management and access
+  typedef Impl::ViewDataManagement< traits > view_data_management ;
 
-  typename view_data_handle_type::handle_type m_ptr_on_device ;
+  //----------------------------------------
+  // Data members:
 
-  offset_map_type               m_offset_map ;
-  Impl::ViewTracking< traits >  m_tracking ;
+  typename view_data_management::handle_type  m_ptr_on_device ;
+  offset_map_type                             m_offset_map ;
+  view_data_management                        m_management ;
+
+  //----------------------------------------
 
 public:
 
   /** return type for all indexing operators */
-  typedef typename view_data_handle_type::return_type return_type ;
+  typedef typename view_data_management::return_type return_type ;
 
   typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
@@ -571,14 +522,21 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( view_data_handle_type::get_raw_ptr(m_ptr_on_device) ); }
+  ~View()
+    { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device((typename traits::value_type*) NULL)
+  View()
+    : m_ptr_on_device((typename traits::value_type*) NULL)
+    , m_offset_map()
+    , m_management()
     { m_offset_map.assign(0, 0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device((typename traits::value_type*) NULL)
+  View( const View & rhs )
+    : m_ptr_on_device((typename traits::value_type*) NULL)
+    , m_offset_map()
+    , m_management()
     {
       (void) Impl::ViewAssignment<
          typename traits::specialize ,
@@ -601,6 +559,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,RS> & rhs )
     : m_ptr_on_device((typename traits::value_type*) NULL)
+    , m_offset_map()
+    , m_management()
     {
       (void) Impl::ViewAssignment<
          typename traits::specialize , RS >( *this , rhs );
@@ -643,13 +603,15 @@ public:
         const size_t n7 = 0 ,
         const size_t n8 = 0 )
     : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = view_data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() , Alloc::initialize() );
+      m_ptr_on_device = view_data_management::allocate( Alloc::label(prop) , m_offset_map , Alloc::initialize() );
     }
 
   template< class AllocationProperties >
@@ -660,13 +622,17 @@ public:
         // are valid for allocating viewed memory.
         const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( layout );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = view_data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() , Alloc::initialize() );
+      m_ptr_on_device = view_data_management::allocate( Alloc::label(prop) , m_offset_map , Alloc::initialize() );
+
+      m_management.set_noncontiguous();
     }
 
   //------------------------------------
@@ -686,9 +652,11 @@ public:
         const size_t n7 = 0 ,
         const size_t n8 = 0 )
     : m_ptr_on_device(ptr)
+    , m_offset_map()
+    , m_management()
     {
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
-      m_tracking = false ;
+      m_management.set_unmanaged();
     }
 
   template< class Type >
@@ -697,9 +665,12 @@ public:
         typename traits::array_layout const & layout ,
         typename Impl::ViewRawPointerProp< traits , Type >::size_type = 0 )
     : m_ptr_on_device(ptr)
+    , m_offset_map()
+    , m_management()
     {
       m_offset_map.assign( layout );
-      m_tracking = false ;
+      m_management.set_unmanaged();
+      m_management.set_noncontiguous();
     }
 
   //------------------------------------
@@ -721,6 +692,8 @@ public:
         const unsigned n6 = 0 ,
         const unsigned n7 = 0 )
     : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
     {
       typedef typename traits::value_type  value_type_ ;
 
@@ -743,6 +716,8 @@ public:
   View( typename if_scratch_memory_constructor::type space ,
         typename traits::array_layout const & layout)
     : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
     {
       typedef typename traits::value_type  value_type_ ;
 
@@ -752,7 +727,8 @@ public:
         if_device_shmem_pointer ;
 
       m_offset_map.assign( layout );
-      m_tracking = false ;
+      m_management.set_unmanaged();
+      m_management.set_noncontiguous();
 
       enum { align = 8 };
       enum { mask  = align - 1 };
@@ -788,7 +764,7 @@ public:
   // Is not allocated
 
   KOKKOS_FORCEINLINE_FUNCTION
-  bool is_null() const { return 0 == view_data_handle_type::get_raw_ptr(m_ptr_on_device) ; }
+  bool is_null() const { return 0 == ptr_on_device() ; }
 
   //------------------------------------
   // Operators for scalar (rank zero) views.
@@ -801,7 +777,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   const View & operator = ( const typename if_scalar_operator::type & rhs ) const
     {
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
       *m_ptr_on_device = if_scalar_operator::select( rhs );
       return *this ;
     }
@@ -809,21 +785,21 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   operator typename if_scalar_operator::type & () const
     {
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
       return if_scalar_operator::select( *m_ptr_on_device );
     }
 
   KOKKOS_FORCEINLINE_FUNCTION
   typename if_scalar_operator::type & operator()() const
     {
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
       return if_scalar_operator::select( *m_ptr_on_device );
     }
 
   KOKKOS_FORCEINLINE_FUNCTION
   typename if_scalar_operator::type & operator*() const
     {
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
       return if_scalar_operator::select( *m_ptr_on_device );
     }
 
@@ -841,7 +817,7 @@ public:
     operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -852,7 +828,7 @@ public:
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -864,7 +840,7 @@ public:
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -878,7 +854,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1) ];
     }
@@ -891,7 +867,7 @@ public:
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1) ];
     }
@@ -905,7 +881,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2) ];
     }
@@ -918,7 +894,7 @@ public:
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2) ];
     }
@@ -932,7 +908,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3) ];
     }
@@ -945,7 +921,7 @@ public:
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3) ];
     }
@@ -961,7 +937,7 @@ public:
                  const iType4 & i4 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4) ];
     }
@@ -975,7 +951,7 @@ public:
         const iType4 & i4 , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4) ];
     }
@@ -992,7 +968,7 @@ public:
                  const iType4 & i4 , const iType5 & i5 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4,i5) ];
     }
@@ -1007,7 +983,7 @@ public:
         const iType4 & i4 , const iType5 & i5 , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4,i5) ];
     }
@@ -1024,7 +1000,7 @@ public:
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4,i5,i6) ];
     }
@@ -1039,7 +1015,7 @@ public:
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4,i5,i6) ];
     }
@@ -1056,7 +1032,7 @@ public:
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4,i5,i6,i7) ];
     }
@@ -1071,7 +1047,7 @@ public:
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , view_data_handle_type::get_raw_ptr( m_ptr_on_device ) );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , ptr_on_device() );
 
       return m_ptr_on_device[ m_offset_map(i0,i1,i2,i3,i4,i5,i6,i7) ];
     }
@@ -1081,9 +1057,8 @@ public:
   // These methods are specific to specialization of a view.
 
   KOKKOS_FORCEINLINE_FUNCTION
-  typename traits::value_type * ptr_on_device() const {
-    return view_data_handle_type::get_raw_ptr(m_ptr_on_device);
-  }
+  typename traits::value_type * ptr_on_device() const
+    { return (typename traits::value_type *) m_ptr_on_device ; }
 
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
@@ -1298,6 +1273,7 @@ void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
   Impl::ViewRemap< dst_type , src_type >( dst , src );
 }
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class T , class L , class D , class M , class S >

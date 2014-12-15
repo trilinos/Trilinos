@@ -211,8 +211,10 @@ public:
       return *this ;
     }
 
+
   KOKKOS_INLINE_FUNCTION
-  ValueType * raw_ptr() const { return m_alloc_ptr + m_offset ; }
+  operator const ValueType * () const { return m_alloc_ptr + m_offset ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -268,8 +270,10 @@ public:
     return *this;
   }
 
+
   KOKKOS_INLINE_FUNCTION
-  ValueType * raw_ptr() const { return m_ptr ; }
+  operator const ValueType * () const { return m_ptr ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -313,26 +317,6 @@ public:
                                 , typename ViewTraits::memory_space > handle_type;
 
   typedef typename ViewTraits::value_type return_type;
-
-  static handle_type allocate( const std::string & label , size_t count , bool default_construct )
-    {
-      typename ViewTraits::value_type* const ptr = (typename ViewTraits::value_type*)
-         ViewTraits::memory_space::allocate( label ,
-                                             typeid(typename ViewTraits::value_type) ,
-                                             sizeof(typename ViewTraits::value_type) ,
-                                             count );
-
-      if ( default_construct ) {
-        (void) DefaultConstruct< typename ViewTraits::execution_space
-                               , typename ViewTraits::value_type >( ptr , count );
-      }
-
-      return handle_type( ptr );
-    }
-
-  KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr( const handle_type & handle )
-    { return handle.raw_ptr(); }
 };
 
 }

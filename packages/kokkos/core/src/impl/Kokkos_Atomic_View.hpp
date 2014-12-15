@@ -389,6 +389,7 @@ template<class ViewTraits>
 class AtomicViewDataHandle {
 public:
   typename ViewTraits::value_type* ptr;
+
   KOKKOS_INLINE_FUNCTION
   AtomicViewDataHandle(typename ViewTraits::value_type* ptr_):ptr(ptr_){}
 
@@ -397,6 +398,11 @@ public:
   AtomicDataElement<ViewTraits> operator[] (const iType& i) const {
     return AtomicDataElement<ViewTraits>(ptr+i,AtomicViewConstTag());
   }
+
+
+  KOKKOS_INLINE_FUNCTION
+  operator typename ViewTraits::value_type * () const { return ptr ; }
+
 };
 
 template<unsigned Size>
@@ -434,27 +440,6 @@ public:
 
   typedef Impl::AtomicViewDataHandle<ViewTraits> handle_type;
   typedef Impl::AtomicDataElement<ViewTraits>    return_type;
-
-  static handle_type allocate(std::string label, size_t count, bool default_construct )
-  {
-    typename ViewTraits::value_type * const ptr = (typename ViewTraits::value_type*)
-      ViewTraits::memory_space::allocate( label ,
-      typeid(typename ViewTraits::value_type) ,
-      sizeof(typename ViewTraits::value_type) ,
-      count );
-
-    if ( default_construct ) {
-      (void) DefaultConstruct< typename ViewTraits::execution_space
-                             , typename ViewTraits::value_type >( ptr , count );
-    }
-
-    return handle_type(ptr);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr(handle_type handle) {
-    return handle.ptr;
-  }
 };
 
 }

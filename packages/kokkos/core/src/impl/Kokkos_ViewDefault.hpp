@@ -50,26 +50,6 @@
 namespace Kokkos {
 namespace Impl {
 
-template<class DstHandleType, class SrcHandleType>
-KOKKOS_INLINE_FUNCTION
-void static assign_from_handle(
-  typename DstHandleType::handle_type& dst_handle,
-  typename enable_if< !is_same<DstHandleType,SrcHandleType>::value ,
-                      const typename SrcHandleType::handle_type& >::type src_handle)
-{
-  dst_handle = SrcHandleType::get_raw_ptr(src_handle);
-}
-
-template<class DstHandleType, class SrcHandleType>
-KOKKOS_INLINE_FUNCTION
-void static assign_from_handle(
-  typename DstHandleType::handle_type& dst_handle,
-  typename enable_if< is_same<DstHandleType,SrcHandleType>::value ,
-                      const typename SrcHandleType::handle_type& >::type src_handle)
-{
-  dst_handle = src_handle;
-}
-
 template<>
 struct ViewAssignment< ViewDefault , ViewDefault , void >
 {
@@ -96,17 +76,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                       is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout,LayoutStride>::value )
                   )>::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
-    assign_from_handle<typename View<DT,DL,DD,DM,Specialize>::view_data_handle_type,
-                       typename View<ST,SL,SD,SM,Specialize>::view_data_handle_type>
-    (dst.m_ptr_on_device,src.m_ptr_on_device);
+    dst.m_ptr_on_device = typename ViewDataManagement< ViewTraits<DT,DL,DD,DM> >::handle_type( src.m_ptr_on_device );
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -126,13 +104,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map , 1 , i0 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + i0 ;
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -153,13 +131,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map , 2 , i0 , i1 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -181,13 +159,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map, 3, i0, i1, i2 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1,i2);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -210,13 +188,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map, 4, i0, i1, i2, i3 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1,i2,i3);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -240,13 +218,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map, 5, i0, i1, i2, i3, i4);
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1,i2,i3,i4);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -271,13 +249,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map, 6, i0, i1, i2, i3, i4, i5);
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1,i2,i3,i4,i5);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -303,13 +281,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map, 7, i0, i1, i2, i3, i4, i5, i6 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1,i2,i3,i4,i5,i6);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -336,13 +314,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     assert_shape_bounds( src.m_offset_map, 8, i0, i1, i2, i3, i4, i5, i6, i7 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,i1,i2,i3,i4,i5,i6,i7);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -364,7 +342,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.N0 = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -373,11 +351,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       assert_shape_bounds( src.m_offset_map , 1 , range.first );
       assert_shape_bounds( src.m_offset_map , 1 , range.second - 1 );
 
-      dst.m_tracking      = src.m_tracking ;
+      dst.m_management      = src.m_management ;
       dst.m_offset_map.N0 = range.second - range.first ;
       dst.m_ptr_on_device = src.ptr_on_device() + range.first ;
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -401,13 +379,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N0 ;
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(0,i1);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
 
@@ -432,15 +410,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), IndexType >::type columnIndex )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     if (rowRange.first < rowRange.second) { // valid row range
-      dst.m_tracking = src.m_tracking;
+      dst.m_management = src.m_management;
       dst.m_offset_map.N0 = rowRange.second - rowRange.first;
       dst.m_ptr_on_device = src.ptr_on_device () +
         src.m_offset_map (rowRange.first, columnIndex);
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
     else { // not a valid row range
       dst.m_offset_map.N0 = 0;
@@ -469,13 +447,13 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), ALL >::type & )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N1 ;
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -502,16 +480,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     assert_shape_bounds( src.m_offset_map , 2 , range.first , i1 );
     assert_shape_bounds( src.m_offset_map , 2 , range.second - 1 , i1 );
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     if ( range.first < range.second ) {
-      dst.m_tracking      = src.m_tracking ;
+      dst.m_management      = src.m_management ;
       dst.m_offset_map.N0 = range.second - range.first ;
       dst.m_offset_map.N1 = 1 ;
       dst.m_offset_map.S0 = range.second - range.first ;
       dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(range.first,i1);
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -535,16 +513,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N0 ;
     dst.m_offset_map.N1 = 1 ;
 
     dst.m_offset_map.S0 = src.m_offset_map.N0 ;
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(0,i1);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -567,15 +545,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), ALL >::type & )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = 1 ;
     dst.m_offset_map.N1 = src.m_offset_map.N1 ;
     dst.m_offset_map.SR = src.m_offset_map.SR ;
     dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(i0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
   //------------------------------------
   /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
@@ -600,7 +578,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     //typedef typename traits_type::shape_type shape_type ; // unused
     //typedef typename View<DT,DL,DD,DM,Specialize>::stride_type stride_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( 0, 0, 0, 0, 0, 0, 0, 0 );
 
@@ -622,11 +600,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
       dst.m_offset_map.SR = src.m_offset_map.SR ;
 
-      dst.m_tracking      = src.m_tracking ;
+      dst.m_management      = src.m_management ;
 
       dst.m_ptr_on_device = src.ptr_on_device() + range.first * src.m_offset_map.SR ;
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -648,7 +626,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
     dst.m_offset_map.assign(0,0,0,0, 0,0,0,0);
     dst.m_ptr_on_device = 0 ;
 
@@ -671,11 +649,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       dst.m_offset_map.N0 = range0.second - range0.first ;
       dst.m_offset_map.N1 = range1.second - range1.first ;
 
-      dst.m_tracking = src.m_tracking ;
+      dst.m_management = src.m_management ;
 
       dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(range0.first,range1.first);
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -697,7 +675,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
     dst.m_offset_map.assign(0,0,0,0, 0,0,0,0);
     dst.m_ptr_on_device = 0 ;
 
@@ -711,11 +689,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
       dst.m_offset_map.assign(src.m_offset_map);
       dst.m_offset_map.N1 = range1.second - range1.first ;
-      dst.m_tracking      = src.m_tracking ;
+      dst.m_management      = src.m_management ;
 
       dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(0,range1.first);
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -737,7 +715,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
     dst.m_offset_map.assign(0,0,0,0, 0,0,0,0);
     dst.m_ptr_on_device = 0 ;
 
@@ -751,11 +729,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
       dst.m_offset_map.assign(src.m_offset_map);
       dst.m_offset_map.N0 = range0.second - range0.first ;
-      dst.m_tracking = src.m_tracking ;
+      dst.m_management = src.m_management ;
 
       dst.m_ptr_on_device = src.ptr_on_device() + src.m_offset_map(range0.first,0);
 
-      dst.m_tracking.increment( dst.ptr_on_device() );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -782,15 +760,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N1 ;
     dst.m_offset_map.N1 = src.m_offset_map.N2 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -817,15 +795,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N2 ;
     dst.m_offset_map.N1 = src.m_offset_map.N3 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -853,15 +831,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N3 ;
     dst.m_offset_map.N1 = src.m_offset_map.N4 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
 
@@ -891,15 +869,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N4 ;
     dst.m_offset_map.N1 = src.m_offset_map.N5 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -929,15 +907,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N5 ;
     dst.m_offset_map.N1 = src.m_offset_map.N6 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
 
@@ -969,15 +947,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N6 ;
     dst.m_offset_map.N1 = src.m_offset_map.N7 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,i5,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1004,16 +982,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N1 ;
     dst.m_offset_map.N1 = src.m_offset_map.N2 ;
     dst.m_offset_map.N2 = src.m_offset_map.N3 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1041,16 +1019,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N2 ;
     dst.m_offset_map.N1 = src.m_offset_map.N3 ;
     dst.m_offset_map.N2 = src.m_offset_map.N4 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1079,16 +1057,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N3 ;
     dst.m_offset_map.N1 = src.m_offset_map.N4 ;
     dst.m_offset_map.N2 = src.m_offset_map.N5 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1118,16 +1096,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N4 ;
     dst.m_offset_map.N1 = src.m_offset_map.N5 ;
     dst.m_offset_map.N2 = src.m_offset_map.N6 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1158,16 +1136,16 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N5 ;
     dst.m_offset_map.N1 = src.m_offset_map.N6 ;
     dst.m_offset_map.N2 = src.m_offset_map.N7 ;
     dst.m_offset_map.SR = dst.m_offset_map.N1 * dst.m_offset_map.N2 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,i4,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1195,9 +1173,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N1 ;
     dst.m_offset_map.N1 = src.m_offset_map.N2 ;
     dst.m_offset_map.N2 = src.m_offset_map.N3 ;
@@ -1206,7 +1184,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1235,9 +1213,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N2 ;
     dst.m_offset_map.N1 = src.m_offset_map.N3 ;
     dst.m_offset_map.N2 = src.m_offset_map.N4 ;
@@ -1246,7 +1224,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1276,9 +1254,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N3 ;
     dst.m_offset_map.N1 = src.m_offset_map.N4 ;
     dst.m_offset_map.N2 = src.m_offset_map.N5 ;
@@ -1287,7 +1265,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1318,9 +1296,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N4 ;
     dst.m_offset_map.N1 = src.m_offset_map.N5 ;
     dst.m_offset_map.N2 = src.m_offset_map.N6 ;
@@ -1329,7 +1307,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,i3,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1358,9 +1336,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N1 ;
     dst.m_offset_map.N1 = src.m_offset_map.N2 ;
     dst.m_offset_map.N2 = src.m_offset_map.N3 ;
@@ -1370,7 +1348,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 * dst.m_offset_map.N4 ;
     dst.m_ptr_on_device = &src(i0,0,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1400,9 +1378,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N2 ;
     dst.m_offset_map.N1 = src.m_offset_map.N3 ;
     dst.m_offset_map.N2 = src.m_offset_map.N4 ;
@@ -1412,7 +1390,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 * dst.m_offset_map.N4 ;
     dst.m_ptr_on_device = &src(i0,i1,0,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1443,9 +1421,9 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   {
     //typedef ViewTraits<DT,DL,DD,DM> traits_type ; // unused
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
     dst.m_offset_map.N0 = src.m_offset_map.N3 ;
     dst.m_offset_map.N1 = src.m_offset_map.N4 ;
     dst.m_offset_map.N2 = src.m_offset_map.N5 ;
@@ -1455,7 +1433,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                           dst.m_offset_map.N3 * dst.m_offset_map.N4 ;
     dst.m_ptr_on_device = &src(i0,i1,i2,0,0,0,0,0);
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1499,11 +1477,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       spec.stride[0]    = 1 ;
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -1561,11 +1539,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -1635,11 +1613,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -1708,11 +1686,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -1787,11 +1765,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -1872,11 +1850,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -1963,11 +1941,11 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management.decrement( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
     dst.m_offset_map.assign( spec );
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   template< class DT , class DL , class DD , class DM
@@ -2061,15 +2039,15 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       if ( is_range[i] ) { ++j ; }
     }
 
-    dst.m_tracking.decrement( dst.ptr_on_device() );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
     dst.m_offset_map.assign( spec );
 
     dst.m_ptr_on_device = src.ptr_on_device() + offset ;
 
-    dst.m_tracking.increment( dst.ptr_on_device() );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -2104,8 +2082,6 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     }
   }
 };
-
-//----------------------------------------------------------------------------
 
 } /* namespace Impl */
 } /* namespace Kokkos */
