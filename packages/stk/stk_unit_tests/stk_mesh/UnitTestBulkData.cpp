@@ -4492,7 +4492,7 @@ TEST(BulkData, ChangeAuraElementPart)
   stk::mesh::BulkData mesh(meta, pm);
 
   stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
-  stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
 
   stk::mesh::Selector all_nodes = meta.universal_part();
 
@@ -4564,7 +4564,7 @@ TEST(BulkData, ChangeAuraElementPart)
   EXPECT_TRUE(mesh.is_valid(elem2));
   EXPECT_TRUE(mesh.is_valid(elem4));
 
-  const bool expect_consistent_parts_on_aura_entities = false;
+  const bool expect_consistent_parts_on_aura_entities = true;
 
   if (expect_consistent_parts_on_aura_entities)
   {
