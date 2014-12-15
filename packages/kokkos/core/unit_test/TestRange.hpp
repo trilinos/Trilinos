@@ -119,17 +119,17 @@ struct TestRange {
   static void test_reduce( const size_t N )
     {
       TestRange functor(N);
-      Kokkos::View<int,Kokkos::HostSpace> total("total");
+      int total = 0 ;
 
       Kokkos::parallel_for(    Kokkos::RangePolicy<ExecSpace>(0,N) , functor );
 
       Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace>(0,N) , functor , total );
       // sum( 0 .. N-1 )
-      ASSERT_EQ( size_t((N-1)*(N)/2) , size_t(*total) );
+      ASSERT_EQ( size_t((N-1)*(N)/2) , size_t(total) );
 
       Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace,OffsetTag>(0,N) , functor , total );
       // sum( 1 .. N )
-      ASSERT_EQ( size_t((N)*(N+1)/2) , size_t(*total) );
+      ASSERT_EQ( size_t((N)*(N+1)/2) , size_t(total) );
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -145,7 +145,6 @@ struct TestRange {
   static void test_scan( const size_t N )
     {
       TestRange functor(N);
-      Kokkos::View<int,Kokkos::HostSpace> total("total");
 
       Kokkos::parallel_for( Kokkos::RangePolicy<ExecSpace>(0,N) , functor );
 

@@ -47,6 +47,7 @@
 #define MUELU_UTILITIES_DECL_HPP
 
 #include <unistd.h> //necessary for "sleep" function in debugging methods
+#include <string>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -188,8 +189,9 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true){
-      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string()){
+      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
@@ -197,7 +199,8 @@ namespace MueLu {
                               const Matrix& A,
                               const Matrix& B,
                               RCP<Matrix> C_in,
-                              Teuchos::FancyOStream &fos);
+                              Teuchos::FancyOStream &fos,
+			      const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -224,8 +227,8 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true
-                                );
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string());                                
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply

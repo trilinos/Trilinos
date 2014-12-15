@@ -77,7 +77,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
-  "-DMPI_BASE_DIR:PATH=/home/trilinos"
+  "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
@@ -90,6 +90,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SPPARKS:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_ENABLE_CppUnit:BOOL=ON"
+  "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
+  "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
   )
 
 #

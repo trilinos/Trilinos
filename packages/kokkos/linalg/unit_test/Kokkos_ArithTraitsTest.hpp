@@ -146,7 +146,7 @@ public:
   /// \brief Set the initial value (\c 1) of the reduction.
   ///
   /// Subclasses need not and must not override this method.
-  KOKKOS_INLINE_FUNCTION void init (volatile value_type& dst) const {
+  KOKKOS_INLINE_FUNCTION void init ( value_type& dst) const {
     dst = 1;
   }
 

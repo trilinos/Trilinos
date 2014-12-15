@@ -73,6 +73,7 @@ FUNCTION(TRIBITS_PROCESS_ENABLED_TPL  TPL_NAME)
     # Locate the FindTPL${TPL_NAME}.cmake module
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(${TPL_NAME}_FINDMOD)
+      PRINT_VAR(${TPL_NAME}_TPLS_LIST_FILE)
     ENDIF()
     IF (IS_ABSOLUTE ${${TPL_NAME}_FINDMOD})
       #MESSAGE("${${TPL_NAME}_FINDMOD} is absolute!")
@@ -89,6 +90,12 @@ FUNCTION(TRIBITS_PROCESS_ENABLED_TPL  TPL_NAME)
 
     # Address failed find of the TPL
     IF (TPL_${TPL_NAME}_NOT_FOUND AND NOT TPL_TENTATIVE_ENABLE_${TPL_NAME})
+      MESSAGE(
+        "-- NOTE: The find module file for this failed TPL '${TPL_NAME}' is:\n"
+        "     ${CURRENT_TPL_PATH}\n"
+        "   which is pointed to in the file:\n"
+        "     ${${TPL_NAME}_TPLS_LIST_FILE}\n"
+        )
       IF (TPL_${TPL_NAME}_ENABLING_PKG)
         MESSAGE(
           "TIP: One way to get past the configure failure for the\n"

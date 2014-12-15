@@ -314,15 +314,20 @@ public:
 
   typedef typename ViewTraits::value_type return_type;
 
-  static handle_type allocate( const std::string & label , size_t count )
+  static handle_type allocate( const std::string & label , size_t count , bool default_construct )
     {
-      return handle_type(
-       (typename ViewTraits::value_type*)
+      typename ViewTraits::value_type* const ptr = (typename ViewTraits::value_type*)
          ViewTraits::memory_space::allocate( label ,
                                              typeid(typename ViewTraits::value_type) ,
                                              sizeof(typename ViewTraits::value_type) ,
-                                             count )
-      );
+                                             count );
+
+      if ( default_construct ) {
+        (void) DefaultConstruct< typename ViewTraits::execution_space
+                               , typename ViewTraits::value_type >( ptr , count );
+      }
+
+      return handle_type( ptr );
     }
 
   KOKKOS_INLINE_FUNCTION

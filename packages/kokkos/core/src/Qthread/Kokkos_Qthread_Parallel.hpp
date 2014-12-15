@@ -101,7 +101,7 @@ private:
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    driver( self.m_func , Policy( self.m_policy , exec.worker_rank() , exec.worker_size() ) );
+    driver( self.m_func , typename Policy::WorkRange( self.m_policy , exec.worker_rank() , exec.worker_size() ) );
 
     // All threads wait for completion.
     exec.exec_all_barrier();
@@ -170,7 +170,7 @@ private:
 
     driver( self.m_func
           , ValueInit::init( self.m_func , exec.exec_all_reduce_value() )
-          , Policy( self.m_policy , exec.worker_rank() , exec.worker_size() )
+          , typename Policy::WorkRange( self.m_policy , exec.worker_rank() , exec.worker_size() )
           );
 
     exec.template exec_all_reduce<FunctorType, typename Policy::work_tag >( self.m_func );
@@ -432,7 +432,7 @@ private:
   {
     const ParallelScan & self = * ((const ParallelScan *) arg );
 
-    const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
+    const typename Policy::WorkRange range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
     // Initialize thread-local value
     reference_type update = ValueInit::init( self.m_func , exec.exec_all_reduce_value() );

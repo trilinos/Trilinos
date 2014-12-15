@@ -112,7 +112,7 @@ namespace Details {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+    typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
     /// \brief Default constructor (sets number of columns to zero).
     ///
@@ -254,7 +254,7 @@ namespace Details {
       typedef scalar_type ST;
       typedef node_type NT;
 
-      RCP<const Tpetra::Map<LO, GO, NT> > map = X.getMap();
+      RCP<const ::Tpetra::Map<LO, GO, NT> > map = X.getMap();
       Array<LO> localIndices;
       const size_t numColumns = getNumColumns();
       for (size_t j = 0; j < numColumns; ++j) {
@@ -370,7 +370,7 @@ namespace Details {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+    typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
     /// \brief Default constructor (sets number of columns to zero).
     ///
@@ -913,7 +913,7 @@ namespace Tpetra {
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+    typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
     /// \brief Constructor.
     ///
@@ -1234,7 +1234,7 @@ namespace Tpetra {
       typedef typename MV::local_ordinal_type local_ordinal_type;
       typedef typename MV::global_ordinal_type global_ordinal_type;
       typedef typename MV::node_type node_type;
-      typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
       /// \brief Test global assembly when constructor Map = target Map.
       ///
@@ -1457,7 +1457,7 @@ namespace Tpetra {
       typedef LocalOrdinalType LO;
       typedef GlobalOrdinalType GO;
       typedef NodeType NT;
-      typedef Tpetra::Map<LO, GO, NT> MT;
+      typedef ::Tpetra::Map<LO, GO, NT> MT;
       typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
 
       RCP<FancyOStream> out = outStream.is_null() ?

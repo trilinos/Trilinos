@@ -107,6 +107,8 @@ namespace MueLu {
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
+      std::ostringstream levelstr;
+      levelstr << coarseLevel.GetLevelID();
 
       // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();
@@ -128,7 +130,7 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2));
+        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
       }
       Set(coarseLevel, "AP Pattern", AP);
 
@@ -147,13 +149,13 @@ namespace MueLu {
       const bool doFillComplete = true;
       if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-        Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
+        Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-implicit-")+levelstr.str());
 
       } else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-        Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
+        Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-explicit-")+levelstr.str());
       }
 
       CheckRepairMainDiagonal(Ac);

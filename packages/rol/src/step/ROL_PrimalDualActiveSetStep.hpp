@@ -240,7 +240,7 @@ public:
              @param[in]        con         are the bound constraints
              @param[in]        algo_state  is the current state of the algorithm
   */
-  void initialize( Vector<Real> &x, Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Initialize state descent direction and gradient storage

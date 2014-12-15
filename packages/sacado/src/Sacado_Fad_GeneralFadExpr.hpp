@@ -47,6 +47,15 @@ namespace Sacado {
 
     public:
 
+      //! Typename of values
+      typedef typename GeneralFad<T,Storage>::value_type value_type;
+
+      //! Typename of scalar's (which may be different from value_type)
+      typedef typename GeneralFad<T,Storage>::scalar_type scalar_type;
+
+      //! Typename of base-expressions
+      typedef typename BaseExpr< GeneralFad<T,Storage> >::type base_expr_type;
+
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
       Expr() :
@@ -56,8 +65,9 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array is empty
        */
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const T & x) :
+      Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         GeneralFad<T,Storage>(x) {}
 
       //! Constructor with size \c sz and value \c x
@@ -91,7 +101,7 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x) :
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
         GeneralFad<T,Storage>(x) {}
 
       //! Destructor

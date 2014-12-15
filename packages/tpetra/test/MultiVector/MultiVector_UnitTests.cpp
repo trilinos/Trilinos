@@ -1982,70 +1982,172 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyConst, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    using std::endl;
+    using Teuchos::toString;
+    typedef Tpetra::global_size_t GST;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const Mag M0 = ScalarTraits<Mag>::zero();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create a Map
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename MV::mag_type Mag;
+    typedef Teuchos::ScalarTraits<Mag> STM;
+
+    const Mag M0 = STM::zero ();
+    // This test should even pass in the field of the integers mod 2.
+    // In that case, TWO == ZERO, THREE == ONE, and FOUR == TWO,
+    // though, so the test won't be very conclusive.
+    const Scalar ZERO = STS::zero ();
+    const Scalar ONE = STS::one ();
+    const Scalar TWO = ONE + ONE;
+    const Scalar THREE = TWO + ONE;
+    const Scalar FOUR = THREE + ONE;
+    const Scalar FIVE = FOUR + ONE;
+
+    // Create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    const GO indexBase = 0;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+
+    out << "Part 1:" << endl;
     {
-      // create random MV
-      MV mvorig(map,numVectors);
-      mvorig.randomize();
-      // create non-const subview, test copy constructor
-      TEUCHOS_TEST_FOR_EXCEPT(numVectors != 7);
-      Tuple<size_t,3> inds = tuple<size_t>(1,3,5);
-      RCP<MV> mvview = mvorig.subViewNonConst(inds);
-      Array<Mag> norig(numVectors), nsub(inds.size()), ncopy(inds.size());
-      mvorig.normInf(norig());
-      for (size_t j=0; j < as<size_t>(inds.size()); ++j) {
+      Teuchos::OSTab tab1 (out);
+
+      // Create original MultiVector.  Fill it with nonzero initial
+      // data.  Thus, if we see zeros in the inf-norms below, we know
+      // that something is wrong.
+      out << "Create original MultiVector (mvorig)" << endl;
+      MV mvorig (map, numVectors);
+      out << "Fill all entries of mvorig with " << FIVE << endl;
+      mvorig.putScalar (FIVE);
+
+      // Remember the inf-norms of all of the columns of mvorig.
+      Array<Mag> norig (numVectors);
+      mvorig.normInf (norig ());
+      out << "Inf-norms of mvorig's columns: " << toString (norig ()) << endl;
+
+      // Create nonconst strided (noncontiguous) subview of mvorig.
+      Tuple<size_t,3> inds = tuple<size_t> (1,3,5);
+      out << "mvview = mvorig.subViewNonConst(" << toString (inds) << ")" << endl;
+      RCP<MV> mvview = mvorig.subViewNonConst (inds);
+
+      Array<Mag> nsub (inds.size ());
+      for (size_t j = 0; j < static_cast<size_t> (inds.size ()); ++j) {
         nsub[j] = norig[inds[j]];
       }
-      MV mvcopy(createCopy(*mvview));
-      mvcopy.normInf(ncopy());
+
+      out << "Make three different deep copies of mvview" << endl;
+
+      // Make a deep copy of mvview, in three different ways.  All
+      // three copies should be independent of mvview and of each
+      // other.
+
+      out << "  MV mvcopy (*mvview, Teuchos::Copy);" << endl;
+      MV mvcopy (*mvview, Teuchos::Copy);
+
+      out << "  MV mvcopy2 = Tpetra::createCopy (*mvview);" << endl;
+      MV mvcopy2 = Tpetra::createCopy (*mvview);
+
+      out << "  MV mvcopy3 (map, numVecs, false); mvcopy3.randomize (); "
+        "Tpetra::deep_copy (mvcopy3, *mvview);" << endl;
+      MV mvcopy3 (mvview->getMap (), mvview->getNumVectors (), false);
+      mvcopy3.randomize ();
+      Tpetra::deep_copy (mvcopy3, *mvview);
+
+      out << "Deep copy must preserve norms of the copied columns" << endl;
+
+      // Deep copy must preserve norms of the copied columns.
+      Array<Mag> ncopy (inds.size ());
+      mvcopy.normInf (ncopy ());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
-      // reset both the view and the copy of the view, ensure that they are independent
-      Teuchos::Array<Mag> nsub_aft(inds.size()), ones(inds.size(),as<Mag>(1));
-      Teuchos::Array<Mag> ncopy_aft(inds.size()), twos(inds.size(),as<Mag>(2));
-      mvview->putScalar(as<Scalar>(1));
-      mvcopy.putScalar(as<Scalar>(2));
-      mvview->normInf(nsub_aft());
-      mvcopy.normInf(ncopy_aft());
-      TEST_COMPARE_FLOATING_ARRAYS(nsub_aft,ones,M0);
-      TEST_COMPARE_FLOATING_ARRAYS(ncopy_aft,twos,M0);
+      out << "  Inf-norms of mvcopy's columns: " << toString (ncopy ()) << endl;
+
+      Array<Mag> ncopy2 (inds.size ());
+      mvcopy2.normInf (ncopy2 ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy2,nsub,M0);
+      out << "  Inf-norms of mvcopy2's columns: " << toString (ncopy2 ()) << endl;
+
+      Array<Mag> ncopy3 (inds.size ());
+      mvcopy3.normInf (ncopy3 ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy3,nsub,M0);
+      out << "  Inf-norms of mvcopy3's columns: " << toString (ncopy3 ()) << endl;
+
+      out << "Test whether the copies are independent of their source, "
+        "and of each other" << endl;
+
+      // Change all the entries in both the view, and in all copies of
+      // the view.  We will test below whether all of these
+      // MultiVectors are independent.
+      mvview->putScalar (ONE);
+      mvcopy.putScalar (TWO);
+      mvcopy2.putScalar (THREE);
+      mvcopy3.putScalar (FOUR);
+
+      Array<Mag> nsub_aft (inds.size ());
+      mvview->normInf (nsub_aft ());
+      out << "  Inf-norms of mvview's columns: " << toString (nsub_aft ()) << endl;
+      Array<Mag> ones (inds.size (), STM::one ());
+      TEST_COMPARE_FLOATING_ARRAYS(nsub_aft, ones, M0);
+
+      Array<Mag> ncopy_aft (inds.size ());
+      mvcopy.normInf (ncopy_aft ());
+      out << "  Inf-norms of mvcopy's columns: " << toString (ncopy_aft ()) << endl;
+      Array<Mag> twos (inds.size (), STM::one () + STM::one ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy_aft, twos, M0);
+
+      Array<Mag> ncopy2_aft (inds.size ());
+      mvcopy2.normInf (ncopy2_aft ());
+      out << "  Inf-norms of mvcopy2's columns: " << toString (ncopy2_aft ()) << endl;
+      Array<Mag> threes (inds.size (), STM::one () + STM::one () + STM::one ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy2_aft,threes,M0);
+
+      Array<Mag> ncopy3_aft (inds.size ());
+      mvcopy3.normInf (ncopy3_aft ());
+      out << "  Inf-norms of mvcopy3's columns: " << toString (ncopy3_aft ()) << endl;
+      Array<Mag> fours (inds.size (), STM::one () + STM::one () + STM::one () + STM::one ());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy3_aft,fours,M0);
     }
+
+    out << "Part 2:" << endl;
     {
       // create random MV
-      MV morig(map,numVectors);
-      morig.randomize();
-      // test copy constructor with
-      // copy it
-      MV mcopy1(createCopy(morig)), mcopy2(createCopy(morig));
+      MV morig (map,numVectors);
+      morig.randomize ();
+      // Test the copy constructor in its deep copy mode.
+      MV mcopy1 (morig, Teuchos::Copy);
+      // Test createCopy.  It should do the same as above, except that
+      // mcopy2 always has view semantics, even in the (old)
+      // KokkosClassic version of Tpetra.
+      MV mcopy2 = createCopy (morig);
 
       // verify that all three have identical values
-      Array<Mag> norig(numVectors), ncopy1(numVectors), ncopy2(numVectors);
-      morig.normInf(norig);
-      mcopy1.normInf(ncopy1);
-      mcopy2.normInf(ncopy2);
-      TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy1,M0);
-      TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy2,M0);
-      // modify all three
-      morig.putScalar(as<Scalar>(0));
-      mcopy1.putScalar(as<Scalar>(1));
-      mcopy2.putScalar(as<Scalar>(2));
-      // compute norms, check
-      Array<Mag> zeros(numVectors,as<Mag>(0)), ones(numVectors,as<Mag>(1)), twos(numVectors,as<Mag>(2));
-      morig.normInf(norig);
-      mcopy1.normInf(ncopy1);
-      mcopy2.normInf(ncopy2);
-      TEST_COMPARE_FLOATING_ARRAYS(norig,zeros,M0);
-      TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ones,M0);
-      TEST_COMPARE_FLOATING_ARRAYS(ncopy2,twos,M0);
+      Array<Mag> norig (numVectors);
+      Array<Mag> ncopy1 (numVectors);
+      Array<Mag> ncopy2 (numVectors);
+      morig.normInf (norig);
+      mcopy1.normInf (ncopy1);
+      mcopy2.normInf (ncopy2);
+      TEST_COMPARE_FLOATING_ARRAYS(norig, ncopy1, M0);
+      TEST_COMPARE_FLOATING_ARRAYS(norig, ncopy2, M0);
+
+      // Change all three MultiVectors to have different values.  The
+      // three MultiVectors should be independent of each other.  That
+      // is, none of them should be a view of any of the others.
+      morig.putScalar (ZERO);
+      mcopy1.putScalar (ONE);
+      mcopy2.putScalar (TWO);
+
+      // Check the above assertion about independence.
+      Array<Mag> zeros (numVectors, STM::zero ());
+      Array<Mag> ones (numVectors, STM::one ());
+      Array<Mag> twos (numVectors, STM::one () + STM::one ());
+      morig.normInf (norig);
+      mcopy1.normInf (ncopy1);
+      mcopy2.normInf (ncopy2);
+      TEST_COMPARE_FLOATING_ARRAYS(norig, zeros, M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy1, ones, M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy2, twos, M0);
     }
   }
 

@@ -70,6 +70,7 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
     validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating fatory for coalesced filtered graph");
+    validParamList->set< RCP<const FactoryBase> >("Filtering",      Teuchos::null, "Generating factory for filtering boolean");
 
     return validParamList;
   }
@@ -77,9 +78,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "Filtering");
     Input(currentLevel, "Graph");
-    // NOTE: we do this DeclareInput in such complicated fashion because this is not a part of the parameter list
-    currentLevel.DeclareInput("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -87,7 +87,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Matrix filtering", currentLevel);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-    if (currentLevel.Get<bool>("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get()) == false) {
+    if (Get<bool>(currentLevel, "Filtering") == false) {
       GetOStream(Runtime0) << "Filtered matrix is not being constructed as no filtering is being done" << std::endl;
       Set(currentLevel, "A", A);
       return;

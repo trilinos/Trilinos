@@ -48,6 +48,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       UnaryPlusOp(const ExprT& expr) {}
 
@@ -71,6 +73,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       UnaryMinusOp(const ExprT& expr) {}
 
@@ -94,6 +98,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       ExpOp(const ExprT& expr) :
         c(),
@@ -151,6 +157,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       LogOp(const ExprT& expr) :
         c(),
@@ -211,6 +219,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       SqrtOp(const ExprT& expr) :
         c(),
@@ -272,6 +282,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       CosOp(const ExprT& expr) :
         c(),
@@ -340,6 +352,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       SinOp(const ExprT& expr) :
         c(),
@@ -408,6 +422,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       CoshOp(const ExprT& expr) :
         c(),
@@ -476,6 +492,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       SinhOp(const ExprT& expr) :
         c(),
@@ -544,6 +562,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT::value_type value_type;
+      typedef typename ExprT::scalar_type scalar_type;
+      typedef typename ExprT::base_expr_type base_expr_type;
 
       FAbsOp(const ExprT& expr) {}
 
@@ -618,6 +638,16 @@ namespace Sacado {
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
 
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
       void allocateCache(int d) const {}
@@ -641,6 +671,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;
 
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -672,6 +704,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;
 
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -709,6 +743,16 @@ namespace Sacado {
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
 
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
       void allocateCache(int d) const {}
@@ -732,6 +776,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;
 
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -763,6 +809,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;
 
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -799,6 +847,16 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       MultiplicationOp(const ExprT1& expr1, const ExprT2 expr2) :
         c(),
@@ -846,6 +904,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;
 
       MultiplicationOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -871,6 +931,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;
 
       MultiplicationOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -901,6 +963,16 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       DivisionOp(const ExprT1& expr1, const ExprT2 expr2) :
         c(),
@@ -952,6 +1024,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;
 
       DivisionOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -977,6 +1051,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;
 
       DivisionOp(const ExprT1& expr1, const ExprT2 expr2) :
@@ -1042,6 +1118,16 @@ namespace Sacado {
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
 
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
       void allocateCache(int d) const {}
@@ -1073,6 +1159,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;
 
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -1106,6 +1194,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;
 
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -1144,6 +1234,15 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
@@ -1176,6 +1275,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+      typedef typename ExprT1::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;
 
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -1209,6 +1310,8 @@ namespace Sacado {
     public:
 
       typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+      typedef typename ExprT2::base_expr_type base_expr_type;
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;
 
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
@@ -1247,6 +1350,16 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       ASinQuadOp(const ExprT1& expr1, const ExprT2& expr2) :
         c(),
@@ -1310,6 +1423,16 @@ namespace Sacado {
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
 
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
+
       ACosQuadOp(const ExprT1& expr1, const ExprT2& expr2) :
         c(),
         dc(-1)
@@ -1371,6 +1494,16 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
                                        value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef typename ExprT1::base_expr_type base_expr_type_1;
+      typedef typename ExprT2::base_expr_type base_expr_type_2;
+      typedef typename Sacado::Promote<base_expr_type_1,
+                                       base_expr_type_2>::type base_expr_type;
 
       ATanQuadOp(const ExprT1& expr1, const ExprT2& expr2) :
         c(),

@@ -258,9 +258,7 @@ namespace Basker{
         return ierr;
       }
 
-
     /*End creating working space */
-
 
     /*Defining Variables Used*/
     Int i, j, k;
@@ -281,7 +279,6 @@ namespace Basker{
 
     stack = tptr;
     tptr += 2*(nrow);
-
 
     cu_ltop = 0;
     cu_utop = 0;
@@ -380,14 +377,15 @@ namespace Basker{
               {
                 lcnt++;
                 if( BASKER_ScalarTraits<Entry>::gt(absv , maxv))
-                  {
+                  //if(absv > BASKER_ScalarTraits<Entry>::approxABS(maxv))
+                 {
                     maxv = absv;
                     pivot = value;
                     maxindex= j;
                   }
               }
           }
-        ucnt = nrow - top -lcnt + 1;
+        ucnt = nrow - top - lcnt + 1;
 
         if(maxindex == ncol || pivot == ((Entry)0))
           {
@@ -957,11 +955,13 @@ namespace Basker{
   {
     Entry *new_entry = new Entry[new_size];    
     for(Int i = 0; i < old_size; i++)
-      {
-        //BASKER_ScalarTraits<Entry>::approxABS(value);
-        new_entry[i] = BASKER_ScalarTraits<Entry>::copyConstruct(old[i]);
+      { 
+        /*Assumption that Entry was own defined copy constructor*/
+        new_entry[i] = old[i];
       }
+    delete[] old;
     return new_entry;
+    
 
   }
   template <class Int, class Entry>
@@ -970,9 +970,12 @@ namespace Basker{
     Int *new_int = new Int[new_size];
     for(Int i =0; i < old_size; i++)
       {
+        /*Assumption that Int was own defined copy constructor*/
         new_int[i] = old[i];
       }
+    delete[] old;
     return new_int;
+    
   }
 
 

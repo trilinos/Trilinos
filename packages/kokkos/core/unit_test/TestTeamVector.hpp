@@ -188,7 +188,7 @@ struct functor_team_for {
               value += values(i);
             }
             if (test != value) {
-              printf ("FAILED team_parallel_for %i %i %lf %lf\n",
+              printf ("FAILED team_parallel_for %i %i %f %f\n",
                       team.league_rank (), team.team_rank (),
                       static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
@@ -225,12 +225,14 @@ struct functor_team_reduce {
          }
          if (test != value) {
            if(team.league_rank() == 0)
-           printf ("FAILED team_parallel_reduce %i %i %lf %lf %i\n",
+           printf ("FAILED team_parallel_reduce %i %i %f %f %i\n",
              team.league_rank (), team.team_rank (),
              static_cast<double> (test), static_cast<double> (value),sizeof(Scalar));
               flag() = 1;
          }
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -261,12 +263,14 @@ struct functor_team_reduce_join {
            test += i - team.league_rank () + team.league_size () + team.team_size ();
          }
          if (test != value) {
-           printf ("FAILED team_vector_parallel_reduce_join %i %i %lf %lf\n",
+           printf ("FAILED team_vector_parallel_reduce_join %i %i %f %f\n",
              team.league_rank (), team.team_rank (),
              static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
          }
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -317,7 +321,7 @@ struct functor_team_vector_for {
               value += values(i);
             }
             if (test != value) {
-              printf ("FAILED team_vector_parallel_for %i %i %lf %lf\n",
+              printf ("FAILED team_vector_parallel_for %i %i %f %f\n",
                       team.league_rank (), team.team_rank (),
                       static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
@@ -356,13 +360,15 @@ struct functor_team_vector_reduce {
          }
          if (test != value) {
            if(team.league_rank() == 0)
-           printf ("FAILED team_vector_parallel_reduce %i %i %lf %lf %i\n",
+           printf ("FAILED team_vector_parallel_reduce %i %i %f %f %i\n",
              team.league_rank (), team.team_rank (),
              static_cast<double> (test), static_cast<double> (value),sizeof(Scalar));
               flag() = 1;
          }
       });
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -394,13 +400,15 @@ struct functor_team_vector_reduce_join {
            test += i - team.league_rank () + team.league_size () + team.team_size ();
          }
          if (test != value) {
-           printf ("FAILED team_vector_parallel_reduce_join %i %i %lf %lf\n",
+           printf ("FAILED team_vector_parallel_reduce_join %i %i %f %f\n",
              team.league_rank (), team.team_rank (),
              static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
          }
       });
     }
+#else
+    (void) value; // suppress build warning for unused variable
 #endif
   }
 };
@@ -587,8 +595,8 @@ struct functor_reduce {
 template<typename Scalar,class ExecutionSpace>
 bool test_scalar(int nteams, int team_size, int test) {
   Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace> d_flag("flag");
-  Kokkos::View<int,Kokkos::LayoutLeft,Kokkos::HostSpace> h_flag("flag");
-  h_flag() = 0;
+  typename Kokkos::View<int,Kokkos::LayoutLeft,ExecutionSpace>::HostMirror h_flag("h_flag");
+  h_flag() = 0 ;
   Kokkos::deep_copy(d_flag,h_flag);
   #ifdef KOKKOS_HAVE_CXX11
   if(test==0)

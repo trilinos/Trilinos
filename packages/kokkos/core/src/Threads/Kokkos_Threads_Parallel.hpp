@@ -99,7 +99,7 @@ private:
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    driver( self.m_func , Policy( self.m_policy , exec.pool_rank() , exec.pool_size() ) );
+    driver( self.m_func , typename Policy::WorkRange( self.m_policy , exec.pool_rank() , exec.pool_size() ) );
 
     exec.fan_in();
   }
@@ -274,7 +274,7 @@ private:
 
     driver( self.m_func
           , ValueInit::init( self.m_func , exec.reduce_memory() )
-          , Policy( self.m_policy , exec.pool_rank() , exec.pool_size() )
+          , typename Policy::WorkRange( self.m_policy , exec.pool_rank() , exec.pool_size() )
           );
 
     exec.template fan_in_reduce< FunctorType , work_tag >( self.m_func );
@@ -441,7 +441,7 @@ private:
   {
     const ParallelScan & self = * ((const ParallelScan *) arg );
 
-    const Policy range( self.m_policy , exec.pool_rank() , exec.pool_size() );
+    const typename Policy::WorkRange range( self.m_policy , exec.pool_rank() , exec.pool_size() );
 
     reference_type update = ValueInit::init( self.m_func , exec.reduce_memory() );
 

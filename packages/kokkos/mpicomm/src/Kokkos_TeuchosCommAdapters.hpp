@@ -164,6 +164,28 @@ reduceAll (const SendViewType& sendBuf,
   }
 }
 
+template<typename Ordinal,
+         typename T, typename L, typename D, typename M, typename S>
+void broadcast(const Comm<Ordinal>& comm,
+               const int rootRank,
+               const Ordinal count,
+               const Kokkos::View<T,L,D,M,S>& buffer)
+{
+  broadcast( comm, rootRank, count, buffer.ptr_on_device() );
+}
+
+template<typename Ordinal,
+         typename T, typename L, typename D, typename M, typename S,
+         typename Serializer>
+void broadcast(const Comm<Ordinal>& comm,
+               const Serializer& serializer,
+               const int rootRank,
+               const Ordinal count,
+               const Kokkos::View<T,L,D,M,S>& buffer)
+{
+  broadcast( comm, serializer, rootRank, count, buffer.ptr_on_device() );
+}
+
 } // namespace Teuchos
 
 #endif // KOKKOS_TEUCHOS_COMM_ADAPTERS_HPP

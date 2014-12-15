@@ -1185,7 +1185,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE
       "${${NATIVE_REPO_NAME}_TPLS_FILE}")
     INCLUDE(${${NATIVE_REPO_NAME}_TPLS_FILE})
-    TRIBITS_PROCESS_TPLS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
+    TRIBITS_PROCESS_TPLS_LISTS(${NATIVE_REPO_NAME}  ${NATIVE_REPO_DIR})
 
   ENDFOREACH()
 
@@ -1260,26 +1260,26 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
 
       # Read in the add-on TPLs from the extra repo
 
-      SET(EXTRAREPO_TPLS_FILE
+      SET(${EXTRA_REPO}_TPLS_FILE
         "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
 
       MESSAGE("")
-      MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
+      MESSAGE("Reading a list of extra TPLs from ${${EXTRA_REPO}_TPLS_FILE} ... ")
       MESSAGE("")
 
-      IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}")
+      IF (NOT EXISTS "${${EXTRA_REPO}_TPLS_FILE}")
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
             "\n***"
-            "\n*** WARNING!  Ignoring missing extra repo '${EXTRA_REPO}' TPLs list file '${EXTRAREPO_TPLS_FILE}' on request!"
+            "\n*** WARNING!  Ignoring missing extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
             "\n***\n")
         ELSE()
           MESSAGE( SEND_ERROR
-            "ERROR: Skipping missing extra repo '${EXTRA_REPO}' TPLs list file '${EXTRAREPO_TPLS_FILE}'!")
+            "ERROR: Skipping missing extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}'!")
         ENDIF()
       ELSE()
-        TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE "${EXTRAREPO_TPLS_FILE}")
-        INCLUDE("${EXTRAREPO_TPLS_FILE}")
+        TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE "${${EXTRA_REPO}_TPLS_FILE}")
+        INCLUDE("${${EXTRA_REPO}_TPLS_FILE}")
         SET(APPEND_TO_TPLS_LIST TRUE)
         TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})  # Reads the variable ???
       ENDIF()

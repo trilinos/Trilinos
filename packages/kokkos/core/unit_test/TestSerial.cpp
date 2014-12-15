@@ -64,6 +64,7 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
@@ -200,6 +201,7 @@ TEST_F( serial , view_remap )
 TEST_F( serial , view_aggregate )
 {
   TestViewAggregate< Kokkos::Serial >();
+  TestViewAggregateReduction< Kokkos::Serial >();
 }
 
 //----------------------------------------------------------------------------

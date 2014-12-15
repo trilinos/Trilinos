@@ -73,6 +73,9 @@ namespace Sacado {
      */
     template <typename ExprT> class Expr {};
 
+    // Forward declaration
+    template <typename T, typename S> class Vector;
+
     //! Vectorized evaluation class
     template <typename T, typename Storage >
     class VectorImpl {
@@ -277,6 +280,8 @@ public VectorImpl<T,Storage> {
       typedef typename VectorImpl<T,Storage>::scalar_type scalar_type;
       typedef typename VectorImpl<T,Storage>::storage_type storage_type;
       typedef typename VectorImpl<T,Storage>::const_reference const_reference;
+
+      typedef Vector<T,Storage> base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -507,6 +512,26 @@ namespace Sacado {
     }; // class Vector
 
   } // namespace ETV
+
+  template <typename T>
+  struct IsExpr< ETV::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< ETV::Expr<T> > {
+    typedef typename ETV::Expr<T>::base_expr_type type;
+  };
+
+  template <typename T, typename S>
+  struct IsExpr< ETV::Vector<T,S> > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename S>
+  struct BaseExprType< ETV::Vector<T,S> > {
+    typedef ETV::Vector<T,S> type;
+  };
 
 } // namespace Sacado
 

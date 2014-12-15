@@ -115,7 +115,7 @@ namespace Intrepid {
 
 template <class Scalar>
 void IntrepidPolylib::zwgj (Scalar *z, Scalar *w, const int np, const Scalar alpha, const Scalar beta){
-  register int i;
+  int i;
   Scalar fac, one = 1.0, two = 2.0, apb = alpha + beta;
 
   IntrepidPolylib::jacobz (np,z,alpha,beta);
@@ -138,7 +138,7 @@ void IntrepidPolylib::zwgrjm(Scalar *z, Scalar *w, const int np, const Scalar al
     w[0] = 2.0;
   }
   else{
-    register int i;
+    int i;
     Scalar fac, one = 1.0, two = 2.0, apb = alpha + beta;
 
     z[0] = -one;
@@ -164,7 +164,7 @@ void IntrepidPolylib::zwgrjp(Scalar *z, Scalar *w, const int np, const Scalar al
     w[0] = 2.0;
   }
   else{
-    register int i;
+    int i;
     Scalar fac, one = 1.0, two = 2.0, apb = alpha + beta;
 
     IntrepidPolylib::jacobz  (np-1,z,alpha+1,beta);
@@ -190,7 +190,7 @@ void IntrepidPolylib::zwglj(Scalar *z, Scalar *w, const int np, const Scalar alp
     w[0] = 2.0;
   }
   else{
-    register int i;
+    int i;
     Scalar   fac, one = 1.0, apb = alpha + beta, two = 2.0;
 
     z[0]    = -one;
@@ -220,7 +220,7 @@ void IntrepidPolylib::Dgj(Scalar *D,  const Scalar *z, const int np, const Scala
         D[0] = 0.0;
     }
     else{
-        register int i,j;
+        int i,j; 
         Scalar *pd;
 
         pd = (Scalar *)malloc(np*sizeof(Scalar));
@@ -251,7 +251,7 @@ void IntrepidPolylib::Dgrjm(Scalar *D, const Scalar *z, const int np, const Scal
         D[0] = 0.0;
     }
     else{
-        register int i, j;
+        int i, j; 
         Scalar   one = 1.0, two = 2.0;
         Scalar   *pd;
 
@@ -291,7 +291,7 @@ void IntrepidPolylib::Dgrjp(Scalar *D, const Scalar *z, const int np, const Scal
         D[0] = 0.0;
     }
     else{
-        register int i, j;
+        int i, j; 
         Scalar   one = 1.0, two = 2.0;
         Scalar   *pd;
 
@@ -332,7 +332,7 @@ void IntrepidPolylib::Dglj(Scalar *D, const Scalar *z, const int np, const Scala
         D[0] = 0.0;
     }
     else{
-        register int i, j;
+        int i, j; 
         Scalar   one = 1.0, two = 2.0;
         Scalar   *pd;
 
@@ -456,7 +456,7 @@ template <class Scalar>
 void IntrepidPolylib::Imgj(Scalar *im, const Scalar *zgj, const Scalar *zm, const int nz,
                            const int mz, const Scalar alpha, const Scalar beta){
         Scalar zp;
-        register int i, j;
+        int i, j;
 
         /* old Polylib code */
         for (i = 0; i < mz; ++i) {
@@ -485,7 +485,7 @@ void IntrepidPolylib::Imgrjm(Scalar *im, const Scalar *zgrj, const Scalar *zm, c
                              const int mz, const Scalar alpha, const Scalar beta)
 {
     Scalar zp;
-    register int i, j;
+    int i, j;
 
     for (i = 0; i < mz; i++) {
       zp = zm[i];
@@ -513,7 +513,7 @@ void IntrepidPolylib::Imgrjp(Scalar *im, const Scalar *zgrj, const Scalar *zm, c
                              const int mz, const Scalar alpha, const Scalar beta)
 {
         Scalar zp;
-        register int i, j;
+        int i, j;
 
         for (i = 0; i < mz; i++) {
           zp = zm[i];
@@ -541,7 +541,7 @@ void IntrepidPolylib::Imglj(Scalar *im, const Scalar *zglj, const Scalar *zm, co
                             const int mz, const Scalar alpha, const Scalar beta)
 {
     Scalar zp;
-    register int i, j;
+    int i, j;
 
     for (i = 0; i < mz; i++) {
       zp = zm[i];
@@ -661,7 +661,7 @@ template <class Scalar>
 void IntrepidPolylib::jacobd(const int np, const Scalar *z, Scalar *polyd, const int n,
                              const Scalar alpha, const Scalar beta)
 {
-  register int i;
+  int i;
   Scalar one = 1.0;
   if(n == 0)
     for(i = 0; i < np; ++i) polyd[i] = 0.0;
@@ -676,7 +676,7 @@ void IntrepidPolylib::jacobd(const int np, const Scalar *z, Scalar *polyd, const
 
 template <class Scalar>
 void IntrepidPolylib::Jacobz(const int n, Scalar *z, const Scalar alpha, const Scalar beta){
-    register int i,j,k;
+    int i,j,k;
     Scalar   dth = M_PI/(2.0*(Scalar)n);
     Scalar   poly,pder,rlast=0.0;
     Scalar   sum,delr,r;

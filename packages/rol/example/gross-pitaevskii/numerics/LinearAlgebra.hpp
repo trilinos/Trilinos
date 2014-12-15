@@ -1,4 +1,5 @@
 #include"Teuchos_LAPACK.hpp"
+#include"ROL_StdVector.hpp"
 
 #ifndef __LINEAR_ALGEBRA__
 #define __LINEAR_ALGEBRA__
@@ -11,7 +12,7 @@
   @param[in]    r        right-hand-side     ( length N   )
   @param[out]   x        solution vector     ( length N   )   */
 template<class Real>
-void trisolve(const Teuchos::LAPACK<int,Real> * const lapack,
+void trisolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
               const std::vector<Real>& a,
               const std::vector<Real>& b,
               const std::vector<Real>& c,
@@ -46,7 +47,7 @@ void trisolve(const Teuchos::LAPACK<int,Real> * const lapack,
   @param[in]    X        vector of column-stacked solution matrix elements ( length N*M ) 
  */
 template<class Real>
-void lusolve(const Teuchos::LAPACK<int,Real> * const lapack,
+void lusolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
              const std::vector<Real> &A,
              const std::vector<Real> &B,
                    std::vector<Real> &X) {
@@ -77,7 +78,7 @@ void lusolve(const Teuchos::LAPACK<int,Real> * const lapack,
   @param[in]    X        vector of column-stacked solution matrix elements ( length N*M ) 
  */
 template<class Real>
-void cholsolve(const Teuchos::LAPACK<int,Real> * const lapack,
+void cholsolve(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
                const std::vector<Real> &A,
                const std::vector<Real> &B,
                      std::vector<Real> &X) {

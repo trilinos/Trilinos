@@ -24,7 +24,7 @@
 #
 # To use this script just run it, for example, like (this builds and tests):
 #
-#  $ ./checkin-test-cee-compute011 --do-all
+#  $ ./checkin-test-cee-compute011.sh --do-all
 #
 # (This pushes after successful tests have been run)
 #
@@ -57,10 +57,10 @@ MPI_BASE_DIR=/sierra/sntools/SDK/mpi/openmpi/1.6.4-gcc-4.7.2-RHEL6
 NETCDF=$BASE
 HDFDIR=$BASE
 MKL_PATH=/sierra/sntools/SDK/compilers/intel
-LABLAS_LIBRARIES="-L$MKL_PATH/lib/intel64 -Wl,--start-group $MKL_PATH/mkl/lib/intel64/libmkl_intel_lp64.a $MKL_PATH/mkl/lib/intel64/libmkl_core.a $MKL_PATH/mkl/lib/intel64/libmkl_sequential.a -Wl,--end-group -liomp5 -lpthread"
+LABLAS_LIBRARIES="-L$MKL_PATH/lib/intel64 -Wl,--start-group $MKL_PATH/mkl/lib/intel64/libmkl_intel_lp64.a $MKL_PATH/mkl/lib/intel64/libmkl_core.a $MKL_PATH/mkl/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -ldl"
 
 echo "
--D BUILD_SHARED_LIBS:BOOL=ON
+-D BUILD_SHARED_LIBS:BOOL=OFF
 -D Boost_INCLUDE_DIRS:FILEPATH=\"$BOOSTDIR/include\"
 -D BoostLib_INCLUDE_DIRS:FILEPATH=\"$BOOSTDIR/include\"
 -D Boost_LIBRARY_DIRS:FILEPATH=\"$BOOSTDIR/lib\"
@@ -99,12 +99,20 @@ echo "
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
 -DTPL_ENABLE_MPI:BOOL=ON
 -DMPI_BASE_DIR:PATH=$MPI_BASE_DIR
+-DTPL_ENABLE_GLM=OFF
+-DTrilinos_ENABLE_Piro:BOOL=OFF
+-DTrilinos_ENABLE_Stokhos:BOOL=OFF
+-DTrilinos_ENABLE_PyTrilinos:BOOL=OFF
+-D Amesos2_ENABLE_KLU2:BOOL=ON
 -D TPL_ENABLE_Netcdf:BOOL=ON
 -D TPL_ENABLE_HDF5:BOOL=ON
 -D Netcdf_INCLUDE_DIRS:PATH=\"$NETCDF/include\"
 -D Netcdf_LIBRARY_DIRS:PATH=\"$NETCDF/lib\"
 -D HDF5_INCLUDE_DIRS:PATH=\"$HDFDIR/include\"
 -D HDF5_LIBRARY_DIRS:PATH=\"$HDFDIR/lib\"
+-D Zlib_INCLUDE_DIRS:PATH=$HDFDIR/include
+-D Zlib_LIBRARY_DIRS:PATH=$HDFDIR/lib
+-D TPL_HDF5_LIBRARIES:PATH=\"${HDFDIR}/lib/libnetcdf.a;${HDFDIR}/lib/libhdf5_hl.a;${HDFDIR}/lib/libhdf5.a;${HDFDIR}/lib/libz.a\" 
 " > MPI_RELEASE_SS.config
 
 echo "

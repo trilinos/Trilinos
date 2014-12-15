@@ -85,7 +85,7 @@ namespace Tpetra {
       typedef LocalOrdinal local_ordinal_type;
       typedef GlobalOrdinal global_ordinal_type;
       typedef NodeType node_type;
-      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType> map_type;
+      typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType> map_type;
 
       /// \brief Constructor.
       ///
@@ -172,7 +172,7 @@ namespace Tpetra {
 
       template <class Node2>
       Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
+      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef ReplicatedDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         return new Dir2 (cloneMap);
@@ -230,7 +230,7 @@ namespace Tpetra {
 
       template <class Node2>
       Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
+      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef ContiguousUniformDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         return new Dir2 (cloneMap);
@@ -278,7 +278,7 @@ namespace Tpetra {
 
       template <class Node2>
       Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
+      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef DistributedContiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         Dir2* dir = new Dir2 (cloneMap);
@@ -360,10 +360,10 @@ namespace Tpetra {
 
       template <class Node2>
       Directory<LocalOrdinal,GlobalOrdinal,Node2>*
-      clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
+      clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> output_map_type;
+        typedef ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2> output_map_type;
         Dir2* dir = new Dir2 (cloneMap);
 
         // This method returns a raw pointer.  Thus, take care to

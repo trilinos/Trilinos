@@ -16,6 +16,8 @@ export TDD_PARALLEL_LEVEL=2
 # Submission mode for the *TrilinosDriver* dashboard
 export TDD_CTEST_TEST_TYPE=Nightly
 
+export TDD_FORCE_CMAKE_INSTALL=1
+
 #export CTEST_DO_SUBMIT=FALSE
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
 
@@ -24,18 +26,8 @@ export TDD_CTEST_TEST_TYPE=Nightly
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
 
-export TDD_FORCE_CMAKE_INSTALL=1
+. ~/.bashrc
 
-export CPATH=~/local/include:$CPATH
-export LD_LIBRARY_PATH=~/local/lib:~/local/lib64:/usr/lib64:/lib64:$LD_LIBRARY_PATH
-export PATH=~/bin:/opt/bin:~/local/bin:$PATH
-export PKG_CONFIG_PATH=~/local:$PKG_CONFIG_PATH
-
-# Initialize Modules environment
-. /usr/share/Modules/init/bash
-
-module use-append ~/.modules
-module load common_base
 module load openmpi/1.8.3
 module load gcc/4.9.2
 

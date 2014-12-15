@@ -185,7 +185,7 @@ public:
 
   /** \brief Initialize step.
   */
-  void initialize( Vector<Real> &x, Vector<Real> &g, Vector<Real> &l, Vector<Real> &c,
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, EqualityConstraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
@@ -209,15 +209,15 @@ public:
     algo_state.value = obj.value(x, zerotol);
     algo_state.nfval++;
     con.update(x,true,algo_state.iter);
-    con.value(c, x, zerotol);
-    algo_state.cnorm = c.norm();
+    con.value(*cvec_, x, zerotol);
+    algo_state.cnorm = cvec_->norm();
     algo_state.ncval++;
-    obj.gradient(g, x, zerotol);
+    obj.gradient(*gvec_, x, zerotol);
 
     // Compute gradient of Lagrangian at new multiplier guess.
-    computeLagrangeMultiplier(l, x, g, con);
+    computeLagrangeMultiplier(l, x, *gvec_, con);
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
-    gl->set(g); gl->plus(*ajl);
+    gl->set(*gvec_); gl->plus(*ajl);
     algo_state.ngrad++;
     algo_state.gnorm = gl->norm();
   }

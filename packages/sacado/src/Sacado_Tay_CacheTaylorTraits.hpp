@@ -36,6 +36,7 @@
 namespace Sacado {
   namespace Tay {
     template <typename T> class CacheTaylor;
+    template <typename T> class Expr;
   }
 }
 
@@ -43,6 +44,9 @@ namespace Sacado {
 
   //! Specialization of %Promote to CacheTaylor types
   SACADO_AD_PROMOTE_SPEC( Tay, CacheTaylor )
+
+  //! Specialization of %Promote to Expr types
+  SACADO_EXPR_PROMOTE_SPEC( Tay )
 
   //! Specialization of %ScalarType to DFad types
   template <typename T>

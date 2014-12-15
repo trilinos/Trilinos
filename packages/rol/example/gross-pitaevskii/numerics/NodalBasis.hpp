@@ -1,4 +1,5 @@
 #include<iostream>
+#include"ROL_StdVector.hpp"
 #include"OrthogonalPolynomials.hpp"
 #include"Lagrange.hpp"
 #include"LinearAlgebra.hpp"
@@ -8,10 +9,10 @@
 
 
 template<class Real>
-class NodalBasis{
+struct NodalBasis{
 
-    private:
-        const Teuchos::LAPACK<int,Real> * const lapack_;
+        //! \param lapack_ pointer to LAPACK interface
+        Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack_;
  
         //! \param ni_ Number of interpolation points
         const int ni_;
@@ -19,8 +20,7 @@ class NodalBasis{
         //! \param nq_ Number of quadrature points
         const int nq_;
 
-    public:
-        NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, const int ni, const int nq);    
+        NodalBasis(Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack, const int ni, const int nq);    
         ~NodalBasis();
 
          //! \param xi_ Vector of interpolation points
@@ -35,15 +35,19 @@ class NodalBasis{
         //! \param L_ Column stacked vector of vectors of interpolating functions  
         std::vector<Real> L_;
         std::vector<Real> Lp_;
+        
+        //! Object for working with Lagrange polynomials and their derivatives 
+        Teuchos::RCP<Lagrange<Real> > lagrange_; 
 
-      
+         
 };
 
 /** \brief Set up quantities we will need repeatedly
 */
 template<class Real>
-NodalBasis<Real>::NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, const int ni, const int nq): 
-    lapack_(lapack), ni_(ni), nq_(nq), xi_(ni_,0), xq_(nq_,0), wq_(nq_,0), L_(ni_*nq_,0), Lp_(ni_*nq_,0) {
+NodalBasis<Real>::NodalBasis(Teuchos::RCP<Teuchos::LAPACK<int,Real> > const lapack, const int ni, const int nq): 
+    lapack_(lapack), ni_(ni), nq_(nq), xi_(ni_,0), xq_(nq_,0), wq_(nq_,0), L_(ni_*nq_,0), Lp_(ni_*nq_,0)
+    {
 
     // Generate Legendre-Gauss-Lobatto nodes and weights (unused)
     std::vector<Real> ai(ni_,0);
@@ -62,27 +66,22 @@ NodalBasis<Real>::NodalBasis(const Teuchos::LAPACK<int,Real> * const lapack, con
     std::vector<Real> e(ni_,0);
     std::vector<Real> ell(nq,0);
 
-    Lagrange<Real> lagrange(xi_,xq_);
+    lagrange_ = Teuchos::rcp(new Lagrange<Real>(xi_,xq_));
 
     // Loop over canonical vectors
     for(int i=0;i<ni_;++i) {
 
-        lagrange.interpolant(i,ell);
+        lagrange_->interpolant(i,ell);
 
         std::copy(ell.begin(),ell.end(),L_.begin()+i*nq_);
+      
 
-        lagrange.derivative(i,ell);
+        lagrange_->derivative(i,ell);
         std::copy(ell.begin(),ell.end(),Lp_.begin()+i*nq_);
 
-//        for(int j=0;j<nq_;++j){
-//            std::cout << L_[i*nq_+j] << ' ';
-//        }
-//        std::cout << std::endl;
         // Rezero the vector 
         std::fill(e.begin(),e.end(),0);
     }     
-
-
 
 }
 
