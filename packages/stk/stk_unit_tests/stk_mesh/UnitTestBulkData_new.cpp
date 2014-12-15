@@ -220,7 +220,9 @@ TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   Entity shared_node = fixture.node(1 /*x*/, 1 /*y*/);
   // Assert that this node is shared
   if ( p_size > 1 && bulk.is_valid(shared_node) && (p_rank == 0 || p_rank == 1) ) {
-    ASSERT_GE(bulk.entity_comm_map_shared(bulk.entity_key(shared_node)).size(), 1u);
+    std::vector<int> shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(shared_node),shared_procs);
+    ASSERT_GE(shared_procs.size(), 1u);
   }
 
   bulk.modification_begin();

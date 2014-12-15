@@ -48,6 +48,8 @@
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 
+namespace stk { namespace mesh { namespace unit_test {
+
 using namespace stk::mesh;
 using namespace stk;
 
@@ -59,3 +61,4 @@ bool BulkDataTester::is_entity_in_ghosting_comm_map(stk::mesh::Entity entity)
 }
 
 
+} } } // namespace stk mesh unit_test

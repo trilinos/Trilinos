@@ -131,8 +131,12 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
     ASSERT_TRUE( bulk.is_valid(node0) );
     ASSERT_TRUE( bulk.is_valid(node1) );
 
-    ASSERT_EQ( bulk.entity_comm_map_shared(bulk.entity_key(node0)).size(), 1u );
-    ASSERT_EQ( bulk.entity_comm_map_shared(bulk.entity_key(node1)).size() , 1u );
+    std::vector<int> node0_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node0), node0_shared_procs);
+    std::vector<int> node1_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node0), node1_shared_procs);
+    ASSERT_EQ( node0_shared_procs.size(), 1u );
+    ASSERT_EQ( node1_shared_procs.size(), 1u );
   }
 
   // Test no-op first:
@@ -262,8 +266,12 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
     const EntityKey node_recv = EntityKey(NODE_RANK , ring.m_node_ids[id_recv]);
     const EntityKey node_send = EntityKey(NODE_RANK , ring.m_node_ids[id_send]);
 
-    ASSERT_EQ( bulk.entity_comm_map_shared(node_recv).size(), 1u );
-    ASSERT_EQ( bulk.entity_comm_map_shared(node_send).size() , 1u );
+    std::vector<int> node_recv_shared_procs;
+    bulk.comm_shared_procs(node_recv,node_recv_shared_procs);
+    ASSERT_EQ( node_recv_shared_procs.size(), 1u );
+    std::vector<int> node_send_shared_procs;
+    bulk.comm_shared_procs(node_send,node_send_shared_procs);
+    ASSERT_EQ( node_send_shared_procs.size(), 1u );
   }
 }
 

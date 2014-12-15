@@ -74,6 +74,7 @@ namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
+namespace stk { class CommAll; }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -498,14 +499,13 @@ public:
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
   PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)
-  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }    // CLEANUP: switch apps to use comm_shared_procs
   PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }   //CLEANUP: can replace app usage with comm_procs
 
   int entity_comm_map_owner(const EntityKey & key) const;       // CLEANUP: can make protected
 
   // Comm-related convenience methods
 
-  bool in_shared(EntityKey key) const { return !entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
+  bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
   bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( EntityKey key ) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
@@ -514,10 +514,9 @@ public:
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
+  void comm_procs( const Ghosting & ghost , EntityKey key, std::vector<int> & procs ) const;
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
   void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
-  void comm_procs( const Ghosting & ghost ,
-                   EntityKey key, std::vector<int> & procs ) const;
 
   inline bool in_index_range(Entity entity) const;
   inline bool is_valid(Entity entity) const;
@@ -530,9 +529,6 @@ public:
   inline EntityRank entity_rank(Entity entity) const;
   inline EntityKey entity_key(Entity entity) const;
   inline EntityState state(Entity entity) const;
-  inline void mark_entity(Entity entity, entitySharing sharedType);     //CLEANUP: move this and calling functions to private
-  inline entitySharing is_entity_marked(Entity entity) const;           //CLEANUP: move this and calling functions to private
-  inline bool add_node_sharing_called() const;                          //CLEANUP: move this and calling functions to private
   inline Bucket & bucket(Entity entity) const;
   inline Bucket * bucket_ptr(Entity entity) const;
   inline Bucket::size_type bucket_ordinal(Entity entity) const;
@@ -683,7 +679,21 @@ public:
    */
   void allocate_field_data();
 
+#ifndef STK_BUILT_IN_SIERRA // DELETE public functions BTW 2015-02-13 and 2015-03-04
+  STK_DEPRECATED(inline void mark_entity(Entity entity, entitySharing sharedType));
+  STK_DEPRECATED(inline entitySharing is_entity_marked(Entity entity) const);
+  STK_DEPRECATED(inline bool add_node_sharing_called() const);
+  STK_DEPRECATED(PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const)
+  { return this->internal_entity_comm_map_shared(key); }
+#endif // STK_BUILT_IN_SIERRA
+
 protected: //functions
+
+  inline entitySharing internal_is_entity_marked(Entity entity) const;
+  PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
+
+  void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
+  void gather_shared_nodes(std::vector<EntityKey> & shared_nodes);
   inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
   impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
@@ -691,6 +701,7 @@ protected: //functions
   inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
+
 
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
@@ -831,6 +842,11 @@ private: //functions
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
   void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
+
+  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(CommAll &comm, std::vector<shared_entity_type> & shared_entity_map);
+
+  inline void internal_mark_entity(Entity entity, entitySharing sharedType);
+  inline bool internal_add_node_sharing_called() const;
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();

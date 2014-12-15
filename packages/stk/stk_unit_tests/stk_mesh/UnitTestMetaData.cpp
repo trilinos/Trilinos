@@ -140,7 +140,7 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   meta.commit();
 
-  BulkDataTester bulk ( meta , MPI_COMM_WORLD );
+  stk::mesh::unit_test::BulkDataTester bulk ( meta , MPI_COMM_WORLD );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
   std::vector<stk::mesh::Part *> elem_parts;

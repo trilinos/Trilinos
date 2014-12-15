@@ -757,17 +757,34 @@ inline EntityState BulkData::state(Entity entity) const
   return static_cast<EntityState>(m_entity_states[entity.local_offset()]);
 }
 
+#ifndef STK_BUILT_IN_SIERRA // DELETE ifdef BTW 2015-02-13 and 2015-03-04
 inline void BulkData::mark_entity(Entity entity, entitySharing sharedType)
 {
-    m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
+    this->internal_mark_entity(entity,sharedType);
 }
 
 inline BulkData::entitySharing BulkData::is_entity_marked(Entity entity) const
 {
-    return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
+    return this->internal_is_entity_marked(entity);
 }
 
 inline bool BulkData::add_node_sharing_called() const
+{
+  return this->internal_add_node_sharing_called();
+}
+#endif // STK_BUILT_IN_SIERRA
+
+inline void BulkData::internal_mark_entity(Entity entity, entitySharing sharedType)
+{
+    m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
+}
+
+inline BulkData::entitySharing BulkData::internal_is_entity_marked(Entity entity) const
+{
+    return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
+}
+
+inline bool BulkData::internal_add_node_sharing_called() const
 {
   return m_add_node_sharing_called;
 }

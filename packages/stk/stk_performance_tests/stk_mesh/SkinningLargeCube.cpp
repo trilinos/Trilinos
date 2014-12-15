@@ -243,11 +243,12 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_map_shared(mesh.entity_key(node));
+    std::vector<int> shared_procs;
+    mesh.comm_shared_procs(mesh.entity_key(node),shared_procs);
 
-    for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
+    for (size_t shared_procs_i=0 ; shared_procs_i<shared_procs.size() ; ++shared_procs_i) {
 
-      size_t proc = entity_comm.first->proc;
+      size_t proc = shared_procs[shared_procs_i];
       comm.send_buffer(proc).pack<stk::mesh::EntityKey>(mesh.entity_key(node))
         .pack<stk::mesh::EntityKey>(mesh.entity_key(new_node));
 
@@ -260,11 +261,12 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_map_shared(mesh.entity_key(node));
+    std::vector<int> shared_procs;
+    mesh.comm_shared_procs(mesh.entity_key(node),shared_procs);
 
-    for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
+    for (size_t shared_procs_i=0 ; shared_procs_i<shared_procs.size() ; ++shared_procs_i) {
 
-      size_t proc = entity_comm.first->proc;
+      size_t proc = shared_procs[shared_procs_i];
       comm.send_buffer(proc).pack<stk::mesh::EntityKey>(mesh.entity_key(node))
         .pack<stk::mesh::EntityKey>(mesh.entity_key(new_node));
 

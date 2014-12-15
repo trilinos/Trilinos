@@ -103,24 +103,6 @@ bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity eleme
   return false;//didn't find element edge equivalent to input edgeNodes
 }
 
-void gather_shared_nodes(stk::mesh::BulkData & mesh, std::vector<EntityKey> & shared_nodes)
-{
-    const stk::mesh::BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
-
-    for(size_t nodeIndex = 0; nodeIndex < node_buckets.size(); ++nodeIndex)
-    {
-        const stk::mesh::Bucket & bucket = *node_buckets[nodeIndex];
-        for(size_t entityIndex = 0; entityIndex < bucket.size(); ++entityIndex)
-        {
-            Entity node = bucket[entityIndex];
-            if (mesh.is_entity_marked(node) == BulkData::IS_SHARED)
-            {
-                shared_nodes.push_back(mesh.entity_key(node));
-            }
-        }
-    }
-}
-
 int check_for_connected_nodes(const BulkData& mesh)
 {
   //This function returns an old-fashioned int return-code which is 0 if all is well
@@ -173,64 +155,6 @@ int check_no_shared_elements_or_higher(const BulkData& mesh)
 }
 
 
-void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
-{
-    const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entityRank);
-    const bool add_node_sharing_called = mesh.add_node_sharing_called();
-
-    for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
-    {
-        const stk::mesh::Bucket& bucket = *entity_buckets[bucketIndex];
-        stk::topology topology = bucket.topology();
-        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-        {
-            Entity entity = bucket[entityIndex];
-            const unsigned num_nodes_on_entity = bucket.num_nodes(entityIndex);
-
-            if (!add_node_sharing_called && mesh.state(entity) == stk::mesh::Unchanged)
-            {
-              // No nodes newly shared and entity has not had nodes added, so entity cannot become shared.
-              continue;
-            }
-
-            if ( num_nodes_on_entity > 1 )
-            {
-                if(mesh.owned_closure(entity))
-                {
-                    Entity const * nodes = bucket.begin_nodes(entityIndex);
-
-                    //do we need to do some sorting operation here?
-                    //sort entity nodes into lexicographical smallest permutation?
-
-
-                    bool shared_entity = true;
-                    for(size_t n = 0; n < num_nodes_on_entity; ++n)
-                    {
-                        Entity node = nodes[n];
-                        shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.is_entity_marked(node) == BulkData::IS_SHARED));
-                    }
-
-                    if(shared_entity)
-                    {
-                        shared_entity_type sentity;
-                        sentity.topology = topology;
-                        sentity.nodes.resize(num_nodes_on_entity);
-                        for(size_t n = 0; n < num_nodes_on_entity; ++n)
-                        {
-                            sentity.nodes[n]=mesh.entity_key(nodes[n]);
-                        }
-                        std::sort(sentity.nodes.begin(),sentity.nodes.end());
-                        const EntityKey &entity_key = mesh.entity_key(entity);
-                        sentity.local_key = entity_key;
-                        sentity.global_key = entity_key;
-                        shared_entities.push_back(sentity);
-                        mesh.mark_entity(entity, BulkData::POSSIBLY_SHARED);
-                    }
-                }
-            }
-        }
-    }
-}
 
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
         stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes)
@@ -1140,11 +1064,12 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     // If shared then I am owner or owner is in the shared list
 
     if ( shares && p_owner != p_rank ) {
-      PairIterEntityComm ip = M.entity_comm_map_shared(M.entity_key(entity));
-      for ( ; ! ip.empty() && p_owner != ip->proc ; ++ip );
-      if ( ip.empty() ) {
+      std::vector<int> shared_procs;
+      M.comm_shared_procs(M.entity_key(entity),shared_procs);
+      std::vector<int>::const_iterator it = std::find(shared_procs.begin(),shared_procs.end(),p_owner);
+      if (it == shared_procs.end()) {
         error_log << __FILE__ << ":" << __LINE__ << ": ";
-        error_log << "problem: entity shared-not-owned, but entity_comm_map_shared returns empty;" << std::endl;
+        error_log << "problem: entity shared-not-owned, but comm_shared_procs does not contain owner;" << std::endl;
         this_result = false ;
       }
     }
@@ -1343,7 +1268,9 @@ void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mes
     Entity entity = i->entity;
 
     bool entityisValid = mesh.is_valid(entity);
-    bool isSharedEntity = !mesh.entity_comm_map_shared(i->key).empty();
+    std::vector<int> shared_procs;
+    mesh.comm_shared_procs(i->key,shared_procs);
+    bool isSharedEntity = !shared_procs.empty();
     bool isNotInOwnedClosure = !mesh.owned_closure(entity);
     bool entityIsSharedButNotInClosure =  entityisValid && isSharedEntity && isNotInOwnedClosure;
 

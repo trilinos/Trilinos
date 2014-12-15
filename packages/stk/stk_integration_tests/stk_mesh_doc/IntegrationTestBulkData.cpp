@@ -88,7 +88,7 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+    stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     if(stkMeshBulkData.parallel_size() == 2)
     {
@@ -115,7 +115,7 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
     MPI_Comm communicator = MPI_COMM_WORLD;
     const int spatialDim = 2;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+    stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     if ( stkMeshBulkData.parallel_size() == 4 )
     {
@@ -143,7 +143,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+    stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     if ( stkMeshBulkData.parallel_size() == 2 )
     {
@@ -169,7 +169,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
+    stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
     if ( stkMeshBulkData.parallel_size() == 1 )
     {
         std::string exodusFileName = getOption("-i", "mesh.exo");

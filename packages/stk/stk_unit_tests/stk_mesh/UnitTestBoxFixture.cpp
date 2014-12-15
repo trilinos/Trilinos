@@ -194,7 +194,9 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
       ( i == local_box[0][0] && i != root_box[0][0] ) ||
       ( i == local_box[0][1] && i != root_box[0][1] );
     if (bulk.parallel_size() > 1) {
-      ASSERT_EQ( shared , ! bulk.entity_comm_map_shared(bulk.entity_key(node)).empty() );
+        std::vector<int> shared_procs;
+        bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+      ASSERT_EQ( shared , ! shared_procs.empty() );
     }
   }
   }
@@ -216,9 +218,10 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
                 Entity const node = bulk.get_entity( node_type , node_id );
                 ASSERT_TRUE( bulk.is_valid(node) );
                 // Must be shared with 'p'
-                stk::mesh::PairIterEntityComm iter = bulk.entity_comm_map_shared(bulk.entity_key(node));
-                for ( ; ! iter.empty() && iter->proc != p ; ++iter );
-                ASSERT_TRUE( ! iter.empty() );
+                std::vector<int> shared_procs;
+                bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+                std::vector<int>::const_iterator it=std::find(shared_procs.begin(),shared_procs.end(),p);
+                ASSERT_TRUE( it != shared_procs.end() );
 
                 ++count_shared_node_pairs ;
               }
@@ -231,8 +234,9 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
        i = bulk.comm_list().begin() ;
        i != bulk.comm_list().end() ;
        ++i) {
-    const stk::mesh::PairIterEntityComm ec = bulk.entity_comm_map_shared(i->key);
-    count_shared_entities += ec.size();
+    std::vector<int> shared_procs;
+    bulk.comm_shared_procs(i->key,shared_procs);
+    count_shared_entities += shared_procs.size();
   }
   ASSERT_EQ( count_shared_entities , count_shared_node_pairs );
 

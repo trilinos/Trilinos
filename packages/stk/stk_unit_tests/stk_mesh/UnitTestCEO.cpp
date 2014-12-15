@@ -115,7 +115,7 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
 
     const int spatial_dimension = 2;
     stk::mesh::MetaData meta(spatial_dimension);
-    BulkDataTester bulk(meta, pm);
+    stk::mesh::unit_test::BulkDataTester bulk(meta, pm);
 
     stk::mesh::EntityVector elems;
     CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);

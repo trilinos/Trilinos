@@ -78,7 +78,7 @@ enum EntityStates {
   STATE_MESH_DELETED
 };
 
-inline bool check_state(const BulkDataTester & mesh, const EntityKey & entityKey, EntityStates state,
+inline bool check_state(const stk::mesh::unit_test::BulkDataTester & mesh, const EntityKey & entityKey, EntityStates state,
                  int p0 = -1, int p1 = -1, int p2 = -1, int p3 = -1, int p4 = -1, int p5 = -1)
 {
   // Check to see if the state is as expected for the provided EntityKey.
@@ -155,16 +155,18 @@ inline bool check_state(const BulkDataTester & mesh, const EntityKey & entityKey
       if (expectedProcs.empty()) {
         oss << "check_state(): Must provide processor(s) with STATE_SHARED check." << std::endl;
       }
-      stk::mesh::PairIterEntityComm comm_it = mesh.entity_comm_map_shared(entityKey);
+      std::vector<int> shared_procs;
+      mesh.comm_shared_procs(entityKey,shared_procs);
       std::vector<int>::const_iterator expected_procs_it = expectedProcs.begin();
       bool lists_match = true;
 
-      if (comm_it.size() != expectedProcs.size()) {
+      if (shared_procs.size() != expectedProcs.size()) {
         lists_match = false;
       }
       else {
-        for ( ; expected_procs_it != expectedProcs.end(); ++comm_it, ++expected_procs_it) {
-          int comm_proc = comm_it.first->proc;
+        size_t shared_procs_i = 0;
+        for ( ; expected_procs_it != expectedProcs.end(); ++shared_procs_i, ++expected_procs_it) {
+          int comm_proc = shared_procs[shared_procs_i];
           int user_proc = *expected_procs_it;
           if (comm_proc != user_proc) {
             lists_match = false;
@@ -175,9 +177,8 @@ inline bool check_state(const BulkDataTester & mesh, const EntityKey & entityKey
 
       if (!lists_match) {
         oss << "check_state(): Entity " << entityKey << " was shared with procs (";
-        comm_it = mesh.entity_comm_map_shared(entityKey);
-        for ( ; comm_it.first != comm_it.second; ++comm_it) {
-          int proc = comm_it.first->proc;
+        for (size_t i=0 ; i<shared_procs.size() ; ++i) {
+          int proc = shared_procs[i];
           oss << proc << " ";
         }
         oss << ")" << std::endl
@@ -196,11 +197,12 @@ inline bool check_state(const BulkDataTester & mesh, const EntityKey & entityKey
       if (!expectedProcs.empty()) {
         oss << "check_state(): Cannot provide processors with STATE_NOT_SHARED check." << std::endl;
       }
-      if (!mesh.entity_comm_map_shared(entityKey).empty()) {
+      std::vector<int> shared_procs;
+      mesh.comm_shared_procs(entityKey,shared_procs);
+      if (!shared_procs.empty()) {
         oss << "check_state(): Entity " << entityKey << " was shared with procs (";
-        stk::mesh::PairIterEntityComm comm_pit = mesh.entity_comm_map_shared(entityKey);
-        for ( ; comm_pit.first != comm_pit.second; ++comm_pit) {
-          int proc = comm_pit.first->proc;
+        for (size_t i=0 ; i<shared_procs.size() ; ++i) {
+          int proc = shared_procs[i];
           oss << proc << " ";
         }
         oss << ") when it shouldn't have been shared." << std::endl;
@@ -586,7 +588,7 @@ inline bool check_relns(const stk::mesh::BulkData & mesh, const EntityKey & enti
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////// 2Elem2ProcMove //////////////////////////////////////
-inline void fillMeshfor2Elem2ProcMoveAndTest(BulkDataTester& bulk, stk::mesh::MetaData &meta, std::vector<stk::mesh::Entity>& elems)
+inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTester& bulk, stk::mesh::MetaData &meta, std::vector<stk::mesh::Entity>& elems)
 {
     //   id/owner_proc
     //
@@ -730,7 +732,7 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(BulkDataTester& bulk, stk::mesh::Me
     }
 }
 
-inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
+inline void checkStatesAfterCEO_2Elem2ProcMove(stk::mesh::unit_test::BulkDataTester &bulk)
 {
     //   id/owner_proc
     //
@@ -867,7 +869,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
 // valid vs not valid, owned.... shared vs not shared, ghosted_from vs not ghosted_from
 // ghosted_to vs not_ghosted_to
 
-inline void checkStatesAfterCEOME_2Elem2ProcMove(BulkDataTester &bulk)
+inline void checkStatesAfterCEOME_2Elem2ProcMove(stk::mesh::unit_test::BulkDataTester &bulk)
 {
     //   id/owner_proc
     //
@@ -1022,7 +1024,7 @@ inline void checkStatesAfterCEOME_2Elem2ProcMove(BulkDataTester &bulk)
 
 //////////////////////////////////// 2Elem2ProcFlip //////////////////////////////////////
 
-inline void fillMeshfor2Elem2ProcFlipAndTest(BulkDataTester& mesh, stk::mesh::MetaData &meta)
+inline void fillMeshfor2Elem2ProcFlipAndTest(stk::mesh::unit_test::BulkDataTester& mesh, stk::mesh::MetaData &meta)
 {
     //   id/owner_proc
     //
@@ -1194,7 +1196,7 @@ inline void fillMeshfor2Elem2ProcFlipAndTest(BulkDataTester& mesh, stk::mesh::Me
     }
 }
 
-inline void checkStatesAfterCEOME_2Elem2ProcFlip(BulkDataTester& mesh)
+inline void checkStatesAfterCEOME_2Elem2ProcFlip(stk::mesh::unit_test::BulkDataTester& mesh)
 {
     //   id/owner_proc
     //
@@ -1345,7 +1347,7 @@ inline void checkStatesAfterCEOME_2Elem2ProcFlip(BulkDataTester& mesh)
     }
 }
 
-inline void checkStatesAfterCEO_2Elem2ProcFlip(BulkDataTester& mesh)
+inline void checkStatesAfterCEO_2Elem2ProcFlip(stk::mesh::unit_test::BulkDataTester& mesh)
 {
     //   id/owner_proc
     //
@@ -1503,7 +1505,7 @@ inline void checkStatesAfterCEO_2Elem2ProcFlip(BulkDataTester& mesh)
 
 //////////////////////////////////// 3Elem2ProcMoveRight //////////////////////////////////////
 
-inline void fillMeshfor3Elem2ProcMoveRightAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector& elements)
+inline void fillMeshfor3Elem2ProcMoveRightAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector& elements)
 {
     //   id/owner_proc
     //
@@ -1745,7 +1747,7 @@ inline void fillMeshfor3Elem2ProcMoveRightAndTest(BulkDataTester &mesh, stk::mes
     }
 }
 
-inline void checkStatesAfterCEO_3Elem2ProcMoveRight(BulkDataTester &mesh)
+inline void checkStatesAfterCEO_3Elem2ProcMoveRight(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //   id/owner_proc
     //
@@ -1923,7 +1925,7 @@ inline void checkStatesAfterCEO_3Elem2ProcMoveRight(BulkDataTester &mesh)
     }
 }
 
-inline void checkStatesAfterCEOME_3Elem2ProcMoveRight(BulkDataTester &mesh)
+inline void checkStatesAfterCEOME_3Elem2ProcMoveRight(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //   id/owner_proc
     //
@@ -2121,7 +2123,7 @@ inline void checkStatesAfterCEOME_3Elem2ProcMoveRight(BulkDataTester &mesh)
 
 //////////////////////////////////// 3Elem2ProcMoveLeft //////////////////////////////////////
 
-inline void fillMeshfor3Elem2ProcMoveLeftAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector &elements)
+inline void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector &elements)
 {
     //   id/owner_proc
     //
@@ -2363,7 +2365,7 @@ inline void fillMeshfor3Elem2ProcMoveLeftAndTest(BulkDataTester &mesh, stk::mesh
     }
 }
 
-inline void checkStatesAfterCEO_3Elem2ProcMoveLeft(BulkDataTester &mesh)
+inline void checkStatesAfterCEO_3Elem2ProcMoveLeft(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //   id/owner_proc
     //
@@ -2534,7 +2536,7 @@ inline void checkStatesAfterCEO_3Elem2ProcMoveLeft(BulkDataTester &mesh)
     }
 }
 
-inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(BulkDataTester &mesh)
+inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //   id/owner_proc
     //
@@ -2724,7 +2726,7 @@ inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(BulkDataTester &mesh)
 
 //////////////////////////////////// 4Elem4ProcEdge //////////////////////////////////////
 
-inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta_data,
+inline void fillMeshfor4Elem4ProcEdgeAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta_data,
         EntityKey &elem_key_chg_own)
 {
     // This unit-test is designed to test the conditions that results that
@@ -3324,7 +3326,7 @@ inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::Me
 }
 
 
-inline void checkStatesAfterCEO_4Elem4ProcEdge(BulkDataTester &mesh)
+inline void checkStatesAfterCEO_4Elem4ProcEdge(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     // This unit-test is designed to test the conditions that results that
     // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
@@ -3818,7 +3820,7 @@ inline void checkStatesAfterCEO_4Elem4ProcEdge(BulkDataTester &mesh)
 }
 
 
-inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
+inline void checkStatesAfterCEOME_4Elem4ProcEdge(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     // This unit-test is designed to test the conditions that results that
     // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
@@ -4298,7 +4300,7 @@ inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
 
 //////////////////////////////////// 8Elem4ProcMoveTop //////////////////////////////////////
 
-inline void fillMeshfor8Elem4ProcMoveTopAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta)
+inline void fillMeshfor8Elem4ProcMoveTopAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
     //
     //     id/proc                           id/proc
@@ -4991,7 +4993,7 @@ inline void fillMeshfor8Elem4ProcMoveTopAndTest(BulkDataTester &mesh, stk::mesh:
 }
 
 
-inline void checkStatesAfterCEO_8Elem4ProcMoveTop(BulkDataTester &mesh)
+inline void checkStatesAfterCEO_8Elem4ProcMoveTop(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //
     //     id/proc                           id/proc
@@ -5738,7 +5740,7 @@ inline void checkStatesAfterCEO_8Elem4ProcMoveTop(BulkDataTester &mesh)
 }
 
 
-inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
+inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //
     //     id/proc                           id/proc
@@ -6486,7 +6488,7 @@ inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
 
 //////////////////////////////////// 4Elem4ProcRotate //////////////////////////////////////
 
-inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta)
+inline void fillMeshfor4Elem4ProcRotateAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
     //
     //     id/proc                id/proc
@@ -6945,7 +6947,7 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
     }
 }
 
-inline void checkStatesAfterCEO_4Elem4ProcRotate(BulkDataTester &mesh, stk::mesh::MetaData &meta)
+inline void checkStatesAfterCEO_4Elem4ProcRotate(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
     // check intermediate state after change_entity_owner() but before internal_modification_end()
     //     id/proc                id/proc
@@ -7387,7 +7389,7 @@ inline void checkStatesAfterCEO_4Elem4ProcRotate(BulkDataTester &mesh, stk::mesh
     }
 }
 
-inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::mesh::MetaData &meta)
+inline void checkStatesAfterCEOME_4Elem4ProcRotate(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
 
     //     id/proc                id/proc
@@ -7789,7 +7791,7 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
 
 //////////////////////////////////// 3Elem4Proc1Edge3D //////////////////////////////////////
 
-inline void fillMeshfor3Elem4Proc1Edge3DAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta)
+inline void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::mesh::unit_test::BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
     //  ID.proc
     //                    15.2--------16.2                      15.1--------16.1
@@ -8224,7 +8226,7 @@ inline void fillMeshfor3Elem4Proc1Edge3DAndTest(BulkDataTester &mesh, stk::mesh:
     }
 }
 
-inline void checkStatesAfterCEO_3Elem4Proc1Edge3D(BulkDataTester &mesh)
+inline void checkStatesAfterCEO_3Elem4Proc1Edge3D(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //  ID.proc
     //                    15.2--------16.2                      15.1--------16.1
@@ -8572,7 +8574,7 @@ inline void checkStatesAfterCEO_3Elem4Proc1Edge3D(BulkDataTester &mesh)
     }
 }
 
-inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
+inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(stk::mesh::unit_test::BulkDataTester &mesh)
 {
     //  ID.proc
     //                    15.2--------16.2                      15.1--------16.1
@@ -8945,7 +8947,7 @@ inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
 
 //these tests are for turning regenerate_aura off in various places
 
-inline void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(BulkDataTester &bulk)
+inline void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(stk::mesh::unit_test::BulkDataTester &bulk)
 {
     //   id/owner_proc
     //
@@ -9098,7 +9100,7 @@ inline void checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(BulkDataTester &bulk)
     }
 }
 
-inline void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(BulkDataTester& mesh, stk::mesh::MetaData &meta)
+inline void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::mesh::unit_test::BulkDataTester& mesh, stk::mesh::MetaData &meta)
 {
     //   id/owner_proc
     //
@@ -9269,7 +9271,7 @@ inline void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(BulkDataTester& mesh, stk:
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2));
     }
 }
-inline void checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(BulkDataTester& mesh)
+inline void checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(stk::mesh::unit_test::BulkDataTester& mesh)
 {
     //   id/owner_proc
     //

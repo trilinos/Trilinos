@@ -54,7 +54,7 @@ public:
 
 
 
-void updateDistributedIndexUsingStkMesh(BulkDataTester &stkMeshBulkData, stk::parallel::DistributedIndex& distributedIndex)
+void updateDistributedIndexUsingStkMesh(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData, stk::parallel::DistributedIndex& distributedIndex)
 {
     stk::parallel::DistributedIndex::KeyTypeVector local_created_or_modified; // only store locally owned/shared entities
 
@@ -103,7 +103,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
-        BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::impl::convert_entity_keys_to_spans(stkMeshMetaData);
         DistributedIndexTester distributedIndex(communicator, spans);
@@ -307,7 +307,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         int sharedNodeIds[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18 };
 
@@ -323,7 +323,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
             EXPECT_TRUE(bucket.shared());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
             EXPECT_TRUE(commStuff.size() == 1);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
             size_t sharedButNotGhostedId = 0;
@@ -399,7 +399,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
     }
 }
 
-void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::BulkData &stkMeshBulkData)
+void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::unit_test::BulkDataTester &stkMeshBulkData)
 {
     int sharedNodeIds[] = { 19, 20, 21, 22, 23, 24, 25, 26, 27 };
 
@@ -415,7 +415,7 @@ void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::B
         stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
         stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
         EXPECT_TRUE(bucket.shared());
-        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
+        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
         EXPECT_TRUE(commStuff.size() == 1);
         EXPECT_TRUE((*commStuff.first).proc == otherProcId);
         size_t sharedButNotGhostedId = 0;
@@ -434,7 +434,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -507,7 +507,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -575,7 +575,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -663,7 +663,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -755,7 +755,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 

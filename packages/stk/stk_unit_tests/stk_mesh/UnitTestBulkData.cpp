@@ -171,7 +171,9 @@ void donate_one_element(BulkData & mesh, bool aura)
     {
         EntityProc entry;
         entry.first = elem;
-        entry.second = mesh.entity_comm_map_shared(mesh.entity_key(node))[0].proc;
+        std::vector<int> shared_procs;
+        mesh.comm_shared_procs(mesh.entity_key(node),shared_procs);
+        entry.second = shared_procs[0];
         change.push_back(entry);
 
         Entity const *elem_nodes_i = mesh.begin_nodes(elem);
@@ -221,11 +223,12 @@ void donate_all_shared_nodes(BulkData & mesh, bool aura)
             i != entity_comm.end() && i->key.rank() == BaseEntityRank; ++i)
             {
         Entity const node = i->entity;
-        const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_map_shared(i->key);
+        std::vector<int> shared_procs;
+        mesh.comm_shared_procs(i->key,shared_procs);
 
-        if(mesh.parallel_owner_rank(node) == p_rank && !ec.empty())
+        if(mesh.parallel_owner_rank(node) == p_rank && !shared_procs.empty())
         {
-            change.push_back(EntityProc(node, ec->proc));
+            change.push_back(EntityProc(node, shared_procs[0]));
         }
     }
 
@@ -1630,7 +1633,11 @@ TEST(BulkData, testChangeEntityPartsOfShared)
         mesh.modification_end();
 
         // Expect that this is a shared node
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(changing_node)).empty());
+        {
+            std::vector<int> shared_procs;
+            mesh.comm_shared_procs(mesh.entity_key(changing_node),shared_procs);
+            EXPECT_FALSE(shared_procs.empty());
+        }
 
         // Expect that part change had no impact since it was on the proc that did not end
         // up as the owner
@@ -1658,6 +1665,12 @@ TEST(BulkData, testChangeEntityPartsOfShared)
         mesh.modification_begin();
         mesh.modification_end();
     }
+}
+
+bool is_entity_key_shared(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey key) {
+    std::vector<int> shared_procs;
+    mesh.comm_shared_procs(key,shared_procs);
+    return !shared_procs.empty();
 }
 
 TEST(BulkData, testParallelSideCreation)
@@ -1750,9 +1763,9 @@ TEST(BulkData, testParallelSideCreation)
         mesh.modification_end();
 
         // Expect that the side is not shared, but the nodes of side are shared
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side)).empty());
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[0])).empty());
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[1])).empty());
+        EXPECT_TRUE(is_entity_key_shared(mesh,mesh.entity_key(side)));
+        EXPECT_TRUE(is_entity_key_shared(mesh,mesh.entity_key(side_nodes[0])));
+        EXPECT_TRUE(is_entity_key_shared(mesh,mesh.entity_key(side_nodes[1])));
 
         // Now "detect" that there is a duplicate aura side using the side nodes
         EntityVector sides;
@@ -1789,9 +1802,9 @@ TEST(BulkData, testParallelSideCreation)
         mesh.modification_end();
 
         // Expect that the side is shared, and nodes of side are shared
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side)).empty());
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[0])).empty());
-        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[1])).empty());
+        EXPECT_TRUE(is_entity_key_shared(mesh,mesh.entity_key(side)));
+        EXPECT_TRUE(is_entity_key_shared(mesh,mesh.entity_key(side_nodes[0])));
+        EXPECT_TRUE(is_entity_key_shared(mesh,mesh.entity_key(side_nodes[1])));
 
         // Check that there is only a single side using the side nodes
         get_entities_through_relations(mesh, side_nodes, side_rank, sides);
@@ -2974,7 +2987,7 @@ TEST(BulkData, ModificationEnd)
     {
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
+        stk::mesh::unit_test::BulkDataTester *stkMeshBulkData = new stk::mesh::unit_test::BulkDataTester(stkMeshMetaData, communicator);
 
         std::string exodusFileName = getOption("-i", "generated:1x1x4");
 
@@ -3056,7 +3069,7 @@ TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    BulkDataTester mesh(stkMeshMetaData, communicator);
+    stk::mesh::unit_test::BulkDataTester mesh(stkMeshMetaData, communicator);
     std::string exodusFileName = getOption("-i", "generated:1x1x1|sideset:xXyYzZ");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -3111,7 +3124,7 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
 
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    BulkDataTester mesh(stkMeshMetaData, communicator);
+    stk::mesh::unit_test::BulkDataTester mesh(stkMeshMetaData, communicator);
     std::string exodusFileName = getOption("-i", "generated:1x1x3");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -3159,7 +3172,7 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
 //
 //    const int spatialDim = 3;
 //    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    BulkDataTester mesh(stkMeshMetaData, communicator);
+//    stk::mesh::unit_test::BulkDataTester mesh(stkMeshMetaData, communicator);
 //    std::string exodusFileName = getOption("-i", "generated:1x1x3");
 //    {
 //        stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -3199,7 +3212,7 @@ TEST(BulkData, verify_closure_count_is_correct)
     {
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
+        stk::mesh::unit_test::BulkDataTester *stkMeshBulkData = new stk::mesh::unit_test::BulkDataTester(stkMeshMetaData, communicator);
 
         std::string exodusFileName = getOption("-i", "generated:1x1x2");
 
@@ -3350,7 +3363,7 @@ TEST(BulkData, change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  BulkDataTester bulk( meta, pm);
+  stk::mesh::unit_test::BulkDataTester bulk( meta, pm);
 
   std::vector<stk::mesh::Entity> elems;
   CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
@@ -3387,7 +3400,7 @@ TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  BulkDataTester mesh( meta, pm);
+  stk::mesh::unit_test::BulkDataTester mesh( meta, pm);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest_no_ghost(mesh, meta);
 
@@ -3440,7 +3453,7 @@ TEST(BulkData, change_entity_owner_2Elem2ProcMove)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  BulkDataTester bulk( meta, pm);
+  stk::mesh::unit_test::BulkDataTester bulk( meta, pm);
 
   std::vector<stk::mesh::Entity> elems;
   CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
@@ -3477,7 +3490,7 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  BulkDataTester mesh( meta, pm);
+  stk::mesh::unit_test::BulkDataTester mesh( meta, pm);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest(mesh, meta);
 
@@ -3511,7 +3524,7 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveRight)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  BulkDataTester mesh(meta_data, pm);
+  stk::mesh::unit_test::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -3553,7 +3566,7 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveLeft)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  BulkDataTester mesh(meta_data, pm);
+  stk::mesh::unit_test::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -3607,7 +3620,7 @@ TEST(BulkData, change_entity_owner_4Elem4ProcEdge)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  BulkDataTester mesh(meta_data, pm);
+  stk::mesh::unit_test::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -3678,7 +3691,7 @@ TEST(BulkData, change_entity_owner_8Elem4ProcMoveTop)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  BulkDataTester mesh(meta, pm);
+  stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
 
   CEOUtils::fillMeshfor8Elem4ProcMoveTopAndTest(mesh, meta);
 
@@ -3726,7 +3739,7 @@ TEST(BulkData, change_entity_owner_4Elem4ProcRotate)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  BulkDataTester mesh(meta, pm);
+  stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
   const int p_rank = mesh.parallel_rank();
 
   CEOUtils::fillMeshfor4Elem4ProcRotateAndTest(mesh, meta);
@@ -3793,7 +3806,7 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
 
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  BulkDataTester mesh(meta, pm);
+  stk::mesh::unit_test::BulkDataTester mesh(meta, pm);
   const int p_rank = mesh.parallel_rank();
   CEOUtils::fillMeshfor3Elem4Proc1Edge3DAndTest(mesh, meta);
 
@@ -3833,7 +3846,7 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
     stk::mesh::Part& elem_part = meta.declare_part_with_topology("beam2", stk::topology::BEAM_2);
     meta.commit();
 
-    BulkDataTester bulk(meta, MPI_COMM_WORLD);
+    stk::mesh::unit_test::BulkDataTester bulk(meta, MPI_COMM_WORLD);
     if ( bulk.parallel_size() == 2 )
     {
         bulk.modification_begin();
@@ -3927,7 +3940,7 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
     stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::SHELL_TRIANGLE_3);
     meta.commit();
 
-    BulkDataTester bulk(meta, MPI_COMM_WORLD);
+    stk::mesh::unit_test::BulkDataTester bulk(meta, MPI_COMM_WORLD);
 
     if ( bulk.parallel_size() == 2 )
     {
@@ -4145,7 +4158,7 @@ TEST(BulkData, can_we_create_shared_nodes)
                              |
              */
 
-            BulkDataTester bulk(meta, MPI_COMM_WORLD);
+            stk::mesh::unit_test::BulkDataTester bulk(meta, MPI_COMM_WORLD);
 
             bulk.modification_begin();
 
@@ -4666,7 +4679,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::TRIANGLE_3_2D);
     meta.commit();
 
-    BulkDataTester bulk(meta, MPI_COMM_WORLD);
+    stk::mesh::unit_test::BulkDataTester bulk(meta, MPI_COMM_WORLD);
 
     if ( bulk.parallel_size() != 2 ) return;
 

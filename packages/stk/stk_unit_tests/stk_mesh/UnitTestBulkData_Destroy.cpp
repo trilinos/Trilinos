@@ -243,7 +243,9 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_TRUE( bulk.is_valid(node) );
     ASSERT_NE( p_rank , bulk.parallel_owner_rank(node) );
 
-    ASSERT_EQ( size_t(1) , bulk.entity_comm_map_shared(bulk.entity_key(node)).size() );
+    std::vector<int> shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+    ASSERT_EQ( size_t(1) , shared_procs.size() );
     ASSERT_EQ( size_t(2) , bulk.count_relations(node) );
 
     EntityId node_element_ids[2] ;
@@ -306,8 +308,12 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_NE( p_rank , bulk.parallel_owner_rank(node_not_owned) );
     ASSERT_EQ( p_rank , bulk.parallel_owner_rank(node_owned) );
 
-    ASSERT_EQ( 1u , bulk.entity_comm_map_shared(bulk.entity_key(node_owned)).size() );
-    ASSERT_EQ( 1u , bulk.entity_comm_map_shared(bulk.entity_key(node_not_owned)).size() );
+    std::vector<int> node_owned_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node_owned),node_owned_shared_procs);
+    std::vector<int> node_not_owned_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node_not_owned),node_not_owned_shared_procs);
+    ASSERT_EQ( 1u , node_owned_shared_procs.size() );
+    ASSERT_EQ( 1u , node_not_owned_shared_procs.size() );
     ASSERT_EQ( 2u , bulk.count_relations(node_owned) );
 
     EntityId node_element_ids[2] ;

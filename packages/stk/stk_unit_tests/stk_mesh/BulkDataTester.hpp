@@ -39,6 +39,8 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 
+namespace stk { namespace mesh { namespace unit_test {
+
 class BulkDataTester : public stk::mesh::BulkData
 {
 public:
@@ -137,7 +139,14 @@ public:
     {
         this->fix_up_ownership(entity, new_owner);
     }
+
+    stk::mesh::PairIterEntityComm my_internal_entity_comm_map_shared(const stk::mesh::EntityKey & key) const
+    {
+        return internal_entity_comm_map_shared(key);
+    }
+
 };
 
+} } } // namespace stk mesh unit_test
 
 #endif

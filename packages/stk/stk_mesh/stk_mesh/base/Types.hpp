@@ -367,6 +367,14 @@ struct DynamicConnectivityTagSelector<stk::topology::ELEMENT_RANK>
 
 //----------------------------------------------------------------------
 
+// Use macro below to deprecate functions
+#ifdef __GNUC__
+#define STK_DEPRECATED(func) func __attribute__ ((deprecated))
+#else
+#define STK_DEPRECATED(func) func
+#endif
+
+
 } // namespace mesh
 } // namespace stk
 
