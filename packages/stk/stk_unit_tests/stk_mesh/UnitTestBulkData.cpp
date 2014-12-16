@@ -4200,6 +4200,171 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
     }
 }
 
+typedef std::pair< std::vector<stk::mesh::Entity*>, stk::mesh::Entity* > ChildNodeRequest;
+
+void batch_create_child_nodes(BulkData & mesh, const std::vector< ChildNodeRequest > & child_node_requests)
+{
+  // In general, this requires assigning node IDs, communication, declaring the entities on both processors, and calling add_node_sharing
+  // Here we just hack the desired results for this simple problem.
+
+  int otherProc = 1-mesh.parallel_rank();
+
+  for (unsigned it_req=0; it_req<child_node_requests.size(); ++it_req)
+  {
+    const ChildNodeRequest & request = child_node_requests[it_req];
+
+    const std::vector<stk::mesh::Entity*> & request_parents = request.first;
+    stk::mesh::Entity * request_child = request.second;
+
+    if (request_parents.size() == 2 && mesh.identifier(*request_parents[0]) == 1 && mesh.identifier(*request_parents[1]) == 2)
+    {
+      *request_child = mesh.declare_entity(stk::topology::NODE_RANK, 5);
+    }
+    else if (request_parents.size() == 2 && mesh.identifier(*request_parents[0]) == 1 && mesh.identifier(*request_parents[1]) == 5)
+    {
+      *request_child = mesh.declare_entity(stk::topology::NODE_RANK, 6);
+    }
+    else
+    {
+      ASSERT_TRUE(false);
+    }
+
+    ASSERT_TRUE(mesh.is_valid(*request_child));
+    mesh.add_node_sharing(*request_child, otherProc);
+  }
+}
+
+TEST(BulkData, show_API_for_batch_create_child_nodes)
+{
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::TRIANGLE_3_2D);
+    meta.commit();
+
+    BulkDataTester bulk(meta, MPI_COMM_WORLD);
+
+    if ( bulk.parallel_size() != 2 ) return;
+
+    bulk.modification_begin();
+
+    stk::mesh::Entity node1 = bulk.declare_entity(stk::topology::NODE_RANK, 1);
+    stk::mesh::Entity node2 = bulk.declare_entity(stk::topology::NODE_RANK, 2);
+
+    int otherProc = 1-bulk.parallel_rank();
+    bulk.add_node_sharing(node1, otherProc);
+    bulk.add_node_sharing(node2, otherProc);
+
+    if ( bulk.parallel_rank() == 0 )
+    {
+      bulk.declare_entity(stk::topology::NODE_RANK, 3);
+
+      stk::mesh::EntityId connected_nodes[3];
+      connected_nodes[0] = 1;
+      connected_nodes[1] = 2;
+      connected_nodes[2] = 3;
+      stk::mesh::declare_element(bulk, elem_part, 1, connected_nodes);
+    }
+    else
+    {
+      bulk.declare_entity(stk::topology::NODE_RANK, 4);
+
+      stk::mesh::EntityId connected_nodes[3];
+      connected_nodes[0] = 2;
+      connected_nodes[1] = 1;
+      connected_nodes[2] = 4;
+      stk::mesh::declare_element(bulk, elem_part, 2, connected_nodes);
+    }
+
+    ASSERT_NO_THROW(bulk.modification_end());
+
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(bulk, counts);
+
+    EXPECT_EQ(4u,counts[stk::topology::NODE_RANK]);
+    EXPECT_EQ(2u,counts[stk::topology::ELEMENT_RANK]);
+
+    ASSERT_TRUE(bulk.bucket(node1).shared());
+    ASSERT_TRUE(bulk.bucket(node2).shared());
+
+    // Nodes 3 and 4 accessible on both processors via aura
+    stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+    stk::mesh::Entity node4 = bulk.get_entity(stk::topology::NODE_RANK, 4);
+
+    ASSERT_FALSE(bulk.bucket(node3).shared());
+    ASSERT_FALSE(bulk.bucket(node4).shared());
+
+    std::vector<ChildNodeRequest> child_node_requests;
+
+    stk::mesh::Entity node5; // "child" of 1 and 2 is 5
+    std::vector<stk::mesh::Entity*> node5_parents;
+    node5_parents.push_back(&node1);
+    node5_parents.push_back(&node2);
+    ChildNodeRequest node5_request(node5_parents, &node5);
+    child_node_requests.push_back(node5_request);
+
+    stk::mesh::Entity node6; // "child" of 1 and 5 is 6
+    std::vector<stk::mesh::Entity*> node6_parents;
+    node6_parents.push_back(&node1);
+    node6_parents.push_back(&node5);
+    ChildNodeRequest node6_request(node6_parents, &node6);
+    child_node_requests.push_back(node6_request);
+
+    // It would be nice if child node creation was processed a batch of requests and didn't have to
+    // be part of the modification cycle where the elements are attached.  Currently, this would throw
+    // an error because of the shared orphan nodes.
+    bulk.modification_begin();
+    batch_create_child_nodes(bulk, child_node_requests);
+
+    if ( bulk.parallel_rank() == 0 )
+    {
+      stk::mesh::EntityId connected_nodes[3];
+      connected_nodes[0] = 1;
+      connected_nodes[1] = 6;
+      connected_nodes[2] = 3;
+      stk::mesh::declare_element(bulk, elem_part, 3, connected_nodes);
+
+      connected_nodes[0] = 6;
+      connected_nodes[1] = 5;
+      connected_nodes[2] = 3;
+      stk::mesh::declare_element(bulk, elem_part, 4, connected_nodes);
+
+      connected_nodes[0] = 5;
+      connected_nodes[1] = 2;
+      connected_nodes[2] = 3;
+      stk::mesh::declare_element(bulk, elem_part, 5, connected_nodes);
+    }
+    else
+    {
+      stk::mesh::EntityId connected_nodes[3];
+      connected_nodes[0] = 6;
+      connected_nodes[1] = 1;
+      connected_nodes[2] = 4;
+      stk::mesh::declare_element(bulk, elem_part, 6, connected_nodes);
+
+      connected_nodes[0] = 5;
+      connected_nodes[1] = 6;
+      connected_nodes[2] = 4;
+      stk::mesh::declare_element(bulk, elem_part, 7, connected_nodes);
+
+      connected_nodes[0] = 2;
+      connected_nodes[1] = 5;
+      connected_nodes[2] = 4;
+      stk::mesh::declare_element(bulk, elem_part, 8, connected_nodes);
+    }
+
+    ASSERT_NO_THROW(bulk.modification_end());
+
+    ASSERT_TRUE(bulk.is_valid(node5));
+    ASSERT_TRUE(bulk.is_valid(node6));
+    ASSERT_TRUE(bulk.bucket(node5).shared());
+    ASSERT_TRUE(bulk.bucket(node6).shared());
+
+    stk::mesh::comm_mesh_counts(bulk, counts);
+
+    EXPECT_EQ(6u,counts[stk::topology::NODE_RANK]);
+    EXPECT_EQ(8u,counts[stk::topology::ELEMENT_RANK]);
+}
+
 TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
