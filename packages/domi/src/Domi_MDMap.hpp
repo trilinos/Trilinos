@@ -139,7 +139,7 @@ namespace Domi
  * or communication padding is present.  This allows negative indexes
  * to represent reverse indexing from the end of a dimension.
  */
-template< class Node = Kokkos::DefaultNode::DefaultNodeType >
+template< class Node = KokkosClassic::DefaultNode::DefaultNodeType >
 class MDMap
 {
 public:
@@ -178,7 +178,7 @@ public:
           Teuchos::ArrayView< int >(),
         const Layout layout = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
-          Kokkos::DefaultNode::getDefaultNode());
+          KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Constructor with ParameterList
    *
@@ -194,7 +194,7 @@ public:
    */
   MDMap(Teuchos::ParameterList & plist,
         const Teuchos::RCP< Node > & node =
-          Kokkos::DefaultNode::getDefaultNode());
+          KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Constructor with Teuchos::Comm and ParameterList
    *
@@ -212,7 +212,7 @@ public:
   MDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
         Teuchos::ParameterList & plist,
         const Teuchos::RCP< Node > & node =
-          Kokkos::DefaultNode::getDefaultNode());
+          KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Constructor with MDComm and ParameterList
    *
@@ -230,7 +230,7 @@ public:
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
         Teuchos::ParameterList & plist,
         const Teuchos::RCP< Node > & node =
-          Kokkos::DefaultNode::getDefaultNode());
+          KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Constructor with global bounds for this processor
    *
@@ -251,7 +251,7 @@ public:
           Teuchos::ArrayView< padding_type >(),
         const Layout layout = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
-          Kokkos::DefaultNode::getDefaultNode());
+          KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Copy constructor
    *
@@ -1415,7 +1415,7 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
     for (int commIndex = 1; commIndex < _mdComm->getCommDim(axis); ++commIndex)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        _globalRankBounds[axis][commIndex-1].stop() != 
+        _globalRankBounds[axis][commIndex-1].stop() !=
           _globalRankBounds[axis][commIndex  ].start(),
         MDMapNoncontiguousError,
         "Global rank bounds are not contiguous");
@@ -2406,7 +2406,7 @@ MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
     newMdMap->_commPadSizes.insert(newMdMap->_commPadSizes.begin(),0);
     newMdMap->_pad.insert(newMdMap->_pad.begin(), pad);
     newMdMap->_bndryPadSizes.insert(newMdMap->_bndryPadSizes.begin(),0);
-    newMdMap->_bndryPad.insert(newMdMap->_bndryPad.begin(), pad);    
+    newMdMap->_bndryPad.insert(newMdMap->_bndryPad.begin(), pad);
   }
 
   // Adjust new MDMap arrays for a new trailing dimension
@@ -2421,7 +2421,7 @@ MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
     newMdMap->_commPadSizes.push_back(0);
     newMdMap->_pad.push_back(pad);
     newMdMap->_bndryPadSizes.push_back(0);
-    newMdMap->_bndryPad.push_back(pad);    
+    newMdMap->_bndryPad.push_back(pad);
   }
 
   // Compute the new stride related data
@@ -2444,7 +2444,7 @@ MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
     newMdMap->_localMin  += newMdMap->_localBounds[axis].start() *
                             newMdMap->_localStrides[axis];
     newMdMap->_localMax  += newMdMap->_localBounds[axis].stop() *
-                            newMdMap->_localStrides[axis];    
+                            newMdMap->_localStrides[axis];
   }
 
   // Return the result
