@@ -419,6 +419,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   ae_inargs.beta = 1.0;
   ae_inargs.evaluate_transient_terms = false;
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+  ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // this is the tempory target
   lof_->initializeContainer(panzer::LinearObjContainer::F,*ae_inargs.container_); 
@@ -536,6 +537,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     ae_inargs.evaluate_transient_terms = true;
   }
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+  ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // handle application of the one time dirichlet beta in the
   // assembly engine. Note that this has to be set explicitly
@@ -560,6 +562,19 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 	parameters_.scalar_values[i][j].baseValue = p_data[j];
         parameters_.scalar_values[i][j].family->setRealValueForAllTypes(parameters_.scalar_values[i][j].baseValue);
       }
+    }
+    else if ( p!=Teuchos::null && parameters_.are_distributed[i]) {
+      std::string key = (*parameters_.names[i])[0];
+      RCP<GlobalEvaluationData> ged = distrParamGlobalEvaluationData_.getDataObject(key);
+
+      TEUCHOS_ASSERT(ged!=Teuchos::null);
+
+      // cast to a LOCPair throwing an exception if the cast doesn't work.
+      RCP<LOCPair_GlobalEvaluationData> loc_pair_ged = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged,true);
+
+      // cast to a ThyraObjContainer throwing an exception if the cast doesn't work.
+      RCP<ThyraObjContainer<Scalar> > th_ged = rcp_dynamic_cast<ThyraObjContainer<Scalar> >(loc_pair_ged->getGlobalLOC(),true);
+      th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(p));
     }
   }
   

@@ -72,6 +72,7 @@ using Teuchos::rcp;
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -449,6 +450,99 @@ namespace panzer {
         { TEST_FLOATING_EQUALITY(f1_data[i],20.0*dfdp_data[i],1e-10); }
         out << f1_data[i] << "    " << dfdp_data[i] << std::endl;
       }
+    }
+  }
+
+  // Testing Ditributed Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+      typedef panzer::ModelEvaluator<double> PME;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    bool parameter_on = true;
+    AssemblyPieces ap;
+
+    buildAssemblyPieces(parameter_on,ap);
+
+    int distributed_parameter_index = -1;
+    Teuchos::RCP<panzer::LOCPair_GlobalEvaluationData> dataObject;
+    RCP<PME> me;
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
+
+      bool build_transient_support = false;
+      me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+      // extract the vector space for the distributed parameter
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs 
+          = Teuchos::rcp_dynamic_cast<const ThyraObjFactory<double> >(ap.lof,true)->getThyraDomainSpace();
+
+      // setup an initial value for the parameter
+      Teuchos::RCP<Thyra::VectorBase<double> > initial = Thyra::createMember(vs);
+      Thyra::put_scalar(0.0,initial.ptr());
+
+      // this object changes the parameter from a global object to a ghosted one
+      dataObject = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(ap.lof,panzer::LinearObjContainer::X));
+
+      // add the distributed parameter
+      distributed_parameter_index = me->addDistributedParameter("Transient Predictor",
+                                                                vs,
+                                                                dataObject,
+                                                                initial); 
+    }
+
+    // build inputs
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    // solution
+    RCP<Thyra::VectorBase<double> > x = Thyra::createMember(me->get_x_space());
+    Thyra::put_scalar(1.0,x.ptr());
+    
+    // locally replicated scalar parameter
+    RCP<Thyra::VectorBase<double> > p = Thyra::createMember(me->get_p_space(0));
+    Thyra::put_scalar(1.0,p.ptr());
+
+    // distributed parameter
+    RCP<Thyra::VectorBase<double> > distr_p = Thyra::createMember(me->get_p_space(distributed_parameter_index));
+    Thyra::put_scalar(3.14,distr_p.ptr());
+
+    // build outputs
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
+
+    // Test that the distributed parameter is updated correctly
+    {
+      InArgs in_args = me->createInArgs();
+      OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.Np() == 2);
+
+      in_args.set_x(x);
+      in_args.set_p(0,p);
+      in_args.set_p(distributed_parameter_index,distr_p);
+
+      out_args.set_f(f);
+
+      me->evalModel(in_args,out_args);
+    
+      // Export should have performed global to ghost, ghosted values should be 1
+      // Create a gold standard to compare against
+      RCP<const Thyra::VectorBase<double> > ghosted_distr_p 
+          = Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(dataObject->getGhostedLOC())->get_x_th();
+      RCP<Thyra::VectorBase<double> > gold_standard = Thyra::createMember(ghosted_distr_p->range());
+      Thyra::put_scalar(3.14,gold_standard.ptr());
+
+      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+      // note that all this tests is that the ghosted vector is correctly populated!
+      TEST_EQUALITY_CONST(testEqualityOfVectorValues(*ghosted_distr_p,*gold_standard,tol,true), true);
     }
   }
 
