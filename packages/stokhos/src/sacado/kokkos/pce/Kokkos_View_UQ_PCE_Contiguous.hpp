@@ -506,7 +506,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
@@ -542,7 +542,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
@@ -579,7 +579,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
@@ -617,7 +617,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
