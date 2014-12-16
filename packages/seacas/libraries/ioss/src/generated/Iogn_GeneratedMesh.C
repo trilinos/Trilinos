@@ -84,6 +84,14 @@ namespace Iogn {
     numY = std::strtol(tokens[1].c_str(), NULL, 10);
     numZ = std::strtol(tokens[2].c_str(), NULL, 10);
 
+    if (numX <= 0 || numY <= 0 || numZ <= 0) {
+      if (myProcessor == 0) {
+        std::cerr << "ERROR: (Iogn::GeneratedMesh::GeneratedMesh)\n"
+		  << "       All interval counts must be greater than 0.\n"
+		  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
+      }
+      std::exit(EXIT_FAILURE);
+    }
     initialize();
     parse_options(groups);
   }

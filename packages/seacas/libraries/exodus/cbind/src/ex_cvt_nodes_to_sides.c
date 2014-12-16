@@ -829,6 +829,16 @@ int ex_cvt_nodes_to_sides(int exoid,
 	  and the second node position are used with a element type specific
 	  table to determine the side. */
 
+      if (connect == NULL) {
+	sprintf(errmsg,
+		"Error: logic error. Connect pointer is null for elem blk %"PRId64" for file id %d",
+		elem_blk_parms[p_ndx].elem_blk_id,
+		exoid);
+	ex_err("ex_cvt_nodes_to_sides",errmsg,exerrval);
+	err_stat = EX_FATAL;
+	goto cleanup;
+      }
+
       /* calculate the relative element number position in it's block*/
       elem_num_pos = elem_num -
 	(elem_blk_parms[p_ndx].elem_ctr -

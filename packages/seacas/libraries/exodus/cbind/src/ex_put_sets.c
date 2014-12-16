@@ -100,7 +100,7 @@ int ex_put_sets (int   exoid,
       return (EX_FATAL);
     }
 
-    set_id_ndx = ex_id_lkup(exoid, sets[i].type, sets[i].id);
+    ex_id_lkup(exoid, sets[i].type, sets[i].id);
     if (exerrval != EX_LOOKUPFAIL) {  /* found the side set id, so set is already defined... */
       sets_to_define[i] = 0;
       continue;

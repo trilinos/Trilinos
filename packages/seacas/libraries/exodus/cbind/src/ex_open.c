@@ -167,38 +167,33 @@ int ex_open_int (const char  *path,
 #endif
 	{
 	  /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
-	  if (status == 0) {
-	    exerrval = EX_FATAL;
-	  }
-	  else {
-	    /* It is possible that the user is trying to open a netcdf4
-	       file, but the netcdf4 capabilities aren't available in the
-	       netcdf linked to this library. Note that we can't just use a
-	       compile-time define since we could be using a shareable
-	       netcdf library, so the netcdf4 capabilities aren't known
-	       until runtime...
+	  /* It is possible that the user is trying to open a netcdf4
+	     file, but the netcdf4 capabilities aren't available in the
+	     netcdf linked to this library. Note that we can't just use a
+	     compile-time define since we could be using a shareable
+	     netcdf library, so the netcdf4 capabilities aren't known
+	     until runtime...
 	  
-	       Netcdf-4.X does not (yet?) have a function that can be
-	       queried to determine whether the library being used was
-	       compiled with --enable-netcdf4, so that isn't very
-	       helpful.. 
+	     Netcdf-4.X does not (yet?) have a function that can be
+	     queried to determine whether the library being used was
+	     compiled with --enable-netcdf4, so that isn't very
+	     helpful.. 
 
-	       At this time, query the beginning of the file and see if it
-	       is an HDF-5 file and if it is assume that the open failure
-	       is due to the netcdf library not enabling netcdf4 features...
-	    */
-	    int type = 0;
-	    ex_check_file_type(path, &type);
+	     At this time, query the beginning of the file and see if it
+	     is an HDF-5 file and if it is assume that the open failure
+	     is due to the netcdf library not enabling netcdf4 features...
+	  */
+	  int type = 0;
+	  ex_check_file_type(path, &type);
 	  
-	    if (type == 5) {
-	      /* This is an hdf5 (netcdf4) file. Since the nc_open failed,
-		 the assumption is that the netcdf doesn't have netcdf4
-		 capabilities enabled.  Tell the user...
-	      */
-	      fprintf(stderr,
-		      "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that does not support netcdf-4\n",
-		      path);
-	    }
+	  if (type == 5) {
+	    /* This is an hdf5 (netcdf4) file. Since the nc_open failed,
+	       the assumption is that the netcdf doesn't have netcdf4
+	       capabilities enabled.  Tell the user...
+	    */
+	    fprintf(stderr,
+		    "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that does not support netcdf-4\n",
+		    path);
 	    exerrval = status;
 	  }
 	  sprintf(errmsg,"Error: failed to open %s read only",path);
