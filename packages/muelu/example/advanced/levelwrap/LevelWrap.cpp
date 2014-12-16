@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
     {
       // Use an ML-style parameter list for variety
       Teuchos::ParameterList MLList;
-      MLList.set("ML output", 8);
+      MLList.set("ML output", 10);
       MLList.set("coarse: type","Amesos-SuperLU");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
     {
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
-      MLList.set("ML output", 8);
+      MLList.set("ML output", 10);
       MLList.set("max levels", 3);
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
     {
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
-      MLList.set("ML output", 8);
+      MLList.set("ML output", 10);
       MLList.set("max levels", 3);
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
