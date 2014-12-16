@@ -61,45 +61,8 @@ struct ALL ;
 
 namespace Kokkos { namespace Impl {
 
-template < class ShapeType , class LayoutType , typename Enable = void>
+template < class ShapeType , class LayoutType , typename Enable = void >
 struct ViewOffset ;
-
-//----------------------------------------------------------------------------
-
-template< class T , unsigned R , typename Enable = void >
-struct AssignViewOffsetDimension ; 
-
-template< class T >
-struct AssignViewOffsetDimension< T , 0 , typename enable_if<( 0 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N0 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 1 , typename enable_if<( 1 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N1 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 2 , typename enable_if<( 2 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N2 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 3 , typename enable_if<( 3 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N3 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 4 , typename enable_if<( 4 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N4 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 5 , typename enable_if<( 5 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N5 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 6 , typename enable_if<( 6 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N6 = n ; } };
-
-template< class T >
-struct AssignViewOffsetDimension< T , 7 , typename enable_if<( 7 < T::rank_dynamic )>::type >
-{ AssignViewOffsetDimension( T & s , unsigned n ) { s.N7 = n ; } };
 
 //----------------------------------------------------------------------------
 // LayoutLeft AND ( 1 >= rank OR 0 == rank_dynamic ) : has padding / striding
@@ -120,7 +83,7 @@ struct ViewOffset< ShapeType , LayoutLeft
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n )
-    { AssignViewOffsetDimension< ViewOffset , R >( *this , n ); }
+    { assign_shape_dimension<R>( *this , n ); }
 
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n0 , unsigned n1 , unsigned n2 , unsigned n3
@@ -305,7 +268,7 @@ struct ViewOffset< ShapeType , LayoutLeft
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n )
-    { AssignViewOffsetDimension< ViewOffset , R >( *this , n ); }
+    { assign_shape_dimension<R>( *this , n ); }
 
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n0 , unsigned n1 , unsigned n2 , unsigned n3
@@ -500,7 +463,7 @@ struct ViewOffset< ShapeType , LayoutRight
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n )
-    { AssignViewOffsetDimension< ViewOffset , R >( *this , n ); }
+    { assign_shape_dimension<R>( *this , n ); }
 
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3
@@ -683,7 +646,7 @@ struct ViewOffset< ShapeType , LayoutRight
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n )
-    { AssignViewOffsetDimension< ViewOffset , R >( *this , n ); }
+    { assign_shape_dimension<R>( *this , n ); }
 
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n0 , unsigned n1 , unsigned n2 , unsigned n3
@@ -876,7 +839,7 @@ struct ViewOffset< ShapeType , LayoutStride
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n )
-    { AssignViewOffsetDimension< ViewOffset , R >( *this , n ); }
+    { assign_shape_dimension<R>( *this , n ); }
 
   template< class ShapeRHS , class Layout >
   KOKKOS_INLINE_FUNCTION

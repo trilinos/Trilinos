@@ -394,11 +394,8 @@ public:
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_array_shape , m_stride ) );
 
-      if ( Alloc::initialize() ) {
-        (void) Kokkos::Impl::DefaultConstruct
-          < typename traits::execution_space , scalar_type >
-            ( m_ptr_on_device , Impl::capacity( m_array_shape , m_stride ) );
-      }
+      (void) Kokkos::Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
+          ( m_ptr_on_device , Impl::capacity( m_array_shape , m_stride ) );
     }
 
   //------------------------------------

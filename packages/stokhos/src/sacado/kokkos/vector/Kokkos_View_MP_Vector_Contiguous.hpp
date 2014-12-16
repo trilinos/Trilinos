@@ -514,7 +514,7 @@ public:
                                m_offset_map,
                                m_sacado_size.value );
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
@@ -550,7 +550,7 @@ public:
                                m_offset_map,
                                m_sacado_size.value );
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
