@@ -50,6 +50,9 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
 #include "unit_tests/BulkDataTester.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
+#include <stk_mesh/base/GetEntities.hpp>
+
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -233,6 +236,59 @@ TEST( UnitTestMetaData, set_mesh_bulk_data )
   BulkData bulk2(meta, MPI_COMM_WORLD);
   meta.set_mesh_bulk_data(&bulk2);
   ASSERT_TRUE(&meta.mesh_bulk_data() == &bulk2);
+}
+
+TEST(UnitTestMetaData, superset_of_shared_part)
+{
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if(numProcs == 2)
+    {
+        stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+        const std::string generatedMeshSpecification = "generated:1x1x2";
+        stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+        stkMeshIoBroker.create_input_mesh();
+        stk::mesh::MetaData &meta = stkMeshIoBroker.meta_data();
+        stk::mesh::Part & mysupername = meta.declare_part("my_superset_part");
+        meta.declare_part_subset(mysupername, meta.globally_shared_part());
+        mysupername.entity_membership_is_parallel_consistent(false);
+
+        stk::mesh::Part & mysupernamelocal = meta.declare_part("my_superset_part_local");
+        meta.declare_part_subset(mysupernamelocal, meta.locally_owned_part());
+        mysupernamelocal.entity_membership_is_parallel_consistent(false);
+
+        stkMeshIoBroker.populate_bulk_data();
+        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+        bool expect_supersets_to_work_with_shared_part = false;
+
+        if (expect_supersets_to_work_with_shared_part) {
+
+            std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk shared part=" <<
+                    stk::mesh::count_selected_entities(meta.globally_shared_part(),
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+            std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk shared part=" <<
+                    stk::mesh::count_selected_entities(mysupername,
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+            std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk local part=" <<
+                    stk::mesh::count_selected_entities(meta.locally_owned_part(),
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+            std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk local part=" <<
+                    stk::mesh::count_selected_entities(mysupernamelocal,
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+
+            EXPECT_EQ(
+                    stk::mesh::count_selected_entities(meta.globally_shared_part(),
+                                                       mesh.buckets(stk::topology::NODE_RANK)),
+                                                       stk::mesh::count_selected_entities(mysupername,
+                                                                                          mesh.buckets(stk::topology::NODE_RANK)));
+        }
+
+        EXPECT_EQ(stk::mesh::count_selected_entities(meta.locally_owned_part(),
+                                                     mesh.buckets(stk::topology::NODE_RANK)),
+                  stk::mesh::count_selected_entities(mysupernamelocal,
+                                                     mesh.buckets(stk::topology::NODE_RANK)));
+    }
 }
 
 }
