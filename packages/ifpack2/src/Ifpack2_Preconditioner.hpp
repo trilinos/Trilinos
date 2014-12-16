@@ -47,7 +47,6 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_CondestType.hpp"
-#include "Kokkos_DefaultNode.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -64,8 +63,8 @@ namespace Ifpack2 {
 ///   second template parameter of Tpetra::RowMatrix
 /// @tparam GlobalOrdinal Type of the matrix's global indices; same as the
 ///   third template parameter of Tpetra::RowMatrix
-/// @tparam Node The matrix's Kokkos Node type; same as the fourth
-///   template parameter of Tpetra::RowMatrix
+/// @tparam Node The matrix's Node type; same as the fourth template
+///   parameter of Tpetra::RowMatrix
 ///
 /// The Preconditioner class defines the interface that all Ifpack2
 /// preconditioners must implement.  Preconditioner inherits from

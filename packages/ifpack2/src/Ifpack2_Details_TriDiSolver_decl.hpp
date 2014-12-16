@@ -152,7 +152,7 @@ public:
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the absolute value (magnitude) of a \c scalar_type.
@@ -428,7 +428,7 @@ public:
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the absolute value (magnitude) of a \c scalar_type.
@@ -559,10 +559,10 @@ public:
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel =
             Teuchos::Describable::verbLevel_default) const;
-  
-  void 
+
+  void
   describeLocal (Teuchos::FancyOStream& out,
-		      const Teuchos::EVerbosityLevel verbLevel) const;
+                      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 private:

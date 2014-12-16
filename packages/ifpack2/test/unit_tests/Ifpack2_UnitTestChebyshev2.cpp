@@ -226,10 +226,24 @@ private:
     // ifpack2/src/Ifpack2_Details_Chebyshev_def.hpp for a way to work
     // around this.
 
-    typedef KokkosClassic::MultiVector<ST, typename MAT::node_type> KMV;
-    KMV localDiag = D->getLocalMV ();
-    typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
-    KMVT::ReciprocalThreshold (localDiag, STS::eps ());
+    typedef typename V::scalar_type scalar_type;
+    typedef typename V::mag_type mag_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+    const scalar_type ONE = STS::one ();
+    const mag_type min_val_abs = STS::magnitude (STS::eps ());
+    Teuchos::ArrayRCP<scalar_type> D_0 = D->getDataNonConst (0);
+    scalar_type* const D_0_raw = D_0.getRawPtr ();
+    const size_t lclNumRows = D->getLocalLength ();
+
+    for (size_t i = 0; i < lclNumRows; ++i) {
+      const scalar_type D_0i = D_0_raw[i];
+      if (STS::magnitude (D_0i) < min_val_abs) {
+        D_0_raw[i] = STS::eps ();
+      } else {
+        D_0_raw[i] = ONE / D_0i;
+      }
+    }
 
     return D;
   }

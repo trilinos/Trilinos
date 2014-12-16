@@ -97,15 +97,15 @@ pp. 2864-2887.
 
 Jacobi will always use your matrix's native sparse matrix-vector
 multiply kernel.  This should give good performance, since we have
-spent a lot of effort tuning Tpetra's kernels.  Depending on the
-Kokkos Node type of your Tpetra matrix, it may also exploit threads
-for additional parallelism within each MPI process.  In contrast,
-Gauss-Seidel and symmetric Gauss-Seidel are intrinsically sequential
-methods within an MPI process.  This prevents us from exposing more
-parallelism via threads.  The difference should become more apparent
-as your code moves away from a "one MPI process per core" model, to a
-"one MPI process per socket or node" model, assuming that you are
-using a threaded Kokkos Node type.
+spent a lot of effort tuning Tpetra's kernels.  Depending on the Node
+type of your Tpetra matrix, it may also exploit threads for additional
+parallelism within each MPI process.  In contrast, Gauss-Seidel and
+symmetric Gauss-Seidel are intrinsically sequential methods within an
+MPI process.  This prevents us from exposing more parallelism via
+threads.  The difference should become more apparent as your code
+moves away from a "one MPI process per core" model, to a "one MPI
+process per socket or node" model, assuming that you are using a
+thread-parallel Node type.
 
 Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
@@ -260,7 +260,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".

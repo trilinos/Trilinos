@@ -151,7 +151,7 @@ public:
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the absolute value (magnitude) of a \c scalar_type.
@@ -427,7 +427,7 @@ public:
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the absolute value (magnitude) of a \c scalar_type.

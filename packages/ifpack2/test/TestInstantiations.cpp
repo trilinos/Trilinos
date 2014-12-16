@@ -101,10 +101,7 @@
     template class Chebyshev<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
   }
 
-// mfh 04 Sep 2014: Get the default Node type, without using
-// KokkosClassic::DefaultNode::DefaultNodeType, since the
-// KokkosClassic subpackage will be deprecated.
-
+// Get the default Node type directly from Tpetra.
 typedef typename ::Tpetra::Map<>::node_type default_node_type;
 
 INSTANT_ALL(default_node_type)
