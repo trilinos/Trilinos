@@ -1,10 +1,27 @@
 #!/bin/bash
+#
+# This script uses CUDA, OpenMP, and MPI.
+#
+# Before invoking this script, set the OMPI_CXX environment variable
+# to point to nvcc_wrapper, wherever it happens to live.  (If you use
+# an MPI implementation other than OpenMPI, set the corresponding
+# environment variable instead.)
+#
 
 rm -f CMakeCache.txt;
 rm -rf CMakeFiles
 EXTRA_ARGS=$@
 MPI_PATH="/opt/mpi/openmpi/1.8.2/nvcc-gcc/4.8.3-6.5"
 CUDA_PATH="/opt/nvidia/cuda/6.5.14"
+
+#
+# As long as there are any .cu files in Trilinos, we'll need to set
+# CUDA_NVCC_FLAGS.  If Trilinos gets rid of all of its .cu files and
+# lets nvcc_wrapper handle them as .cpp files, then we won't need to
+# set CUDA_NVCC_FLAGS.  As it is, given that we need to set
+# CUDA_NVCC_FLAGS, we must make sure that they are the same flags as
+# nvcc_wrapper passes to nvcc.
+#
 CUDA_NVCC_FLAGS="-gencode;arch=compute_35,code=sm_35;-I${MPI_PATH}/include"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi,-fopenmp"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3;-DKOKKOS_USE_CUDA_UVM"
