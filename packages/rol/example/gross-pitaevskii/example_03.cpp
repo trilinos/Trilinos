@@ -119,7 +119,9 @@ int main(int argc, char* argv[]) {
     // Mass matrix
     Teuchos::RCP<InnerProductMatrix<RealT> > mass =    
         Teuchos::rcp( new InnerProductMatrixSolver<RealT>(lapack,L,L,w,1) );
-
+    //Teuchos::RCP<InnerProductMatrix<RealT> > mass =    
+    //    Teuchos::null;
+/*
     // Kinetic energy matrix
     Teuchos::RCP<InnerProductMatrix<RealT> > kinetic = 
         Teuchos::rcp( new InnerProductMatrixSolver<RealT>(lapack,Lp,Lp,w,1) );
@@ -153,7 +155,26 @@ int main(int argc, char* argv[]) {
     // Lagrange multiplier value (scalar)   
     Teuchos::RCP<std::vector<RealT> > lam_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
     ConDualStdVector<RealT> lam(lam_rcp,useRiesz,mass);
+*/
+    Teuchos::RCP<std::vector<RealT> > aa_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 1.0) );
+    OptDualStdVector<RealT> av(aa_rcp,useRiesz,mass);
+    Teuchos::RCP<std::vector<RealT> > bb_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 2.0) );
+    OptDualStdVector<RealT> bv(bb_rcp,useRiesz,mass);
+    Teuchos::RCP<std::vector<RealT> > cc_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 3.0) );
+    OptDualStdVector<RealT> cv(cc_rcp,useRiesz,mass);
+    av.checkVector(bv,cv);
 
+    Teuchos::RCP<std::vector<RealT> > dd_rcp = Teuchos::rcp( new std::vector<RealT> (1, 1.0) );
+    ConDualStdVector<RealT> dv(dd_rcp,useRiesz,mass);
+    Teuchos::RCP<std::vector<RealT> > ee_rcp = Teuchos::rcp( new std::vector<RealT> (1, 2.0) );
+    ConDualStdVector<RealT> ev(ee_rcp,useRiesz,mass);
+    Teuchos::RCP<std::vector<RealT> > ff_rcp = Teuchos::rcp( new std::vector<RealT> (1, 3.0) );
+    ConDualStdVector<RealT> fv(ff_rcp,useRiesz,mass);
+    dv.checkVector(ev,fv);
+
+return 0;
+
+/*
     // Gradient   
     Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
     OptDualStdVector<RealT> g(g_rcp,useRiesz,kinetic);
@@ -201,4 +222,5 @@ int main(int argc, char* argv[]) {
         std::cout << "End Result: TEST PASSED\n";
 
     return 0;
+*/
 }

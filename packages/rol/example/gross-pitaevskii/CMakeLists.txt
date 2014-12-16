@@ -19,6 +19,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ADD_DIR_TO_NAME
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_03
+    SOURCES example_03.cpp 
+    ARGS "default" "exactsolve" 
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     GrossPitaevskiiDataCopy

@@ -287,6 +287,15 @@ int main(int argc, char *argv[]) {
     OptStdVector<RealT> x(x_rcp); // Iteration Vector
     OptDualStdVector<RealT> g(g_rcp); // zeroed gradient vector in dual space
 
+    Teuchos::RCP<std::vector<RealT> > aa_rcp = Teuchos::rcp( new std::vector<RealT> (1, 1.0) );
+    OptDualStdVector<RealT> av(aa_rcp);
+    Teuchos::RCP<std::vector<RealT> > bb_rcp = Teuchos::rcp( new std::vector<RealT> (1, 2.0) );
+    OptDualStdVector<RealT> bv(bb_rcp);
+    Teuchos::RCP<std::vector<RealT> > cc_rcp = Teuchos::rcp( new std::vector<RealT> (1, 3.0) );
+    OptDualStdVector<RealT> cv(cc_rcp);
+    av.checkVector(bv,cv);
+
+
     // Run Algorithm
     std::vector<std::string> output = algo.run(x,g, obj, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
@@ -295,8 +304,7 @@ int main(int argc, char *argv[]) {
 
     // Get True Solution
     Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
-    OptStdVector<RealT> xtrue(xtrue_rcp);
- 
+    OptStdVector<RealT> xtrue(xtrue_rcp); 
    
     // Compute Error
     x.axpy(-1.0, xtrue);
