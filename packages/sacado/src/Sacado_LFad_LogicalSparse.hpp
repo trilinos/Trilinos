@@ -745,28 +745,28 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_VALUE_FUNC(LogicalSparse&) operator += (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparse&) operator += (const Expr<S>& x) {
         ImplType::operator+=(x);
         return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_VALUE_FUNC(LogicalSparse&) operator -= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparse&) operator -= (const Expr<S>& x) {
         ImplType::operator-=(x);
         return *this;
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_VALUE_FUNC(LogicalSparse&) operator *= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparse&) operator *= (const Expr<S>& x) {
         ImplType::operator*=(x);
         return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      SACADO_ENABLE_VALUE_FUNC(LogicalSparse&) operator /= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(LogicalSparse&) operator /= (const Expr<S>& x) {
         ImplType::operator/=(x);
         return *this;
       }

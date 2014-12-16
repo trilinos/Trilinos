@@ -191,18 +191,14 @@ namespace Sacado {
   template <typename T, typename U>                                     \
   struct Promote< NS :: Expr <T>, U,                                    \
                   typename mpl::enable_if_c<                            \
-                    mpl::is_convertible< U,                             \
-                                         typename NS :: Expr <T>::value_type \
-                                         >::value &&                    \
+                    mpl::is_convertible< U, typename BaseExprType< typename NS :: Expr <T>::value_type >::type >::value && \
                    !IsView<U>::value >::type > {                        \
     typedef typename NS :: Expr <T>::base_expr_type type;               \
   };                                                                    \
   template <typename T, typename U>                                     \
   struct Promote< U, NS :: Expr <T>,                                    \
                   typename mpl::enable_if_c<                            \
-                    mpl::is_convertible< U,                             \
-                                         typename NS :: Expr <T>::value_type \
-                                         >::value && \
+                    mpl::is_convertible< U, typename BaseExprType< typename NS :: Expr <T>::value_type >::type >::value && \
                   !IsView<U>::value >::type > {                         \
     typedef typename NS :: Expr <T>::base_expr_type type;               \
   };

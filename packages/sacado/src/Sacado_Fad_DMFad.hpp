@@ -208,7 +208,7 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(DMFad&) operator += (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(DMFad&) operator += (const Expr<S>& x) {
         GeneralFadType::operator+=(x);
         return *this;
       }
@@ -216,7 +216,7 @@ namespace Sacado {
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(DMFad&) operator -= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(DMFad&) operator -= (const Expr<S>& x) {
         GeneralFadType::operator-=(x);
         return *this;
       }
@@ -224,7 +224,7 @@ namespace Sacado {
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(DMFad&) operator *= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(DMFad&) operator *= (const Expr<S>& x) {
         GeneralFadType::operator*=(x);
         return *this;
       }
@@ -232,7 +232,7 @@ namespace Sacado {
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(DMFad&) operator /= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(DMFad&) operator /= (const Expr<S>& x) {
         GeneralFadType::operator/=(x);
         return *this;
       }
