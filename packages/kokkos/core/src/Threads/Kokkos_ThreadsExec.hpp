@@ -457,10 +457,10 @@ public:
     { }
 #else
     // Make sure there is enough scratch space:
-    typedef typename if_c< sizeof(typename JoinOp::value_type) < TEAM_REDUCE_SIZE
-                         , typename JoinOp::value_type , void >::type type ;
+    typedef typename if_c< sizeof(ValueType) < TEAM_REDUCE_SIZE
+                         , ValueType , void >::type type ;
 
-    type * const local_value = ((type*) m_exec.scratch_thread());
+    type * const local_value = ((type*) m_exec.scratch_memory());
     if(team_rank() == thread_id)
       *local_value = value;
     memory_fence();

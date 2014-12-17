@@ -202,24 +202,26 @@ public:
 
 #else
 
-  const execution_space::scratch_memory_space & team_shmem() const ;
+  const execution_space::scratch_memory_space & team_shmem() const {return m_team_shared;}
 
-  int league_rank() const ;
-  int league_size() const ;
-  int team_rank() const ;
-  int team_size() const ;
+  int league_rank() const {return 0;}
+  int league_size() const {return 1;}
+  int team_rank() const {return 0;}
+  int team_size() const {return 1;}
 
-  void team_barrier() const ;
+  void team_barrier() const {}
+  template<class ValueType>
+  void team_broadcast(ValueType& value, const int& thread_id) const {}
 
   template< class JoinOp >
   typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
-                                         , const JoinOp & op ) const ;
+                                         , const JoinOp & op ) const {return typename JoinOp::value_type();}
 
   template< typename Type >
-  Type team_scan( const Type & value , Type * const global_accum ) const ;
+  Type team_scan( const Type & value , Type * const global_accum ) const {return Type();}
 
   template< typename Type >
-  Type team_scan( const Type & value ) const ;
+  Type team_scan( const Type & value ) const {return Type();}
 
 #ifdef KOKKOS_HAVE_CXX11
   template< class Operation >
@@ -2167,29 +2169,37 @@ namespace Kokkos {
 template<class FunctorType>
 KOKKOS_INLINE_FUNCTION
 void single(const Impl::VectorSingleStruct<Impl::CudaTeamMember>& , const FunctorType& lambda) {
+#ifdef __CUDA_ARCH__
   if(threadIdx.x == 0) lambda();
+#endif
 }
 
 template<class FunctorType>
 KOKKOS_INLINE_FUNCTION
 void single(const Impl::ThreadSingleStruct<Impl::CudaTeamMember>& , const FunctorType& lambda) {
+#ifdef __CUDA_ARCH__
   if(threadIdx.x == 0 && threadIdx.y == 0) lambda();
+#endif
 }
 
 template<class FunctorType, class ValueType>
 KOKKOS_INLINE_FUNCTION
 void single(const Impl::VectorSingleStruct<Impl::CudaTeamMember>& , const FunctorType& lambda, ValueType& val) {
+#ifdef __CUDA_ARCH__
   if(threadIdx.x == 0) lambda(val);
   val = shfl(val,0,blockDim.x);
+#endif
 }
 
 template<class FunctorType, class ValueType>
 KOKKOS_INLINE_FUNCTION
 void single(const Impl::ThreadSingleStruct<Impl::CudaTeamMember>& single_struct, const FunctorType& lambda, ValueType& val) {
+#ifdef __CUDA_ARCH__
   if(threadIdx.x == 0 && threadIdx.y == 0) {
     lambda(val);
   }
   single_struct.team_member.team_broadcast(val,0);
+#endif
 }
 
 }
