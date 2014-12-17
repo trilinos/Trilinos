@@ -23,10 +23,12 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   RBGen               packages/rbgen                  PT
   Phalanx             packages/phalanx                ST
   Panzer              packages/panzer                 ST
+  AlwaysMissing       AlwaysMissing                   PT
   )
 
 # NOTE: Sacado was really PT but for testing purpose it is made ST
 # NOTE: Belos was really PT but for testing purpose it is made ST
 
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(AlwaysMissing)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(ML BadSystem1)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)
