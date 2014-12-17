@@ -64,7 +64,7 @@
 #include <Tpetra_Operator.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraVector.hpp>
-#include <Amesos2.hpp>
+//#include <Amesos2.hpp>
 #endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_EpetraOperator.hpp>
