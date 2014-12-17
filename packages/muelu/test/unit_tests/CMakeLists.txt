@@ -18,6 +18,7 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
+  BlockedCoarseMapFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
