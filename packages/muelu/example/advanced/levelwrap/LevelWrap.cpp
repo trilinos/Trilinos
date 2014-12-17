@@ -101,6 +101,8 @@ using Teuchos::RCP;
 const std::string thickSeparator = "==========================================================================================================================";
 const std::string thinSeparator  = "--------------------------------------------------------------------------------------------------------------------------";
 
+const std::string prefSeparator = "=====================================";
+
 // --------------------------------------------------------------------------------------
 void solve_system(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
  using Teuchos::RCP;
@@ -285,6 +287,7 @@ int main(int argc, char *argv[]) {
     // Solve #1 (standard MueLu)
     // =========================================================================
     out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 1: Standard "<< prefSeparator <<std::endl;
     {
       // Use an ML-style parameter list for variety
       Teuchos::ParameterList MLList;
@@ -294,7 +297,11 @@ int main(int argc, char *argv[]) {
       MLList.set("coarse: type","Amesos-KLU");
 #endif
       MLParameterListInterpreter mueLuFactory(MLList);      
-      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	
+      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	      
+      Teuchos::Ptr<FactoryManagerBase> LevelFactory = mueLuFactory.GetFactoryManager(1);
+      H->AddNewLevel();
+      H->GetLevel(1)->Keep("Nullspace",LevelFactory->GetFactory("Nullspace").get()); 
+
       H->GetLevel(0)->Set("A", A);
       mueLuFactory.SetupHierarchy(*H);
 
@@ -305,6 +312,11 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Get("R",R);
       H->GetLevel(1)->Get("P",P);
       H->GetLevel(1)->Get("A",Ac);
+
+      H->GetLevel(1)->print(std::cout,MueLu::High | MueLu::Debug);
+      //      printf("NullspaceFactory = %#0x\n",NullManager.GetFactory("Nullspace").get());
+      nullspace = H->GetLevel(1)->Get<RCP<MultiVector> >("Nullspace",LevelFactory->GetFactory("Nullspace").get());
+      exit(1);
     }
     out << thickSeparator << std::endl;
 
@@ -312,16 +324,17 @@ int main(int argc, char *argv[]) {
     // Solve #2 (level wrap, the long way, using pre-done Ac)
     // =========================================================================
     out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 2: LevelWrap, Long Way, P, R, Ac "<< prefSeparator <<std::endl;
     {
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
-      MLList.set("max levels", 3);
+      MLList.set("max levels", 3);// CMS - We have to limit the number of levels since the nullspace factory won't work otherwise
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
-      FactoryManager M0, M1, M2;
+      FactoryManager M1;
       M1.SetFactory("A",        MueLu::NoFactory::getRCP());
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
@@ -329,13 +342,16 @@ int main(int argc, char *argv[]) {
 
       MLParameterListInterpreter mueLuFactory(MLList);   
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
-      mueLuFactory.AddFactoryManager(2, 1, Teuchos::rcpFromRef(M2));
+      //      mueLuFactory.AddFactoryManager(2, 1, Teuchos::rcpFromRef(M2));
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	      
       H->GetLevel(0)->Set("A", A);
       H->AddNewLevel();
+
+
       H->GetLevel(1)->Set("R", R);
       H->GetLevel(1)->Set("P", P);
       H->GetLevel(1)->Set("A", Ac);
+      H->GetLevel(1)->Set("Nullspace", nullspace);
 
 
       mueLuFactory.SetupHierarchy(*H);
@@ -347,29 +363,29 @@ int main(int argc, char *argv[]) {
     out << thickSeparator << std::endl;
 
 
-#if 0
-
-  // =========================================================================
-    // Solve #2 (level wrap, the long way, using P & R only)
+    // =========================================================================
+    // Solve #3 (level wrap, the long way, using P & R only)
     // =========================================================================
     out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 3: LevelWrap, Long Way, P, R "<< prefSeparator <<std::endl;
     {
+
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
-      MLList.set("max levels", 3);
+      MLList.set("max levels", 2);// CMS - We have to limit the number of levels since the nullspace factory won't work otherwise
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
-      FactoryManager M0, M1, M2;
+      FactoryManager M1;
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
       
 
       MLParameterListInterpreter mueLuFactory(MLList);   
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
-      mueLuFactory.AddFactoryManager(2, 1, Teuchos::rcpFromRef(M2));
+      //      mueLuFactory.AddFactoryManager(2, 1, Teuchos::rcpFromRef(M2));
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	      
       H->GetLevel(0)->Set("A", A);
       H->AddNewLevel();
@@ -384,13 +400,6 @@ int main(int argc, char *argv[]) {
 
     }
     out << thickSeparator << std::endl;
-
-#endif
-
-
-
-
-
 
 
 
