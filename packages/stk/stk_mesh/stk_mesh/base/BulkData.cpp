@@ -1084,13 +1084,7 @@ void BulkData::initialize_arrays()
 #endif
 }
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-// The add_parts must be full ordered and consistent,
-// i.e. no bad parts, all supersets included, and
-// owner & used parts match the owner value.
 
-//----------------------------------------------------------------------
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
 {
@@ -5723,7 +5717,6 @@ void BulkData::internal_resolve_shared_membership()
                 {
                     removeParts.push_back(&m_mesh_meta_data.get_part(remove_parts[ipart]));
                 }
-
                 internal_change_entity_parts(i->entity, inducedParts, removeParts);
             }
         }
