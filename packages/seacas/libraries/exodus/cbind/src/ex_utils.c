@@ -727,6 +727,7 @@ int ex_id_lkup( int exoid,
                 "Error: failed to allocate memory for temporary array id_vals_int for file id %d",
                 exoid);
         ex_err("ex_id_lkup",errmsg,exerrval);
+        free(id_vals);
         return (EX_FATAL);
       }
       status = nc_get_var_int(exoid, varid, (int *)id_vals_int);

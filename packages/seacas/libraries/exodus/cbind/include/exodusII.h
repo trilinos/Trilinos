@@ -1972,16 +1972,16 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
     * ======================================================================== */
 
   /* ERROR CODE DEFINITIONS AND STORAGE                                       */
-  extern int exerrval;     /**< shared error return value                */
-  extern int exoptval;     /**< error reporting flag (default is quiet)  */
+  EXODUS_EXPORT int exerrval;     /**< shared error return value                */
+  EXODUS_EXPORT int exoptval;     /**< error reporting flag (default is quiet)  */
 
-  char* ex_name_of_object(ex_entity_type obj_type);
-  ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
+  EXODUS_EXPORT char* ex_name_of_object(ex_entity_type obj_type);
+  EXODUS_EXPORT ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
 
   /* Should be internal use only, but was in external include file for
      nemesis and some codes are using the function
   */
-  int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+  EXODUS_EXPORT int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
 		 const char *ne_var_name, /* Nemesis index variable name */
 		 int64_t *index,	 /* array of length 2 to hold results */
 		 int      pos		 /* position of this proc/cmap in index */

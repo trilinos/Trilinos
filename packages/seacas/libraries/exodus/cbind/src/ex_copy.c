@@ -599,7 +599,7 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
   size_t var_sz=1L;
   nc_type var_type_in, var_type_out;
 
-  void *void_ptr;
+  void *void_ptr = NULL;
 
   /* Get the var_id for the requested variable from both files. */
   (void)nc_inq_varid(in_id, var_nm, &var_in_id);
@@ -642,7 +642,8 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
   } /* end loop over dim */
 
   /* Allocate enough space to hold the variable */
-  void_ptr=malloc(var_sz * type_size(var_type_in));
+  if (var_sz > 0)
+      void_ptr=malloc(var_sz * type_size(var_type_in));
 
   /* Get the variable */
 
@@ -769,7 +770,8 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
     (void)nc_inq_vartype( in_id, var_in_id,     &var_type_in);
     (void)nc_inq_vartype(out_id, var_out_id[0], &var_type_out);
 
-    void_ptr=malloc(num_nodes * type_size(var_type_in));
+    if (num_nodes > 0)
+        void_ptr=malloc(num_nodes * type_size(var_type_in));
 
     /* Copy each component of the variable... */
     for (i=0; i < spatial_dim; i++) {
@@ -797,7 +799,8 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
     (void)nc_inq_vartype(in_id,  var_in_id[0], &var_type_in);
     (void)nc_inq_vartype(out_id, var_out_id,   &var_type_out);
 
-    void_ptr=malloc(num_nodes * type_size(var_type_in));
+    if (num_nodes > 0)
+        void_ptr=malloc(num_nodes * type_size(var_type_in));
 
     /* Copy each component of the variable... */
     for (i=0; i < spatial_dim; i++) {

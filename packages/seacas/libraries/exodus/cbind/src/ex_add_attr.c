@@ -170,7 +170,7 @@ int ex_add_attr(int exoid,
     goto error_ret;         /* exit define mode and return */
   }
 
-  status = ex_get_dimension(exoid, dnumobjent, ex_name_of_object(obj_type),
+  ex_get_dimension(exoid, dnumobjent, ex_name_of_object(obj_type),
 			    &num_obj, &numobjentdim, "ex_add_attr");
   dims[0] = numobjentdim;
   dims[1] = numattrdim;

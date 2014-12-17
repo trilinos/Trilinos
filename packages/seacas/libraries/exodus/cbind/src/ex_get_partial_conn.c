@@ -79,7 +79,8 @@ int ex_get_partial_conn( int   exoid,
   int econnid = -1;
   int fconnid = -1;
 
-  int blk_id_ndx, status;
+  int blk_id_ndx;
+  int status = 0;
 
   int numnodperentdim = -1;
   int numedgperentdim = -1;
