@@ -78,7 +78,7 @@
     <ParameterList name="myPatternFact">
       <Parameter name="factory"                             type="string" value="PatternFactory"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-      <Parameter name="k"                                   type="int"    value="1"/>
+      <Parameter name="emin: pattern order"                 type="int"    value="1"/>
     </ParameterList>
 
     <ParameterList name="myConstraintFact">
@@ -93,8 +93,8 @@
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
       <Parameter name="Constraint"                          type="string" value="myConstraintFact"/>
       <!-- <Parameter name="Nullspace"                           type="string" value="myNullspaceFact"/> -->
-      <Parameter name="Niterations"                         type="int"    value="3"/>
-      <Parameter name="Reuse Niterations"                   type="int"    value="1"/>
+      <Parameter name="emin: num iterations"                type="int"    value="3"/>
+      <Parameter name="emin: num reuse iterations"          type="int"    value="1"/>
       <Parameter name="Keep P0"                             type="bool"   value="true"/>
       <Parameter name="Keep Constraint0"                    type="bool"   value="true"/>
     </ParameterList>
