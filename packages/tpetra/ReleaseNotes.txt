@@ -5,6 +5,16 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.13):
 ----------------------------
 
+* Split Tpetra into subpackages; moved KokkosClassic and KokkosTSQR
+  subpackages into Tpetra
+
+The "Classic" and "TSQR" subpackages of Kokkos are now the "Classic"
+resp. "TSQR" subpackages of Tpetra.  The original contents of Tpetra
+are now the "Core" subpackage of Tpetra.
+
+NOTE: Any package dependencies on "KokkosClassic" or "KokkosTSQR" must
+now be changed to "TpetraClassic" resp. "TpetraTSQR".
+
 * Update to instructions for building Kokkos Refactor version
 
 See the Release Notes for the 11.12 release (below) for an explanation
@@ -22,7 +32,7 @@ disabled by default.  Here is a summary of the required CMake options.
 -D Trilinos_ENABLE_KokkosContainers:BOOL=ON
 -D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON
 -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON
--D Trilinos_ENABLE_KokkosMpi:BOOL=ON
+-D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON
 
 # Set default Node type to one of the new Kokkos Nodes
 -D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosSerialWrapperNode"

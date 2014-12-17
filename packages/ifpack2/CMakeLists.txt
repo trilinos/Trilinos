@@ -10,7 +10,7 @@ TRIBITS_PACKAGE( Ifpack2 )
 # B) Set up package-specific options
 #
 
-ASSERT_DEFINED(Tpetra_ETI_SCALARS)
+ASSERT_DEFINED(TpetraCore_ETI_SCALARS)
 SET(Ifpack2_ETI_SCALARS "double")
 SET(Ifpack2_ETI_GORDS   "int")
 SET(Ifpack2_ETI_LORDS   "int")
