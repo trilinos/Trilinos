@@ -326,7 +326,6 @@ int main(int argc, char *argv[]) {
       // Start w/ an ML-style parameter list
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
-      MLList.set("max levels", 3);// CMS - We have to limit the number of levels since the nullspace factory won't work otherwise
       MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
@@ -336,20 +335,16 @@ int main(int argc, char *argv[]) {
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
       
-
       MLParameterListInterpreter mueLuFactory(MLList);   
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	
       H->setlib(lib);
       H->GetLevel(0)->Set("A", A);
       H->AddNewLevel();
-
-
       H->GetLevel(1)->Set("R", R);
       H->GetLevel(1)->Set("P", P);
       H->GetLevel(1)->Set("A", Ac);
       H->GetLevel(1)->Set("Nullspace", nullspace);
-
 
       mueLuFactory.SetupHierarchy(*H);
 
@@ -377,8 +372,7 @@ int main(int argc, char *argv[]) {
       FactoryManager M1;
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
-      
-
+     
       MLParameterListInterpreter mueLuFactory(MLList);   
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
