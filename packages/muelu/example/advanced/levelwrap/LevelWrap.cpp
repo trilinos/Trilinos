@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
       // Use an ML-style parameter list for variety
       Teuchos::ParameterList MLList;
       MLList.set("ML output", 10);
-      MLList.set("coarse: type","Amesos-SuperLU");
+      MLList.set("coarse: type","Amesos-Superlu");
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
