@@ -65,7 +65,7 @@ template < class ShapeType , class LayoutType , typename Enable = void >
 struct ViewOffset ;
 
 //----------------------------------------------------------------------------
-// LayoutLeft AND ( 1 >= rank OR 0 == rank_dynamic ) : has padding / striding
+// LayoutLeft AND ( 1 >= rank OR 0 == rank_dynamic ) : no padding / striding
 template < class ShapeType >
 struct ViewOffset< ShapeType , LayoutLeft
                  , typename enable_if<( 1 >= ShapeType::rank
@@ -84,6 +84,31 @@ struct ViewOffset< ShapeType , LayoutLeft
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n )
     { assign_shape_dimension<R>( *this , n ); }
+
+  // This subview must be 1 == rank and 1 == rank_dynamic.
+  // The source dimension #0 must be non-zero and all other dimensions are zero.
+  template< class S , class L >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::enable_if<( 1 == shape_type::rank &&
+                             1 == shape_type::rank_dynamic &&
+                             1 <= S::rank &&
+                             Impl::is_same<L,LayoutLeft>::value
+                           )>::type
+  assign_subview( const ViewOffset<S,L,void> &
+                , const size_t n0
+                , const size_t n1
+                , const size_t n2
+                , const size_t n3
+                , const size_t n4
+                , const size_t n5
+                , const size_t n6
+                , const size_t n7
+                )
+    {
+      // n1 .. n7 must be zero
+      shape_type::N0 = n0 ;
+    }
+
 
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n0 , unsigned n1 , unsigned n2 , unsigned n3
@@ -265,10 +290,51 @@ struct ViewOffset< ShapeType , LayoutLeft
 
   size_type S0 ;
 
+  // This subview must be 2 == rank and 2 == rank_dynamic
+  // due to only having stride #0.
+  // The source dimension #0 must be non-zero for stride-one leading dimension.
+  // If source is rank deficient then set to zero.
+  template< class S , class L >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::enable_if<( 2 == shape_type::rank &&
+                             2 == shape_type::rank_dynamic &&
+                             2 <= S::rank &&
+                             Impl::is_same<L,LayoutLeft>::value
+                           )>::type
+  assign_subview( const ViewOffset<S,L,void> & rhs
+                , const size_t n0
+                , const size_t n1
+                , const size_t n2
+                , const size_t n3
+                , const size_t n4
+                , const size_t n5
+                , const size_t n6
+                , const size_t n7
+                )
+    {
+      // N0 = n0 ;
+      // N1 = second non-zero dimension
+      // S0 = stride for second non-zero dimension
+      shape_type::N0 = 0 ;
+      shape_type::N1 = 0 ;
+      S0 = 0 ;
+
+      if ( 0 == n0 ) {}
+      else if (                n1 ) { shape_type::N0 = n0 ; shape_type::N1 = n1 ; S0 = rhs.stride_1(); }
+      else if ( 2 < S::rank && n2 ) { shape_type::N0 = n0 ; shape_type::N1 = n2 ; S0 = rhs.stride_2(); }
+      else if ( 3 < S::rank && n3 ) { shape_type::N0 = n0 ; shape_type::N1 = n3 ; S0 = rhs.stride_3(); }
+      else if ( 4 < S::rank && n4 ) { shape_type::N0 = n0 ; shape_type::N1 = n4 ; S0 = rhs.stride_4(); }
+      else if ( 5 < S::rank && n5 ) { shape_type::N0 = n0 ; shape_type::N1 = n5 ; S0 = rhs.stride_5(); }
+      else if ( 6 < S::rank && n6 ) { shape_type::N0 = n0 ; shape_type::N1 = n6 ; S0 = rhs.stride_6(); }
+      else if ( 7 < S::rank && n7 ) { shape_type::N0 = n0 ; shape_type::N1 = n7 ; S0 = rhs.stride_7(); }
+    }
+
+
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n )
     { assign_shape_dimension<R>( *this , n ); }
+
 
   KOKKOS_INLINE_FUNCTION
   void assign( size_t n0 , unsigned n1 , unsigned n2 , unsigned n3
@@ -460,6 +526,36 @@ struct ViewOffset< ShapeType , LayoutRight
 
   enum { has_padding = false };
 
+  // This subview must be 1 == rank and 1 == rank_dynamic
+  // The source view's last dimension must be non-zero
+  template< class S , class L >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::enable_if<( 1 == shape_type::rank &&
+                             1 == shape_type::rank_dynamic &&
+                             1 <= S::rank &&
+                             Impl::is_same<L,LayoutRight>::value
+                           )>::type
+  assign_subview( const ViewOffset<S,L,void> &
+                , const size_t n0
+                , const size_t n1
+                , const size_t n2
+                , const size_t n3
+                , const size_t n4
+                , const size_t n5
+                , const size_t n6
+                , const size_t n7
+                )
+    {
+      shape_type::N0 = S::rank == 1 ? n0 : (
+                       S::rank == 2 ? n1 : (
+                       S::rank == 3 ? n2 : (
+                       S::rank == 4 ? n3 : (
+                       S::rank == 5 ? n4 : (
+                       S::rank == 6 ? n5 : (
+                       S::rank == 7 ? n6 : n7 ))))));
+      // should have n0 .. n_(rank-2) equal zero
+    }
+
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n )
@@ -642,6 +738,52 @@ struct ViewOffset< ShapeType , LayoutRight
   enum { has_padding = true };
 
   size_type SR ;
+
+  // This subview must be 2 == rank and 2 == rank_dynamic
+  // due to only having stride #(rank-1).
+  // The source dimension #(rank-1) must be non-zero for stride-one leading dimension.
+  // If source is rank deficient then set to zero.
+  template< class S , class L >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::enable_if<( 2 == shape_type::rank &&
+                             2 == shape_type::rank_dynamic &&
+                             2 <= S::rank &&
+                             Impl::is_same<L,LayoutRight>::value
+                           )>::type
+  assign_subview( const ViewOffset<S,L,void> & rhs
+                , const size_t n0
+                , const size_t n1
+                , const size_t n2
+                , const size_t n3
+                , const size_t n4
+                , const size_t n5
+                , const size_t n6
+                , const size_t n7
+                )
+    {
+      const size_type nR = S::rank == 2 ? n1 : (
+                           S::rank == 3 ? n2 : (
+                           S::rank == 4 ? n3 : (
+                           S::rank == 5 ? n4 : (
+                           S::rank == 6 ? n5 : (
+                           S::rank == 7 ? n6 : n7 )))));
+
+      // N0 = first non-zero-dimension
+      // N1 = last non-zero dimension
+      // SR = stride for second non-zero dimension
+      shape_type::N0 = 0 ;
+      shape_type::N1 = 0 ;
+      SR = 0 ;
+
+      if ( 0 == nR ) {}
+      else if (                n0 ) { shape_type::N0 = n0 ; shape_type::n1 = nR ; SR = rhs.stride_0(); }
+      else if ( 2 < S::rank && n1 ) { shape_type::N0 = n1 ; shape_type::n1 = nR ; SR = rhs.stride_1(); }
+      else if ( 3 < S::rank && n2 ) { shape_type::N0 = n2 ; shape_type::n1 = nR ; SR = rhs.stride_2(); }
+      else if ( 4 < S::rank && n3 ) { shape_type::N0 = n3 ; shape_type::n1 = nR ; SR = rhs.stride_3(); }
+      else if ( 5 < S::rank && n4 ) { shape_type::N0 = n4 ; shape_type::n1 = nR ; SR = rhs.stride_4(); }
+      else if ( 6 < S::rank && n5 ) { shape_type::N0 = n5 ; shape_type::n1 = nR ; SR = rhs.stride_5(); }
+      else if ( 7 < S::rank && n6 ) { shape_type::N0 = n6 ; shape_type::n1 = nR ; SR = rhs.stride_6(); }
+    }
 
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
@@ -836,6 +978,52 @@ struct ViewOffset< ShapeType , LayoutStride
 
   size_type S[ shape_type::rank + 1 ];
 
+  template< class SType , class L , typename iType >
+  KOKKOS_INLINE_FUNCTION
+  void assign_subview( const ViewOffset<SType,L,void> & rhs
+                     , const size_type n0
+                     , const size_type n1
+                     , const size_type n2
+                     , const size_type n3
+                     , const size_type n4
+                     , const size_type n5
+                     , const size_type n6
+                     , const size_type n7
+                     )
+    {
+      shape_type::assign( *this, 0,0,0,0, 0,0,0,0 );
+
+      for ( int i = 0 ; i < int(shape_type::rank+1) ; ++i ) { S[i] = 0 ; }
+
+      // preconditions:
+      //  shape_type::rank <= rhs.rank
+      //  shape_type::rank == count of nonzero( rhs_dim[i] )
+      size_type dimen[8] = { n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 };
+      size_type stride[ SType::rank + 1 ];
+
+      rhs.stride( stride );
+
+      // contract the zero-dimensions
+      int r = 0 ;
+      for ( int i = 0 ; i < int(SType::rank) ; ++i ) {
+        if ( 0 != dimen[i] ) {
+          dimen[r]  = dimen[i] ;
+          stride[r] = stride[i] ;
+          ++r ;
+        }
+      }
+
+      if ( int(shape_type::rank) == r ) {
+        // The shape is non-zero
+        for ( int i = 0 ; i < int(shape_type::rank) ; ++i ) {
+          const size_type cap = dimen[i] * ( S[i] = stride[i] );
+          if ( S[ shape_type::rank ] < cap ) S[ shape_type::rank ] = cap ;
+        }
+        // set the contracted nonzero dimensions
+        shape_type::assign( *this, dimen[0], dimen[1], dimen[2], dimen[3], dimen[4], dimen[5], dimen[6], dimen[7] );
+      }
+    }
+
   template< unsigned R >
   KOKKOS_INLINE_FUNCTION
   void assign( unsigned n )
@@ -1018,8 +1206,11 @@ struct ViewOffset< ShapeType , LayoutStride
 
 //----------------------------------------------------------------------------
 
-template< class T /* assume an integral type */ >
+template< class T >
 struct ViewOffsetRange {
+
+  enum { OK_integral_type = Impl::StaticAssert< Impl::is_integral<T>::value >::value };
+
   enum { is_range = false };
 
   KOKKOS_INLINE_FUNCTION static
@@ -1030,7 +1221,7 @@ struct ViewOffsetRange {
 };
 
 template<>
-struct ViewOffsetRange<ALL> {
+struct ViewOffsetRange< Kokkos::ALL > {
   enum { is_range = true };
 
   KOKKOS_INLINE_FUNCTION static
@@ -1042,26 +1233,32 @@ struct ViewOffsetRange<ALL> {
 
 template< typename iType >
 struct ViewOffsetRange< std::pair<iType,iType> > {
+
+  enum { OK_integral_type = Impl::StaticAssert< Impl::is_integral<iType>::value >::value };
+
   enum { is_range = true };
 
   KOKKOS_INLINE_FUNCTION static
   size_t dimension( size_t const n , std::pair<iType,iType> const & r )
-    { return ( 0 <= int(r.first) && r.first < r.second && size_t(r.second) < n ) ? r.second - r.first : 0 ; }
+    { return ( size_t(r.first) < size_t(r.second) && size_t(r.second) <= n ) ? size_t(r.second) - size_t(r.first) : 0 ; }
 
   KOKKOS_INLINE_FUNCTION static
-  size_t begin( std::pair<iType,iType> const & r ) { return r.first ; }
+  size_t begin( std::pair<iType,iType> const & r ) { return size_t(r.first) ; }
 };
 
 template< typename iType >
 struct ViewOffsetRange< Kokkos::pair<iType,iType> > {
+
+  enum { OK_integral_type = Impl::StaticAssert< Impl::is_integral<iType>::value >::value };
+
   enum { is_range = true };
 
   KOKKOS_INLINE_FUNCTION static
   size_t dimension( size_t const n , Kokkos::pair<iType,iType> const & r )
-    { return ( 0 <= int(r.first) && r.first < r.second && size_t(r.second) < n ) ? r.second - r.first : 0 ; }
+    { return ( size_t(r.first) < size_t(r.second) && size_t(r.second) <= n ) ? size_t(r.second) - size_t(r.first) : 0 ; }
 
   KOKKOS_INLINE_FUNCTION static
-  size_t begin( Kokkos::pair<iType,iType> const & r ) { return r.first ; }
+  size_t begin( Kokkos::pair<iType,iType> const & r ) { return size_t(r.first) ; }
 };
 
 }} // namespace Kokkos::Impl
