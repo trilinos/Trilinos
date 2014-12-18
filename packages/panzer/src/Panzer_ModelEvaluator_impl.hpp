@@ -858,7 +858,7 @@ required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) cons
    for(int i=0;i<outArgs.Ng();i++) 
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
 
-   return activeGArgs;
+   return activeGArgs | required_basic_dgdx(outArgs);
 }
 
 template <typename Scalar>
