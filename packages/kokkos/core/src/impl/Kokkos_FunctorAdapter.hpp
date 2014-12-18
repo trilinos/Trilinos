@@ -572,6 +572,93 @@ struct FunctorValueJoin
 } // namespace Impl
 } // namespace Kokkos
 
+#ifdef KOKKOS_HAVE_CXX11
+namespace Kokkos {
+
+namespace Impl {
+
+  template<typename ValueType, class JoinOp, class Enable = void>
+  struct JoinLambdaAdapter {
+    typedef ValueType value_type;
+    const JoinOp& lambda;
+    KOKKOS_INLINE_FUNCTION
+    JoinLambdaAdapter(const JoinOp& lambda_):lambda(lambda_) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile value_type& dst, const volatile value_type& src) const {
+      lambda(dst,src);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void join(value_type& dst, const value_type& src) const {
+      lambda(dst,src);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (volatile value_type& dst, const volatile value_type& src) const {
+      lambda(dst,src);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (value_type& dst, const value_type& src) const {
+      lambda(dst,src);
+    }
+  };
+
+  template<typename ValueType, class JoinOp>
+  struct JoinLambdaAdapter<ValueType, JoinOp, decltype( FunctorValueJoinFunction< JoinOp , void >::enable_if( & JoinOp::join ) )> {
+    typedef ValueType value_type;
+    typedef StaticAssertSame<ValueType,typename JoinOp::value_type> assert_value_types_match;
+    const JoinOp& lambda;
+    KOKKOS_INLINE_FUNCTION
+    JoinLambdaAdapter(const JoinOp& lambda_):lambda(lambda_) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile value_type& dst, const volatile value_type& src) const {
+      lambda.join(dst,src);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void join(value_type& dst, const value_type& src) const {
+      lambda.join(dst,src);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (volatile value_type& dst, const volatile value_type& src) const {
+      lambda.join(dst,src);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (value_type& dst, const value_type& src) const {
+      lambda.join(dst,src);
+    }
+  };
+
+  template<typename ValueType>
+  struct JoinAdd {
+    typedef ValueType value_type;
+
+    KOKKOS_INLINE_FUNCTION
+    JoinAdd() {}
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile value_type& dst, const volatile value_type& src) const {
+      dst+=src;
+    }
+    KOKKOS_INLINE_FUNCTION
+    void operator() (value_type& dst, const value_type& src) const {
+      dst+=src;
+    }
+    KOKKOS_INLINE_FUNCTION
+    void operator() (volatile value_type& dst, const volatile value_type& src) const {
+      dst+=src;
+    }
+  };
+
+}
+}
+#endif
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

@@ -297,13 +297,17 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
    using Teuchos::RCP;
    using Teuchos::rcp;
 
+   std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > > matchedValues
+            = stkMeshDB_->getPeriodicNodePairing();
 
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > matchedNodes
-            = stkMeshDB_->getPeriodicNodePairing();
+            = matchedValues.first;
+   Teuchos::RCP<std::vector<unsigned int> > matchTypes
+            = matchedValues.second;
 
    // no matchedNodes means nothing to do!
    if(matchedNodes==Teuchos::null) return;
-      
+
    for(std::size_t m=0;m<matchedNodes->size();m++) {
       stk_classic::mesh::EntityId oldNodeId = (*matchedNodes)[m].first;
       std::size_t newNodeId = (*matchedNodes)[m].second;
@@ -311,12 +315,24 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
       std::vector<stk_classic::mesh::Entity*> elements;
       std::vector<int> localIds;
 
+      GlobalOrdinal offset0 = 0; // to make numbering consistent with that in PeriodicBC_Matcher
+      GlobalOrdinal offset1 = 0; // offset for dof indexing
+      if((*matchTypes)[m] == 0)
+        offset1 = nodeOffset-offset0;
+      else if((*matchTypes)[m] == 1){
+        offset0 = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
+        offset1 = edgeOffset-offset0;
+      } else
+        TEUCHOS_ASSERT(false);
+
       // get relevent elements and node IDs
-      stkMeshDB_->getOwnedElementsSharingNode(oldNodeId,elements,localIds);
+      stkMeshDB_->getOwnedElementsSharingNode(oldNodeId-offset0,elements,localIds,(*matchTypes)[m]);
 
       // modify global numbering already built for each element
-      for(std::size_t e=0;e<elements.size();e++)
-         modifySubcellConnectivities(fp,elements[e],0,localIds[e],newNodeId,nodeOffset);
+      for(std::size_t e=0;e<elements.size();e++){
+         modifySubcellConnectivities(fp,elements[e],(*matchTypes)[m],localIds[e],newNodeId,offset1);
+      }
+
    }
 }
 

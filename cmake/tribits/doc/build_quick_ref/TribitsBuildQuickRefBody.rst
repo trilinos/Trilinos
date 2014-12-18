@@ -602,6 +602,32 @@ cache variable::
   -D <Project>_CXX11_FLAGS="<compiler flags>"
 
 
+Enabling explicit template instantiation for C++
+------------------------------------------------
+
+To enable explicit template instantiation for C++ code for packages that
+support it, configure with::
+
+  -D <Project>_ENABLE_EXPLICIT_INSTANTIATION=ON
+
+When ``OFF``, all packages that have templated C++ code will use implicit
+template instantiation.
+
+Explicit template instantiation can be enabled (``ON``) or disabled (``OFF``)
+for individual packages with::
+
+
+  -D <TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION=[ON|OFF]
+
+The default value for ``<TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION`` is
+set by ``<Project>_ENABLE_EXPLICIT_INSTANTIATION``.
+
+For packages that support it, explicit template instantation can massively
+reduce the compile times for the C++ code involved.  To see what packages
+support explicit instantation just search the CMakeCache.txt file for varibles
+with ``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
+
+
 Disabling the Fortran compiler and all Fortran code
 ---------------------------------------------------
 
@@ -1191,7 +1217,7 @@ timeouts for the individual tests that have their own timeout set (through the
 ``TIMEOUT`` argument for each individual test) can be scaled by a constant
 factor ``<testTimeoutScaleFactor>`` by configuring with::
 
-  -D <Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT=<testTimeoutScaleFactor>
+  -D <Project>_SCALE_TEST_TIMEOUT=<testTimeoutScaleFactor>
 
 Here, ``<testTimeoutScaleFactor>`` can be an integral number like ``5`` or can
 be fractional number like ``1.5``.
@@ -1754,7 +1780,7 @@ directory, do::
 
   $ ctest -T memcheck -L <TRIBITS_PACKAGE>
 
-To run valgrind on a specific test, from the **base** project directory, do:
+To run valgrind on a specific test, from the **base** project directory, do::
 
   $ ctest -T memcheck -R ^<FULL_TEST_NAME>$
 

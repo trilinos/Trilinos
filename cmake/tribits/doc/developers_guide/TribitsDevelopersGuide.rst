@@ -4,7 +4,7 @@ TriBITS Developers Guide and Reference
 
 :Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
 :Date: |date|
-:Version: TriBITS Development at |date|
+:Version: .. include:: TribitsGitVersion.txt
 
 .. |date| date::
 
@@ -747,14 +747,11 @@ set in this top-level ``CMakeLists.txt`` file are those that do not impact the
 list of package enables/disables.  The latter type of defaults should set in
 other files (see below).
 
-.. _${PROJECT_NAME}_TRIBITS_DIR:
-
-In this example project, a CMake cache variable
-``${PROJECT_NAME}_TRIBITS_DIR`` must be set by the user to define where the
-base ``tribits`` source directory is located.  With this variable set
-(i.e. passed into ``cmake`` command-line use
-``-DTribitsExProj_TRIBITS_DIR=<someDir>``), one just includes a single file to
-pull in the TriBITS system::
+In this example project, a CMake cache variable `${PROJECT_NAME}_TRIBITS_DIR`_
+must be set by the user to define where the base ``tribits`` source directory
+is located.  With this variable set (i.e. passed into ``cmake`` command-line
+use ``-DTribitsExProj_TRIBITS_DIR=<someDir>``), one just includes a single
+file to pull in the TriBITS system::
 
   INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
 
@@ -1014,7 +1011,7 @@ documentation`_.
 TriBITS Project Core Variables
 ..............................
 
-The following local variables are defined in the top-level Project
+The following `local variables` are defined in the top-level Project
 ``CMakeLists.txt`` file scope and are therefore accessible by all files
 processed by TriBITS:
 
@@ -1060,11 +1057,44 @@ processed by TriBITS:
     the built-in ``PROJECT()`` command called in the top-level
     `<projectDir>/CMakeLists.txt`_ file..
 
+The following `cache varaibles` are defined for every TriBITS project:
+
+  .. _${PROJECT_NAME}_TRIBITS_DIR:
+
+  ``${PROJECT_NAME}_TRIBITS_DIR``
+
+    CMake cache variable that gives the path to the TriBITS implementation
+    directory.  When set to a relative path (set as type ``STRING``, see
+    below), this is taken relative to ``${CMAKE_CURRENT_SOURCE_DIR}/`` (the
+    project base source dir).  When an absolute path is given, it is used
+    without modification.  If this variable is not set in the
+    `<projectDir>/CMakeLists.txt`_ file, then it will be automatically set as
+    a ``PATH`` cache variable by the include of ``TriBITS.cmake`` by the
+    statement ::
+
+      SET( ${PROJECT_NAME}_TRIBITS_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits" CACHE PATH "...")
+
+    Therefore, projects that snapshot TriBITS into
+    `<projectDir>/cmake/tribits/`_ don't need to explicitly set
+    ``${PROJECT_NAME}_TRIBITS_DIR``.  In addition, one can also point to a
+    different TriBITS implementation just by setting the absolute path::
+
+      -D <Project>_TRIBITS_DIR=<some-abs-dir>
+
+    or to a relative path using, for example::
+
+      -D <Project>_TRIBITS_DIR:STRING=TriBITS/tribits
+
+    Note that when the ``TriBITS`` git repo itself is cloned by a TriBITS
+    project, then ``${PROJECT_NAME}_TRIBITS_DIR`` should be set to the
+    directory ``TriBITS/tribits`` (see `TriBITS/tribits/`_) as shown above.
+
   .. _${PROJECT_NAME}_ENABLE_TESTS:
 
   ``${PROJECT_NAME}_ENABLE_TESTS``
 
-    CMake cache variables that if set to ``ON``, then tests for all explicitly
+    CMake cache variable that if set to ``ON``, then tests for all explicitly
     enabled packages will be turned on.  This has a default value of ``OFF``.
     This is used in logic to enable individual SE package tests (see
     `<Project>_ENABLE_TESTS only enables explicitly enabled SE package
@@ -1072,11 +1102,11 @@ processed by TriBITS:
 
   ``${PACKAGE_NAME}_ENABLE_EXAMPLES``
 
-    CMake cache variables that if set to ``ON``, then examples for all
+    CMake cache variable that if set to ``ON``, then examples for all
     explicitly enabled packages will be turned on.  This has a default value
     of ``OFF``.
 
-The following internal project-scope local (non-cache) CMake variables are
+The following `internal project-scope local` (non-cache) CMake variables are
 defined by TriBITS giving the project's TriBITS repositories.:
 
   .. _${PROJECT_NAME}_NATIVE_REPOSITORIES:
@@ -6711,6 +6741,9 @@ Engineering for Computational Science and Engineering, 2009.  http://web.ornl.go
 
 *SCALE: A Comprehensive Modeling and Simulation Suite for Nuclear Safety Analysis and Design*, ORNL/TM-2005/39, Version 6.1, Oak Ridge National Laboratory, Oak Ridge, Tennessee, June 2011. Available from Radiation Safety Information Computational Center at Oak Ridge National Laboratory as CCC-785.  http://scale.ornl.gov/
 
+.. _LiveV:
+
+*LiveV*  https://github.com/lifev/cmake
 
 TriBITS Detailed Reference Documentation
 ========================================
@@ -7175,8 +7208,8 @@ History of TriBITS
 
 TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
-initial goal was to just to support a native Windows build (using Visual C++)
-to compile and install these few Trilinos packages on Windows for usage by
+initial goal was to support a native Windows build (using Visual C++) to
+compile and install these few Trilinos packages on Windows for usage by
 another project (the Sandia Titan project which included VTK).  At that time,
 Trilinos was using a highly customized and augmented autotools build system.
 Initially, this CMake system was just a set of macros to streamline creating
@@ -7202,7 +7235,7 @@ CMake-based build system started in October 2011 and an initial implementation
 was complete in December 2011 when it was used for the CASL VERA build system.
 In early 2012, the ORNL CASL-related projects Denovo and SCALE (see [`SCALE,
 2011`_]) adopted TriBITS as their native development build systems.  Shortly
-after, TriBITS was adopted the native build system for the CASL-related
+after, TriBITS was adopted as the native build system for the CASL-related
 University of Michigan code MPACT.  In addition to being used in CASL, all of
 these codes also had a significant life outside of CASL.  Because they used
 the same TriBITS build system, it proved relatively easy to keep these various
@@ -7212,7 +7245,7 @@ independent from CASL VERA.  Since the initial extraction of TriBITS from
 Trilinos, the TriBITS system was further extended and refined, driven by CASL
 VERA development and expansion.  Independently, an early version of TriBITS
 from 2012 was adopted by the LiveV
-project\footnote{https://github.com/lifev/cmake} which was forked and extended
+project (see [`LiveV`_]) which was forked and extended
 independently.
 
 Why a TriBITS Package is not a CMake Package

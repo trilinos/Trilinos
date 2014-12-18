@@ -139,6 +139,9 @@ namespace MueLu {
         GetOStream(Runtime0) << "Ac: Using previous RAP pattern" << std::endl;
 
         Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+        // Some eigenvalue may have been cached with the matrix in the previous run.
+        // As the matrix values will be updated, we need to reset the eigenvalue.
+        Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
 
       // If we do not modify matrix later, allow optimization of storage.

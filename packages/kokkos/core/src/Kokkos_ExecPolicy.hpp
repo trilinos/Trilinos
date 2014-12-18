@@ -606,6 +606,19 @@ namespace Impl {
     {}
   };
 
+  template<class TeamMemberType>
+  struct ThreadSingleStruct {
+    const TeamMemberType& team_member;
+    KOKKOS_INLINE_FUNCTION
+    ThreadSingleStruct(const TeamMemberType& team_member_):team_member(team_member_){}
+  };
+
+  template<class TeamMemberType>
+  struct VectorSingleStruct {
+    const TeamMemberType& team_member;
+    KOKKOS_INLINE_FUNCTION
+    VectorSingleStruct(const TeamMemberType& team_member_):team_member(team_member_){}
+  };
 } // namespace Impl
 
 /*template<typename iType, class TeamMemberType>

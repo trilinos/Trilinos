@@ -49,7 +49,7 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Thyra_MueLuTpetraPreconditionerFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
 #endif
 
@@ -60,7 +60,7 @@
 
 #include <string>
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 namespace Stratimikos {
 
 // Dynamically register MueLu Tpetra adapters in Stratimikos

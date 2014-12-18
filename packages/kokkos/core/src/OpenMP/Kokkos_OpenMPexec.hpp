@@ -218,17 +218,54 @@ public:
     }
 #endif
 
+  template<class ValueType>
+  KOKKOS_INLINE_FUNCTION
+  void team_broadcast(ValueType& value, const int& thread_id) const
+  {
+#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { }
+#else
+    // Make sure there is enough scratch space:
+    typedef typename if_c< sizeof(ValueType) < TEAM_REDUCE_SIZE
+                         , ValueType , void >::type type ;
+
+    type * const local_value = ((type*) m_exec.scratch_thread());
+    if(team_rank() == thread_id)
+      *local_value = value;
+    memory_fence();
+    team_barrier();
+    value = *local_value;
+#endif
+  }
+
+#ifdef KOKKOS_HAVE_CXX11
+  template< class ValueType, class JoinOp >
+  KOKKOS_INLINE_FUNCTION ValueType
+    team_reduce( const ValueType & value
+               , const JoinOp & op_in ) const
+  #if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return ValueType(); }
+  #else
+    {
+      typedef ValueType value_type;
+      const JoinLambdaAdapter<value_type,JoinOp> op(op_in);
+  #endif
+#else // KOKKOS_HAVE_CXX11
   template< class JoinOp >
   KOKKOS_INLINE_FUNCTION typename JoinOp::value_type
     team_reduce( const typename JoinOp::value_type & value
                , const JoinOp & op ) const
-#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+  #if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     { return typename JoinOp::value_type(); }
-#else
+  #else
     {
+      typedef typename JoinOp::value_type value_type;
+  #endif
+#endif // KOKKOS_HAVE_CXX11
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       // Make sure there is enough scratch space:
-      typedef typename if_c< sizeof(typename JoinOp::value_type) < TEAM_REDUCE_SIZE
-                           , typename JoinOp::value_type , void >::type type ;
+      typedef typename if_c< sizeof(value_type) < TEAM_REDUCE_SIZE
+                           , value_type , void >::type type ;
 
       type * const local_value = ((type*) m_exec.scratch_thread());
 
@@ -262,7 +299,6 @@ public:
       return *((type volatile const *)local_value);
     }
 #endif
-
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
    *
@@ -802,11 +838,11 @@ public:
   inline int league_size() const { return m_league_size ; }
 
   /** \brief  Specify league size, request team size */
-  TeamPolicy( execution_space & , int league_size_request , int team_size_request )
-    { init( league_size_request , team_size_request ); }
+  TeamPolicy( execution_space & , int league_size_request , int team_size_request , int vector_length_request = 1)
+    { init( league_size_request , team_size_request ); (void) vector_length_request; }
 
-  TeamPolicy( int league_size_request , int team_size_request )
-    { init( league_size_request , team_size_request ); }
+  TeamPolicy( int league_size_request , int team_size_request , int vector_length_request = 1 )
+    { init( league_size_request , team_size_request ); (void) vector_length_request; }
 
   inline int team_alloc() const { return m_team_alloc ; }
   inline int team_iter()  const { return m_team_iter ; }
@@ -941,10 +977,26 @@ Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
-  ThreadVectorLoop(Impl::OpenMPexecTeamVectorMember thread, const iType count) {
+  ThreadVectorLoop(const Impl::OpenMPexecTeamVectorMember& thread, const iType& count) {
   return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >(thread,count);
 }
 
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >
+  ThreadVectorLoop(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >(thread,count);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember> Thread(const Impl::OpenMPexecTeamMember& thread) {
+  return Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember>(thread);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember> VectorLane(const Impl::OpenMPexecTeamMember& thread) {
+  return Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember>(thread);
+}
 } // namespace Kokkos
 
 namespace Kokkos {
@@ -1070,6 +1122,95 @@ namespace Kokkos {
  * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
+void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >&
+    loop_boundaries, const Lambda& lambda) {
+  #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+  #pragma ivdep
+  #endif
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+    lambda(i);
+}
+
+/** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a summation of
+ * val is performed and put into result. This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType >
+KOKKOS_INLINE_FUNCTION
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >&
+      loop_boundaries, const Lambda & lambda, ValueType& result) {
+  result = ValueType();
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    ValueType tmp = ValueType();
+    lambda(i,tmp);
+    result+=tmp;
+  }
+}
+
+/** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
+ * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
+ * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
+ * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
+ * '1 for *'). This functionality requires C++11 support.*/
+template< typename iType, class Lambda, typename ValueType, class JoinType >
+KOKKOS_INLINE_FUNCTION
+void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >&
+      loop_boundaries, const Lambda & lambda, ValueType& init_result, const JoinType& join) {
+
+  ValueType result = init_result;
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    ValueType tmp = ValueType();
+    lambda(i,tmp);
+    join(result,tmp);
+  }
+  init_result = result;
+}
+
+/** \brief  Intra-thread vector parallel exclusive prefix sum. Executes lambda(iType i, ValueType & val, bool final)
+ *          for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes in the thread and a scan operation is performed.
+ * Depending on the target execution space the operator might be called twice: once with final=false
+ * and once with final=true. When final==true val contains the prefix sum value. The contribution of this
+ * "i" needs to be added to val no matter whether final==true or not. In a serial execution
+ * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
+ * to the final sum value over all vector lanes.
+ * This functionality requires C++11 support.*/
+template< typename iType, class FunctorType >
+KOKKOS_INLINE_FUNCTION
+void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >&
+      loop_boundaries, const FunctorType & lambda) {
+
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void > ValueTraits ;
+  typedef typename ValueTraits::value_type value_type ;
+
+  value_type scan_val = value_type();
+
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+    lambda(i,scan_val,true);
+  }
+}
+
+} // namespace Kokkos
+
+namespace Kokkos {
+/** \brief  Intra-thread vector parallel_for. Executes lambda(iType i) for each i=0..N-1.
+ *
+ * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
+ * This functionality requires C++11 support.*/
+template<typename iType, class Lambda>
+KOKKOS_INLINE_FUNCTION
 void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >&
     loop_boundaries, const Lambda& lambda) {
   #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -1151,6 +1292,36 @@ void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::Open
 }
 
 } // namespace Kokkos
+
+namespace Kokkos {
+
+template<class FunctorType>
+KOKKOS_INLINE_FUNCTION
+void single(const Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember>& single_struct, const FunctorType& lambda) {
+  lambda();
+}
+
+template<class FunctorType>
+KOKKOS_INLINE_FUNCTION
+void single(const Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember>& single_struct, const FunctorType& lambda) {
+  if(single_struct.team_member.team_rank()==0) lambda();
+}
+
+template<class FunctorType, class ValueType>
+KOKKOS_INLINE_FUNCTION
+void single(const Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember>& single_struct, const FunctorType& lambda, ValueType& val) {
+  lambda(val);
+}
+
+template<class FunctorType, class ValueType>
+KOKKOS_INLINE_FUNCTION
+void single(const Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember>& single_struct, const FunctorType& lambda, ValueType& val) {
+  if(single_struct.team_member.team_rank()==0) {
+    lambda(val);
+  }
+  single_struct.team_member.team_broadcast(val,0);
+}
+}
 
 #endif // KOKKOS_HAVE_CXX11
 

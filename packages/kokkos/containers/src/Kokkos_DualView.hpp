@@ -284,11 +284,12 @@ public:
   /// typename dual_view_type::t_host hostView = DV.view<host_device_type> ();
   /// \endcode
   template< class Device >
+  KOKKOS_INLINE_FUNCTION
   const typename Impl::if_c<
     Impl::is_same<typename t_dev::memory_space,
                           typename Device::memory_space>::value,
     t_dev,
-    t_host>::type view () const
+    t_host>::type& view () const
   {
     return Impl::if_c<
       Impl::is_same<

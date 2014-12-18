@@ -182,14 +182,14 @@ private:
     { if ( is_managed() ) StaticViewTraits::memory_space::decrement( ptr ); }
   
   KOKKOS_INLINE_FUNCTION
-  void increment( const void * ptr , const StaticallyUnmanaged & ) const {}
+  void increment( const void * , const StaticallyUnmanaged & ) const {}
   
   KOKKOS_INLINE_FUNCTION
-  void decrement( const void * ptr , const StaticallyUnmanaged & ) const {}
+  void decrement( const void * , const StaticallyUnmanaged & ) const {}
 
 public:
 
-  using typename ViewDataHandle< StaticViewTraits >::handle_type ;
+  typedef typename ViewDataHandle< StaticViewTraits >::handle_type handle_type;
 
   KOKKOS_INLINE_FUNCTION
   ViewDataManagement() : m_traits( DefaultTraits ) {}
