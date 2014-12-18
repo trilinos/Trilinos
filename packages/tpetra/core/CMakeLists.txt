@@ -268,7 +268,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor
   TPETRA_ENABLE_KOKKOS_REFACTOR
-  "Enable the \"Kokkos refactor\" version of Tpetra.  In order to enable this, you must also enable the following Kokkos subpackages that do not build by default: Core, Compat, LinAlg, Containers, Algorithms, and MpiComm."
+  "Enable the \"Kokkos refactor\" version of Tpetra.  In order to enable this, you must also enable the following subpackages that do not currently build by default: KokkosCore, KokkosCompat, KokkosContainers, KokkosAlgorithms, KokkosMpiComm, and TpetraKernels."
   OFF
   )
 
@@ -288,11 +288,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 IF (Tpetra_ENABLE_Kokkos_Refactor AND
     (NOT ${PACKAGE_NAME}_ENABLE_KokkosCore OR
      NOT ${PACKAGE_NAME}_ENABLE_KokkosCompat OR
-     NOT ${PACKAGE_NAME}_ENABLE_KokkosLinAlg OR
+     NOT ${PACKAGE_NAME}_ENABLE_TpetraKernels OR
      NOT ${PACKAGE_NAME}_ENABLE_KokkosContainers OR
      NOT ${PACKAGE_NAME}_ENABLE_KokkosAlgorithms OR
      NOT ${PACKAGE_NAME}_ENABLE_KokkosMpiComm))
-  MESSAGE(FATAL_ERROR "Dear user: You enabled the Tpetra_ENABLE_Kokkos_Refactor option, which turns on the Kokkos Refactor version of Tpetra.  However, you did not enable all required packages in order for this to work.  The Kokkos Refactor version of Tpetra depends on some Kokkos subpackages which currently do not build by default.  For now, you must enable them explicitly in order to use the Kokkos Refactor version of Tpetra.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, Algorithms, and MpiComm.  Despite the name \"MpiComm\", you may enable that subpackage even if not building Trilinos with MPI support.  Enable these subpackages by adding the following to your CMake configuration:\n-D Trilinos_ENABLE_KokkosCore:BOOL=ON\n-D Trilinos_ENABLE_KokkosCompat:BOOL=ON\n-D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON\n-D Trilinos_ENABLE_KokkosContainers:BOOL=ON\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON\nIf you are running Trilinos' check-in test script, you must enable these subpackages explicitly, using arguments to --enable-packages, like this:\n--enable-packages=KokkosCore,KokkosCompat,KokkosContainers,KokkosLinAlg,KokkosAlgorithms,KokkosMpiComm,<YOUR_PACKAGES>\n(Replace <YOUR_PACKAGES> with the other packages you want to enable.)  Also, the check-in test script will not enable these subpackages with the default builds MPI_DEBUG and SERIAL_RELEASE, so you must create another configuration and use it with the --extra-builds=... command-line argument.\n\n${PACKAGE_NAME}_ENABLE_KokkosCore = ${${PACKAGE_NAME}_ENABLE_KokkosCore}\n${PACKAGE_NAME}_ENABLE_KokkosCompat = ${${PACKAGE_NAME}_ENABLE_KokkosCompat}\n${PACKAGE_NAME}_ENABLE_KokkosLinAlg = ${${PACKAGE_NAME}_ENABLE_KokkosLinAlg}\n${PACKAGE_NAME}_ENABLE_KokkosContainers = ${${PACKAGE_NAME}_ENABLE_KokkosContainers}\n${PACKAGE_NAME}_ENABLE_KokkosAlgorithms = ${${PACKAGE_NAME}_ENABLE_KokkosAlgorithms}\n${PACKAGE_NAME}_ENABLE_KokkosMpiComm = ${${PACKAGE_NAME}_ENABLE_KokkosMpiComm}")
+  MESSAGE(FATAL_ERROR "Dear user: You enabled the Tpetra_ENABLE_Kokkos_Refactor option, which turns on the Kokkos Refactor version of Tpetra.  However, you did not enable all required packages in order for this to work.  The Kokkos Refactor version of Tpetra depends on some Kokkos subpackages which currently do not build by default.  For now, you must enable them explicitly in order to use the Kokkos Refactor version of Tpetra.  Please enable subpackages KokkosCore, KokkosContainers, KokkosAlgorithms, KokkosCompat, KokkosMpiComm, and TpetraKernels.  Despite the name \"MpiComm\", you may enable that subpackage even if not building Trilinos with MPI support.  Enable these subpackages by adding the following to your CMake configuration:\n-D Trilinos_ENABLE_KokkosCore:BOOL=ON\n-D Trilinos_ENABLE_KokkosCompat:BOOL=ON\n-D Trilinos_ENABLE_TpetraKernels:BOOL=ON\n-D Trilinos_ENABLE_KokkosContainers:BOOL=ON\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON\nIf you are running Trilinos' check-in test script, you must enable these subpackages explicitly, using arguments to --enable-packages, like this:\n--enable-packages=KokkosCore,KokkosCompat,KokkosContainers,TpetraKernels,KokkosAlgorithms,KokkosMpiComm,<YOUR_PACKAGES>\n(Replace <YOUR_PACKAGES> with the other packages you want to enable.)  Also, the check-in test script will not enable these subpackages with the default builds MPI_DEBUG and SERIAL_RELEASE, so you must create another configuration and use it with the --extra-builds=... command-line argument.\n\n${PACKAGE_NAME}_ENABLE_KokkosCore = ${${PACKAGE_NAME}_ENABLE_KokkosCore}\n${PACKAGE_NAME}_ENABLE_KokkosCompat = ${${PACKAGE_NAME}_ENABLE_KokkosCompat}\n${PACKAGE_NAME}_ENABLE_TpetraKernels = ${${PACKAGE_NAME}_ENABLE_TpetraKernels}\n${PACKAGE_NAME}_ENABLE_KokkosContainers = ${${PACKAGE_NAME}_ENABLE_KokkosContainers}\n${PACKAGE_NAME}_ENABLE_KokkosAlgorithms = ${${PACKAGE_NAME}_ENABLE_KokkosAlgorithms}\n${PACKAGE_NAME}_ENABLE_KokkosMpiComm = ${${PACKAGE_NAME}_ENABLE_KokkosMpiComm}")
 ENDIF()
 
 IF (Tpetra_ENABLE_Kokkos_Refactor)
@@ -312,7 +312,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
-  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, Containers, Algorithms, LinAlg, and MpiComm subpackages of Kokkos to be enabled." )
+  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the following subpackages to be enabled: KokkosCore, KokkosContainers, KokkosAlgorithms, KokkosCompat, KokkosMpiComm, and TpetraKernels." )
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(

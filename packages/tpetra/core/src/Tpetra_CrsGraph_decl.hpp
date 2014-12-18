@@ -42,19 +42,25 @@
 #ifndef TPETRA_CRSGRAPH_DECL_HPP
 #define TPETRA_CRSGRAPH_DECL_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
-
-#include <Teuchos_CompileTimeAssert.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Tpetra_RowGraph.hpp>
 #include <Tpetra_DistObject.hpp>
 #include <Tpetra_Exceptions.hpp>
 
+#include <Kokkos_DefaultKernels.hpp>
+
+#include <Teuchos_CompileTimeAssert.hpp>
+#include <Teuchos_Describable.hpp>
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+
+#ifndef KOKKOS_CONFIGDEFS_HPP
+#  error "KOKKOS_CONFIGDEFS_HPP not defined, so something is wrong with Kokkos_ConfigDefs.hpp"
+#endif // KOKKOS_CONFIGDEFS_HPP
+
+#ifndef KOKKOS_DEFAULT_KERNELS_HPP
+#  error "KOKKOS_DEFAULT_KERNELS_HPP not defined, so something is wrong with Kokkos_ConfigDefs.hpp"
+#endif // KOKKOS_DEFAULT_KERNELS_HPP
 
 namespace Tpetra {
 

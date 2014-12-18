@@ -42,11 +42,13 @@
 #ifndef TPETRA_MAP_DECL_HPP
 #define TPETRA_MAP_DECL_HPP
 
+/// \file Tpetra_Map_decl.hpp
+/// \brief Declarations for the Tpetra::Map class and related
+///   nonmember constructors.
+
+#include <Tpetra_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
-
-// enums and defines
-#include "Tpetra_ConfigDefs.hpp"
 
 // mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
 // it is by default), then Map will used the fixed-structure hash
@@ -62,9 +64,6 @@
 #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
 #endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
-/// \file Tpetra_Map_decl.hpp
-/// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
-///
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -95,15 +94,15 @@ namespace Tpetra {
     };
   } // namespace Details
 
-    template<class Node>
-    Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
+  template<class Node>
+  Teuchos::RCP<Node> defaultArgNode() {
+    // Workaround function for a deferred visual studio bug
+    // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+    // Use this function for default arguments rather than calling
+    // what is the return value below.  Also helps in reducing
+    // duplication in various constructors.
+    return KokkosClassic::Details::getNode<Node> ();
+  }
 
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.

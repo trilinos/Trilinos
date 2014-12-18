@@ -1,0 +1,3 @@
+NOTE: It is unlikely that the raw build scripts in this directory
+still work.  For now, please use the CMake build system to build these
+examples.

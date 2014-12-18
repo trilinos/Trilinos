@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
-SET(LIB_OPTIONAL_DEP_PACKAGES EpetraExt Ifpack ML TriKota Anasazi Sacado NOX Isorropia KokkosCore KokkosLinAlg KokkosMpiComm KokkosAlgorithms Tpetra Ifpack2 MueLu Belos Amesos2)
+SET(LIB_OPTIONAL_DEP_PACKAGES EpetraExt Ifpack ML TriKota Anasazi Sacado NOX Isorropia KokkosCore TpetraKernels KokkosMpiComm KokkosAlgorithms Tpetra Ifpack2 MueLu Belos Amesos2)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES AztecOO Stratimikos Zoltan)
 SET(LIB_REQUIRED_DEP_TPLS)

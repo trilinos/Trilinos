@@ -30,7 +30,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosContainers_INCLUDE_DIRS} )
-    CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
+    CUDA_INCLUDE_DIRECTORIES( ${TpetraKernels_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosCompat_INCLUDE_DIRS} )
     IF (TrilinosCouplings_ENABLE_MueLu)
       CUDA_INCLUDE_DIRECTORIES( ${MueLu_INCLUDE_DIRS} )
@@ -52,7 +52,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
   IF( TrilinosCouplings_ENABLE_Stokhos AND
       Stokhos_ENABLE_Sacado AND
       Stokhos_ENABLE_KokkosCore AND
-      Stokhos_ENABLE_KokkosLinAlg AND
+      Stokhos_ENABLE_TpetraKernels AND
       Stokhos_ENABLE_Tpetra )
 
     SET( SOURCES fenl_ensemble.hpp

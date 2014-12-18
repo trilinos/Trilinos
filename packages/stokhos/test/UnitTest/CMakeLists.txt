@@ -510,7 +510,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Stokhos_ENABLE_KokkosLinAlg)
+    IF (Stokhos_ENABLE_TpetraKernels)
 
       IF (Kokkos_ENABLE_Pthread)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(

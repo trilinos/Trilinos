@@ -583,7 +583,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_MemoryTraits.cpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
       )
-    IF (Stokhos_ENABLE_KokkosLinAlg)
+    IF (Stokhos_ENABLE_TpetraKernels)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
       LIST(APPEND SACADO_HEADERS

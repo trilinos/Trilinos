@@ -38,7 +38,15 @@ ENDIF()
 
 #SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-IF (NOT ${PROJECT_NAME}_ENABLE_Kokkos)
+# mfh 18 Dec 2014: The "real" Kokkos(Classic) is now the TpetraClassic
+# subpackage of Tpetra.  Thus, we have to test whether Tpetra is
+# enabled, not whether Kokkos is enabled.  Furthermore, it wasn't
+# previously correct to test if Kokkos was enabled, since Kokkos could
+# have been enabled without the KokkosClassic subpackage having been
+# enabled.
+#
+#IF (NOT ${PROJECT_NAME}_ENABLE_Kokkos)
+IF (NOT ${PROJECT_NAME}_ENABLE_Tpetra)
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/FakeKokkos)
   APPEND_GLOB(HEADERS FakeKokkos/*.hpp)
 ENDIF()

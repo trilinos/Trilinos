@@ -93,7 +93,7 @@ cmake \
   -D Trilinos_ENABLE_KokkosCore:BOOL=ON \
   -D Trilinos_ENABLE_KokkosCompat:BOOL=ON \
   -D Trilinos_ENABLE_KokkosContainers:BOOL=ON \
-  -D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON \
+  -D Trilinos_ENABLE_TpetraKernels:BOOL=ON \
   -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \
   -D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON \
   -D Trilinos_ENABLE_KokkosTPL:BOOL=ON \

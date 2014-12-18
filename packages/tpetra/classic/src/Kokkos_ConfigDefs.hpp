@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_CONFIGDEFS_H
-#define KOKKOS_CONFIGDEFS_H
+#ifndef KOKKOS_CONFIGDEFS_HPP
+#define KOKKOS_CONFIGDEFS_HPP
 
 #include <TpetraClassic_config.h>
 // mem management
@@ -108,5 +108,4 @@ namespace Kokkos {
   }
 }
 
-
-#endif /* KOKKOS_CONFIGDEFS_H */
+#endif /* KOKKOS_CONFIGDEFS_HPP */

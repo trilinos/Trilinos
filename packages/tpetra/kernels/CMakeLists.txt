@@ -1,15 +1,14 @@
-
 #
 # Define the subpackage
 #
-TRIBITS_SUBPACKAGE(LinAlg)
+TRIBITS_SUBPACKAGE(Kernels)
 
 #
 # Set up subpackage-specific configuration options
 #
 
 #
-# "Optimization level" for KokkosLinAlg computational kernels.  The
+# "Optimization level" for TpetraKernels computational kernels.  The
 # higher the level, the more code variants get generated, and thus the
 # longer the compile times.  However, more code variants mean both
 # better performance overall, and more uniform performance for corner
@@ -17,7 +16,7 @@ TRIBITS_SUBPACKAGE(LinAlg)
 #
 TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
   KOKKOSLINALG_OPT_LEVEL
-  "Optimization level for KokkosLinAlg computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
+  "Optimization level for TpetraKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
   "1"
   )
 

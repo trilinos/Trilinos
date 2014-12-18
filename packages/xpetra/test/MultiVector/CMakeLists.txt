@@ -17,8 +17,6 @@
 #     ${TEUCHOS_STD_UNIT_TEST_MAIN}
 #   COMM serial mpi
 #   STANDARD_PASS_OUTPUT
-# #TODO
-# #  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 #   )
 
 IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)

@@ -12,6 +12,5 @@ IF (${PACKAGE_NAME}_ENABLE_CUSPARSE AND ${PACKAGE_NAME}_ENABLE_ThreadPool)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   ) 
 ENDIF()

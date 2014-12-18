@@ -43,7 +43,7 @@ APPEND_SET(SOURCES
 #
 
 TRIBITS_ADD_LIBRARY(
-  kokkos
+  tpetraclassic
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

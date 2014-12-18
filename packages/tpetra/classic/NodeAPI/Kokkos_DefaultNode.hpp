@@ -39,30 +39,30 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_DEFAULT_NODE_HPP_
-#define KOKKOS_DEFAULT_NODE_HPP_
+#ifndef KOKKOS_DEFAULTNODE_HPP
+#define KOKKOS_DEFAULTNODE_HPP
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
 #include "Kokkos_BufferMacros.hpp"
 
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_TPETRACLASSIC_SERIAL
 #  include "Kokkos_SerialNode.hpp"
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_TPETRACLASSIC_SERIAL
+#ifdef HAVE_TPETRACLASSIC_TBB
 #  include "Kokkos_TBBNode.hpp"
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#ifdef HAVE_TPETRACLASSIC_THREADPOOL
 #  include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 #  include "Kokkos_OpenMPNode.hpp"
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
+#ifdef HAVE_TPETRACLASSIC_THRUST
 #  include "Kokkos_ThrustGPUNode.hpp"
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_KOKKOSCOMPAT
 #  include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #endif
 
@@ -120,7 +120,7 @@ namespace Details {
       typedef OpenMPNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
       typedef ThrustGPUNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#elif defined(HAVE_TPETRACLASSIC_KOKKOSCOMPAT)
 #  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
@@ -129,12 +129,12 @@ namespace Details {
       typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_SERIAL)
+#  elif defined(HAVE_TPETRACLASSIC_SERIAL)
       typedef SerialNode DefaultNodeType;
 #  else
 #    error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
-#  endif // defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-#elif defined(HAVE_KOKKOSCLASSIC_SERIAL)
+#  endif // defined(HAVE_TPETRACLASSIC_KOKKOSCOMPAT)
+#elif defined(HAVE_TPETRACLASSIC_SERIAL)
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
 #else
@@ -147,4 +147,5 @@ namespace Details {
 
 } // namespace KokkosClassic
 
-#endif
+#endif // KOKKOS_DEFAULTNODE_HPP
+

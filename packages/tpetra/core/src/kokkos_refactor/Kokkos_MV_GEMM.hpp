@@ -41,9 +41,10 @@
 //@HEADER
 */
 
-//Note this code lives only temporarily in Tpetra
-//As soon as GEMM kernels exist in KokkosLinAlg and thus a depnedency on Teuchos
-//can be eliminated the code will move to KokkosLinAlg.
+// Note this code lives only temporarily in TpetraCore.  As soon as
+// GEMM kernels exist in the TpetraKernels subpackage, and thus a
+// depnedency on Teuchos can be eliminated, the code will move to
+// TpetraKernels.
 
 #if defined(KOKKOS_MULTIVECTOR_H_) && defined(TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP)
 

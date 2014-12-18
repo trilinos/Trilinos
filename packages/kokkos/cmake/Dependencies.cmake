@@ -7,7 +7,6 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Compat                compat            EX       OPTIONAL
   Containers            containers        EX       OPTIONAL
   Algorithms            algorithms        EX       OPTIONAL
-  LinAlg                linalg            EX       OPTIONAL
   Example               example           EX       OPTIONAL
   MpiComm               mpicomm           EX       OPTIONAL
   )

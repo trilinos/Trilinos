@@ -87,7 +87,7 @@ namespace KokkosClassic {
     //@{
 
     //! Default constructor
-    MultiVector (RCP<Node> node)
+    MultiVector (const Teuchos::RCP<Node>& node)
       : node_(node)
       , numRows_(0)
       , numCols_(0)
@@ -130,7 +130,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride)
     {
       numRows_ = numRows;
@@ -160,7 +160,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols)
@@ -178,17 +178,17 @@ namespace KokkosClassic {
     //@{
 
     //! The multivector data, as a nonconst array.
-    ArrayRCP<Scalar> getValuesNonConst () {
+    Teuchos::ArrayRCP<Scalar> getValuesNonConst () {
       return contigValues_;
     }
 
     //! The multivector data, as a const array.
-    ArrayRCP<const Scalar> getValues () const {
+    Teuchos::ArrayRCP<const Scalar> getValues () const {
       return contigValues_;
     }
 
     //! Return a nonconst view of the data in the i-th column of the multivector.
-    ArrayRCP<Scalar>
+    Teuchos::ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -201,7 +201,7 @@ namespace KokkosClassic {
     }
 
     //! Return a const view of the data in the i-th column of the multivector.
-    ArrayRCP<const Scalar>
+    Teuchos::ArrayRCP<const Scalar>
     getValues (size_t i) const {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -422,7 +422,7 @@ namespace KokkosClassic {
     //@{
 
     //! Node accessor
-    RCP<Node> getNode() const { return node_; }
+    Teuchos::RCP<Node> getNode() const { return node_; }
 
     //! Number of rows in the multivector (view).
     size_t getNumRows() const { return numRows_; }
@@ -452,8 +452,8 @@ namespace KokkosClassic {
     //@}
 
   private:
-    RCP<Node> node_;
-    ArrayRCP<Scalar> contigValues_;
+    Teuchos::RCP<Node> node_;
+    Teuchos::ArrayRCP<Scalar> contigValues_;
     size_t numRows_;
     size_t numCols_;
     size_t stride_;
@@ -501,7 +501,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride)
     {
       numRows_ = numRows;
@@ -515,7 +515,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols)
@@ -528,15 +528,15 @@ namespace KokkosClassic {
       origNumCols_ = origNumCols;
     }
 
-    ArrayRCP<Scalar> getValuesNonConst () {
+    Teuchos::ArrayRCP<Scalar> getValuesNonConst () {
       return contigValues_;
     }
 
-    ArrayRCP<const Scalar> getValues () const {
+    Teuchos::ArrayRCP<const Scalar> getValues () const {
       return contigValues_;
     }
 
-    ArrayRCP<Scalar>
+    Teuchos::ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -548,7 +548,7 @@ namespace KokkosClassic {
       return contigValues_.persistingView (stride_*i, numRows_);
     }
 
-    ArrayRCP<const Scalar>
+    Teuchos::ArrayRCP<const Scalar>
     getValues (size_t i) const {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -686,7 +686,7 @@ namespace KokkosClassic {
       return B;
     }
 
-    RCP<SerialNode> getNode() const { return node_; }
+    Teuchos::RCP<SerialNode> getNode() const { return node_; }
     size_t getNumRows() const { return numRows_; }
     size_t getNumCols() const { return numCols_; }
     size_t getStride() const { return stride_; }
@@ -694,8 +694,8 @@ namespace KokkosClassic {
     size_t getOrigNumCols() const { return origNumCols_; }
 
   private:
-    RCP<SerialNode> node_;
-    ArrayRCP<Scalar> contigValues_;
+    Teuchos::RCP<SerialNode> node_;
+    Teuchos::ArrayRCP<Scalar> contigValues_;
     size_t numRows_;
     size_t numCols_;
     size_t stride_;
@@ -737,7 +737,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride)
     {
       numRows_ = numRows;
@@ -751,7 +751,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols)
@@ -764,15 +764,15 @@ namespace KokkosClassic {
       origNumCols_ = origNumCols;
     }
 
-    ArrayRCP<Scalar> getValuesNonConst () {
+    Teuchos::ArrayRCP<Scalar> getValuesNonConst () {
       return contigValues_;
     }
 
-    ArrayRCP<const Scalar> getValues () const {
+    Teuchos::ArrayRCP<const Scalar> getValues () const {
       return contigValues_;
     }
 
-    ArrayRCP<Scalar>
+    Teuchos::ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -784,7 +784,7 @@ namespace KokkosClassic {
       return contigValues_.persistingView (stride_*i, numRows_);
     }
 
-    ArrayRCP<const Scalar>
+    Teuchos::ArrayRCP<const Scalar>
     getValues (size_t i) const {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -922,7 +922,7 @@ namespace KokkosClassic {
       return B;
     }
 
-    RCP<TPINode> getNode() const { return node_; }
+    Teuchos::RCP<TPINode> getNode() const { return node_; }
     size_t getNumRows() const { return numRows_; }
     size_t getNumCols() const { return numCols_; }
     size_t getStride() const { return stride_; }
@@ -930,8 +930,8 @@ namespace KokkosClassic {
     size_t getOrigNumCols() const { return origNumCols_; }
 
   private:
-    RCP<TPINode> node_;
-    ArrayRCP<Scalar> contigValues_;
+    Teuchos::RCP<TPINode> node_;
+    Teuchos::ArrayRCP<Scalar> contigValues_;
     size_t numRows_;
     size_t numCols_;
     size_t stride_;
@@ -974,7 +974,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride)
     {
       numRows_ = numRows;
@@ -988,7 +988,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols)
@@ -1001,15 +1001,15 @@ namespace KokkosClassic {
       origNumCols_ = origNumCols;
     }
 
-    ArrayRCP<Scalar> getValuesNonConst () {
+    Teuchos::ArrayRCP<Scalar> getValuesNonConst () {
       return contigValues_;
     }
 
-    ArrayRCP<const Scalar> getValues () const {
+    Teuchos::ArrayRCP<const Scalar> getValues () const {
       return contigValues_;
     }
 
-    ArrayRCP<Scalar>
+    Teuchos::ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -1021,7 +1021,7 @@ namespace KokkosClassic {
       return contigValues_.persistingView (stride_*i, numRows_);
     }
 
-    ArrayRCP<const Scalar>
+    Teuchos::ArrayRCP<const Scalar>
     getValues (size_t i) const {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -1159,7 +1159,7 @@ namespace KokkosClassic {
       return B;
     }
 
-    RCP<TBBNode> getNode() const { return node_; }
+    Teuchos::RCP<TBBNode> getNode() const { return node_; }
     size_t getNumRows() const { return numRows_; }
     size_t getNumCols() const { return numCols_; }
     size_t getStride() const { return stride_; }
@@ -1167,8 +1167,8 @@ namespace KokkosClassic {
     size_t getOrigNumCols() const { return origNumCols_; }
 
   private:
-    RCP<TBBNode> node_;
-    ArrayRCP<Scalar> contigValues_;
+    Teuchos::RCP<TBBNode> node_;
+    Teuchos::ArrayRCP<Scalar> contigValues_;
     size_t numRows_;
     size_t numCols_;
     size_t stride_;
@@ -1211,7 +1211,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride)
     {
       numRows_ = numRows;
@@ -1225,7 +1225,7 @@ namespace KokkosClassic {
     void
     initializeValues (size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols)
@@ -1238,15 +1238,15 @@ namespace KokkosClassic {
       origNumCols_ = origNumCols;
     }
 
-    ArrayRCP<Scalar> getValuesNonConst () {
+    Teuchos::ArrayRCP<Scalar> getValuesNonConst () {
       return contigValues_;
     }
 
-    ArrayRCP<const Scalar> getValues () const {
+    Teuchos::ArrayRCP<const Scalar> getValues () const {
       return contigValues_;
     }
 
-    ArrayRCP<Scalar>
+    Teuchos::ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -1258,7 +1258,7 @@ namespace KokkosClassic {
       return contigValues_.persistingView (stride_*i, numRows_);
     }
 
-    ArrayRCP<const Scalar>
+    Teuchos::ArrayRCP<const Scalar>
     getValues (size_t i) const {
 #ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
@@ -1396,7 +1396,7 @@ namespace KokkosClassic {
       return B;
     }
 
-    RCP<OpenMPNode> getNode() const { return node_; }
+    Teuchos::RCP<OpenMPNode> getNode() const { return node_; }
     size_t getNumRows() const { return numRows_; }
     size_t getNumCols() const { return numCols_; }
     size_t getStride() const { return stride_; }
@@ -1404,8 +1404,8 @@ namespace KokkosClassic {
     size_t getOrigNumCols() const { return origNumCols_; }
 
   private:
-    RCP<OpenMPNode> node_;
-    ArrayRCP<Scalar> contigValues_;
+    Teuchos::RCP<OpenMPNode> node_;
+    Teuchos::ArrayRCP<Scalar> contigValues_;
     size_t numRows_;
     size_t numCols_;
     size_t stride_;

@@ -96,11 +96,12 @@
 #  define HAVE_TPETRA_KOKKOSCOMPAT
 #endif // HAVE_TPETRACORE_KOKKOSCOMPAT
 
-/* Define when enabling KokkosLinAlg in Tpetra */
-#cmakedefine HAVE_TPETRACORE_KOKKOSLINALG
-#ifdef HAVE_TPETRACORE_KOKKOSLINALG
+/* Define when enabling TpetraKernels in TpetraCore */
+#cmakedefine HAVE_TPETRACORE_TPETRAKERNELS
+#ifdef HAVE_TPETRACORE_TPETRAKERNELS
+#  define HAVE_TPETRA_TPETRAKERNELS
 #  define HAVE_TPETRA_KOKKOSLINALG
-#endif // HAVE_TPETRACORE_KOKKOSLINALG
+#endif // HAVE_TPETRACORE_TPETRAKERNELS
 
 /* Define when enabling KokkosContainers in Tpetra */
 #cmakedefine HAVE_TPETRACORE_KOKKOSCONTAINERS

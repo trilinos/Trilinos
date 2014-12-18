@@ -5,6 +5,9 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.13):
 ----------------------------
 
+* Moved KokkosLinAlg subpackage (from Kokkos) into Tpetra as the
+  TpetraKernels subpackage
+
 * Split Tpetra into subpackages; moved KokkosClassic and KokkosTSQR
   subpackages into Tpetra
 
@@ -30,7 +33,7 @@ disabled by default.  Here is a summary of the required CMake options.
 -D Trilinos_ENABLE_KokkosCore:BOOL=ON
 -D Trilinos_ENABLE_KokkosCompat:BOOL=ON
 -D Trilinos_ENABLE_KokkosContainers:BOOL=ON
--D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON
+-D Trilinos_ENABLE_TpetraKernels:BOOL=ON
 -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON
 -D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON
 
@@ -48,7 +51,9 @@ Here are some OPTIONAL CMake options that may help reduce build times
 if ETI (explicit template instantiation) is enabled:
 
 # Disable KokkosClassic::TPINode
--D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
+-D TpetraClassic_ENABLE_ThreadPool:BOOL=OFF
+# Disable KokkosClassic::OpenMPNode
+-D TpetraClassic_ENABLE_OpenMP:BOOL=OFF
 # Shut off Kokkos' Pthreads back-end.
 -D Kokkos_ENABLE_Pthread:BOOL=OFF
 

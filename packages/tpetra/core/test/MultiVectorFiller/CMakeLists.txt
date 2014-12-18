@@ -9,7 +9,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     MultiVectorFiller_SerialNodeTest
   COMM serial
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
@@ -18,7 +17,6 @@ IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
   #   SOURCES MultiVectorFiller_TbbTest
   #   COMM mpi
   #   STANDARD_PASS_OUTPUT
-  #   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   #   )
 ENDIF()
 
@@ -28,7 +26,6 @@ IF (KokkosClassic_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
   #   SOURCES MultiVectorFiller_ThreadPoolTest
   #   COMM mpi
   #   STANDARD_PASS_OUTPUT
-  #   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   #   )
 ENDIF()
 
@@ -38,7 +35,6 @@ IF (KokkosClassic_ENABLE_Thrust AND KokkosClassic_ENABLE_CUDA_DOUBLE AND Tpetra_
   #   SOURCES MultiVectorFiller_ThrustTest
   #   COMM mpi
   #   STANDARD_PASS_OUTPUT
-  #   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   #   )
 ENDIF()
 

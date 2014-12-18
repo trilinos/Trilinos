@@ -193,7 +193,7 @@ APPEND_SET(HEADERS  ${CMAKE_CURRENT_BINARY_DIR}/KokkosClassic_DefaultNode_config
 #
 
 TRIBITS_ADD_LIBRARY(
-  kokkosnodeapi
+  tpetraclassicnodeapi
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

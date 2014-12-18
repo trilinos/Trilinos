@@ -47,6 +47,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
+#include <Kokkos_NodeAPIConfigDefs.hpp> // enum KokkosClassic::ReadWriteOption
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 

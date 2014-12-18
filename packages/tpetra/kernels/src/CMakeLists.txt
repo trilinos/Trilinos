@@ -12,12 +12,9 @@ LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
 #-----------------------------------------------------------------------------
 
-# Can't call the library kokkoslinalg as it conflicts with KokkosClassic
-# library of the same name.
 TRIBITS_ADD_LIBRARY(
-    kokkoscorelinalg
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    DEPLIBS
-    )
+  tpetrakernels
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )
 

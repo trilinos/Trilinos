@@ -45,16 +45,12 @@
 /// \file Tpetra_CrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::CrsMatrix class
 
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-
 
 namespace Tpetra {
   /// \class CrsMatrix
@@ -2297,8 +2293,8 @@ namespace Tpetra {
     // "other_type" typedef would point to some other, "generic"
     // implementation of SparseOps.
     //
-    // The Kokkos refactor version of Tpetra will hide this complexity
-    // at the KokkosLinAlg level, so that users won't have to look at
+    // The new Kokkos refactor version of Tpetra hides this complexity
+    // at the TpetraKernels level, so that users won't have to look at
     // type selectors quite so much.
     typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, node_type>::SparseOps source_sparse_ops_type;
     typedef typename source_sparse_ops_type::template bind_scalar<Scalar>::other_type sparse_ops_type;
