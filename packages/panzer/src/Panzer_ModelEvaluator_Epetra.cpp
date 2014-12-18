@@ -530,7 +530,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   bool requiredSensitivities = required_basic_dfdp(outArgs);
 
   // see if the user wants us to do anything
-  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && !requiredResponses && !requiredSensitivities) {
+  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && 
+     !requiredResponses && !requiredSensitivities) {
      return;
   }
 
@@ -551,6 +552,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   //
   const RCP<const Epetra_Vector> x = inArgs.get_x();
   RCP<const Epetra_Vector> x_dot;
+
   panzer::AssemblyEngineInArgs ae_inargs;
   ae_inargs.container_ = lof_->buildLinearObjContainer(); // we use a new global container
   ae_inargs.ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
@@ -693,7 +695,6 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
   if(required_basic_dfdp(outArgs))
      evalModel_basic_dfdp(ae_inargs,inArgs,outArgs);
-   // optional sanity check
   
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss

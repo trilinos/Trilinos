@@ -306,6 +306,9 @@ private:
   //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
   bool required_basic_dfdp(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
+  //! Initialize the nominal values with good starting conditions
+  void initializeNominalValues();
+
 private: // data members
 
   double t_init_;
