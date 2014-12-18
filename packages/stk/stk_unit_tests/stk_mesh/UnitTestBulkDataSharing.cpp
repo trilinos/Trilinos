@@ -376,15 +376,14 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
 
   EXPECT_NO_THROW(mesh.modification_end());
 
-/*
   // Make sure we know about all nodes and elements (including aura, which
   // includes *all* entities in our small mesh)
   //
   std::vector<unsigned> countsAll;
   count_entities(meta_data.universal_part(), mesh, countsAll);
 
-  EXPECT_EQ( 9u, countsAll[stk::topology::NODE_RANK] );
-  EXPECT_EQ( 4u, countsAll[stk::topology::ELEM_RANK] );
+  EXPECT_EQ( 10u, countsAll[stk::topology::NODE_RANK] ); //
+  EXPECT_EQ( 4u,  countsAll[stk::topology::ELEM_RANK] );
 
   // Count how many entities each proc owns, which will be different for each
   // proc (because of the lower parallel rank owning shared nodes on the
@@ -397,7 +396,7 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
 
   if (p_rank == 0)
   {
-    EXPECT_EQ( 4u, countsOwned[stk::topology::NODE_RANK] );
+    EXPECT_EQ( 5u, countsOwned[stk::topology::NODE_RANK] ); //
 
     mesh.comm_shared_procs(mesh.entity_key(createdNodes[0]), sharingProcs);
     EXPECT_TRUE( sharingProcs.empty() );
@@ -418,7 +417,7 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
   }
   else if (p_rank == 1)
   {
-    EXPECT_EQ( 2u, countsOwned[stk::topology::NODE_RANK] );
+    EXPECT_EQ( 3u, countsOwned[stk::topology::NODE_RANK] ); //
 
     mesh.comm_shared_procs(mesh.entity_key(createdNodes[0]), sharingProcs);
     EXPECT_EQ( 1u, sharingProcs.size() );
@@ -479,6 +478,5 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
     EXPECT_EQ( 1u, sharingProcs.size() );
     EXPECT_EQ( 1, sharingProcs[0] );
   }
-*/
 }
 
