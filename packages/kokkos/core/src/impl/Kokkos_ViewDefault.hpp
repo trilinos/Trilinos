@@ -2178,17 +2178,18 @@ private:
   enum { R6 = Impl::ViewOffsetRange< SubArg6_type >::is_range ? 1 : 0 };
   enum { R7 = Impl::ViewOffsetRange< SubArg7_type >::is_range ? 1 : 0 };
 
-  enum { OutputRank = R0 + R1 + R2 + R3 + R4 + R5 + R6 + R7 };
+  enum { OutputRank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
+                    + unsigned(R4) + unsigned(R5) + unsigned(R6) + unsigned(R7) };
 
   // Reverse
-  enum { R0_rev = 0 == InputRank ? 0 : (
-                  1 == InputRank ? R0 : (
-                  2 == InputRank ? R1 : (
-                  3 == InputRank ? R2 : (
-                  4 == InputRank ? R3 : (
-                  5 == InputRank ? R4 : (
-                  6 == InputRank ? R5 : (
-                  7 == InputRank ? R6 : R7 ))))))) };
+  enum { R0_rev = 0 == InputRank ? 0u : (
+                  1 == InputRank ? unsigned(R0) : (
+                  2 == InputRank ? unsigned(R1) : (
+                  3 == InputRank ? unsigned(R2) : (
+                  4 == InputRank ? unsigned(R3) : (
+                  5 == InputRank ? unsigned(R4) : (
+                  6 == InputRank ? unsigned(R5) : (
+                  7 == InputRank ? unsigned(R6) : unsigned(R7) ))))))) };
 
   typedef typename SrcViewType::array_layout  SrcViewLayout ;
 

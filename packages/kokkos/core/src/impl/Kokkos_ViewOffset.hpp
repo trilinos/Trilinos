@@ -1059,17 +1059,17 @@ struct ViewOffset< ShapeType , LayoutStride
       // preconditions:
       //  shape_type::rank <= rhs.rank
       //  shape_type::rank == count of nonzero( rhs_dim[i] )
-      size_type dimen[8] = { n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 };
-      size_type stride[ SType::rank + 1 ];
+      size_type dim[8] = { n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 };
+      size_type str[ SType::rank + 1 ];
 
-      rhs.stride( stride );
+      rhs.stride( str );
 
       // contract the zero-dimensions
       int r = 0 ;
       for ( int i = 0 ; i < int(SType::rank) ; ++i ) {
-        if ( 0 != dimen[i] ) {
-          dimen[r]  = dimen[i] ;
-          stride[r] = stride[i] ;
+        if ( 0 != dim[i] ) {
+          dim[r] = dim[i] ;
+          str[r] = str[i] ;
           ++r ;
         }
       }
@@ -1077,11 +1077,11 @@ struct ViewOffset< ShapeType , LayoutStride
       if ( int(shape_type::rank) == r ) {
         // The shape is non-zero
         for ( int i = 0 ; i < int(shape_type::rank) ; ++i ) {
-          const size_type cap = dimen[i] * ( S[i] = stride[i] );
+          const size_type cap = dim[i] * ( S[i] = str[i] );
           if ( S[ shape_type::rank ] < cap ) S[ shape_type::rank ] = cap ;
         }
         // set the contracted nonzero dimensions
-        shape_type::assign( *this, dimen[0], dimen[1], dimen[2], dimen[3], dimen[4], dimen[5], dimen[6], dimen[7] );
+        shape_type::assign( *this, dim[0], dim[1], dim[2], dim[3], dim[4], dim[5], dim[6], dim[7] );
       }
 
       return true ; // definitely noncontiguous
