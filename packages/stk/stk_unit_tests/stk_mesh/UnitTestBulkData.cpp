@@ -4350,44 +4350,237 @@ TEST(BulkData, can_we_create_shared_nodes)
     }
 }
 
-stk::mesh::EntityId get_node_id_along_edge(stk::mesh::BulkData &mesh, stk::mesh::Entity nodeA, stk::mesh::Entity nodeB)
+typedef std::pair< std::vector<stk::mesh::Entity*>, stk::mesh::Entity* > ChildNodeRequest;
+
+struct edgeToBeRefined
 {
-    std::vector<int> sharingProcsA;
-    stk::mesh::EntityKey keyA = mesh.entity_key(nodeA);
-    mesh.comm_shared_procs(keyA, sharingProcsA);
-    int ownerA = mesh.parallel_owner_rank(nodeA);
+    stk::mesh::EntityId m_node1;
+    stk::mesh::EntityId m_node2;
+    std::vector<int> m_sharing_procs;
+    std::vector<std::pair<int, stk::mesh::EntityId> > m_id_proc_pairs_from_all_procs;
+    stk::mesh::BulkData *m_stk_mesh;
+    bool m_id_procs_pairs_have_been_sorted;
+    stk::mesh::Entity **m_node_entity;
 
-    std::vector<int> sharingProcsB;
-    stk::mesh::EntityKey keyB = mesh.entity_key(nodeB);
-    mesh.comm_shared_procs(keyB, sharingProcsB);
-    int ownerB = mesh.parallel_owner_rank(nodeB);
-
-    int owner_new_node = std::min(ownerA, ownerB);
-
-//    unsigned num_nodes_requested = 0;
-//    if ( mesh.parallel_rank() == owner_new_node )
-//    {
-//        num_nodes_requested = 1;
-//    }
-
-    // pretend that I call generate_new_entities
-
-    stk::mesh::EntityId id = 0;
-    if ( mesh.parallel_rank() == owner_new_node )
+    edgeToBeRefined(stk::mesh::BulkData& bulkData, stk::mesh::EntityId nodeA, stk::mesh::EntityId nodeB, stk::mesh::Entity **entity_place_holder=NULL)
+    : m_node1(0), m_node2(0), m_sharing_procs(), m_id_proc_pairs_from_all_procs(), m_stk_mesh(&bulkData),
+      m_id_procs_pairs_have_been_sorted(false), m_node_entity(entity_place_holder)
     {
-        id = 100;
+        if ( nodeA < nodeB )
+        {
+            m_node1 = nodeA;
+            m_node2 = nodeB;
+        }
+        else
+        {
+            m_node1 = nodeB;
+            m_node2 = nodeA;
+        }
     }
 
-    std::vector<int> procs_with_both;
+    void add_proc_id_pair(int proc_id, stk::mesh::EntityId id)
+    {
+        m_id_proc_pairs_from_all_procs.push_back(std::make_pair(proc_id, id));
+    }
 
-    std::sort(sharingProcsA.begin(), sharingProcsA.end());
-    std::sort(sharingProcsB.begin(), sharingProcsB.end());
+    void calculate_sharing_procs()
+    {
+        std::vector<int> sharingProcsA;
+        stk::mesh::EntityKey keyA(stk::topology::NODE_RANK, m_node1);
+        m_stk_mesh->comm_shared_procs(keyA, sharingProcsA);
 
-    std::set_intersection(sharingProcsA.begin(),sharingProcsA.end(),sharingProcsB.begin(),sharingProcsB.end(),std::back_inserter(procs_with_both));
+        std::vector<int> sharingProcsB;
+        stk::mesh::EntityKey keyB(stk::topology::NODE_RANK, m_node2);
+        m_stk_mesh->comm_shared_procs(keyB, sharingProcsB);
 
-    MPI_Bcast( &id, 1, MPI_UNSIGNED_LONG, owner_new_node, mesh.parallel());
+        std::sort(sharingProcsA.begin(), sharingProcsA.end());
+        std::sort(sharingProcsB.begin(), sharingProcsB.end());
 
-    return id;
+        std::set_intersection(sharingProcsA.begin(),sharingProcsA.end(),sharingProcsB.begin(),sharingProcsB.end(),std::back_inserter(m_sharing_procs));
+    }
+
+    size_t num_sharing_procs() const
+    {
+        return m_sharing_procs.size();
+    }
+
+    int sharing_proc(int index) const
+    {
+        return m_sharing_procs[index];
+    }
+
+    stk::mesh::EntityId suggested_node_id() const
+    {
+        ThrowRequireMsg(!m_id_procs_pairs_have_been_sorted, "Invalid use of edge calculation. Contact sierra-help");
+        return m_id_proc_pairs_from_all_procs[0].second;
+    }
+
+    stk::mesh::EntityId node1() const
+    {
+        return m_node1;
+    }
+
+    stk::mesh::EntityId node2() const
+    {
+        return m_node2;
+    }
+
+    void sort_id_proc_pairs()
+    {
+        m_id_procs_pairs_have_been_sorted = true;
+        std::sort(m_id_proc_pairs_from_all_procs.begin(), m_id_proc_pairs_from_all_procs.end());
+    }
+
+    stk::mesh::EntityId get_id_for_edge() const
+    {
+        ThrowRequireMsg(m_id_procs_pairs_have_been_sorted, "Invalid use of edge calculation. Contact sierra-help");
+        return m_id_proc_pairs_from_all_procs[0].second;
+    }
+
+    void set_node_entity_for_edge()
+    {
+        this->sort_id_proc_pairs();
+        stk::mesh::EntityId id_for_edge = this->get_id_for_edge();
+        *(*m_node_entity) = m_stk_mesh->declare_entity(stk::topology::NODE_RANK, id_for_edge);
+        for (size_t i=0;i<m_id_proc_pairs_from_all_procs.size();++i)
+        {
+            if ( m_id_proc_pairs_from_all_procs[i].first != m_stk_mesh->parallel_rank() )
+            {
+                m_stk_mesh->add_node_sharing(**m_node_entity, m_id_proc_pairs_from_all_procs[i].first);
+            }
+        }
+    }
+
+    bool operator==(const edgeToBeRefined& otherEdge) const
+    {
+        if ( this->node1() == otherEdge.node1() &&
+                this->node2() == otherEdge.node2() )
+        {
+            return true;
+        }
+        return false;
+    }
+};
+
+struct edge_finder
+{
+    bool operator()(const edgeToBeRefined& edge1, const edgeToBeRefined& edge2) const
+    {
+        if ( edge1.node1() != edge2.node1() )
+        {
+            return edge1.node1() < edge2.node1();
+        }
+        else
+        {
+            return edge1.node2() < edge2.node2();
+        }
+    }
+};
+
+
+
+void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest > & child_node_requests)
+{
+    bool communicate_nodes = true;
+    std::vector<bool> communicate_edge(child_node_requests.size(), false);
+
+    unsigned num_nodes_requested = child_node_requests.size();
+    std::vector<stk::mesh::EntityId> available_node_ids;
+    mesh.generate_new_ids(stk::topology::NODE_RANK, num_nodes_requested, available_node_ids);
+
+    while ( communicate_nodes )
+    {
+        communicate_nodes = false;
+
+        std::vector<edgeToBeRefined> edgesToBeRefined;
+
+        for (unsigned it_req=0; it_req<child_node_requests.size(); ++it_req)
+        {
+            ChildNodeRequest & request = child_node_requests[it_req];
+            std::vector<stk::mesh::Entity*> & request_parents = request.first;
+
+            ThrowRequireMsg(request_parents.size() == 2, "Invalid size of request, needed exactly 2 parents, found " << request_parents.size() << ". Contact sierra-help.");
+            if (mesh.is_valid(*request_parents[0]) && mesh.is_valid(*request_parents[1]) && communicate_edge[it_req] == false )
+            {
+                stk::mesh::Entity **request_child = &request.second;
+
+                communicate_edge[it_req] = true;
+                communicate_nodes = true;
+                stk::mesh::EntityId node1 = mesh.identifier(*request_parents[0]);
+                stk::mesh::EntityId node2 = mesh.identifier(*request_parents[1]);
+
+                edgesToBeRefined.push_back(edgeToBeRefined(mesh, node1, node2, request_child));
+                edgesToBeRefined.back().add_proc_id_pair(mesh.parallel_rank(), available_node_ids[it_req]);
+                edgesToBeRefined.back().calculate_sharing_procs();
+            }
+        }
+
+        if ( communicate_nodes == false ) break;
+
+        std::sort(edgesToBeRefined.begin(), edgesToBeRefined.end(), edge_finder());
+
+        // By this point, I have list of edges that I need to communicate
+
+        stk::CommAll comm_spec(mesh.parallel());
+
+        for (int phase=0;phase<2;++phase)
+        {
+            for (size_t edge_index=0;edge_index<edgesToBeRefined.size();++edge_index)
+            {
+                for (size_t proc_index=0;proc_index<edgesToBeRefined[edge_index].num_sharing_procs();++proc_index)
+                {
+                    int other_proc = edgesToBeRefined[edge_index].sharing_proc(proc_index);
+                    stk::mesh::EntityId node_1 = edgesToBeRefined[edge_index].node1();
+                    stk::mesh::EntityId node_2 = edgesToBeRefined[edge_index].node2();
+                    stk::mesh::EntityId this_procs_suggested_id = edgesToBeRefined[edge_index].suggested_node_id();
+                    comm_spec.send_buffer(other_proc).pack<stk::mesh::EntityId>(node_1).pack<stk::mesh::EntityId>(node_2);
+                    comm_spec.send_buffer(other_proc).pack<stk::mesh::EntityId>(this_procs_suggested_id);
+                }
+            }
+
+            if ( phase == 0 )
+            {
+                comm_spec.allocate_buffers(mesh.parallel_size()/4);
+            }
+            else
+            {
+                comm_spec.communicate();
+            }
+        }
+
+        for(int i = 0; i < mesh.parallel_size(); ++i)
+        {
+            if(i != mesh.parallel_rank())
+            {
+                while(comm_spec.recv_buffer(i).remaining())
+                {
+                    stk::mesh::EntityId node1;
+                    stk::mesh::EntityId node2;
+                    stk::mesh::EntityId suggested_node_id;
+                    comm_spec.recv_buffer(i).unpack<stk::mesh::EntityId>(node1);
+                    comm_spec.recv_buffer(i).unpack<stk::mesh::EntityId>(node2);
+                    comm_spec.recv_buffer(i).unpack<stk::mesh::EntityId>(suggested_node_id);
+
+                    edgeToBeRefined from_other_proc(mesh, node1, node2);
+                    std::vector<edgeToBeRefined>::iterator iter = std::lower_bound(edgesToBeRefined.begin(), edgesToBeRefined.end(),
+                                   from_other_proc, edge_finder());
+
+                    if ( iter != edgesToBeRefined.end() && *iter == from_other_proc)
+                    {
+                        iter->add_proc_id_pair(i, suggested_node_id);
+                    }
+                }
+            }
+        }
+
+        for (size_t edge_index=0;edge_index<edgesToBeRefined.size();++edge_index)
+        {
+            edgesToBeRefined[edge_index].set_node_entity_for_edge();
+        }
+    }
+
+    std::vector<bool>::iterator iter = std::find(communicate_edge.begin(), communicate_edge.end(), false);
+    ThrowRequireMsg(iter == communicate_edge.end(), "Invalid edge requests. Contact sierra-help.");
 }
 
 TEST(BulkData, create_node_along_shared_edge)
@@ -4399,92 +4592,72 @@ TEST(BulkData, create_node_along_shared_edge)
 
     if ( mesh.parallel_size() == 2 )
     {
-        std::string filename = "test.exo";
         reader.set_bulk_data(mesh);
         reader.add_mesh_database("generated:2x2x2", stk::io::READ_MESH);
         reader.create_input_mesh();
         reader.populate_bulk_data();
-        write_mesh(filename, mesh);
+
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(mesh, counts);
+
+        EXPECT_EQ(27u,counts[stk::topology::NODE_RANK]);
+        EXPECT_EQ(8u,counts[stk::topology::ELEMENT_RANK]);
 
         // nodes 16, 17, 18
         // nodes 13, 14, 15
         // nodes 10, 11, 12
 
-        stk::mesh::Entity nodeA = mesh.get_entity(stk::topology::NODE_RANK, 10);
-        stk::mesh::Entity nodeB = mesh.get_entity(stk::topology::NODE_RANK, 11);
+        stk::mesh::Entity node_10 = mesh.get_entity(stk::topology::NODE_RANK, 10);
+        stk::mesh::Entity node_11 = mesh.get_entity(stk::topology::NODE_RANK, 11);
 
-        stk::mesh::EntityId nodeId = get_node_id_along_edge(mesh, nodeA, nodeB);
+        ASSERT_TRUE(mesh.bucket(node_10).shared());
+        ASSERT_TRUE(mesh.bucket(node_11).shared());
 
-        stk::mesh::EntityId goldId = 100;
-        EXPECT_EQ(goldId, nodeId);
+        {
+            std::vector<ChildNodeRequest> child_node_requests;
+
+            stk::mesh::Entity node_between_10_and_11= stk::mesh::Entity();
+            {
+                std::vector<stk::mesh::Entity*> node_parents;
+                node_parents.push_back(&node_10);
+                node_parents.push_back(&node_11);
+                ChildNodeRequest node_request(node_parents, &node_between_10_and_11);
+                child_node_requests.push_back(node_request);
+            }
+
+            stk::mesh::Entity node_between_10_and_new_node = stk::mesh::Entity();
+            {
+                std::vector<stk::mesh::Entity*> node_parents;
+                node_parents.push_back(&node_10);
+                node_parents.push_back(&node_between_10_and_11);
+                ChildNodeRequest node_request(node_parents, &node_between_10_and_new_node);
+                child_node_requests.push_back(node_request);
+            }
+
+            stk::mesh::Entity node_between_10_and_second_new_node = stk::mesh::Entity();
+            {
+                std::vector<stk::mesh::Entity*> node_parents;
+                node_parents.push_back(&node_10);
+                node_parents.push_back(&node_between_10_and_new_node);
+                ChildNodeRequest node_request(node_parents, &node_between_10_and_second_new_node);
+                child_node_requests.push_back(node_request);
+            }
+
+            mesh.modification_begin();
+            batch_create_child_nodes_new(mesh, child_node_requests);
+            ASSERT_NO_THROW(mesh.modification_end());
+        }
+
+        stk::mesh::comm_mesh_counts(mesh, counts);
+
+        EXPECT_EQ(30u,counts[stk::topology::NODE_RANK]);
+        EXPECT_EQ(8u,counts[stk::topology::ELEMENT_RANK]);
+
+        std::string filename = "test.exo";
+        write_mesh(filename, mesh);
     }
 }
 
-typedef std::pair< std::vector<stk::mesh::Entity*>, stk::mesh::Entity* > ChildNodeRequest;
-
-void batch_create_child_nodes(BulkData & mesh, const std::vector< ChildNodeRequest > & child_node_requests)
-{
-  // In general, this requires assigning node IDs, communication, declaring the entities on both processors, and calling add_node_sharing
-  // Here we just hack the desired results for this simple problem.
-
-  int otherProc = 1-mesh.parallel_rank();
-
-  for (unsigned it_req=0; it_req<child_node_requests.size(); ++it_req)
-  {
-    const ChildNodeRequest & request = child_node_requests[it_req];
-
-    const std::vector<stk::mesh::Entity*> & request_parents = request.first;
-    stk::mesh::Entity * request_child = request.second;
-
-    if (request_parents.size() == 2 && mesh.identifier(*request_parents[0]) == 1 && mesh.identifier(*request_parents[1]) == 2)
-    {
-      *request_child = mesh.declare_entity(stk::topology::NODE_RANK, 5);
-    }
-    else if (request_parents.size() == 2 && mesh.identifier(*request_parents[0]) == 1 && mesh.identifier(*request_parents[1]) == 5)
-    {
-      *request_child = mesh.declare_entity(stk::topology::NODE_RANK, 6);
-    }
-    else
-    {
-      ASSERT_TRUE(false);
-    }
-
-    ASSERT_TRUE(mesh.is_valid(*request_child));
-    mesh.add_node_sharing(*request_child, otherProc);
-  }
-}
-
-void batch_create_child_nodes_new(BulkData & mesh, const std::vector< ChildNodeRequest > & child_node_requests)
-{
-  // In general, this requires assigning node IDs, communication, declaring the entities on both processors, and calling add_node_sharing
-  // Here we just hack the desired results for this simple problem.
-
-  int otherProc = 1-mesh.parallel_rank();
-
-  for (unsigned it_req=0; it_req<child_node_requests.size(); ++it_req)
-  {
-    const ChildNodeRequest & request = child_node_requests[it_req];
-
-    const std::vector<stk::mesh::Entity*> & request_parents = request.first;
-    stk::mesh::Entity * request_child = request.second;
-
-    if (request_parents.size() == 2 && mesh.identifier(*request_parents[0]) == 1 && mesh.identifier(*request_parents[1]) == 2)
-    {
-      *request_child = mesh.declare_entity(stk::topology::NODE_RANK, 5);
-    }
-    else if (request_parents.size() == 2 && mesh.identifier(*request_parents[0]) == 1 && mesh.identifier(*request_parents[1]) == 5)
-    {
-      *request_child = mesh.declare_entity(stk::topology::NODE_RANK, 6);
-    }
-    else
-    {
-      ASSERT_TRUE(false);
-    }
-
-    ASSERT_TRUE(mesh.is_valid(*request_child));
-    mesh.add_node_sharing(*request_child, otherProc);
-  }
-}
 
 TEST(BulkData, show_API_for_batch_create_child_nodes)
 {
@@ -4547,14 +4720,14 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 
     std::vector<ChildNodeRequest> child_node_requests;
 
-    stk::mesh::Entity node5; // "child" of 1 and 2 is 5
+    stk::mesh::Entity node5 = stk::mesh::Entity(); // "child" of 1 and 2 is 5
     std::vector<stk::mesh::Entity*> node5_parents;
     node5_parents.push_back(&node1);
     node5_parents.push_back(&node2);
     ChildNodeRequest node5_request(node5_parents, &node5);
     child_node_requests.push_back(node5_request);
 
-    stk::mesh::Entity node6; // "child" of 1 and 5 is 6
+    stk::mesh::Entity node6 = stk::mesh::Entity(); // "child" of 1 and 5 is 6
     std::vector<stk::mesh::Entity*> node6_parents;
     node6_parents.push_back(&node1);
     node6_parents.push_back(&node5);
@@ -4565,22 +4738,22 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     // be part of the modification cycle where the elements are attached.  Currently, this would throw
     // an error because of the shared orphan nodes.
     bulk.modification_begin();
-    batch_create_child_nodes(bulk, child_node_requests);
+    batch_create_child_nodes_new(bulk, child_node_requests);
 
     if ( bulk.parallel_rank() == 0 )
     {
       stk::mesh::EntityId connected_nodes[3];
       connected_nodes[0] = 1;
-      connected_nodes[1] = 6;
+      connected_nodes[1] = bulk.identifier(node6);
       connected_nodes[2] = 3;
       stk::mesh::declare_element(bulk, elem_part, 3, connected_nodes);
 
-      connected_nodes[0] = 6;
-      connected_nodes[1] = 5;
+      connected_nodes[0] = bulk.identifier(node6);
+      connected_nodes[1] = bulk.identifier(node5);
       connected_nodes[2] = 3;
       stk::mesh::declare_element(bulk, elem_part, 4, connected_nodes);
 
-      connected_nodes[0] = 5;
+      connected_nodes[0] = bulk.identifier(node5);
       connected_nodes[1] = 2;
       connected_nodes[2] = 3;
       stk::mesh::declare_element(bulk, elem_part, 5, connected_nodes);
@@ -4588,18 +4761,18 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     else
     {
       stk::mesh::EntityId connected_nodes[3];
-      connected_nodes[0] = 6;
+      connected_nodes[0] = bulk.identifier(node6);
       connected_nodes[1] = 1;
       connected_nodes[2] = 4;
       stk::mesh::declare_element(bulk, elem_part, 6, connected_nodes);
 
-      connected_nodes[0] = 5;
-      connected_nodes[1] = 6;
+      connected_nodes[0] = bulk.identifier(node5);
+      connected_nodes[1] = bulk.identifier(node6);
       connected_nodes[2] = 4;
       stk::mesh::declare_element(bulk, elem_part, 7, connected_nodes);
 
       connected_nodes[0] = 2;
-      connected_nodes[1] = 5;
+      connected_nodes[1] = bulk.identifier(node5);
       connected_nodes[2] = 4;
       stk::mesh::declare_element(bulk, elem_part, 8, connected_nodes);
     }
