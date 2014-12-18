@@ -406,17 +406,20 @@ namespace MueLu {
 
 	  for(ParameterList::ConstIterator it2 = sublist.begin(); it2!=sublist.end(); it2++) {
 	    if(!it2->first.compare("A") || !it2->first.compare("R") || !it2->first.compare("P") || !it2->first.compare("Nullspace") || !it2->first.compare("Coordinates")) {
-	      nonSerialSublist.set(it2->first,it2->second);
+	      nonSerialSublist.setEntry(it2->first,it2->second);
 	    }
-	    else
-	      serialSublist.set(it2->first,it2->second);	  
+	    else {
+	      serialSublist.setEntry(it2->first,it2->second);	
+	    }
 	  }	  
 	}
-	else
-	  serialList.set(it->first,it->second);	  
+	else {
+	  serialList.setEntry(it->first,it->second);	  
+	}
       }
-      else 
-	serialList.set(it->first,it->second);
+      else {
+	serialList.setEntry(it->first,it->second);
+      }     
     }    
     return max_level;
   }

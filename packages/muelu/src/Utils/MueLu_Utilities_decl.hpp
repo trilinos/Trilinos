@@ -97,8 +97,8 @@ class Epetra_Vector;
 
 #include "MueLu_Hierarchy.hpp"
 
-namespace MueLu {
 
+namespace MueLu {
 // MPI helpers
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
@@ -113,6 +113,8 @@ namespace MueLu {
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
   Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class HierarchyManager;
 
   /*!
     @class Utils
@@ -410,7 +412,7 @@ namespace MueLu {
     /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
       calling AddNewLevel as appropriate.
      */
-    static void AddNonSerializableDataToHierarchy(Hierarchy & H, const Teuchos::ParameterList & nonSerialList);
+    static void AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & nonSerialList);
 
   }; // class Utils
 

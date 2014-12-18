@@ -137,7 +137,8 @@ namespace MueLu {
     // NOTE: This stuff should be in some utility function that isn't here
 
     if (hasParamList) {
-      MueLu::Utils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*H,nonSerialList);
+      std::cout<<"%%%%%%%%%%%%%%%%% NonSerialList %%%%%%%%%%%%%%%%%"<<nonSerialList <<"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"<<std::endl;
+      MueLu::Utils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H,nonSerialList);
       mueLuFactory->SetupHierarchy(*H);
     }
     else

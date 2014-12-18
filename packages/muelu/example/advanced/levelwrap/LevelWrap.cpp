@@ -69,7 +69,7 @@
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_EpetraOperator.hpp>
 #include <Xpetra_EpetraVector.hpp>
-
+#include <MueLu_CreateEpetraPreconditioner.hpp>
 #endif
 
 #include <MueLu_UseDefaultTypes.hpp>
@@ -104,7 +104,7 @@ const std::string thinSeparator  = "--------------------------------------------
 const std::string prefSeparator = "=====================================";
 
 // --------------------------------------------------------------------------------------
-void solve_system(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
+void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
  using Teuchos::RCP;
  using Teuchos::rcp;
 #ifdef HAVE_MUELU_TPETRA
@@ -112,17 +112,15 @@ void solve_system(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X,
   typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
   typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
   typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
-  RCP<Tpetra_Operator> Mtpetra;
   if(lib==Xpetra::UseTpetra) {
-    RCP<Tpetra_CrsMatrix> At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
-    Mtpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO>(H));
-    
+    RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+    RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO>(H));    
     RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
     RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
     typedef Tpetra_MultiVector MV;
     typedef Tpetra_Operator OP;
     RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-    belosProblem->setRightPrec(Mtpetra);
+    belosProblem->setRightPrec(Mt);
     belosProblem->setProblem(Xt,Bt);
     
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
@@ -134,17 +132,15 @@ void solve_system(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X,
   }
 #endif	
 #ifdef HAVE_MUELU_EPETRA
-  RCP<MueLu::EpetraOperator> Mepetra;
   if(lib==Xpetra::UseEpetra) {
-    RCP<Epetra_CrsMatrix> Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
-    Mepetra = rcp(new MueLu::EpetraOperator(H));
-    
-    RCP<Epetra_MultiVector> Xe = rcp(&Xpetra::toEpetra(*X),false);
-    RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
+    RCP<Epetra_CrsMatrix>      Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
+    RCP<MueLu::EpetraOperator> Me = rcp(new MueLu::EpetraOperator(H));    
+    RCP<Epetra_MultiVector>    Xe = rcp(&Xpetra::toEpetra(*X),false);
+    RCP<Epetra_MultiVector>    Be = rcp(&Xpetra::toEpetra(*B),false);
     typedef Epetra_MultiVector MV;
     typedef Epetra_Operator OP;
     RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));		
-    belosProblem->setRightPrec(Mepetra);
+    belosProblem->setRightPrec(Me);
     belosProblem->setProblem(Xe,Be);
     
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
@@ -156,6 +152,59 @@ void solve_system(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X,
   }
 #endif            
 }
+
+
+// --------------------------------------------------------------------------------------
+void solve_system_list(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, RCP<Teuchos::ParameterList> & SList) {
+  using Teuchos::RCP;  
+  using Teuchos::rcp;
+#ifdef HAVE_MUELU_TPETRA
+  typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
+  typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
+  typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
+  typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
+  if(lib==Xpetra::UseTpetra) {
+    RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+    RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
+    RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
+    RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
+    typedef Tpetra_MultiVector MV;
+    typedef Tpetra_Operator OP;
+    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
+    belosProblem->setRightPrec(Mt);
+    belosProblem->setProblem(Xt,Bt);
+    
+    Belos::SolverFactory<SC, MV, OP> BelosFactory;
+    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+    BelosSolver->setProblem(belosProblem);
+    Belos::ReturnType result = BelosSolver->solve();
+    if(result==Belos::Unconverged)
+     throw std::runtime_error("Belos failed to converge");
+  }
+#endif
+#ifdef HAVE_MUELU_EPETRA
+  if(lib==Xpetra::UseEpetra) {
+    RCP<Epetra_CrsMatrix>   Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
+    RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae,MueLuList);
+    RCP<Epetra_MultiVector> Xe = rcp(&Xpetra::toEpetra(*X),false);
+    RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
+    typedef Epetra_MultiVector MV;
+    typedef Epetra_Operator OP;
+    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));		
+    belosProblem->setRightPrec(Me);
+    belosProblem->setProblem(Xe,Be);
+    
+    Belos::SolverFactory<SC, MV, OP> BelosFactory;
+    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+    BelosSolver->setProblem(belosProblem);
+    Belos::ReturnType result = BelosSolver->solve();
+    if(result==Belos::Unconverged)
+      throw std::runtime_error("Belos failed to converge");
+  }
+#endif        
+
+}
+
 
 
 // --------------------------------------------------------------------------------------
@@ -248,7 +297,6 @@ int main(int argc, char *argv[]) {
     ParameterList galeriList = galeriParameters.GetParameterList();
     out << thickSeparator << std::endl << xpetraParameters << galeriParameters;
 
-
     // =========================================================================
     // Problem construction
     // =========================================================================
@@ -306,7 +354,7 @@ int main(int argc, char *argv[]) {
       mueLuFactory.SetupHierarchy(*H);
 
       // Solve
-      solve_system(lib,A,X,B,H,SList);
+      solve_system_hierarchy(lib,A,X,B,H,SList);
 
       // Extract R,P & Ac for LevelWrap Usage
       H->GetLevel(1)->Get("R",R);
@@ -345,15 +393,36 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Set("P", P);
       H->GetLevel(1)->Set("A", Ac);
       H->GetLevel(1)->Set("Nullspace", nullspace);
-
       mueLuFactory.SetupHierarchy(*H);
 
-      // Solve
-      solve_system(lib,A,X,B,H,SList);
+      solve_system_hierarchy(lib,A,X,B,H,SList);
 
     }
     out << thickSeparator << std::endl;
 
+
+#if 1
+    {
+      // Tusbol!
+      Teuchos::ParameterList level1,level12, inList, S, NS;
+      level1.set("A",666);
+      level1.set("zuul",111);
+      level1.set("bork",112);
+      level12.set("R",667);
+      level12.set("P",668);
+      level12.set("Nullspace",669);
+      level12.set("Coordinates",670);
+      level12.set("porcula",112);
+      inList.set("level 1",level1);
+      inList.set("level 12",level12);
+      inList.set("stuff","string");
+
+      MueLu::ExtractNonSerializableData(inList,S,NS);
+      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@ inList @@@@@@@@@@@@@@@@@@@"<<std::endl << inList <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   S    @@@@@@@@@@@@@@@@@@@"<<std::endl << S      <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   NS   @@@@@@@@@@@@@@@@@@@"<<std::endl << NS     <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+    }
+#endif
 
     // =========================================================================
     // Solve #3 (level wrap, the long way, using P, R and nullspace)
@@ -382,11 +451,9 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Set("R", R);
       H->GetLevel(1)->Set("P", P);
       H->GetLevel(1)->Set("Nullspace", nullspace);
-
       mueLuFactory.SetupHierarchy(*H);
 
-      // Solve
-      solve_system(lib,A,X,B,H,SList);
+      solve_system_hierarchy(lib,A,X,B,H,SList);
 
     }
     out << thickSeparator << std::endl;
@@ -395,7 +462,7 @@ int main(int argc, char *argv[]) {
     // Solve #4 (level wrap, the fast way, everything)
     // =========================================================================
     out << thickSeparator << std::endl;
-    out << prefSeparator << " Solve 3: LevelWrap, Fast Way, P, R, Ac "<< prefSeparator <<std::endl;
+    out << prefSeparator << " Solve 4: LevelWrap, Fast Way, P, R, Ac "<< prefSeparator <<std::endl;
     {
       Teuchos::ParameterList MueLuList, level1;
       level1.set("A",Ac);
@@ -403,43 +470,29 @@ int main(int argc, char *argv[]) {
       level1.set("P",P);
       level1.set("Nullspace",nullspace);
       MueLuList.set("level 1",level1);
-      MueLuList.set("verbosity",std::string("high"));// What???????
+      MueLuList.set("verbosity","high");
+      MueLuList.set("coarse: max size",100);
 
-#ifdef HAVE_MUELU_TPETRA
-      if(lib==Xpetra::UseTpetra) {
-	RCP<Tpetra_CrsMatrix> At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
-	RCP<Tpetra_Operator> M = MueLu::CreateTpetraPreconditioner(At,MueLuList);
-      }
-#endif
-      // TODO: 
-      // 1) Add nonSerial list support to CreateEpetraPreconditioner
-      // 2) Create a solve_system using only the parameterlist that encapsulates the E/T issues
-      // 3) Try both the Ac and P/R only versions and have Belos run with w/ Solve System
-      // 4) Figure out what other chunks of code could use a nonSerial split
-
+      solve_system_list(lib,A,X,B,MueLuList,SList);
     }
 
-#if 0
+    // =========================================================================
+    // Solve #5 (level wrap, the fast way, P, R + Nullspace)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 5: LevelWrap, Fast Way, P, R "<< prefSeparator <<std::endl;
     {
-      // Tusbol!
-      Teuchos::ParameterList level1,level12, inList, S, NS;
-      level1.set("A",666);
-      level1.set("zuul",111);
-      level1.set("bork",112);
-      level12.set("R",667);
-      level12.set("P",668);
-      level12.set("Nullspace",669);
-      level12.set("Coordinates",670);
-      level12.set("porcula",112);
-      inList.set("level1",level1);
-      inList.set("level12",level12);
+      Teuchos::ParameterList MueLuList, level1;
+      level1.set("R",R);
+      level1.set("P",P);
+      level1.set("Nullspace",nullspace);
+      MueLuList.set("level 1",level1);
+      MueLuList.set("verbosity","high");
+      MueLuList.set("coarse: max size",100);
 
-      MueLu::ExtractNonSerializableData(inList,S,NS);
-      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@ inList @@@@@@@@@@@@@@@@@@@"<<std::endl << inList <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
-      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   S    @@@@@@@@@@@@@@@@@@@"<<std::endl << S      <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
-      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   NS   @@@@@@@@@@@@@@@@@@@"<<std::endl << NS     <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+      solve_system_list(lib,A,X,B,MueLuList,SList);
     }
-#endif
+
 
     success = true;
   }
