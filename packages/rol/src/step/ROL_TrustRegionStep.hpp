@@ -160,6 +160,7 @@ private:
   Real              scale1_; ///< Scale for inexact gradient computation.
 
   bool              softUp_;
+  Real              scaleEps_;
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
 
@@ -274,6 +275,9 @@ public:
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
+
+    // Scale for epsilon active sets
+    scaleEps_ = parlist.get("Scale for Epsilon Active Sets",1.0);
   }
 
   /** \brief Constructor.
@@ -314,6 +318,9 @@ public:
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
+
+    // Scale for epsilon active sets
+    scaleEps_ = parlist.get("Scale for Epsilon Active Sets",1.0);
   }
 
   /** \brief Initialize step.
@@ -429,7 +436,7 @@ public:
 
     Real eps = 0.0;
     if ( con.isActivated() ) {
-      eps = algo_state.gnorm;
+      eps = scaleEps_*algo_state.gnorm;
     }
     ProjectedObjective<Real> pObj(obj,con,secant_,useSecantPrecond_,useSecantHessVec_,eps);
 

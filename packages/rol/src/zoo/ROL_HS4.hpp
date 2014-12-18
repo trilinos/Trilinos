@@ -91,8 +91,9 @@ namespace ZOO {
       Teuchos::RCP<std::vector<Real> > ehv =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
 
-      (*ehv)[0] = 2.0*((*ex)[0] + 1.0)*(*ev)[0];
-      (*ehv)[1] = 0.0;
+      Real alpha = 0.0;
+      (*ehv)[0] = 2.0*((*ex)[0] + 1.0)*(*ev)[0] + alpha*(*ev)[0];
+      (*ehv)[1] = 0.0 + alpha*(*ev)[1];
     }
 #endif
   };
@@ -114,7 +115,7 @@ namespace ZOO {
     obj = Teuchos::rcp( new Objective_HS4<Real> );
     // Instantiate BoundConstraint
     std::vector<Real> l(n,0.0); l[0] = 1.0; l[1] = 0.0;
-    std::vector<Real> u(n,0.0); u[0] = ROL_OVERFLOW; u[1] = ROL_OVERFLOW;
+    std::vector<Real> u(n,0.0); u[0] = 0.1*ROL_OVERFLOW; u[1] = 0.1*ROL_OVERFLOW;
     con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
     // Get Initial Guess
     (*x0p)[0] =  1.125;
