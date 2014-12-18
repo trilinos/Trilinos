@@ -64,7 +64,7 @@
 #include <Tpetra_Operator.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraVector.hpp>
-//#include <Amesos2.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
 #endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_EpetraOperator.hpp>
@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
 
 
     // =========================================================================
-    // Solve #3 (level wrap, the long way, using P & R only)
+    // Solve #3 (level wrap, the long way, using P, R and nullspace)
     // =========================================================================
     out << thickSeparator << std::endl;
     out << prefSeparator << " Solve 3: LevelWrap, Long Way, P, R "<< prefSeparator <<std::endl;
@@ -391,7 +391,55 @@ int main(int argc, char *argv[]) {
     }
     out << thickSeparator << std::endl;
 
+    // =========================================================================
+    // Solve #4 (level wrap, the fast way, everything)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 3: LevelWrap, Fast Way, P, R, Ac "<< prefSeparator <<std::endl;
+    {
+      Teuchos::ParameterList MueLuList, level1;
+      level1.set("A",Ac);
+      level1.set("R",R);
+      level1.set("P",P);
+      level1.set("Nullspace",nullspace);
+      MueLuList.set("level 1",level1);
+      MueLuList.set("verbosity",std::string("high"));// What???????
 
+#ifdef HAVE_MUELU_TPETRA
+      if(lib==Xpetra::UseTpetra) {
+	RCP<Tpetra_CrsMatrix> At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+	RCP<Tpetra_Operator> M = MueLu::CreateTpetraPreconditioner(At,MueLuList);
+      }
+#endif
+      // TODO: 
+      // 1) Add nonSerial list support to CreateEpetraPreconditioner
+      // 2) Create a solve_system using only the parameterlist that encapsulates the E/T issues
+      // 3) Try both the Ac and P/R only versions and have Belos run with w/ Solve System
+      // 4) Figure out what other chunks of code could use a nonSerial split
+
+    }
+
+#if 0
+    {
+      // Tusbol!
+      Teuchos::ParameterList level1,level12, inList, S, NS;
+      level1.set("A",666);
+      level1.set("zuul",111);
+      level1.set("bork",112);
+      level12.set("R",667);
+      level12.set("P",668);
+      level12.set("Nullspace",669);
+      level12.set("Coordinates",670);
+      level12.set("porcula",112);
+      inList.set("level1",level1);
+      inList.set("level12",level12);
+
+      MueLu::ExtractNonSerializableData(inList,S,NS);
+      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@ inList @@@@@@@@@@@@@@@@@@@"<<std::endl << inList <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   S    @@@@@@@@@@@@@@@@@@@"<<std::endl << S      <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   NS   @@@@@@@@@@@@@@@@@@@"<<std::endl << NS     <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
+    }
+#endif
 
     success = true;
   }
