@@ -265,7 +265,7 @@ public:
   {
     /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
-    if (avail2ndAdjs(sourcetarget, through)) {
+    if (avail2ndAdjs(sourcetarget, through)) { // TODO:  Check use of avail2ndAdjs; maybe should be availAdjs
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -274,9 +274,12 @@ public:
       using Teuchos::rcp;
 
       // Get the default communicator and Kokkos Node instance
+      // TODO:  Default communicator may not be correct here
       RCP<const Comm<int> > comm =
 	DefaultPlatform::getDefaultPlatform ().getComm ();
-      RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+
+      // TODO:  kokkosnode may be default argument to Tpetra Maps.
+      RCP<Node> kokkosnode = DefaultPlatform::getDefaultPlatform ().getNode ();
 
       // Get node-element connectivity
 
@@ -301,16 +304,21 @@ public:
       int LocalNumOfNodes = getLocalNumOf(through);
       
       // Build a list of the ADJS global ids...
+      // TODO:  int is not the right cast here; probably GOs?
       adjsGIDs.resize (LocalNumOfNodes);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
 	adjsGIDs[i] = as<int> (Ids[i]);
       }
 
-      delete [] Ids;
+      // TODO:  Ids is a view; shouldn't delete it.  delete [] Ids;
       getIDsViewOf(sourcetarget, Ids);
 
       //Generate Map for nodes.
-      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
+      // TODO:  can probably remove the kokkosnode from this constructor;
+      // TODO:  check for alternate constructors.
+      // TODO:  Also, map is constructed with "through" (e.g., vertices) as rows;
+      // TODO:  it should have "sourcetarget" (e.g., elements) as rows.
+      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, kokkosnode));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -343,8 +351,8 @@ public:
 	}// *** node loop ***
       }// *** element loop ***
 
-      delete [] offsets;
-      delete [] adjacencyIds;
+      // TODO:  probably shouldn't delete these delete [] offsets;
+      // TODO:  probably shouldn't delete these delete [] adjacencyIds;
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete ();
@@ -359,7 +367,7 @@ public:
       RCP<const map_type> ColMap = adjsMatrix->getColMap ();
       RCP<const map_type> globalMap =
 	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
-			   Tpetra::GloballyDistributed, node));
+			   Tpetra::GloballyDistributed, kokkosnode));
 
       // Create the exporter from this process' column Map to the global
       // 1-1 column map. (???)
@@ -422,7 +430,7 @@ public:
 	}
       }
 
-      delete [] Ids;
+      // TODO:  probably shouldn't delete these delete [] Ids;
       Ids = NULL;
       start[LocalNumIDs] = nadj;
 
