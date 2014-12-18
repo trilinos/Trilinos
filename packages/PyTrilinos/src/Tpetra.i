@@ -57,8 +57,8 @@ operators, and dense and sparse matrices.
 %enddef
 
 %module(package   = "PyTrilinos",
-	directors = "1",
-	docstring = %tpetra_docstring) Tpetra
+        directors = "1",
+        docstring = %tpetra_docstring) Tpetra
 
 %{
 // PyTrilinos includes
@@ -151,7 +151,6 @@ import numpy
 //////////////////////////////////
 // Tpetra configuration support //
 //////////////////////////////////
-%include "Tpetra_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 
 ////////////////////////////
