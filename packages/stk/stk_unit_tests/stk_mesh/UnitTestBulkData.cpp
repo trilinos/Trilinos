@@ -3343,6 +3343,268 @@ TEST(BulkData, verify_closure_count_is_correct)
 
 }
 
+TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  const int myRank = stk::parallel_machine_rank(communicator);
+
+  if (numProcs != 2) { return; }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::unit_test::BulkDataTester bulk(meta,communicator);
+
+  stk::mesh::Part& element_part = meta.declare_part_with_topology("Beam2Part", stk::topology::BEAM_2);
+
+  bulk.modification_begin();
+  stk::mesh::Entity node1 = bulk.declare_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity node2 = bulk.declare_entity(stk::topology::NODE_RANK, 2);
+  int other_proc = 1-myRank;
+  bulk.add_node_sharing(node1,other_proc);
+  bulk.add_node_sharing(node2,other_proc);
+  EXPECT_EQ(bulk.my_orphaned_node_marking()+1,bulk.closure_count(node1)); 
+  EXPECT_EQ(bulk.my_orphaned_node_marking()+1,bulk.closure_count(node2)); 
+
+  ASSERT_NO_THROW(bulk.modification_end());
+
+  if (myRank == 0) 
+  { 
+    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_EQ(1u,bulk.closure_count(node2)); 
+  } 
+  else 
+  { 
+    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node1)); 
+    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node2)); 
+  }
+
+  bulk.modification_begin();
+  if (myRank == 1) 
+  {
+    stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, 1, element_part);
+    bulk.declare_relation(element,node1,0);
+    EXPECT_EQ(1u,bulk.closure_count(node1));
+    bulk.declare_relation(element,node2,1);
+    EXPECT_EQ(1u,bulk.closure_count(node2));
+  }
+  EXPECT_NO_THROW(bulk.modification_end());
+
+  EXPECT_EQ(1u,bulk.closure_count(node1));
+  EXPECT_EQ(1u,bulk.closure_count(node2));
+
+  bulk.modification_begin();
+  if (myRank == 0) 
+  {
+    std::vector<Entity> element_vector;
+    bulk.get_entities(stk::topology::ELEMENT_RANK, meta.universal_part(), element_vector);
+    ASSERT_EQ(1u, element_vector.size());
+    EXPECT_TRUE(bulk.destroy_entity(element_vector[0]));
+    EXPECT_TRUE(bulk.destroy_entity(node1));
+    EXPECT_TRUE(bulk.destroy_entity(node2));
+    EXPECT_FALSE(bulk.is_valid(node1));
+    EXPECT_FALSE(bulk.is_valid(node2));
+  }
+  EXPECT_NO_THROW(bulk.modification_end());
+  if (myRank == 0)
+  {
+    EXPECT_FALSE(bulk.is_valid(node1));
+    EXPECT_FALSE(bulk.is_valid(node2));
+  }
+  else // myRank == 1
+  {
+    EXPECT_TRUE(bulk.bucket(node1).owned());
+    EXPECT_TRUE(bulk.bucket(node2).owned());
+    EXPECT_FALSE(bulk.bucket(node1).shared());
+    EXPECT_FALSE(bulk.bucket(node2).shared());
+  }
+}
+
+TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_deletes)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  const int myRank = stk::parallel_machine_rank(communicator);
+
+  if (numProcs != 2) { return; }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::unit_test::BulkDataTester bulk(meta,communicator);
+
+  bulk.modification_begin();
+  stk::mesh::Entity node1 = bulk.declare_entity(stk::topology::NODE_RANK, 1);
+  int other_proc = 1-myRank;
+  bulk.add_node_sharing(node1,other_proc);
+
+  bulk.modification_end();
+
+  bulk.modification_begin();
+
+  if (myRank == 0) 
+  {
+    EXPECT_TRUE(bulk.destroy_entity(node1));
+    EXPECT_FALSE(bulk.is_valid(node1));
+  }
+  EXPECT_NO_THROW(bulk.modification_end());
+  if (myRank == 0)
+  {
+    EXPECT_FALSE(bulk.is_valid(node1));
+  }
+  else // myRank == 1
+  {
+    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_TRUE(bulk.bucket(node1).owned());
+    EXPECT_FALSE(bulk.bucket(node1).shared());
+  }
+}
+
+TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_3proc)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  const int myRank = stk::parallel_machine_rank(communicator);
+
+  if (numProcs != 3) { return; }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::unit_test::BulkDataTester bulk(meta,communicator);
+
+  bulk.modification_begin();
+  stk::mesh::Entity node1;
+  if (myRank != 2) {
+    node1 = bulk.declare_entity(stk::topology::NODE_RANK, 1);
+    int other_proc = 1-myRank;
+    bulk.add_node_sharing(node1,other_proc);
+  }
+  bulk.modification_end();
+  if (myRank == 0) 
+  {
+    EXPECT_EQ(1u, bulk.closure_count(node1));
+  }
+  else if (myRank == 1) 
+  {
+    EXPECT_EQ(bulk.my_orphaned_node_marking(), bulk.closure_count(node1));
+  }
+  else // myRank == 2
+  {
+    EXPECT_FALSE(bulk.is_valid(node1));
+  }
+
+  std::vector<EntityProc> new_owners;
+  if (myRank == 0) 
+  {
+    new_owners.push_back(stk::mesh::EntityProc(node1,2));
+  }
+  EXPECT_NO_THROW(bulk.change_entity_owner(new_owners));
+
+  if (myRank == 0)
+  {
+    EXPECT_FALSE(bulk.is_valid(node1));
+  }
+  else if (myRank == 1)
+  {
+    node1 = bulk.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK,1));
+    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node1)); 
+    EXPECT_FALSE(bulk.bucket(node1).owned());
+    EXPECT_TRUE(bulk.bucket(node1).shared());
+  }
+  else // myRank == 2 
+  {
+    node1 = bulk.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK,1));
+    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_TRUE(bulk.bucket(node1).owned());
+    EXPECT_TRUE(bulk.bucket(node1).shared());
+  }
+}
+
+TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_2proc)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  const int myRank = stk::parallel_machine_rank(communicator);
+
+  if (numProcs != 2) { return; }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::unit_test::BulkDataTester bulk(meta,communicator);
+
+  bulk.modification_begin();
+  stk::mesh::Entity node1 = bulk.declare_entity(stk::topology::NODE_RANK, 1);
+  int other_proc = 1-myRank;
+  bulk.add_node_sharing(node1,other_proc);
+  bulk.modification_end();
+  if (myRank == 0) 
+  {
+    EXPECT_EQ(1u,bulk.closure_count(node1));
+  }
+  else // myRank == 1
+  {
+    EXPECT_EQ(bulk.my_orphaned_node_marking(),bulk.closure_count(node1));
+  }
+
+  std::vector<EntityProc> new_owners;
+  if (myRank == 0) 
+  {
+    new_owners.push_back(stk::mesh::EntityProc(node1,1));
+  }
+  EXPECT_NO_THROW(bulk.change_entity_owner(new_owners));
+
+  if (myRank == 0)
+  {
+    EXPECT_EQ(0, bulk.closure_count(node1)); 
+    EXPECT_FALSE(bulk.is_valid(node1));
+  }
+  else if (myRank == 1)
+  {
+    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_TRUE(bulk.bucket(node1).owned());
+    EXPECT_FALSE(bulk.bucket(node1).shared());
+  }
+}
+
+TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_adds_element)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  const int myRank = stk::parallel_machine_rank(communicator);
+
+  if (numProcs != 2) { return; }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::unit_test::BulkDataTester bulk(meta,communicator);
+
+  stk::mesh::Part& element_part = meta.declare_part_with_topology("Beam2Part", stk::topology::BEAM_2);
+
+  bulk.modification_begin();
+  stk::mesh::Entity node1 = bulk.declare_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity node2 = bulk.declare_entity(stk::topology::NODE_RANK, 2);
+  int other_proc = 1-myRank;
+  bulk.add_node_sharing(node1,other_proc);
+  bulk.add_node_sharing(node2,other_proc);
+
+  bulk.modification_end();
+
+  bulk.modification_begin();
+  if (myRank == 0) 
+  {
+    stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, 1, element_part);
+    bulk.declare_relation(element,node1,0);
+    EXPECT_EQ(2u,bulk.closure_count(node1));
+    bulk.declare_relation(element,node2,1);
+    EXPECT_EQ(2u,bulk.closure_count(node2));
+  }
+  EXPECT_NO_THROW(bulk.modification_end());
+  if (myRank == 1)
+  {
+    EXPECT_EQ(bulk.my_orphaned_node_marking(),bulk.closure_count(node1));
+    EXPECT_EQ(bulk.my_orphaned_node_marking(),bulk.closure_count(node2));
+  }
+}
+
 TEST(BulkData, change_entity_owner_no_aura_check)
 {
 //   id/owner_proc
@@ -4332,8 +4594,16 @@ TEST(BulkData, can_we_create_shared_nodes)
 
             bulk.change_entity_owner(entities_to_change);
 
-            EXPECT_TRUE(bulk.is_valid(node2));
-            EXPECT_TRUE(bulk.bucket(node2).shared());
+            if (bulk.parallel_rank() == 0)
+            {
+                EXPECT_FALSE(bulk.is_valid(node2));
+            }
+            else // bulk.parallel_rank() == 1
+            {
+                ASSERT_TRUE(bulk.is_valid(node2));
+                EXPECT_FALSE(bulk.bucket(node2).shared());
+                EXPECT_EQ(1u,bulk.closure_count(node2));
+            }
 
         }
 

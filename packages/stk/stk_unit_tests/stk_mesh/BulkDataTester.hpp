@@ -73,6 +73,11 @@ public:
         return m_closure_count[entity.local_offset()];
     }
 
+    uint16_t my_orphaned_node_marking()
+    {
+        return orphaned_node_marking;
+    }
+
     bool my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
     {
         return BulkData::entity_comm_map_insert(entity, val);

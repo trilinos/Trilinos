@@ -91,8 +91,12 @@ std::vector<DynConnData> DynConnMetrics::m_data;
 #endif
 }
 
+// Static constant on BulkData:
+const uint16_t BulkData::orphaned_node_marking = 25000;
 
 ///////////////////////////////////////////// Functions for creating entities
+
+namespace {
 
 void fillEntityCommInfoForEntity(stk::mesh::Ghosting &ghost_id, stk::mesh::BulkData &mesh, std::vector<stk::mesh::EntityKey> nodes, EntityCommInfoVector &sharing_processors)
 {
@@ -132,6 +136,8 @@ void fillSharedEntities(stk::mesh::Ghosting& ghost_id, stk::mesh::BulkData &mesh
         }
     }
 }
+
+} // namespace
 
 void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, CommAll &comm, std::vector<std::vector<shared_entity_type> > &shared_entities)
 {
@@ -831,7 +837,6 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
     return internal_declare_entity(ent_rank, ent_id, parts);
 }
 
-const uint16_t orphaned_node_marking = 25000;
 
 void BulkData::add_node_sharing( Entity node, int sharing_proc )
 {
@@ -839,10 +844,7 @@ void BulkData::add_node_sharing( Entity node, int sharing_proc )
   ThrowRequire(entity_rank(node) == stk::topology::NODE_RANK);
   ThrowRequire(state(node) != Deleted);
 
-  if ( m_closure_count[node.local_offset()] == 1 && bucket(node).owned() )
-  {
-      m_closure_count[node.local_offset()] += orphaned_node_marking;
-  }
+  protect_orphaned_node(node);
 
   m_add_node_sharing_called = true;
 
@@ -1860,13 +1862,13 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
   {
     if ( idx.bucket->entity_rank() > stk::topology::NODE_RANK && entity_rank(e_to) == stk::topology::NODE_RANK )
     {
-      if ( idx.bucket->owned() && m_closure_count[e_to.local_offset()] >= orphaned_node_marking )
+      if ( idx.bucket->owned() ) // owned entity with relation to node, true shared
       {
-        m_closure_count[e_to.local_offset()] -= orphaned_node_marking;
+          unprotect_orphaned_node(e_to);
       }
-      else if ( idx.bucket->in_aura() && bucket(e_to).owned() && m_closure_count[e_to.local_offset()] >= orphaned_node_marking )
+      else if ( idx.bucket->in_aura() && bucket(e_to).owned() ) // aura with relation to owned node, mostly true shared
       {
-        m_closure_count[e_to.local_offset()] -= orphaned_node_marking;
+          unprotect_orphaned_node(e_to);
       }
     }
 
@@ -4053,6 +4055,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
         {
             // Own it and has sharing information.
             // Add the globally_shared
+            unprotect_orphaned_node(entity);
             internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/);
         }
         else
@@ -5385,7 +5388,9 @@ void BulkData::internal_change_entity_parts(
 
   if (add_to_locally_owned) {
 
-     ++m_closure_count[entity.local_offset()];
+    unprotect_orphaned_node(entity);
+
+    ++m_closure_count[entity.local_offset()];
 
     // update downward connectivity closure count
     if (bucket_old) {
@@ -5401,7 +5406,9 @@ void BulkData::internal_change_entity_parts(
   }
   else if (remove_from_locally_owned)
   {
-     --m_closure_count[entity.local_offset()];
+
+    --m_closure_count[entity.local_offset()];
+
 
     // update downward connectivity closure count
     if (bucket_old) {

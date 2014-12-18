@@ -839,6 +839,27 @@ protected: //functions
 private: //functions
 
 
+  // Only to be called from add_node_sharing
+  void protect_orphaned_node(Entity entity)
+  {
+      if ( entity_rank(entity) == stk::topology::NODE_RANK
+              && state(entity) == Created
+              && m_closure_count[entity.local_offset()] == 1
+              && bucket(entity).owned()
+         )
+      {
+          m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+      }
+  }
+
+  void unprotect_orphaned_node(Entity entity)
+  {
+      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      {
+          m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+      }
+  }
+
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
   void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
@@ -985,6 +1006,7 @@ public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
 
 protected: //data
+  static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
