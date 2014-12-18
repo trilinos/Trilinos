@@ -43,8 +43,7 @@
 
 // Ensure that if CUDA and KokkosCompat are enabled, then only the .cu
 // version of this file will actually be compiled.
-#include <Tpetra_config.h>
-
+#include <Tpetra_ConfigDefs.hpp>
 
 // This test comes from zoltan2/test/temp/multivectorTest.cpp.
 // It mimics the recursive bisection algorithm in Zoltan2.

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,14 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Assert.hpp>
@@ -163,19 +163,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
      // Generate a 5-point 2D Finite Difference matrix
     Xoff.resize(5);
     Yoff.resize(5);
-    Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
-    Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
+    Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0;
+    Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1;
   }
   else if (numPoints==9) {
     // Generate a 9-point 2D Finite Difference matrix
     Xoff.resize(9);
     Yoff.resize(9);
-    Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1; 
-    Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1; 
-    Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1; 
-    Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0; 
-    Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1; 
-    Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1; 
+    Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1;
+    Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1;
+    Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1;
+    Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0;
+    Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1;
+    Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1;
   }
   else {
     // Generate a 25-point 2D Finite Difference matrix
@@ -184,19 +184,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
     Teuchos_Ordinal xi = 0, yi = 0;
     int xo = -2, yo = -2;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
   }
 
   RCP<Map<LO,GO> > map;
@@ -218,12 +218,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
   }
   for (int j=0; j<jstop; j++) {
     for (int k=1; k<17; k++) {
-      if ( (!shortTest && (k<7 || k%2==0)) 
+      if ( (!shortTest && (k<7 || k%2==0))
          || (shortTest && (k<6 || k%4==0))) {
         int nrhs=k;
         out << "\n*************** Results for " << nrhs << " RHS ";
 
-        GenerateCrsProblem(Xoff.getRawPtr(), Yoff.getRawPtr(), nrhs, *platform, 
+        GenerateCrsProblem(Xoff.getRawPtr(), Yoff.getRawPtr(), nrhs, *platform,
             map, A, b, bt, xexact, out);
 
         runMatrixTests(A, b, bt, xexact, out);
@@ -275,11 +275,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
 }
 
 // Constructs a 2D PDE finite difference matrix using the list of x and y offsets.
-// 
+//
 // nx      (In) - number of grid points in x direction
 // ny      (In) - number of grid points in y direction
 //   The total number of equations will be nx*ny ordered such that the x direction changes
-//   most rapidly: 
+//   most rapidly:
 //      First equation is at point (0,0)
 //      Second at                  (1,0)
 //       ...
@@ -307,7 +307,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
 //
 template <class LO, class GO, class Scalar>
 void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
-            const Platform<Scalar> &platform, 
+            const Platform<Scalar> &platform,
             RCP<const Map<LO,GO> > &map,
             RCP<CrsMatrix<Scalar,LO,GO> > &A,
             RCP<MultiVector<Scalar,LO,GO> > &b,
@@ -363,7 +363,7 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
   out << "Time to insert matrix values = " << insertTime << endl
       << "Time to complete fill        = " << fillCompleteTime << endl;
 
-  if (nrhs<=1) {  
+  if (nrhs<=1) {
     b = createVector<Scalar>(map);
     bt = createVector<Scalar>(map);
     xexact = createVector<Scalar>(map);
@@ -431,7 +431,7 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,LO,GO> > A,  RCP<MultiVector<Scalar,LO,
   }
 }
 
-  // 
+  //
   // INSTANTIATIONS
   //
 

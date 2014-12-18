@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,22 +35,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
-
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
-#include <Teuchos_UnitTestHarness.hpp>
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 namespace {
 
   using Teuchos::RCP;
@@ -81,7 +77,7 @@ namespace {
       srcMat->insertGlobalValues(0, tuple<int>(0), tuple<double>(1.0) );
     }
     srcMat->fillComplete();
-    /* 
+    /*
        srcMat = [1 ] // proc 0
                 [  ] // proc 1
      */
@@ -95,7 +91,7 @@ namespace {
     RCP<const Import> importer = Tpetra::createImport(sourceRowMap, destRowMap);
     // global row 1 in srcMat is empty: this is a null communication to dstMat
     dstMat->doImport(*srcMat, *importer, Tpetra::INSERT);
-    /* 
+    /*
        dstMat_p0 = [1 ]
                    [  ]
        dstMat_p1 = [1 ]

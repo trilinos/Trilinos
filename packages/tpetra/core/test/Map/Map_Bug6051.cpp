@@ -41,15 +41,12 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
-#include "Teuchos_UnitTestHarness.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Tuple.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_TieBreak.hpp"
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_TieBreak.hpp>
 
 #define NUM_GLOBAL_ELEMENTS 100
 

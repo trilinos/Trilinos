@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,15 +35,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
+#ifndef HAVE_TPETRA_EPETRA
+#  error "HAVE_TPETRA_EPETRA is undefined, but Tpetra is nevertheless building this file.  This probably means that Tpetra's CMake build system has a bug.  Please report this bug to the Tpetra developers."
+#else
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -55,7 +56,6 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_as.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -175,7 +175,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( EpetraRowMatrix, BasicFunctionality, LO, GO, Scalar )
@@ -259,7 +259,7 @@ namespace {
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
@@ -297,4 +297,4 @@ namespace {
 
 }
 
-
+#endif // HAVE_TPETRA_EPETRA

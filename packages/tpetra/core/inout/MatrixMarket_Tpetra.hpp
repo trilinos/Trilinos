@@ -53,7 +53,7 @@
 /// details) defines a human-readable ASCII text file format ("Matrix
 /// Market format") for interchange of sparse and dense matrices.
 ///
-#include "Tpetra_config.h"
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"

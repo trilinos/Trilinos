@@ -71,16 +71,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_OpenMP
-  HAVE_TPETRA_OPENMP
-  "Enabling OpenMP in Tpetra"
-  ${TpetraClassic_ENABLE_OpenMP}
-  )
-IF(${PACKAGE_NAME}_ENABLE_OpenMP AND NOT TpetraClassic_ENABLE_OpenMP)
-  MESSAGE(WARNING "Disabling OpenMP in Tpetra because KokkosClassic_ENABLE_OpenMP is ${KokkosClassic_ENABLE_OpenMP}")
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."
@@ -202,10 +192,8 @@ IF (Tpetra_INST_UNSIGNED_LONG)
   LIST(APPEND TpetraCore_ETI_SCALARS "unsigned int")
   # NOTE: The above types are used because they help catch errors with caused
   # when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
-  # global_size_t (using wrong OrdinalTraits<>::invald(). 
+  # global_size_t (using wrong Teuchos::OrdinalTraits<>::invald(). 
 ENDIF()
-
-
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
@@ -291,7 +279,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
 )
 
-
 # The "Kokkos refactor" version of Tpetra currently requires that
 # several Kokkos subpackages be enabled.  These subpackages are not
 # enabled by default, because they are not currently (as of August
@@ -330,7 +317,7 @@ ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_RTI
-  HAVE_TPETRA_RTI
+  HAVE_TPETRACORE_RTI
   "Enable Tpetra's Reduction/Transformation Interface (RTI).  It is OFF by default.  Note that RTI is currently incompatible with the new Kokkos wrapper Nodes."
   OFF
   )

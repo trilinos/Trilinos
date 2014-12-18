@@ -190,7 +190,7 @@ namespace KokkosClassic {
     //! Return a nonconst view of the data in the i-th column of the multivector.
     ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -203,7 +203,7 @@ namespace KokkosClassic {
     //! Return a const view of the data in the i-th column of the multivector.
     ArrayRCP<const Scalar>
     getValues (size_t i) const {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -334,7 +334,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
@@ -343,7 +343,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -398,7 +398,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
@@ -407,7 +407,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -468,7 +468,7 @@ namespace KokkosClassic {
   // methods faster on CPU Nodes.
   //
 
-#if defined (HAVE_KOKKOSCLASSIC_SERIAL)
+#if defined (HAVE_TPETRACLASSIC_SERIAL)
   // Partial specialization for SerialNode.
   template<class Scalar>
   class MultiVector<Scalar, SerialNode> {
@@ -538,7 +538,7 @@ namespace KokkosClassic {
 
     ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -550,7 +550,7 @@ namespace KokkosClassic {
 
     ArrayRCP<const Scalar>
     getValues (size_t i) const {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -609,7 +609,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
@@ -618,7 +618,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -667,7 +667,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
@@ -676,7 +676,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -702,7 +702,7 @@ namespace KokkosClassic {
     size_t origNumRows_;
     size_t origNumCols_;
   };
-#endif // defined (HAVE_KOKKOSCLASSIC_SERIAL)
+#endif // defined (HAVE_TPETRACLASSIC_SERIAL)
 
 #if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
   // Partial specialization for TPINode.
@@ -774,7 +774,7 @@ namespace KokkosClassic {
 
     ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -786,7 +786,7 @@ namespace KokkosClassic {
 
     ArrayRCP<const Scalar>
     getValues (size_t i) const {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -845,7 +845,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
@@ -854,7 +854,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -903,7 +903,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
@@ -912,7 +912,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1011,7 +1011,7 @@ namespace KokkosClassic {
 
     ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -1023,7 +1023,7 @@ namespace KokkosClassic {
 
     ArrayRCP<const Scalar>
     getValues (size_t i) const {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -1082,7 +1082,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
@@ -1091,7 +1091,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1140,7 +1140,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
@@ -1149,7 +1149,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1248,7 +1248,7 @@ namespace KokkosClassic {
 
     ArrayRCP<Scalar>
     getValuesNonConst(size_t i) {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -1260,7 +1260,7 @@ namespace KokkosClassic {
 
     ArrayRCP<const Scalar>
     getValues (size_t i) const {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       const bool inRange = i < numCols_; // i >= 0 since it's unsigned.
       TEUCHOS_TEST_FOR_EXCEPTION(
         contigValues_.is_null () || ! inRange,
@@ -1319,7 +1319,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
@@ -1328,7 +1328,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1377,7 +1377,7 @@ namespace KokkosClassic {
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
       const size_t len = contigValues_.size () -
         Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
         "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
@@ -1386,7 +1386,7 @@ namespace KokkosClassic {
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
         "we are trying to make a " << newNumRows << " x " << newNumCols
         << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_KOKKOSCLASSIC_DEBUG
+#endif // HAVE_TPETRACLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),

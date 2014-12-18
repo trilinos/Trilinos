@@ -6,23 +6,37 @@
 #cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
 
 /* Define if want to build with epetra enabled */
-#cmakedefine HAVE_TPETRA_EPETRA
+#cmakedefine HAVE_TPETRACORE_EPETRA
+#ifdef HAVE_TPETRACORE_EPETRA
+#  define HAVE_TPETRA_EPETRA
+#endif // HAVE_TPETRACORE_EPETRA
 
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TPETRA_DEBUG
 
 #cmakedefine HAVE_TPETRA_ENABLE_SS_TESTING
 
-/* Define if want to build tpetra with OpenMP */
-#cmakedefine HAVE_TPETRA_OPENMP
-
 /* Define if we have MPI */
-#cmakedefine HAVE_TPETRA_MPI
+#cmakedefine HAVE_TPETRACORE_MPI
+#ifdef HAVE_TPETRACORE_MPI
+#  define HAVE_TPETRA_MPI
+#endif // HAVE_TPETRACORE_MPI
 
 /* Determine if we have CUDA, Thrust, QD */
-#cmakedefine HAVE_TPETRA_CUDA
-#cmakedefine HAVE_TPETRA_THRUST
-#cmakedefine HAVE_TPETRA_QD
+#cmakedefine HAVE_TPETRACORE_CUDA
+#ifdef HAVE_TPETRACORE_CUDA
+#  define HAVE_TPETRA_CUDA
+#endif // HAVE_TPETRACORE_CUDA
+
+#cmakedefine HAVE_TPETRACORE_THRUST
+#ifdef HAVE_TPETRACORE_THRUST
+#  define HAVE_TPETRA_THRUST
+#endif // HAVE_TPETRACORE_THRUST
+
+#cmakedefine HAVE_TPETRACORE_QD
+#ifdef HAVE_TPETRACORE_QD
+#  define HAVE_TPETRA_QD
+#endif // HAVE_TPETRACORE_QD
 
 /* Define if want to build tpetra-throw_warnings */
 #cmakedefine HAVE_TPETRA_THROW_WARNINGS
@@ -47,11 +61,15 @@
    in Tpetra (and downstream packages).  TSQR is enabled by default in
    Tpetra if KokkosTSQR is enabled, but users may turn off TSQR by
    setting Tpetra_ENABLE_TSQR to OFF. */
-#cmakedefine HAVE_TPETRA_KOKKOSTSQR
+#cmakedefine HAVE_TPETRACORE_TPETRATSQR
+#ifdef HAVE_TPETRACORE_TPETRATSQR
+#  define HAVE_TPETRA_KOKKOSTSQR
+#  define HAVE_TPETRA_TPETRATSQR
+#endif // HAVE_TPETRACORE_TPETRATSQR
 
-/* Define when building Tpetra with TSQR enabled.  TSQR is enabled by
-   default in Tpetra if the KokkosTSQR subpackage is enabled.  Users
-   may turn off TSQR even if KokkosTSQR is enabled, by setting
+/* Define when building TpetraCore with TSQR enabled.  TSQR is enabled
+   by default in TpetraCore if the TpetraTSQR subpackage is enabled.
+   Users may turn off TSQR even if TpetraTSQR is enabled, by setting
    Tpetra_ENABLE_TSQR to OFF. */
 #cmakedefine HAVE_TPETRA_TSQR
 
@@ -67,19 +85,34 @@
 #cmakedefine HAVE_TPETRA_MMM_TIMINGS
 
 /* Define when enabling KokkosCore in Tpetra */
-#cmakedefine HAVE_TPETRA_KOKKOSCORE
+#cmakedefine HAVE_TPETRACORE_KOKKOSCORE
+#ifdef HAVE_TPETRACORE_KOKKOSCORE
+#  define HAVE_TPETRA_KOKKOSCORE
+#endif // HAVE_TPETRACORE_KOKKOSCORE
 
 /* Define when enabling KokkosCompat in Tpetra */
-#cmakedefine HAVE_TPETRA_KOKKOSCOMPAT
+#cmakedefine HAVE_TPETRACORE_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_KOKKOSCOMPAT
+#  define HAVE_TPETRA_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_KOKKOSCOMPAT
 
 /* Define when enabling KokkosLinAlg in Tpetra */
-#cmakedefine HAVE_TPETRA_KOKKOSLINALG
+#cmakedefine HAVE_TPETRACORE_KOKKOSLINALG
+#ifdef HAVE_TPETRACORE_KOKKOSLINALG
+#  define HAVE_TPETRA_KOKKOSLINALG
+#endif // HAVE_TPETRACORE_KOKKOSLINALG
 
 /* Define when enabling KokkosContainers in Tpetra */
-#cmakedefine HAVE_TPETRA_KOKKOSCONTAINERS
+#cmakedefine HAVE_TPETRACORE_KOKKOSCONTAINERS
+#ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
+#  define HAVE_TPETRA_KOKKOSCONTAINERS
+#endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
 
 /* Define when enabling KokkosContainers in Tpetra */
-#cmakedefine HAVE_TPETRA_KOKKOSMPICOMM
+#cmakedefine HAVE_TPETRACORE_KOKKOSMPICOMM
+#ifdef HAVE_TPETRACORE_KOKKOSMPICOMM
+#  define HAVE_TPETRA_KOKKOSMPICOMM
+#endif // HAVE_TPETRACORE_KOKKOSMPICOMM
 
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
@@ -109,7 +142,10 @@
 
 #cmakedefine HAVE_TPETRA_THREADED_MKL
 
-#cmakedefine HAVE_TPETRA_RTI
+#cmakedefine HAVE_TPETRACORE_RTI
+#ifdef HAVE_TPETRACORE_RTI
+#  define HAVE_TPETRA_RTI
+#endif // HAVE_TPETRACORE_RTI
 
 @TPETRA_DEPRECATED_DECLARATIONS@
 

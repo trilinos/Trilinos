@@ -1,14 +1,11 @@
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
+#include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Export.hpp>
 
 //
-//  This tests vector export to a target vector with a map that has 
+//  This tests vector export to a target vector with a map that has
 //  no elements on some processors.
 //
 

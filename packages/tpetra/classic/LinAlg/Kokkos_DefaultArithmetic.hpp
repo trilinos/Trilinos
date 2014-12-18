@@ -56,7 +56,7 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_MultiVectorKernelOps.hpp"
 #include "Kokkos_NodeHelpers.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
+#ifdef HAVE_TPETRACLASSIC_THRUST
 #  include "cublas.h"
 #endif
 #include <Teuchos_BLAS.hpp>
@@ -85,7 +85,7 @@ namespace KokkosClassic {
       }
   };
 
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_TPETRACLASSIC_SERIAL
 
   template <typename Scalar>
   struct NodeGEMM<Scalar,SerialNode> {
@@ -107,9 +107,9 @@ namespace KokkosClassic {
       }
   };
 
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#endif // HAVE_TPETRACLASSIC_SERIAL
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#ifdef HAVE_TPETRACLASSIC_TBB
   template <typename Scalar>
   struct NodeGEMM<Scalar,TBBNode> {
     public:
@@ -126,7 +126,7 @@ namespace KokkosClassic {
   };
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#ifdef HAVE_TPETRACLASSIC_THREADPOOL
   template <typename Scalar>
   struct NodeGEMM<Scalar,TPINode> {
     public:
@@ -149,7 +149,7 @@ namespace KokkosClassic {
   };
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
   template <typename Scalar>
   struct NodeGEMM<Scalar,OpenMPNode> {
     public:
@@ -166,7 +166,7 @@ namespace KokkosClassic {
   };
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
+#ifdef HAVE_TPETRACLASSIC_THRUST
   template <typename Scalar>
   struct NodeGEMM<Scalar,ThrustGPUNode> {
     public:
@@ -190,7 +190,7 @@ namespace KokkosClassic {
         const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
                    char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
         cublasSgemm(char_transA, char_transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
         cublasStatus info = cublasGetError();
         TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasSgemm failed with status " << info << "." );
 #endif
@@ -212,7 +212,7 @@ namespace KokkosClassic {
         const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
                    char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
         cublasDgemm(char_transA, char_transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
         cublasStatus info = cublasGetError();
         TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasDgemm failed with status " << info << "." );
 #endif
@@ -1417,7 +1417,7 @@ namespace KokkosClassic {
     }
   };
 
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_TPETRACLASSIC_SERIAL
   // Partial specialization for Node=KokkosClassic::SerialNode.
   template <class Scalar>
   class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
@@ -2257,9 +2257,9 @@ namespace KokkosClassic {
       }
     }
   };
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#endif // HAVE_TPETRACLASSIC_SERIAL
 
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_TPETRACLASSIC_SERIAL
   // Full specialization for Scalar=double and Node=KokkosClassic::SerialNode.
   template <>
   class DefaultArithmetic<MultiVector<double, SerialNode> > :
@@ -3043,7 +3043,7 @@ namespace KokkosClassic {
       }
     }
   };
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#endif // HAVE_TPETRACLASSIC_SERIAL
 
 } // namespace KokkosClassic
 

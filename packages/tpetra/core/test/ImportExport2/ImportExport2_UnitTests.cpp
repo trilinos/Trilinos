@@ -42,10 +42,9 @@
 */
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
+#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
-#include "Teuchos_UnitTestHarness.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
 
 #include <map>
 #include <vector>
@@ -54,7 +53,6 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Tuple.hpp>
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"

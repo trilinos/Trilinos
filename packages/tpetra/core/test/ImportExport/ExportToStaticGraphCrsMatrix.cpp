@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -46,7 +46,7 @@
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -90,7 +90,7 @@ namespace {
       if (out.is_null()) {
         if (this->getVerbLevel() == Teuchos::VERB_NONE) {
           this->setOStream (getFancyOStream (rcp (new Teuchos::oblackholestream)));
-        } 
+        }
         else {
           this->setOStream (getFancyOStream (rcpFromRef (std::cout)));
         }
@@ -103,33 +103,33 @@ namespace {
     typedef global_ordinal_type GO;
     typedef node_type NT;
 
-    Teuchos::RCP<const map_type> 
-    makeNonoverlappingRowMap (const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+    Teuchos::RCP<const map_type>
+    makeNonoverlappingRowMap (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                               const Teuchos::RCP<node_type>& node,
                               const size_t localNumElts) const
     {
       using Tpetra::createContigMapWithNode;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      
-      Tpetra::global_size_t globalNumElts = 
+
+      Tpetra::global_size_t globalNumElts =
         Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
       return createContigMapWithNode<LO, GO, NT> (globalNumElts, localNumElts, comm, node);
     }
 
-    Teuchos::RCP<const map_type> 
+    Teuchos::RCP<const map_type>
     makeDomainMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
     {
       return nonoverlapRowMap;
     }
 
-    Teuchos::RCP<const map_type> 
+    Teuchos::RCP<const map_type>
     makeRangeMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
     {
       return nonoverlapRowMap;
     }
 
-    Teuchos::RCP<const map_type> 
+    Teuchos::RCP<const map_type>
     makeOverlappingRowMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
     {
       using Tpetra::createNonContigMapWithNode;
@@ -149,7 +149,7 @@ namespace {
       RCP<FancyOStream> pOut = this->getOStream();
       Teuchos::oblackholestream blackHole;
       const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ? 
+      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ?
         pOut : getFancyOStream (rcpFromRef (blackHole));
 
       *out << "makeOverlappingRowMap:" << endl;
@@ -163,7 +163,7 @@ namespace {
 
       GO myMinGID = nonoverlapRowMap->getMinGlobalIndex();
       GO myMaxGID = nonoverlapRowMap->getMaxGlobalIndex();
-      *out << "Proc " << myRank << ": my min,max nonoverlap GID = " << myMinGID << "," 
+      *out << "Proc " << myRank << ": my min,max nonoverlap GID = " << myMinGID << ","
            << myMaxGID << endl;
 
       if (myMaxGID != nonoverlapRowMap->getMaxAllGlobalIndex()) {
@@ -202,17 +202,17 @@ namespace {
       RCP<FancyOStream> pOut = this->getOStream();
       Teuchos::oblackholestream blackHole;
       const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ? 
+      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ?
         pOut : getFancyOStream (rcpFromRef (blackHole));
-        
+
       *out << "makeNonoverlappingTestGraph:" << endl;
       OSTab tab = this->getOSTab ();
-        
+
       const size_t maxIndicesPerRow = 3;
       *out << "Creating CrsGraph" << endl;
       RCP<graph_type> graph = rcp (new graph_type (nonoverlapRowMap, maxIndicesPerRow));
       Array<GO> curIndices (maxIndicesPerRow);
-      
+
       *out << "Filling CrsGraph" << endl;
       for (LO localRow = nonoverlapRowMap->getMinLocalIndex(); localRow <= nonoverlapRowMap->getMaxLocalIndex(); ++localRow) {
         const GO globalRow = nonoverlapRowMap->getGlobalElement (localRow);
@@ -222,7 +222,7 @@ namespace {
         if (globalRow == nonoverlapRowMap->getMinAllGlobalIndex()) {
           numEntriesInCurRow = 2;
           startOffset = as<GO> (0);
-        } 
+        }
         else if (globalRow == nonoverlapRowMap->getMaxAllGlobalIndex()) {
           numEntriesInCurRow = 2;
         }
@@ -233,7 +233,7 @@ namespace {
         graph->insertGlobalIndices (globalRow, curIndView);
       }
 
-      *out << "Calling fillComplete() on CrsGraph" << endl;      
+      *out << "Calling fillComplete() on CrsGraph" << endl;
       graph->fillComplete ();
       return graph;
     }
@@ -265,9 +265,9 @@ namespace {
       RCP<FancyOStream> pOut = this->getOStream();
       Teuchos::oblackholestream blackHole;
       const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ? 
+      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ?
         pOut : getFancyOStream (rcpFromRef (blackHole));
-        
+
       *out << "makeOverlappingSourceMatrix:" << endl;
       OSTab tab = this->getOSTab ();
 
@@ -290,12 +290,12 @@ namespace {
       curValues[0] = leftVal;
       curValues[1] = diagVal;
       curValues[2] = rightVal;
-      
+
       *out << "Filling sparse matrix" << endl;
       for (LO localRow = overlapRowMap->getMinLocalIndex(); localRow <= overlapRowMap->getMaxLocalIndex(); ++localRow) {
         const GO globalRow = overlapRowMap->getGlobalElement (localRow);
         if (includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME)) {
-          *out << "Proc " << myRank << ": localRow=" << localRow 
+          *out << "Proc " << myRank << ": localRow=" << localRow
                << ", globalRow=" << globalRow << endl;
         }
 
@@ -320,7 +320,7 @@ namespace {
           numEntriesInCurRow = 2;
           startOffset = as<GO> (0);
           curValView = curValues.view (1, numEntriesInCurRow);
-        } 
+        }
         else if (globalRow == overlapRowMap->getMaxAllGlobalIndex()) {
           numEntriesInCurRow = 2;
           startOffset = as<GO> (-1);
@@ -341,24 +341,24 @@ namespace {
           // the "atom" of strings into an ostringstream first, and
           // then printing the whole string at once.
           std::ostringstream os;
-          os << "Proc " << myRank << ": Insert at row " << globalRow << ": indices=" 
+          os << "Proc " << myRank << ": Insert at row " << globalRow << ": indices="
              << curIndView.toString() << ", values=" << curValView.toString() << endl;
           *out << os.str();
         }
         A_src->insertGlobalValues (globalRow, curIndView, curValView);
       }
-      
+
       *out << "Calling fillComplete (domainMap, rangeMap) on the sparse matrix" << endl;
       A_src->fillComplete (domainMap, rangeMap);
       return A_src;
     }
-    
+
     /// \brief Whether A_src == A_tgt, locally.
     ///
     /// \pre The row Maps of A_src and A_tgt share the same GIDs,
     ///   except that the row Map of A_src has overlap, and the row
     ///   Map of A_tgt does not.  This fits our Export test protocol.
-    /// 
+    ///
     /// \pre Both A_src and A_tgt are locally indexed.  Test for this
     ///   via \c isLocallyIndexed().
     ///
@@ -384,15 +384,15 @@ namespace {
       RCP<FancyOStream> pOut = this->getOStream();
       Teuchos::oblackholestream blackHole;
       const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ? 
+      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ?
         pOut : getFancyOStream (rcpFromRef (blackHole));
-        
+
       *out << "locallyEqual:" << endl;
       OSTab tab = this->getOSTab ();
 
       RCP<const Teuchos::Comm<int> > comm = A_src->getComm();
       const int myRank = comm->getRank();
-      
+
       TEUCHOS_TEST_FOR_EXCEPTION(! A_src->isLocallyIndexed() || ! A_tgt->isLocallyIndexed(),
         std::invalid_argument, "Both A_src and A_tgt must be locally indexed.");
 
@@ -410,17 +410,17 @@ namespace {
       RCP<const map_type> tgtRowMap = A_tgt->getRowMap();
       Array<GO> disagreeingRows;
       bool allRowsAgree = true;
-      for (LO tgtLocalRow = tgtRowMap->getMinLocalIndex(); 
+      for (LO tgtLocalRow = tgtRowMap->getMinLocalIndex();
            tgtLocalRow <= tgtRowMap->getMaxLocalIndex(); ++tgtLocalRow) {
         // There's no particular reason why A_src should have the same
         // local indices as A_tgt, so convert back and forth.
         const GO globalRow = tgtRowMap->getGlobalElement (tgtLocalRow);
-        TEUCHOS_TEST_FOR_EXCEPTION(globalRow == OrdinalTraits<GO>::invalid(), 
-          std::logic_error, "Local row index " << tgtLocalRow 
+        TEUCHOS_TEST_FOR_EXCEPTION(globalRow == OrdinalTraits<GO>::invalid(),
+          std::logic_error, "Local row index " << tgtLocalRow
           << " of A_tgt has no global index.");
         const LO srcLocalRow = srcRowMap->getLocalElement (globalRow);
-        TEUCHOS_TEST_FOR_EXCEPTION(srcLocalRow == OrdinalTraits<LO>::invalid(), 
-          std::logic_error, "Global row index " << globalRow 
+        TEUCHOS_TEST_FOR_EXCEPTION(srcLocalRow == OrdinalTraits<LO>::invalid(),
+          std::logic_error, "Global row index " << globalRow
           << " has no local index of A_src.");
 
         const size_t srcNumEntries = A_src->getNumEntriesInLocalRow (srcLocalRow);
@@ -448,11 +448,11 @@ namespace {
         }
       } // for each local row index of the target matrix on my process
 
-      *out << "Proc " << myRank << ": " 
-           << (allRowsAgree ? "all rows agree" : "some rows don't agree") 
+      *out << "Proc " << myRank << ": "
+           << (allRowsAgree ? "all rows agree" : "some rows don't agree")
            << endl;
       if (includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME)) {
-        *out << "Proc " << myRank << ": disagreeing rows = " 
+        *out << "Proc " << myRank << ": disagreeing rows = "
              << disagreeingRows.toString() << endl;
       }
       const GO firstDisagreeingRow = (disagreeingRows.size() == 0) ?
@@ -465,7 +465,7 @@ namespace {
     /// \pre The row Maps of A_src and A_tgt share the same GIDs,
     ///   except that the row Map of A_src has overlap, and the row
     ///   Map of A_tgt does not.  This fits our Export test protocol.
-    /// 
+    ///
     /// \pre Both A_src and A_tgt are locally indexed.  Test for this
     ///   via \c isLocallyIndexed().
     ///
@@ -494,14 +494,14 @@ namespace {
       RCP<FancyOStream> pOut = this->getOStream();
       Teuchos::oblackholestream blackHole;
       const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ? 
+      RCP<FancyOStream> out = includesVerbLevel (verbLevel, Teuchos::VERB_LOW) ?
         pOut : getFancyOStream (rcpFromRef (blackHole));
-        
+
       *out << "globallyEqual:" << endl;
       OSTab tab = this->getOSTab ();
-      
+
       std::pair<bool, GO> localResult = locallyEqual (A_src, A_tgt);
-      *out << "Proc " << myRank << ": Local result: " << localResult.first 
+      *out << "Proc " << myRank << ": Local result: " << localResult.first
            << "," << localResult.second << endl;
 
       // reduceAll doesn't work for bool, so convert to int first.
@@ -509,18 +509,18 @@ namespace {
       GO firstNonequalIndex = as<GO> (0);
 
       int equalGlobally = 1;
-      reduceAll (*comm, Teuchos::REDUCE_MIN, equalLocally, 
+      reduceAll (*comm, Teuchos::REDUCE_MIN, equalLocally,
                  ptr (&equalGlobally));
       if (equalGlobally == 0) {
-        reduceAll (*comm, Teuchos::REDUCE_MIN, localResult.second, 
+        reduceAll (*comm, Teuchos::REDUCE_MIN, localResult.second,
                    ptr (&firstNonequalIndex));
       }
       return std::make_pair (equalGlobally == 1, firstNonequalIndex);
     }
 
   public:
-    bool 
-    testExportToCrsMatrixWithStaticGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+    bool
+    testExportToCrsMatrixWithStaticGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                           const Teuchos::RCP<node_type>& node,
                                           const size_t localNumElts) const
     {
@@ -543,9 +543,9 @@ namespace {
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
         *out << "Making nonoverlapping and overlapping row Maps" << endl;
       }
-      RCP<const map_type> nonoverlapRowMap = 
+      RCP<const map_type> nonoverlapRowMap =
         makeNonoverlappingRowMap (comm, node, localNumElts);
-      RCP<const map_type> overlapRowMap = 
+      RCP<const map_type> overlapRowMap =
         makeOverlappingRowMap (nonoverlapRowMap);
       RCP<const map_type> domainMap = makeDomainMap (nonoverlapRowMap);
       RCP<const map_type> rangeMap = makeRangeMap (nonoverlapRowMap);
@@ -553,13 +553,13 @@ namespace {
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
         *out << "Making source matrix" << endl;
       }
-      RCP<const matrix_type> A_src = 
+      RCP<const matrix_type> A_src =
         makeOverlappingSourceMatrix (overlapRowMap, domainMap, rangeMap);
 
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
         *out << "Making target graph and matrix" << endl;
       }
-      RCP<const graph_type> graph_tgt = 
+      RCP<const graph_type> graph_tgt =
         makeNonoverlappingTestGraph (nonoverlapRowMap);
       RCP<matrix_type> A_tgt = rcp (new matrix_type (graph_tgt));
 
@@ -581,14 +581,14 @@ namespace {
         comm->barrier();
         comm->barrier();
         comm->barrier();
-        Writer<matrix_type>::writeSparse (*out, A_src, "A_src", 
+        Writer<matrix_type>::writeSparse (*out, A_src, "A_src",
                                           "Source matrix (overlapping "
                                           "distribution)");
         *out << endl;
         comm->barrier();
         comm->barrier();
         comm->barrier();
-        Writer<matrix_type>::writeSparse (*out, A_tgt, "A_tgt", 
+        Writer<matrix_type>::writeSparse (*out, A_tgt, "A_tgt",
                                           "Target matrix (nonoverlapping "
                                           "distribution)");
         *out << endl;
@@ -605,9 +605,9 @@ namespace {
           *out << "Source and target matrix are the same." << endl;
         }
         else {
-          *out << "Source and target matrix differ at row(s) >= row " 
+          *out << "Source and target matrix differ at row(s) >= row "
                << result.second << "." << endl;
-        } 
+        }
       }
 
       return result.first;
@@ -616,7 +616,7 @@ namespace {
 } // namespace (anonymous)
 
 
-int 
+int
 main (int argc, char *argv[])
 {
   using Teuchos::ArrayRCP;
@@ -634,7 +634,7 @@ main (int argc, char *argv[])
   using Teuchos::rcpFromRef;
   using std::cout;
   using std::endl;
-  
+
   typedef double ST;
   typedef int LO;
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_INT_LONG)
@@ -655,8 +655,8 @@ main (int argc, char *argv[])
   const int myRank = comm->getRank();
 
   RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
-  RCP<FancyOStream> procZeroOut = (myRank == 0) ? 
-    getFancyOStream (rcpFromRef (std::cout)) : 
+  RCP<FancyOStream> procZeroOut = (myRank == 0) ?
+    getFancyOStream (rcpFromRef (std::cout)) :
     getFancyOStream (blackHole);
 
   //
@@ -675,11 +675,11 @@ main (int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  const EVerbosityLevel verbLevel = 
+  const EVerbosityLevel verbLevel =
     verbose ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE;
 
   if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
-    *out << "Running test on " << numProcs << " process" 
+    *out << "Running test on " << numProcs << " process"
          << (numProcs != 1 ? "es" : "") << "." << endl;
   }
 

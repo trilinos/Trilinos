@@ -47,10 +47,10 @@
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_DefaultBlockSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_CUSPARSE
+#ifdef HAVE_TPETRACLASSIC_CUSPARSE
 #  include "Kokkos_CUSPARSEOps.hpp"
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_CUSP
+#ifdef HAVE_TPETRACLASSIC_CUSP
 #  include "Kokkos_CuspOps.hpp"
 #endif
 
@@ -111,7 +111,7 @@ namespace KokkosClassic {
     typedef DefaultRelaxation<Scalar, Ordinal, Node> Relaxations;
   };
 
-#if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+#if defined(HAVE_TPETRACLASSIC_SERIAL)
   /// \brief Partial specialization for Node=SerialNode.
   ///
   /// AltSparseOps doesn't use KokkosClassic's parallel programming
@@ -125,9 +125,9 @@ namespace KokkosClassic {
     typedef DefaultBlockSparseOps<Scalar, Ordinal, SerialNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, SerialNode> Relaxations;
   };
-#endif // defined(HAVE_KOKKOSCLASSIC_SERIAL)
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL)
 
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
+#if defined(HAVE_TPETRACLASSIC_TBB)
   class TBBNode;
   //! Partial specialization for TBBNode, using first-touch allocation.
   template <class Scalar, class Ordinal>
@@ -136,9 +136,9 @@ namespace KokkosClassic {
     typedef DefaultBlockSparseOps<Scalar, Ordinal, TBBNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, TBBNode> Relaxations;
   };
-#endif // HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_TPETRACLASSIC_TBB
 
-#if defined(HAVE_KOKKOSCLASSIC_TPI)
+#if defined(HAVE_TPETRACLASSIC_TPI)
   class TPINode;
   //! Partial specialization for TPINode, using first-touch allocation.
   template <class Scalar, class Ordinal>
@@ -147,9 +147,9 @@ namespace KokkosClassic {
     typedef DefaultBlockSparseOps<Scalar, Ordinal, TPINode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, TPINode> Relaxations;
   };
-#endif // HAVE_KOKKOSCLASSIC_TPI
+#endif // HAVE_TPETRACLASSIC_TPI
 
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
+#if defined(HAVE_TPETRACLASSIC_OPENMP)
   class OpenMPNode;
   //! Partial specialization for OpenMPNode, using first-touch allocation.
   template <class Scalar, class Ordinal>
@@ -158,7 +158,7 @@ namespace KokkosClassic {
     typedef DefaultBlockSparseOps<Scalar, Ordinal, OpenMPNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, OpenMPNode> Relaxations;
   };
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
   //
   // We don't have block sparse ops or relaxation kernels for GPUs
@@ -171,7 +171,7 @@ namespace KokkosClassic {
 
   class ThrustGPUNode;
 
-#if defined(HAVE_KOKKOSCLASSIC_CUSP)
+#if defined(HAVE_TPETRACLASSIC_CUSP)
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar, Ordinal, ThrustGPUNode> {
     typedef CuspOps<void, Ordinal, ThrustGPUNode> SparseOps;
@@ -187,7 +187,7 @@ namespace KokkosClassic {
     // specializations below.
   };
 #endif
-#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+#if defined(HAVE_TPETRACLASSIC_CUSPARSE)
   // cuSPARSE only implements float and double kernels.  Attempts to
   // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
   // will result in a compile-time error.

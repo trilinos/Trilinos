@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,15 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -58,7 +58,7 @@ using Teuchos::ParameterList;
 using Teuchos::RCP;
 
 template <class TS>
-void recurseTypes(Teuchos::FancyOStream &os) 
+void recurseTypes(Teuchos::FancyOStream &os)
 {
   using Teuchos::TypeNameTraits;
   //
@@ -83,10 +83,10 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack4 ) {
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStack;
-  typedef TypeStack< double, 
-          TypeStack< float, 
-          TypeStack< int , 
-                     short  > > > 
+  typedef TypeStack< double,
+          TypeStack< float,
+          TypeStack< int ,
+                     short  > > >
                      FullStackManual;
   const bool same = Teuchos::TypeTraits::is_same<FullStack,FullStackManual>::value;
   TEST_EQUALITY_CONST( same, true );
@@ -101,8 +101,8 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack3 ) {
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStack;
-  typedef TypeStack< double, 
-          TypeStack< float, 
+  typedef TypeStack< double,
+          TypeStack< float,
                      int > >
                      FullStackManual;
   const bool same = Teuchos::TypeTraits::is_same<FullStack,FullStackManual>::value;
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack2 ) {
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStack;
-  typedef TypeStack< double, 
+  typedef TypeStack< double,
                      float >
                      FullStackManual;
   const bool same = Teuchos::TypeTraits::is_same<FullStack,FullStackManual>::value;
@@ -132,7 +132,7 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack1 ) {
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStackBottom;
-  typedef TypeStackBottom<int> 
+  typedef TypeStackBottom<int>
                           FullStackManual;
   const bool same = Teuchos::TypeTraits::is_same<FullStack,FullStackManual>::value;
   TEST_EQUALITY_CONST( same, true );

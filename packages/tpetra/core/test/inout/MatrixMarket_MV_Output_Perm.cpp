@@ -41,17 +41,12 @@
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
-#include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_ETIHelperMacros.h>
+#include <Teuchos_UnitTestHarness.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-
-#include <Kokkos_ConfigDefs.hpp>
-#include "Kokkos_DefaultNode.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -291,7 +286,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
   using Teuchos::RCP;
   using Teuchos::TypeNameTraits;
   using std::endl;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+  typedef Tpetra::Map<>::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Get the default communicator.
@@ -311,7 +306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
   // parameters here, but threads don't matter for this test; it's a
   // test for distributed-memory capabilities.
   out << "Creating Kokkos Node of type " << TypeNameTraits<NT>::name () << endl;
-  RCP<NT> node = KokkosClassic::DefaultNode::getDefaultNode();
+  RCP<NT> node = KokkosClassic::DefaultNode::getDefaultNode ();
   // Run the actual test.
   //RCP<const map_type> map = Test<map_type>::createTestMap (comm, node);
   Test<map_type>::testPermutedMultiVectorOutput (out, comm, node);

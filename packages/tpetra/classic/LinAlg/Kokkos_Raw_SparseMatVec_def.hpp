@@ -865,7 +865,7 @@ matVecCsrColMajorForfor (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -1122,7 +1122,7 @@ matVecCsrColMajorForforOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -1631,7 +1631,7 @@ matVecCsrColMajorForfor4Unrolled (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -2152,7 +2152,7 @@ matVecCsrColMajorForfor4UnrolledOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -2391,7 +2391,7 @@ matVecCsrColMajorForfor1Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -2624,7 +2624,7 @@ matVecCsrColMajorForfor1VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -2893,7 +2893,7 @@ matVecCsrColMajorForfor2Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -3174,7 +3174,7 @@ matVecCsrColMajorForfor2VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -3467,7 +3467,7 @@ matVecCsrColMajorForfor3Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -3772,7 +3772,7 @@ matVecCsrColMajorForfor3VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -4089,7 +4089,7 @@ matVecCsrColMajorForfor4Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -4418,7 +4418,7 @@ matVecCsrColMajorForfor4VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -5233,7 +5233,7 @@ matVecCsrColMajorForforConj (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -5490,7 +5490,7 @@ matVecCsrColMajorForforConjOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -5999,7 +5999,7 @@ matVecCsrColMajorForforConj4Unrolled (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -6520,7 +6520,7 @@ matVecCsrColMajorForforConj4UnrolledOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -6741,7 +6741,7 @@ matVecCsrColMajorForforConj1Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -6974,7 +6974,7 @@ matVecCsrColMajorForforConj1VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -7243,7 +7243,7 @@ matVecCsrColMajorForforConj2Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -7524,7 +7524,7 @@ matVecCsrColMajorForforConj2VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -7817,7 +7817,7 @@ matVecCsrColMajorForforConj3Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -8122,7 +8122,7 @@ matVecCsrColMajorForforConj3VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 template<class Ordinal,
          class MatrixScalar,
@@ -8439,7 +8439,7 @@ matVecCsrColMajorForforConj4Vec (
   }
 }
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 template<class Ordinal,
          class MatrixScalar,
          class DomainScalar,
@@ -8768,7 +8768,7 @@ matVecCsrColMajorForforConj4VecOmp (
     }
   }
 }
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRACLASSIC_OPENMP
 
 } // namespace Raw
 } // namespace KokkosClassic

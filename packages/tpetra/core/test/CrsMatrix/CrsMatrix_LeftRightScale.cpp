@@ -43,7 +43,7 @@
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Tpetra_TestingUtilities.hpp>
 
@@ -128,7 +128,7 @@ namespace {
   }
 
   // Compute the Frobenius norm of the matrix.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   getNorm (const RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& matrix)
   {
@@ -151,9 +151,9 @@ namespace {
       ArrayView<const ST> valsView = vals.view (0, as<size_type> (numRowEnts));
       matrix->getLocalRowView (myRow, indsView, valsView);
       for (size_t j = 0; j < numRowEnts; ++j) {
-	const ST curVal = valsView[j];
-	mySum += STS::real (curVal) * STS::real (curVal) + 
-	  STS::imag (curVal) * STS::imag (curVal);
+        const ST curVal = valsView[j];
+        mySum += STS::real (curVal) * STS::real (curVal) +
+          STS::imag (curVal) * STS::imag (curVal);
       }
     }
     MT totalSum = 0;

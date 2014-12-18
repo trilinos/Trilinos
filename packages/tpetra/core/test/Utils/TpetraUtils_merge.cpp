@@ -41,15 +41,11 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_Util.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Util.hpp>
 #include <functional>
 
 

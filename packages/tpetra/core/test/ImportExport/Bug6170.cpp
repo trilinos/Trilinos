@@ -43,7 +43,7 @@
 
 // Ensure that if CUDA and KokkosCompat are both enabled,
 // then Tpetra only compiles the .cu version of this file.
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>

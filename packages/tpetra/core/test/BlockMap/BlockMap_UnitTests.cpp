@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,15 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Array.hpp>
@@ -110,14 +110,14 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockMap, ContigConstBlkSize, LO, GO )
   {
     typedef Map<LO,GO> M;
     typedef BlockMap<LO,GO> BM;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -161,7 +161,7 @@ namespace {
     const M& tmap2ref = *(blkmap2.getPointMap());
     TEST_IS_SAME_AS(tmapref, tmap2ref, true);
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -170,7 +170,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockMap, OverlapConstBlkSize, LO, GO )
   {
     typedef BlockMap<LO,GO> BM;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -182,7 +182,7 @@ namespace {
     if (numImages > 1 && myImageID > 0) {
       myGlobal.insert(myGlobal.begin(), myImageID*2-1);
     }
-    
+
     if (numImages > 1 && myImageID < numImages-1) {
       myGlobal.push_back(myImageID*2+2);
     }
@@ -208,7 +208,7 @@ namespace {
   {
     typedef Map<LO,GO> M;
     typedef BlockMap<LO,GO> BM;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -253,7 +253,7 @@ namespace {
     TEST_IS_SAME_AS(tmapref, tmap2ref, true);
 
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -264,7 +264,7 @@ namespace {
   {
     typedef Map<LO,GO> M;
     typedef BlockMap<LO,GO> BM;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -283,7 +283,7 @@ namespace {
     Array<LO> blkSzs( tuple<LO>(2,2, 2) );
     TEST_THROW(BM blkmap(map, blkIDs(), blkSzs()), std::runtime_error);
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -294,7 +294,7 @@ namespace {
   {
     typedef Map<LO,GO> M;
     typedef BlockMap<LO,GO> BM;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -313,14 +313,14 @@ namespace {
     Array<LO> blkSzs( tuple<LO>(3,3) );
     TEST_THROW(BM blkmap(map, blkIDs(), blkSzs()), std::runtime_error);
 
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 

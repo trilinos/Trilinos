@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,15 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <iostream>
@@ -67,7 +67,7 @@ using Teuchos::tuple;
 
 /**********************************************************************************/
 RCP<Tpetra::Vector<int,int> >
-TestTpetra(const ArrayView<const int> &srcGID, const ArrayView<const int> &destGID) 
+TestTpetra(const ArrayView<const int> &srcGID, const ArrayView<const int> &destGID)
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapExport1 )
   // SRC Map Processor 0: Global IDs = 2 3 4 5 6 7 8
   //         Processor 1: Global IDs =           7 8 9 10 11 12 13
   //
-  // DEST Map  Processor 0: Global IDs = 0 1 2 3 4 5 6  
+  // DEST Map  Processor 0: Global IDs = 0 1 2 3 4 5 6
   //           Processor 1: Global IDs =                    9 10 11 12 13 14 15
   //
   //
@@ -130,11 +130,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapExport2 )
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
-  // SRC Map  Processor 0: Global IDs = 
+  // SRC Map  Processor 0: Global IDs =
   //          Processor 1: Global IDs = 0 1
   //
   // DEST Map Processor 0: Global IDs = 0 1 2
-  //          Processor 1: Global IDs =   1 2 
+  //          Processor 1: Global IDs =   1 2
   //
   // Vectors before export operation:
   // --------------------------------
@@ -162,11 +162,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapExport3 )
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
   /**********************************************************************************/
-  // SRC Map  Processor 0: Global IDs = 0 1 
+  // SRC Map  Processor 0: Global IDs = 0 1
   //          Processor 1: Global IDs = 0 1
   //
   // DEST Map Processor 0: Global IDs = 2 3
-  //          Processor 1: Global IDs = 2 3 
+  //          Processor 1: Global IDs = 2 3
   //
   // Vectors before export operation:
   // --------------------------------

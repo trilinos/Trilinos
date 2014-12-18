@@ -52,12 +52,12 @@
 
 #include "Kokkos_DefaultNode.hpp"
 
-#if (defined(HAVE_KOKKOSCLASSIC_CUSPARSE) || defined(HAVE_KOKKOSCLASSIC_CUSP)) && defined(HAVE_KOKKOSCLASSIC_THRUST)
+#if (defined(HAVE_TPETRACLASSIC_CUSPARSE) || defined(HAVE_TPETRACLASSIC_CUSP)) && defined(HAVE_TPETRACLASSIC_THRUST)
   #include "Kokkos_ThrustGPUNode.hpp"
-  #ifdef HAVE_KOKKOSCLASSIC_CUSPARSE
+  #ifdef HAVE_TPETRACLASSIC_CUSPARSE
     #include "Kokkos_CUSPARSEOps.hpp"
   #endif
-  #ifdef HAVE_KOKKOSCLASSIC_CUSP
+  #ifdef HAVE_TPETRACLASSIC_CUSP
     #include "Kokkos_CuspOps.hpp"
   #endif
   #define TEST_CUDA
@@ -164,14 +164,14 @@ namespace {
     X.initializeValues(  2,1,  xdat,2);
     AX.initializeValues( N,1, axdat,N);
     ATX.initializeValues(2,1,atxdat,2);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
     node->sync();
 #endif
     // AX = A*X
     dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);     //  AX = ones()
     dsm.multiply(Teuchos::TRANS,   ONE,AX,ATX);   // ATX = [-N;N]
     dsm.multiply(Teuchos::TRANS,  -ONE,AX,ONE,X); // X = [1;2] - [-N;N] = [1+N;2-N]
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
     node->sync();
 #endif
     // AX should be all ones
@@ -264,12 +264,12 @@ namespace {
     X.initializeValues( N,1, xdat,N);
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init( X,1);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
     node->sync();
 #endif
     // AX = A*X
     dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+#ifdef HAVE_TPETRACLASSIC_DEBUG
     node->sync();
 #endif
     // AX should be all ones
@@ -385,15 +385,15 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, NodeTest,       ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, ResubmitMatrix, ORDINAL, SCALAR, NODE )
 
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_TPETRACLASSIC_SERIAL
   typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_SerialNode )
 #else
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR)
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#endif // HAVE_TPETRACLASSIC_SERIAL
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#ifdef HAVE_TPETRACLASSIC_TBB
   typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TBBNode )
@@ -401,7 +401,7 @@ namespace {
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_TPETRACLASSIC_OPENMP
   typedef KokkosClassic::OpenMPNode KokkosClassic_OpenMPNode;
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_OpenMPNode )
@@ -409,7 +409,7 @@ namespace {
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#ifdef HAVE_TPETRACLASSIC_THREADPOOL
   typedef KokkosClassic::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TPINode )
@@ -430,7 +430,7 @@ namespace {
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
-#if (defined(HAVE_KOKKOSCLASSIC_CUSPARSE) || defined(HAVE_KOKKOSCLASSIC_CUSP)) && defined(HAVE_KOKKOSCLASSIC_THRUST)
+#if (defined(HAVE_TPETRACLASSIC_CUSPARSE) || defined(HAVE_TPETRACLASSIC_CUSP)) && defined(HAVE_TPETRACLASSIC_THRUST)
   typedef KokkosClassic::ThrustGPUNode KokkosClassic_ThrustGPUNode;
 #ifdef TEST_CUDA_FLOAT
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, KokkosClassic_ThrustGPUNode )
@@ -445,7 +445,7 @@ ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, KokkosClassic_ThrustGPUNo
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, KokkosClassic_ThrustGPUNode )
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_CUSP
+#ifdef HAVE_TPETRACLASSIC_CUSP
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, KokkosClassic_ThrustGPUNode )
 #endif
 #endif

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -60,7 +60,7 @@
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -93,18 +93,18 @@ namespace {
 
 bool
 countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
-	       // Epetra widgets
-	       const Epetra_Map& epetraOwnedMap,
-	       const Epetra_Vector& epetraOwnedVector,
-	       const Epetra_Map& epetraOverlapMap,
-	       Epetra_Vector& epetraOverlapVector,
-	       // Tpetra widgets
-	       const Teuchos::RCP<Tpetra::Map<int> >& tpetraOwnedMap, 
-	       const Tpetra::Vector<double,int>& tpetraOwnedVector,
-	       const Teuchos::RCP<Tpetra::Map<int> >& tpetraOverlapMap,
-	       Tpetra::Vector<double,int>& tpetraOverlapVector,
-	       // options
-	       const bool verbose)
+               // Epetra widgets
+               const Epetra_Map& epetraOwnedMap,
+               const Epetra_Vector& epetraOwnedVector,
+               const Epetra_Map& epetraOverlapMap,
+               Epetra_Vector& epetraOverlapVector,
+               // Tpetra widgets
+               const Teuchos::RCP<Tpetra::Map<int> >& tpetraOwnedMap,
+               const Tpetra::Vector<double,int>& tpetraOwnedVector,
+               const Teuchos::RCP<Tpetra::Map<int> >& tpetraOverlapMap,
+               Tpetra::Vector<double,int>& tpetraOverlapVector,
+               // options
+               const bool verbose)
 {
   using Teuchos::ArrayRCP;
   using Teuchos::ptr;
@@ -131,14 +131,14 @@ countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
     int gid = tpetraOverlapMap->getGlobalElement(lid);
     if (epetraOverlapVector[lid] != gid) {
       localOut << "Process " << pid << ": epetraOverlapVector[" << lid << "] = "
-	       << epetraOverlapVector[lid] << " (should equal " << gid << ")"
-	       << endl;
+               << epetraOverlapVector[lid] << " (should equal " << gid << ")"
+               << endl;
       ++localEpetraFailureCount;
     }
     if (tpetraOverlapArray[lid] != gid) {
       localOut << "Process " << pid << ": tpetraOverlapArray[" << lid << "] = "
-	   << tpetraOverlapArray[lid] << " (should equal " << gid << ")"
-	   << endl;
+           << tpetraOverlapArray[lid] << " (should equal " << gid << ")"
+           << endl;
       ++localTpetraFailureCount;
     }
   }
@@ -150,13 +150,13 @@ countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
     const int numProcs = teuchosComm->getSize();
     for (int p = 0; p < numProcs; ++p) {
       if (p == pid) {
-	cout << "Process " << p << ":" << endl;
-	if (localTpetraFailureCount > 0) {
-	  cout << localOut.str() << endl;
-	} else {
-	  cout << "No errors" << endl;
-	}
-	cout << std::flush; // Write an endl and flush the output stream.
+        cout << "Process " << p << ":" << endl;
+        if (localTpetraFailureCount > 0) {
+          cout << localOut.str() << endl;
+        } else {
+          cout << "No errors" << endl;
+        }
+        cout << std::flush; // Write an endl and flush the output stream.
       }
       // Do a few barriers to ensure that output to stdout completed.
       teuchosComm->barrier();
@@ -168,10 +168,10 @@ countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
   // Get global failure counts.
   int globalEpetraFailureCount = 0;
   int globalTpetraFailureCount = 0;
-  reduceAll (*teuchosComm, Teuchos::REDUCE_SUM, localEpetraFailureCount, 
-	     ptr (&globalEpetraFailureCount));
-  reduceAll (*teuchosComm, Teuchos::REDUCE_SUM, localTpetraFailureCount, 
-	     ptr (&globalTpetraFailureCount));
+  reduceAll (*teuchosComm, Teuchos::REDUCE_SUM, localEpetraFailureCount,
+             ptr (&globalEpetraFailureCount));
+  reduceAll (*teuchosComm, Teuchos::REDUCE_SUM, localTpetraFailureCount,
+             ptr (&globalTpetraFailureCount));
 
   // Report the number of failures over all processes.
   Teuchos::oblackholestream blackHole;
@@ -191,7 +191,7 @@ countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
 } // namespace (anonymous)
 
 
-int 
+int
 main (int argc, char *argv[])
 {
   using Teuchos::ArrayRCP;
@@ -222,7 +222,7 @@ main (int argc, char *argv[])
   RCP<const Comm<int> > teuchosComm = Teuchos::DefaultComm<int>::getComm();
   const int numProcs = teuchosComm->getSize();
   const int pid = teuchosComm->getRank();
-  RCP<FancyOStream> pOut = 
+  RCP<FancyOStream> pOut =
     getFancyOStream (rcpFromRef ((pid == 0) ? std::cout : blackHole));
   FancyOStream& out = *pOut;
   // Verify that we are on four processors (which manifests the bug).
@@ -250,10 +250,10 @@ main (int argc, char *argv[])
   // print themselves in distributed, maximally verbose fashion.  It's
   // best to turn on either Epetra or Tpetra, but not both.  Then you
   // can compare their output side by side.
-  cmdp.setOption ("printEpetra", "dontPrintEpetra", &printEpetra, 
-		  "Print Epetra output (in verbose mode only).");
-  cmdp.setOption ("printTpetra", "dontPrintTpetra", &printTpetra, 
-		  "Print Tpetra output (in verbose mode only).");
+  cmdp.setOption ("printEpetra", "dontPrintEpetra", &printEpetra,
+                  "Print Epetra output (in verbose mode only).");
+  cmdp.setOption ("printTpetra", "dontPrintTpetra", &printTpetra,
+                  "Print Tpetra output (in verbose mode only).");
   // Parse command-line options.
   if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     out << "End Result: TEST FAILED" << endl;
@@ -262,8 +262,8 @@ main (int argc, char *argv[])
   }
 
   if (verbose) {
-    out << "Running test on " << numProcs << " process" 
-	<< (numProcs != 1 ? "es" : "") << "." << endl;
+    out << "Running test on " << numProcs << " process"
+        << (numProcs != 1 ? "es" : "") << "." << endl;
   }
 
   // The maps for this problem are derived from a 3D structured mesh.
@@ -337,13 +337,13 @@ main (int argc, char *argv[])
   // input tells Tpetra::Map to compute the global number of elements
   // itself.
   const int invalid = Teuchos::OrdinalTraits<int>::invalid();
-  RCP<Tpetra::Map<int> > tpetraOwnedMap = 
-    rcp (new Tpetra::Map<int> (invalid, ArrayView<int> (owned, ownedSize), 
-			       0, teuchosComm));
+  RCP<Tpetra::Map<int> > tpetraOwnedMap =
+    rcp (new Tpetra::Map<int> (invalid, ArrayView<int> (owned, ownedSize),
+                               0, teuchosComm));
   tpetraOwnedMap->setObjectLabel ("Owned Map");
   RCP<Tpetra::Map<int> > tpetraOverlapMap =
     rcp (new Tpetra::Map<int> (invalid, ArrayView<int> (overlap, overlapSize),
-			       0, teuchosComm));
+                               0, teuchosComm));
   tpetraOverlapMap->setObjectLabel ("Overlap Map");
 
   // In verbose mode, have the Tpetra::Map objects describe themselves.
@@ -412,8 +412,8 @@ main (int argc, char *argv[])
   tpetraOverlapVector.putScalar(-1);
   ArrayRCP<double> tpetraOwnedArray   = tpetraOwnedVector.getDataNonConst(0);
   ArrayRCP<double> tpetraOverlapArray = tpetraOverlapVector.getDataNonConst(0);
-  for (int owned_lid = 0; 
-       owned_lid < tpetraOwnedMap->getNodeElementList().size(); 
+  for (int owned_lid = 0;
+       owned_lid < tpetraOwnedMap->getNodeElementList().size();
        ++owned_lid) {
     int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
     int overlap_lid = tpetraOverlapMap->getLocalElement(gid);
@@ -432,13 +432,13 @@ main (int argc, char *argv[])
     out << "Testing Import from owned Map to overlap Map:" << endl << endl;
   }
   epetraOverlapVector.Import(  epetraOwnedVector, epetraImporter, Insert);
-  tpetraOverlapVector.doImport(tpetraOwnedVector, tpetraImporter, 
-			       Tpetra::INSERT);
+  tpetraOverlapVector.doImport(tpetraOwnedVector, tpetraImporter,
+                               Tpetra::INSERT);
   // Check the Import results.
-  success = countFailures (teuchosComm, epetraOwnedMap, epetraOwnedVector, 
-			   epetraOverlapMap, epetraOverlapVector, 
-			   tpetraOwnedMap, tpetraOwnedVector, 
-			   tpetraOverlapMap, tpetraOverlapVector, verbose);
+  success = countFailures (teuchosComm, epetraOwnedMap, epetraOwnedVector,
+                           epetraOverlapMap, epetraOverlapVector,
+                           tpetraOwnedMap, tpetraOwnedVector,
+                           tpetraOverlapMap, tpetraOverlapVector, verbose);
 
   const bool testOtherDirections = false;
   if (testOtherDirections) {
@@ -448,14 +448,14 @@ main (int argc, char *argv[])
     tpetraOverlapVector.putScalar(-1);
     tpetraOwnedArray   = tpetraOwnedVector.getDataNonConst(0);
     tpetraOverlapArray = tpetraOverlapVector.getDataNonConst(0);
-    for (int owned_lid = 0; 
-	 owned_lid < tpetraOwnedMap->getNodeElementList().size(); 
-	 ++owned_lid) 
+    for (int owned_lid = 0;
+         owned_lid < tpetraOwnedMap->getNodeElementList().size();
+         ++owned_lid)
       {
-	int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
-	int overlap_lid = tpetraOverlapMap->getLocalElement(gid);
-	tpetraOwnedArray[owned_lid]      = gid;
-	tpetraOverlapArray[overlap_lid]  = gid;
+        int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
+        int overlap_lid = tpetraOverlapMap->getLocalElement(gid);
+        tpetraOwnedArray[owned_lid]      = gid;
+        tpetraOverlapArray[overlap_lid]  = gid;
       }
     // Make sure that the changes to the Tpetra Vector were committed,
     // by releasing the nonconst views.
@@ -467,14 +467,14 @@ main (int argc, char *argv[])
     if (verbose) {
       out << "Testing Export from owned Map to overlap Map:" << endl << endl;
     }
-    tpetraOverlapVector.doExport (tpetraOwnedVector, tpetraExporter1, 
-				  Tpetra::INSERT);
+    tpetraOverlapVector.doExport (tpetraOwnedVector, tpetraExporter1,
+                                  Tpetra::INSERT);
 
     // Check the Export results.
-    success = countFailures (teuchosComm, epetraOwnedMap, epetraOwnedVector, 
-			     epetraOverlapMap, epetraOverlapVector, 
-			     tpetraOwnedMap, tpetraOwnedVector, 
-			     tpetraOverlapMap, tpetraOverlapVector, verbose);
+    success = countFailures (teuchosComm, epetraOwnedMap, epetraOwnedVector,
+                             epetraOverlapMap, epetraOverlapVector,
+                             tpetraOwnedMap, tpetraOwnedVector,
+                             tpetraOverlapMap, tpetraOverlapVector, verbose);
     //
     // Reinitialize the Tpetra vectors and see what Import in the
     // other direction does.
@@ -482,14 +482,14 @@ main (int argc, char *argv[])
     tpetraOverlapVector.putScalar(-1);
     tpetraOwnedArray   = tpetraOwnedVector.getDataNonConst(0);
     tpetraOverlapArray = tpetraOverlapVector.getDataNonConst(0);
-    for (int owned_lid = 0; 
-	 owned_lid < tpetraOwnedMap->getNodeElementList().size(); 
-	 ++owned_lid) 
+    for (int owned_lid = 0;
+         owned_lid < tpetraOwnedMap->getNodeElementList().size();
+         ++owned_lid)
       {
-	int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
-	int overlap_lid = tpetraOverlapMap->getLocalElement(gid);
-	tpetraOwnedArray[owned_lid]      = gid;
-	tpetraOverlapArray[overlap_lid]  = gid;
+        int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
+        int overlap_lid = tpetraOverlapMap->getLocalElement(gid);
+        tpetraOwnedArray[owned_lid]      = gid;
+        tpetraOverlapArray[overlap_lid]  = gid;
       }
     // Make sure that the changes to the Tpetra Vector were committed,
     // by releasing the nonconst views.
@@ -500,13 +500,13 @@ main (int argc, char *argv[])
       out << "Testing Import from overlap Map to owned Map:" << endl << endl;
     }
     Tpetra::Import<int> tpetraImporter2 (tpetraOverlapMap, tpetraOwnedMap);
-    tpetraOwnedVector.doImport (tpetraOverlapVector, tpetraImporter2, 
-				Tpetra::INSERT);
+    tpetraOwnedVector.doImport (tpetraOverlapVector, tpetraImporter2,
+                                Tpetra::INSERT);
     // Check the Import results.
-    success = countFailures (teuchosComm, epetraOwnedMap, epetraOwnedVector, 
-			     epetraOverlapMap, epetraOverlapVector, 
-			     tpetraOwnedMap, tpetraOwnedVector, 
-			     tpetraOverlapMap, tpetraOverlapVector, verbose);
+    success = countFailures (teuchosComm, epetraOwnedMap, epetraOwnedVector,
+                             epetraOverlapMap, epetraOverlapVector,
+                             tpetraOwnedMap, tpetraOwnedVector,
+                             tpetraOverlapMap, tpetraOverlapVector, verbose);
   } // if testOtherDirections
 
   out << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;

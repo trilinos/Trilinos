@@ -41,27 +41,19 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_config.h>
-
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_Util.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
-
-#include <algorithm>
-#include <iterator>
-
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Util.hpp>
-
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #ifdef HAVE_MPI
 #  include <Teuchos_DefaultMpiComm.hpp>
 #endif // HAVE_MPI
 #include <Teuchos_DefaultSerialComm.hpp>
-
+#include <algorithm>
+#include <iterator>
 
 using Teuchos::Array;
 using Teuchos::Comm;

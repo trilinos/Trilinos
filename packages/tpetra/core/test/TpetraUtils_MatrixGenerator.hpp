@@ -49,7 +49,7 @@
 ///
 /// \warning If you don't know what this file is for, don't use it!
 
-#include "Tpetra_config.h"
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
