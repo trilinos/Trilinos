@@ -189,7 +189,7 @@ private:
 
 public:
 
-  using typename ViewDataHandle< StaticViewTraits >::handle_type ;
+  typedef typename ViewDataHandle< StaticViewTraits >::handle_type handle_type;
 
   KOKKOS_INLINE_FUNCTION
   ViewDataManagement() : m_traits( DefaultTraits ) {}
