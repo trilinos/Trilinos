@@ -460,7 +460,6 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    // build the solver
    AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
-   solver.SetAztecOption(AZ_precond,AZ_none);
    solver.SetAztecOption(AZ_kspace,1000);
    solver.SetAztecOption(AZ_output,1);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
