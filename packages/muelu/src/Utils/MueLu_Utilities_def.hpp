@@ -1591,6 +1591,41 @@ namespace MueLu {
 
   }
 
+  
+  /* Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+     calling AddNewLevel as appropriate.
+  */
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(Hierarchy & H, const Teuchos::ParameterList & List) {
+    using Teuchos::ParameterList;
+    ParameterList dummy;
+
+    for(ParameterList::ConstIterator it = List.begin(); it!=List.end(); it++) {
+      // Check for mach of the form "levelX" where X is a positive integer
+      if(List.isSublist(it->first) && it->first.find("level")==0) {
+	std::string levelstr = it->first.substr(5,std::string::npos);
+	int id = (int) strtol(levelstr.c_str(),0,0);
+	if(id > 0)  {
+	  // Do enough level adding so we can be sure to add the data to the right place
+	  for(int i=H.GetNumLevels(); i<=id; i++)
+	      H.AddNewLevel();
+	  
+	  // Grab the level sublist & loop over parameters
+	  const ParameterList & sublist = List.sublist(it->first);
+	  for(ParameterList::ConstIterator it2 = sublist.begin(); it2!=sublist.end(); it2++) {	   
+	    if(!it2->first.compare("A") || !it2->first.compare("R") || !it2->first.compare("P")  || !it2->first.compare("Nullspace") || !it2->first.compare("Coordinates")) 
+	      H.GetLevel(id)->Set(it2->first,it2->second);	      
+	    else
+	      throw std::runtime_error("MueLu::AddNonSerializableDataToHierarchy: List contains unknown data type");
+	  }
+	}    
+      }
+    }
+  }
+
+
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

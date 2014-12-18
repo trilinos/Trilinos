@@ -72,8 +72,11 @@ namespace MueLu {
 
     RCP<HierarchyManager> mueLuFactory;
     RCP<Hierarchy>        H;
+
+    Teuchos::ParameterList serialList, nonSerialList;
     if (hasParamList) {
-      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(paramList));
+      MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
+      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
 
       H = mueLuFactory->CreateHierarchy();
 
@@ -127,8 +130,16 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    if (hasParamList)
+
+    // Grab the non-serializable lists and then for each level number, do an AddLevel up to maxlevel and then start
+    // dumping the data on the level
+
+    // NOTE: This stuff should be in some utility function that isn't here
+
+    if (hasParamList) {
+      MueLu::Utils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*H,nonSerialList);
       mueLuFactory->SetupHierarchy(*H);
+    }
     else
       H->Setup();
 
