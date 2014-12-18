@@ -1602,8 +1602,8 @@ namespace MueLu {
 
     for(ParameterList::ConstIterator it = List.begin(); it!=List.end(); it++) {
       // Check for mach of the form "levelX" where X is a positive integer
-      if(List.isSublist(it->first) && it->first.find("level")==0) {
-	std::string levelstr = it->first.substr(5,std::string::npos);
+      if(List.isSublist(it->first) && it->first.find("level ")==0) {
+	std::string levelstr = it->first.substr(6,std::string::npos);
 	int id = (int) strtol(levelstr.c_str(),0,0);
 	if(id > 0)  {
 	  // Do enough level adding so we can be sure to add the data to the right place

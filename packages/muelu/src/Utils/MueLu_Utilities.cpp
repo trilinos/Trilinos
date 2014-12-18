@@ -391,8 +391,8 @@ namespace MueLu {
 
     for(ParameterList::ConstIterator it = inList.begin(); it!=inList.end(); it++) {
       // Check for mach of the form "levelX" where X is a positive integer
-      if(inList.isSublist(it->first) && it->first.find("level")==0) {
-	std::string levelstr = it->first.substr(5,std::string::npos);
+      if(inList.isSublist(it->first) && it->first.find("level ")==0) {
+	std::string levelstr = it->first.substr(6,std::string::npos);
 	long id =strtol(levelstr.c_str(),0,0);
 	if(id > 0)  {
 	  // Valid level sublist located; do the split copy
