@@ -235,11 +235,13 @@ public:
   KOKKOS_INLINE_FUNCTION
   void team_broadcast(const ValueType& , const int& ) const {}
 
-  template< class JoinOp >
+  template< class ValueType, class JoinOp >
   KOKKOS_INLINE_FUNCTION
-  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+  ValueType team_reduce( const ValueType & value
                                          , const JoinOp & ) const
-    { return value ; }
+    {
+      return value ;
+    }
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -508,13 +510,13 @@ public:
   inline int league_size() const { return m_league_size ; }
 
   /** \brief  Specify league size, request team size */
-  TeamPolicy( execution_space & , int league_size_request , int /* team_size_request */ )
+  TeamPolicy( execution_space & , int league_size_request , int /* team_size_request */  , int vector_length_request = 1 )
     : m_league_size( league_size_request )
-    { }
+    { (void) vector_length_request; }
 
-  TeamPolicy( int league_size_request , int /* team_size_request */ )
+  TeamPolicy( int league_size_request , int /* team_size_request */ , int vector_length_request = 1 )
     : m_league_size( league_size_request )
-    { }
+    { (void) vector_length_request; }
 
   typedef Impl::SerialTeamMember  member_type ;
 };
@@ -954,9 +956,26 @@ Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamMember >
+  ThreadVectorLoop(const Impl::SerialTeamMember& thread, const iType& count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamMember >(thread,count);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >
-  ThreadVectorLoop(Impl::SerialTeamVectorMember thread, const iType count) {
+  ThreadVectorLoop(const Impl::SerialTeamVectorMember& thread, const iType& count) {
   return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::SerialTeamVectorMember >(thread,count);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadSingleStruct<Impl::SerialTeamMember> Thread(const Impl::SerialTeamMember& thread) {
+  return Impl::ThreadSingleStruct<Impl::SerialTeamMember>(thread);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::VectorSingleStruct<Impl::SerialTeamMember> VectorLane(const Impl::SerialTeamMember& thread) {
+  return Impl::VectorSingleStruct<Impl::SerialTeamMember>(thread);
 }
 
 } // namespace Kokkos

@@ -238,17 +238,34 @@ public:
 #endif
   }
 
+#ifdef KOKKOS_HAVE_CXX11
+  template< class ValueType, class JoinOp >
+  KOKKOS_INLINE_FUNCTION ValueType
+    team_reduce( const ValueType & value
+               , const JoinOp & op_in ) const
+  #if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+    { return ValueType(); }
+  #else
+    {
+      typedef ValueType value_type;
+      const JoinLambdaAdapter<value_type,JoinOp> op(op_in);
+  #endif
+#else // KOKKOS_HAVE_CXX11
   template< class JoinOp >
   KOKKOS_INLINE_FUNCTION typename JoinOp::value_type
     team_reduce( const typename JoinOp::value_type & value
                , const JoinOp & op ) const
-#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+  #if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     { return typename JoinOp::value_type(); }
-#else
+  #else
     {
+      typedef typename JoinOp::value_type value_type;
+  #endif
+#endif // KOKKOS_HAVE_CXX11
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       // Make sure there is enough scratch space:
-      typedef typename if_c< sizeof(typename JoinOp::value_type) < TEAM_REDUCE_SIZE
-                           , typename JoinOp::value_type , void >::type type ;
+      typedef typename if_c< sizeof(value_type) < TEAM_REDUCE_SIZE
+                           , value_type , void >::type type ;
 
       type * const local_value = ((type*) m_exec.scratch_thread());
 
@@ -282,7 +299,6 @@ public:
       return *((type volatile const *)local_value);
     }
 #endif
-
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
    *
@@ -822,11 +838,11 @@ public:
   inline int league_size() const { return m_league_size ; }
 
   /** \brief  Specify league size, request team size */
-  TeamPolicy( execution_space & , int league_size_request , int team_size_request )
-    { init( league_size_request , team_size_request ); }
+  TeamPolicy( execution_space & , int league_size_request , int team_size_request , int vector_length_request = 1)
+    { init( league_size_request , team_size_request ); (void) vector_length_request; }
 
-  TeamPolicy( int league_size_request , int team_size_request )
-    { init( league_size_request , team_size_request ); }
+  TeamPolicy( int league_size_request , int team_size_request , int vector_length_request = 1 )
+    { init( league_size_request , team_size_request ); (void) vector_length_request; }
 
   inline int team_alloc() const { return m_team_alloc ; }
   inline int team_iter()  const { return m_team_iter ; }
@@ -961,10 +977,26 @@ Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >
-  ThreadVectorLoop(Impl::OpenMPexecTeamVectorMember thread, const iType count) {
+  ThreadVectorLoop(const Impl::OpenMPexecTeamVectorMember& thread, const iType& count) {
   return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamVectorMember >(thread,count);
 }
 
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >
+  ThreadVectorLoop(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
+  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >(thread,count);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember> Thread(const Impl::OpenMPexecTeamMember& thread) {
+  return Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember>(thread);
+}
+
+KOKKOS_INLINE_FUNCTION
+Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember> VectorLane(const Impl::OpenMPexecTeamMember& thread) {
+  return Impl::VectorSingleStruct<Impl::OpenMPexecTeamMember>(thread);
+}
 } // namespace Kokkos
 
 namespace Kokkos {

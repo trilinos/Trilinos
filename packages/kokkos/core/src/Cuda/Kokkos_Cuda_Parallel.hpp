@@ -108,12 +108,22 @@ public:
     val = sh_val;
   }
 
+#ifdef KOKKOS_HAVE_CXX11
+  template< class ValueType, class JoinOp >
+  __device__ inline
+  typename JoinOp::value_type team_reduce( const ValueType & value
+                                         , const JoinOp & op_in ) const
+    {
+      ValueType * const base_data = (ValueType *) m_team_reduce ;
+      const JoinLambdaAdapter<ValueType,JoinOp> op(op_in);
+#else
   template< class JoinOp >
   __device__ inline
   typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
                                          , const JoinOp & op ) const
     {
       typename JoinOp::value_type * const base_data = (typename JoinOp::value_type *) m_team_reduce ;
+#endif
 
       __syncthreads(); // Don't write in to shared data until all threads have entered this function
 
