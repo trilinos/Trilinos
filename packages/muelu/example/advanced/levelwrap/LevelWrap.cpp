@@ -275,7 +275,6 @@ int main(int argc, char *argv[]) {
     Teuchos::FancyOStream& out = *fancy;
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    SC one = STS::one();
 
     // =========================================================================
     // Parameters initialization
@@ -314,14 +313,8 @@ int main(int argc, char *argv[]) {
     RCP<Vector> B = VectorFactory::Build(map);
     B->setSeed(846930886);
     B->randomize();
-
-    const int nIts = 9;
-
-    int verbosityLevel = MueLu::Medium;
-
     RCP<TimeMonitor> tm;
-
-    
+   
     // Belos Options
     RCP<Teuchos::ParameterList> SList = rcp(new Teuchos::ParameterList );      
     SList->set("Verbosity",Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
@@ -399,30 +392,6 @@ int main(int argc, char *argv[]) {
 
     }
     out << thickSeparator << std::endl;
-
-
-#if 1
-    {
-      // Tusbol!
-      Teuchos::ParameterList level1,level12, inList, S, NS;
-      level1.set("A",666);
-      level1.set("zuul",111);
-      level1.set("bork",112);
-      level12.set("R",667);
-      level12.set("P",668);
-      level12.set("Nullspace",669);
-      level12.set("Coordinates",670);
-      level12.set("porcula",112);
-      inList.set("level 1",level1);
-      inList.set("level 12",level12);
-      inList.set("stuff","string");
-
-      MueLu::ExtractNonSerializableData(inList,S,NS);
-      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@ inList @@@@@@@@@@@@@@@@@@@"<<std::endl << inList <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
-      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   S    @@@@@@@@@@@@@@@@@@@"<<std::endl << S      <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
-      std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@   NS   @@@@@@@@@@@@@@@@@@@"<<std::endl << NS     <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<std::endl;
-    }
-#endif
 
     // =========================================================================
     // Solve #3 (level wrap, the long way, using P, R and nullspace)
