@@ -182,7 +182,7 @@ namespace Ifpack2 {
 /// Chebyshev should spend most of its time in Tpetra's native sparse
 /// matrix-vector multiply kernel.  This should give good performance,
 /// since we have spent a lot of effort tuning that kernel.  Depending
-/// on the Kokkos Node type of your Tpetra matrix, the kernel may also
+/// on the Node type of your Tpetra matrix, the kernel may also
 /// exploit threads for additional parallelism within each MPI process
 /// ("hybrid parallelism" a.k.a. "MPI + X").  If your application
 /// depends on hybrid parallelism for performance, you should favor
@@ -235,7 +235,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -704,7 +704,7 @@ public:
   // That makes clone() easier to implement.
   template <class NewMatrixType> friend class Chebyshev;
 
-  /// \brief Clone this object to one with a different Kokkos Node type.
+  /// \brief Clone this object to one with a different Node type.
   ///
   /// \tparam NewMatrixType The template parameter of the new
   ///   preconditioner to return; a specialization of
@@ -712,7 +712,7 @@ public:
   ///   this type differ from \c MatrixType only in its fourth Node
   ///   template parameter.  However, this is not strictly required.
   ///
-  /// \param[in] A_newnode  The matrix, with the new Kokkos Node type.
+  /// \param[in] A_newnode  The matrix, with the new Node type.
   ///   This would generally be the result of cloning (calling
   ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
   ///   matrix A, though the implementation does not require this.

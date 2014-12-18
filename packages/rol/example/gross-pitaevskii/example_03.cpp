@@ -62,12 +62,11 @@
              \f[\psi(x)\approx \sum\limits_{k=1}^{n-1} \psi(x_k) \ell_k(x)\f].
                
     \author Greg von Winckel
-    \date   Mon Dec  8 11:01:24 MST 2014
+    \date   Tue Dec 16 10:48:32 MST 2014
 */
 
-
+#include<fstream>
 #include "example_03.hpp"
-
 
 typedef double RealT;
 
@@ -92,10 +91,12 @@ int main(int argc, char* argv[]) {
     std::string paramfile = "parameters.xml";
     Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&parlist));
        
-    int    ni         = parlist.get("Interior Grid Points",20);
-    double gnl        = parlist.get("Nonlinearity Coefficient g",50.0);
-    bool   exactsolve = parlist.get("Solve Exact Augmented System",false);
-    bool   useRiesz   = parlist.get("Use Riesz Map",true);
+    int    ni            = parlist.get("Interior Grid Points",50);
+    double gnl           = parlist.get("Nonlinearity Coefficient g",10.00);
+    bool   useRiesz      = parlist.get("Use Riesz Map",true);
+    std::string filename = parlist.get("Output File Name","results.csv");
+
+    std::ofstream outfile(filename.c_str());
 
     // Number of quadrature points
     int nq = 2*ni;
@@ -119,9 +120,7 @@ int main(int argc, char* argv[]) {
     // Mass matrix
     Teuchos::RCP<InnerProductMatrix<RealT> > mass =    
         Teuchos::rcp( new InnerProductMatrixSolver<RealT>(lapack,L,L,w,1) );
-    //Teuchos::RCP<InnerProductMatrix<RealT> > mass =    
-    //    Teuchos::null;
-/*
+
     // Kinetic energy matrix
     Teuchos::RCP<InnerProductMatrix<RealT> > kinetic = 
         Teuchos::rcp( new InnerProductMatrixSolver<RealT>(lapack,Lp,Lp,w,1) );
@@ -133,7 +132,7 @@ int main(int argc, char* argv[]) {
     // Confinement Potential 
     std::vector<RealT> v(nq,0);   
     for(int i=0;i<nq;++i){
-        v[i] = 100*x[i]*x[i];
+       v[i] = 100*x[i]*x[i];
     }
 
     Teuchos::RCP<InnerProductMatrix<RealT> > potential = 
@@ -150,12 +149,13 @@ int main(int argc, char* argv[]) {
   
     // Equality constraint value (scalar)  
     Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
-    ConStdVector<RealT> c(c_rcp,useRiesz,mass);
+    ConStdVector<RealT> c(c_rcp);
 
     // Lagrange multiplier value (scalar)   
     Teuchos::RCP<std::vector<RealT> > lam_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
-    ConDualStdVector<RealT> lam(lam_rcp,useRiesz,mass);
-*/
+    ConDualStdVector<RealT> lam(lam_rcp);
+
+/*
     Teuchos::RCP<std::vector<RealT> > aa_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 1.0) );
     OptDualStdVector<RealT> av(aa_rcp,useRiesz,mass);
     Teuchos::RCP<std::vector<RealT> > bb_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 2.0) );
@@ -165,29 +165,64 @@ int main(int argc, char* argv[]) {
     av.checkVector(bv,cv);
 
     Teuchos::RCP<std::vector<RealT> > dd_rcp = Teuchos::rcp( new std::vector<RealT> (1, 1.0) );
-    ConDualStdVector<RealT> dv(dd_rcp,useRiesz,mass);
+    ConDualStdVector<RealT> dv(dd_rcp);
     Teuchos::RCP<std::vector<RealT> > ee_rcp = Teuchos::rcp( new std::vector<RealT> (1, 2.0) );
-    ConDualStdVector<RealT> ev(ee_rcp,useRiesz,mass);
+    ConDualStdVector<RealT> ev(ee_rcp);
     Teuchos::RCP<std::vector<RealT> > ff_rcp = Teuchos::rcp( new std::vector<RealT> (1, 3.0) );
-    ConDualStdVector<RealT> fv(ff_rcp,useRiesz,mass);
+    ConDualStdVector<RealT> fv(ff_rcp);
     dv.checkVector(ev,fv);
+*/
 
-return 0;
-
-/*
     // Gradient   
     Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
     OptDualStdVector<RealT> g(g_rcp,useRiesz,kinetic);
 
     // Instantiate objective function  
-    Objective_GrossPitaevskii<RealT,OptStdVector<RealT>,OptDualStdVector<RealT> > 
-        obj(ni,gnl,nb,kinetic,potential,nonlinear);
+    Teuchos::RCP<Objective<RealT> > obj =  
+        Teuchos::rcp( new Objective_GrossPitaevskii<RealT,OptStdVector<RealT>,OptDualStdVector<RealT> > 
+        (ni,gnl,nb,kinetic,potential,nonlinear));
 
     // Instantiate normalization constraint
-    Normalization_Constraint<RealT,OptStdVector<RealT>,OptDualStdVector<RealT>, 
-             ConStdVector<RealT>,ConDualStdVector<RealT> > constr(mass,exactsolve);
+    Teuchos::RCP<EqualityConstraint<RealT> > constr = 
+        Teuchos::rcp(new Normalization_Constraint<RealT,OptStdVector<RealT>,OptDualStdVector<RealT>, 
+             ConStdVector<RealT>,ConDualStdVector<RealT> >(mass) );
 
-   // Define Step
+    RealT left = -1e0, right = 1e0;
+    Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > gd_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > vd_rcp = Teuchos::rcp( new std::vector<RealT> (ni, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > vc_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > vl_rcp = Teuchos::rcp( new std::vector<RealT> (1, 0.0) );
+
+    OptStdVector<RealT> xtest(xtest_rcp,useRiesz,kinetic);
+    OptStdVector<RealT> d(d_rcp,useRiesz,kinetic);
+    OptDualStdVector<RealT> gd(gd_rcp,useRiesz,kinetic);
+    OptStdVector<RealT> vd(vd_rcp,useRiesz,kinetic);
+    ConStdVector<RealT> vc(vc_rcp);
+    ConDualStdVector<RealT> vl(vl_rcp);
+
+   for (int i=0; i<ni; i++) {
+      (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*gd_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vd_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+    }
+
+    // set vc, vl
+    (*vc_rcp)[0] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+    (*vl_rcp)[0] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+
+    obj->checkGradient(xtest, g, d, true, *outStream);                      *outStream << "\n";
+    obj->checkHessVec(xtest, g, vd, true, *outStream);                      *outStream << "\n";
+    obj->checkHessSym(xtest, g, d, vd, true, *outStream);                   *outStream << "\n";
+    constr->checkApplyJacobian(xtest, vd, vc, true, *outStream);            *outStream << "\n";
+    constr->checkApplyAdjointJacobian(xtest, vl, vc, g, true, *outStream);  *outStream << "\n";
+    constr->checkApplyAdjointHessian(xtest, vl, d, g, true, *outStream);    *outStream << "\n";
+
+
+
+    // Define Step
     parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
     parlist.set("Maximum Number of Krylov Iterations",80);
     parlist.set("Absolute Krylov Tolerance",1e-4);
@@ -206,7 +241,7 @@ return 0;
     DefaultAlgorithm<RealT> algo(step,status,false);
 
     // Run Algorithm
-    std::vector<std::string> output = algo.run(psi, g, lam, c, obj, constr, false);
+    std::vector<std::string> output = algo.run(psi, g, lam, c, *obj, *constr, false);
   
     for ( unsigned i = 0; i < output.size(); i++ ) {
       *outStream << output[i];
@@ -216,11 +251,17 @@ return 0;
         errorFlag += 1; 
     }
 
+    // Print grid points and minimizer to file
+    outfile << "-1,0" << std::endl;
+    for(int i=0;i<ni;++i) {
+        outfile << nb->xi_[i+1] << "," << (*psi_rcp)[i] << std::endl;   
+    }
+    outfile << "1,0" << std::endl;
+     
     if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
     else
         std::cout << "End Result: TEST PASSED\n";
 
     return 0;
-*/
 }

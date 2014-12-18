@@ -329,8 +329,12 @@ namespace MueLu {
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    if (multigridAlgo != "sa" && reuseType != "none") {
-      this->GetOStream(Warnings0) << "Ignoring reuse options as multigrid algorithm is not \"sa\"" << std::endl;
+    if (reuseType != "none" && (multigridAlgo != "sa" && multigridAlgo != "emin")) {
+        this->GetOStream(Warnings0) << "Ignoring reuse options as multigrid algorithm is not \"sa\" or \"emin\"" << std::endl;
+        reuseType = "none";
+    }
+    if (reuseType == "emin" && multigridAlgo != "emin") {
+      this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
       reuseType = "none";
     }
 
@@ -603,6 +607,11 @@ namespace MueLu {
       ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+      if (reuseType == "emin") {
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations",   int, Pparams);
+        Pparams.set("Keep P0",          true);
+        Pparams.set("Keep Constraint0", true);
+      }
       P->SetParameterList(Pparams);
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
@@ -671,10 +680,10 @@ namespace MueLu {
       keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
       if (!this->implicitTranspose_)
         keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
-
-      if (useCoordinates_)
-        keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
     }
+    if ((reuseType == "RP" || reuseType == "emin") &&
+        useCoordinates_)
+      keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
 
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);

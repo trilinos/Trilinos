@@ -205,12 +205,12 @@ namespace MueLu {
 
     // Translate verbosity parameter
     MsgType eVerbLevel = None;
-    if (verbosityLevel == 0) eVerbLevel = None;
-    if (verbosityLevel >  0) eVerbLevel = Low;
-    if (verbosityLevel >  4) eVerbLevel = Medium;
-    if (verbosityLevel >  7) eVerbLevel = High;
-    if (verbosityLevel >  8) eVerbLevel = Extreme;
-    if (verbosityLevel >  9) eVerbLevel = Test;
+    if (verbosityLevel ==  0) eVerbLevel = None;
+    if (verbosityLevel >=  1) eVerbLevel = Low;
+    if (verbosityLevel >=  5) eVerbLevel = Medium;
+    if (verbosityLevel >= 10) eVerbLevel = High;
+    if (verbosityLevel >= 11) eVerbLevel = Extreme;
+    if (verbosityLevel >= 42) eVerbLevel = Test;
     this->verbosity_ = eVerbLevel;
 
 

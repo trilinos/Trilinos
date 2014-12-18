@@ -464,10 +464,8 @@ public:
                                 sizeof(scalar_type) ,
                                 m_offset_map.capacity() );
 
-      if ( Alloc::initialize() ) {
-        (void) Impl::DefaultConstruct< typename traits::execution_space , scalar_type >
-          ( m_ptr_on_device , m_offset_map.capacity() );
-      }
+      (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
+        ( m_ptr_on_device , m_offset_map.capacity() );
     }
 
   //------------------------------------

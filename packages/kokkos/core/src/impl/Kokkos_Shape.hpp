@@ -340,6 +340,32 @@ struct Shape< ScalarSize , 0, 1,1,1,1, 1,1,1,1 >
 };
 
 //----------------------------------------------------------------------------
+
+template< unsigned R > struct assign_shape_dimension ;
+
+#define KOKKOS_ASSIGN_SHAPE_DIMENSION( R ) \
+template<> \
+struct assign_shape_dimension< R > \
+{ \
+  template< class ShapeType > \
+  KOKKOS_INLINE_FUNCTION \
+  assign_shape_dimension( ShapeType & shape \
+                        , typename Impl::enable_if<( R < ShapeType::rank_dynamic ), size_t >::type n \
+                        ) { shape.N ## R = n ; } \
+};
+
+KOKKOS_ASSIGN_SHAPE_DIMENSION(0)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(1)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(2)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(3)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(4)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(5)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(6)
+KOKKOS_ASSIGN_SHAPE_DIMENSION(7)
+
+#undef KOKKOS_ASSIGN_SHAPE_DIMENSION
+
+//----------------------------------------------------------------------------
 // All-static dimension array
 
 template < unsigned ScalarSize ,

@@ -93,6 +93,9 @@ public:
   ///   with the given traceback mode.
   Object (const std::string& label, int tracebackModeIn = -1);
 
+  //! Destructor (virtual, for safety of derived classes).
+  virtual ~Object () {}
+
   //@}
   //! @name Set methods.
   //@{
@@ -141,8 +144,6 @@ public:
   //@}
 
   static int tracebackMode;
-
-protected:
 
 private:
   //! The Object's current label.

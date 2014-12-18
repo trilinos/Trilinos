@@ -1,5 +1,7 @@
 <ParameterList name="Inputs">
-    <Parameter name="Interior Grid Points"              type="int"    value="100"/>
-    <Parameter name="Nonlinearity Coefficient g"        type="double" value="50"/>
-    <Parameter name="Solve Exact Augmented System"      type="bool"   value="false"/>
+    <Parameter name="Interior Grid Points"              type="int"    value="80"         />
+    <Parameter name="Nonlinearity Coefficient g"        type="double" value="-5"         />
+    <Parameter name="Solve Exact Augmented System"      type="bool"   value="false"      />
+    <Parameter name="Use Riesz Map"                     type="bool"   value="true"       />
+    <Parameter name="Output File Name"                  type="string" value="output.csv" />
 </ParameterList>

@@ -81,15 +81,16 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
     Sacado::mpl::is_convertible<scalar_type,ad_type>::value;
   const bool is_ad_scalar =
     Sacado::mpl::is_convertible<ad_type,scalar_type>::value;
+  const bool is_not_view = ! Sacado::IsView<ad_type>::value;
 
   const bool is_int_ad =
     Sacado::mpl::is_convertible<value_type,ad_type>::value;
 
-  TEST_EQUALITY_CONST( is_value_ad, true );
+  TEST_EQUALITY( is_value_ad, is_not_view );
   TEST_EQUALITY_CONST( is_ad_value, false );
-  TEST_EQUALITY_CONST( is_scalar_ad, true );
+  TEST_EQUALITY( is_scalar_ad, is_not_view );
   TEST_EQUALITY_CONST( is_ad_scalar, false );
-  TEST_EQUALITY_CONST( is_int_ad, true );
+  TEST_EQUALITY( is_int_ad, is_not_view );
 
 #ifdef HAVE_SACADO_CXX11
   // Get the type of the result of the expression 'ad_type * ad_type'
@@ -103,8 +104,8 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
   const bool is_val_expr_ad =
     Sacado::mpl::is_convertible<val_expr_type,ad_type>::value;
 
-  TEST_EQUALITY_CONST( is_ad_expr_ad, true );
-  TEST_EQUALITY_CONST( is_val_expr_ad, true );
+  TEST_EQUALITY( is_ad_expr_ad, is_not_view );
+  TEST_EQUALITY( is_val_expr_ad, is_not_view );
 
   // typedef typename ad_expr_type::value_type ad_expr_value_type;
   // std::cout << typeid(ad_expr_value_type).name() << std::endl;

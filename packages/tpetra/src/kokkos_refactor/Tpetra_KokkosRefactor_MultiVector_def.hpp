@@ -1252,26 +1252,26 @@ namespace Tpetra {
 
     if (this->isDistributed ()) {
       typename Kokkos::View<mag_type*, DeviceType>::HostMirror lclNorms ("lclNorms", numVecs);
-      for (size_type k = 0; k < numVecs; ++k) {
+      for (size_t k = 0; k < numVecs; ++k) {
         lclNorms(k) = ATS::abs (lclDots(k));
       }
 
       RCP<const Comm<int> > comm =
         this->getMap ().is_null () ? null : this->getMap ()->getComm ();
       if (comm.is_null ()) {
-        for (size_type k = 0; k < numVecs; ++k) {
+        for (size_t k = 0; k < numVecs; ++k) {
           norms[k] = ATM::zero ();
         }
       } else {
         reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
                                   lclNorms.ptr_on_device (), norms.getRawPtr ());
-        for (size_type k = 0; k < numVecs; ++k) {
+        for (size_t k = 0; k < numVecs; ++k) {
           norms[k] = ATM::sqrt (norms[k] * OneOverN);
         }
       }
     }
     else {
-      for (size_type k = 0; k < numVecs; ++k) {
+      for (size_t k = 0; k < numVecs; ++k) {
         norms[k] = ATM::sqrt (ATS::magnitude (lclDots(k)) * OneOverN);
       }
     }
@@ -1578,7 +1578,7 @@ namespace Tpetra {
     // isn't necessarily defined.
     const scalar_type OneOverN =
       ATS::one () / static_cast<mag_type> (getGlobalLength ());
-    for (size_type k = 0; k < numMeans; ++k) {
+    for (size_t k = 0; k < numMeans; ++k) {
       means[k] = means[k] * OneOverN;
     }
   }

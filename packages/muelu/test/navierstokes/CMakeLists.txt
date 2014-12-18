@@ -60,6 +60,14 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
 
       TRIBITS_ADD_TEST(
         Navier2DBlocked_xml
+        NAME "Navier2DBlocked_xml_blockdirect"
+        ARGS "--xml=myXML2.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+
+      TRIBITS_ADD_TEST(
+        Navier2DBlocked_xml
         NAME "Navier2DBlocked_xml_bgs1"
         ARGS "--xml=myBGS1.xml"
         NUM_MPI_PROCS 4
@@ -159,7 +167,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
         COMM serial mpi
         )
       TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cp
-        SOURCE_FILES myXML.xml myXMLg.xml myBS1.xml myBS2.xml myBGS1.xml mySIM1.xml mySIM2.xml myUzawa1.xml myIndefDiag1.xml
+        SOURCE_FILES myXML.xml myXMLg.xml myXML2.xml myBS1.xml myBS2.xml myBGS1.xml mySIM1.xml mySIM2.xml myUzawa1.xml myIndefDiag1.xml
         )
     ENDIF() # experimental
 

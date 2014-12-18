@@ -102,15 +102,17 @@ int main(int argc, char *argv[]) {
     int mypid = comm->getRank();
 
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(cout));
-    Teuchos::FancyOStream& fancyout = *fancy;
-    fancyout.setOutputToRootOnly(0);
+    Teuchos::FancyOStream& out = *fancy;
+    out.setOutputToRootOnly(0);
+
+    SC zero = STS::zero(), one = STS::one();
 
     //
     // Parameters
     //
 
     Teuchos::CommandLineProcessor clp(false);
-    Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
+    Xpetra::Parameters            xpetraParameters(clp);                          // manage parameters of Xpetra
 
     std::string xmlFileName  = "reuse.xml"; clp.setOption("xml",                   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'reuse.xml'");
     std::string matrixPrefix = "jac";       clp.setOption("matrix",               &matrixPrefix, "prefix for matrix file names.  Default = 'jac'");
@@ -119,7 +121,7 @@ int main(int argc, char *argv[]) {
     bool        printTimings = true;        clp.setOption("timings", "notimings", &printTimings, "print timings to screen");
     int         first_matrix = 0;           clp.setOption("firstMatrix",          &first_matrix, "first matrix in the sequence to use");
     int         last_matrix  = 1;           clp.setOption("lastMatrix",            &last_matrix, "last matrix in the sequence to use");
-    string      do_reuse_str = "none";      clp.setOption("doReuse",              &do_reuse_str, "if you want to try reuse");
+    bool        doReuse      = true;        clp.setOption("reuse",  "noreuse",         &doReuse, "if you want to try reuse");
     const int   numPDEs      = 2;
 
     switch (clp.parse(argc,argv)) {
@@ -129,14 +131,7 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    int do_reuse = 0;
-    if      (!strcmp(do_reuse_str.c_str(), "none"))   do_reuse = 0;
-    else if (!strcmp(do_reuse_str.c_str(), "simple")) do_reuse = 1;
-    else if (!strcmp(do_reuse_str.c_str(), "fast"))   do_reuse = 2;
-    else return EXIT_FAILURE;
-
-
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
+    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global Time"))), tm;
     RCP<Time> timer;
 
     // Operator and Multivector type that will be used with Belos
@@ -146,8 +141,8 @@ int main(int argc, char *argv[]) {
     // Stats tracking
     int ArraySize = last_matrix - first_matrix + 1;
     Array<Array<int>    > iteration_counts(ArraySize);
-    Array<Array<double> > iteration_times(ArraySize);
-    Array<Array<double> > setup_times(ArraySize);
+    Array<Array<double> > iteration_times (ArraySize);
+    Array<Array<double> > setup_times     (ArraySize);
 
     for (int i = 0; i < ArraySize; i++) {
       iteration_counts[i].resize(ArraySize);
@@ -157,21 +152,20 @@ int main(int argc, char *argv[]) {
 
     ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
 
-    SC zero = STS::zero(), one = STS::one();
     for (int i = first_matrix; i <= last_matrix; i++) {
-      fancyout << "==================================================================" << std::endl;
+      out << "==================================================================" << std::endl;
 
       char matrixFileName[80];
-      char rhsFileName[80];
-      char timerName[80];
+      char rhsFileName   [80];
+      char timerName     [80];
 
       sprintf(matrixFileName,"%s%d.mm", matrixPrefix.c_str(), i);
 
       // Load the matrix
       RCP<Matrix> Aprecond;
-      fancyout << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
+      out << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
       Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
-      fancyout << "done" << std::endl;
+      out << "done" << std::endl;
       Aprecond->SetFixedBlockSize(numPDEs);
 
       // Build the nullspace
@@ -185,7 +179,7 @@ int main(int argc, char *argv[]) {
         data0[k+0] = data1[k+1] = one;
 
       // Build the preconditioner
-      fancyout << "[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+      out << "[" << i << "] Building preconditioner \"" << matrixFileName << "\" ..." << std::endl;
       sprintf(timerName, "Reuse: Preconditioner Setup i=%d", i);
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timerName)));
 
@@ -208,7 +202,7 @@ int main(int argc, char *argv[]) {
       // Loop over all future matrices
       int j = i;
       for (; j <= last_matrix; j++) {
-        fancyout << "------------------------------------------------------------------" << std::endl;
+        out << "------------------------------------------------------------------" << std::endl;
 
         sprintf(matrixFileName, "%s%d.mm", matrixPrefix.c_str(), j);
         sprintf(rhsFileName,    "%s%d.mm", rhsPrefix.c_str(),    j);
@@ -216,11 +210,11 @@ int main(int argc, char *argv[]) {
         RCP<Matrix> Amatvec;
         if (j != i) {
           // Load the matrix
-          fancyout << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
+          out << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
           Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
           Amatvec->SetFixedBlockSize(numPDEs);
 
-          fancyout << "done" << std::endl;
+          out << "done" << std::endl;
 
           // Preconditioner update
           sprintf(timerName, "Reuse: Preconditioner Update i=%d", i);
@@ -230,14 +224,11 @@ int main(int argc, char *argv[]) {
           sprintf(timerName, "Reuse: Setup i=%d j=%d", i, j);
           timer = TimeMonitor::getNewTimer(timerName);
           timer->start();
-          if (do_reuse == 2 && j != i) {
-            // "Fast" reuse
-            // NTS: This isn't quite a real recompute yet.
-            fancyout << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
+          out << "[" << j << "]<-[" << i << "] Updating preconditioner \"" << matrixFileName << "\" ..." << std::endl;
 
-            H->GetLevel(0)->Set("A", Amatvec);
-            mueLuFactory.SetupHierarchy(*H);
-          }
+          H->GetLevel(0)->Set("A", Amatvec);
+          mueLuFactory.SetupHierarchy(*H);
+
           setup_times[i-first_matrix][j-first_matrix] = timer->stop();
           timer = Teuchos::null;
 
@@ -248,7 +239,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Load the RHS
-        fancyout << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
+        out << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
         RCP<MultiVector> rhs = Utils2::ReadMultiVector(string(rhsFileName), Amatvec->getRowMap());
 
         // Create an LHS
@@ -291,16 +282,16 @@ int main(int argc, char *argv[]) {
 
         // Check convergence
         if (ret != Belos::Converged) {
-          fancyout << "ERROR  :  Belos did not converge! " << std::endl;
+          out << "ERROR  :  Belos did not converge! " << std::endl;
           break;
         } else {
-          fancyout << "SUCCESS:  Belos converged!" << std::endl;
-          fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+          out << "SUCCESS:  Belos converged!" << std::endl;
+          out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
           iteration_counts[i-first_matrix][j-first_matrix] = solver->getNumIters();
           iteration_times [i-first_matrix][j-first_matrix] = my_time;
         }
 
-        if (do_reuse == 0) {
+        if (doReuse == 0) {
           j++;
           break;
         }
@@ -312,8 +303,8 @@ int main(int argc, char *argv[]) {
     globalTimeMonitor = Teuchos::null;
 
     if (printTimings)
-      // TimeMonitor::summarize(comm.ptr(), fancyout, false, true, false, Teuchos::Union);
-      TimeMonitor::summarize(comm.ptr(), fancyout);
+      // TimeMonitor::summarize(comm.ptr(), out, false, true, false, Teuchos::Union);
+      TimeMonitor::summarize(comm.ptr(), out);
 
     if (!mypid) {
       printf("************************* Iteration Counts ***********************\n");
@@ -367,7 +358,5 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  //MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
-
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} //main
+}

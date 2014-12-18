@@ -151,7 +151,7 @@ public:
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   /// \brief The (base class) type of the input matrix.

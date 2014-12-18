@@ -1,19 +1,36 @@
 #!/bin/bash
+#
+# This shell script (nvcc_wrapper) wraps both the host compiler and
+# NVCC, if you are building Trilinos with CUDA enabled.  The script
+# remedies some differences between the interface of NVCC and that of
+# the host compiler, in particular for linking.  It also means that
+# Trilinos doesn't need separate .cu files; it can just use .cpp
+# files.
+#
+# Hopefully, at some point, NVIDIA may fix NVCC so as to make this
+# script obsolete.  For now, this script exists and if you want to
+# build Trilinos with CUDA enabled, you must use this script as your
+# compiler.
 
-#Default settings: change those according to your machine
-#For example have two different wrappers with icpc and g++  as backend
-#The defaults can be overwritte by using the usual arguments 
-#(eg -arch=sm_30 -ccbin icpc)
+# Default settings: change those according to your machine.  For
+# example, you may have have two different wrappers with either icpc
+# or g++ as their back-end compiler.  The defaults can be overwritten
+# by using the usual arguments (e.g., -arch=sm_30 -ccbin icpc).
+
 default_arch="sm_35"
 #default_arch="sm_50"
 
+#
+# The default C++ compiler.
+#
 default_compiler="g++"
 #default_compiler="icpc"
 #default_compiler="/usr/local/gcc/4.8.3/bin/g++"
 #default_compiler="/usr/local/gcc/4.9.1/bin/g++"
 
-
-#Internal variables
+#
+# Internal variables
+#
 cpp_files=""
 xcompiler_args=""
 cuda_arg=""

@@ -682,6 +682,8 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
 	
 	    Teuchos::RCP<std::vector<Real> > jacp = Teuchos::rcp( new std::vector<Real> (nx_, 0.0) );
 	    Teuchos::RCP<std::vector<Real> > b1dp = Teuchos::rcp( new std::vector<Real> (nx_, 0.0) );
+
+            
 		
 	    for(int i=0;i<nx_;++i) {
 		(*jacp)[i] = (*psip)[i];

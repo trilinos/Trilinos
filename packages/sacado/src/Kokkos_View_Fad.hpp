@@ -343,11 +343,9 @@ public:
                                 sizeof(fad_value_type) ,
                                 m_offset_map.capacity() );
 
-      if ( Alloc::initialize() ) {
-        (void) Kokkos::Impl::DefaultConstruct
-          < typename traits::execution_space , fad_value_type >
-            ( m_ptr_on_device , m_offset_map.capacity() );
-      }
+      (void) Kokkos::Impl::ViewDefaultConstruct
+        < typename traits::execution_space , fad_value_type , Alloc::Initialize >
+          ( m_ptr_on_device , m_offset_map.capacity() );
     }
 
   //------------------------------------

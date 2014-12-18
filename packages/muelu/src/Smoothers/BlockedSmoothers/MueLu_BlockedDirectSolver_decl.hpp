@@ -113,9 +113,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Setup routine
-     * In the Setup method the Inverse_ vector is filled with the corresponding
-     * SmootherBase objects. Without the Inverse_ vector being filled we cannot call
-     * BlockedGaussSeidelSmoother::Apply.
+     * Call the underlaying Setup routine of the nested direct solver once the input block matrix has been merged
     */
     void Setup(Level &currentLevel);
 

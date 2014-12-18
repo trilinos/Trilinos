@@ -81,7 +81,6 @@ namespace MueLu {
 
     Teuchos::ParameterList params;
     s_ = Teuchos::rcp(new DirectSolver("Klu", params));
-    //s_->SetFactory("A", this); // use this factory as generating factory of the merged matrix A
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -95,13 +94,15 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
-    //this->Input(currentLevel, "A");
-    // TODO: check me: why is this->Input not freeing properly A in release mode?
+    // Note that we have a nested smoother/solver object (of type DirectSolver), so we have to declare the dependencies by hand
+    // call DeclareInput by hand, since this->Input(currentLevel, "A") would not properly free A in the release mode (dependencies)
+    // We need the blocked version of A as input for the MergedAFact_
     currentLevel.DeclareInput("A",this->GetFactory("A").get());
 
+    // syncronize input factory for "A" and nested representation for "A"
     MergedAFact_->SetFactory("A", this->GetFactory("A"));
-    //MergedAFact_->DeclareInput(currentLevel);
 
+    // declare input factories for nested direct solver
     s_->SetFactory("A",MergedAFact_);
     s_->DeclareInput(currentLevel);
   }

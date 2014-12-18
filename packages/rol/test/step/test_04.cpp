@@ -94,15 +94,19 @@ int main(int argc, char *argv[]) {
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
         parlist->set("Initial Linesearch Parameter",1.e-4);
-        parlist->set("Initial Trust-Region Radius",1.e1);
+        parlist->set("Initial Trust-Region Radius",-1.e1);
       }
       else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
         parlist->set("Initial Linesearch Parameter",1.0);
-        parlist->set("Initial Trust-Region Radius",1.e3);
+        parlist->set("Initial Trust-Region Radius",-1.e3);
       }
       else {
         parlist->set("Initial Linesearch Parameter",1.0);
-        parlist->set("Initial Trust-Region Radius",1.e1);
+        parlist->set("Initial Trust-Region Radius",-1.e1);
+      }
+      parlist->set("Scale for Epsilon Active Sets",1.0);
+      if ( prob == ROL::TESTOPTPROBLEM_HS4 ) {
+        parlist->set("Scale for Epsilon Active Sets",1.e-2);
       }
       *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
 
@@ -120,8 +124,8 @@ int main(int argc, char *argv[]) {
       ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
 
       // Get Dimension of Problem
-      int dim = 
-        Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
+      int dim = Teuchos::rcp_const_cast<std::vector<RealT> >(
+                (Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
       parlist->set("Maximum Number of Krylov Iterations", 2*dim);
 
       // Check Derivatives

@@ -47,6 +47,7 @@ APPEND_SET(SOURCES
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   APPEND_SET(SOURCES
+    BlockedCoarseMapFactory.cpp
     BlockedPFactory.cpp
     SubBlockAFactory.cpp
   )

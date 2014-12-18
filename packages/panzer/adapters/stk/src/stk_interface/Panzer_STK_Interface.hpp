@@ -184,6 +184,8 @@ public:
 
    void addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk_classic::mesh::Part * block);
 
+   void addEdges();
+
    /** Addes an entity to a specified side set.
      */
    void addEntityToSideset(stk_classic::mesh::Entity & entity,stk_classic::mesh::Part * sideset);
@@ -199,6 +201,11 @@ public:
      */
    const VectorFieldType & getCoordinatesField() const
    { return *coordinatesField_; }
+
+   /** Grab the edges field 
+     */
+   const VectorFieldType & getEdgesField() const
+   { return *edgesField_; }
 
    /** Look up a global node and get the coordinate.
      */
@@ -372,7 +379,7 @@ public:
    /** Get set of element sharing a single node and its local node id.
      */
    void getOwnedElementsSharingNode(stk_classic::mesh::EntityId nodeId,std::vector<stk_classic::mesh::Entity *> & elements,
-                                                          std::vector<int> & localNodeId) const;
+                                                          std::vector<int> & localNodeId, unsigned int matchType) const;
 
 
    //! get a set of elements sharing multiple nodes
@@ -572,7 +579,7 @@ public:
    void addPeriodicBCs(const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & bc_vec)
    { periodicBCs_.insert(periodicBCs_.end(),bc_vec.begin(),bc_vec.end()); }
 
-   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
+   std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > >
    getPeriodicNodePairing() const;
 
    /** check for a valid block id
@@ -741,6 +748,7 @@ protected:
    std::vector<stk_classic::mesh::Part*> edgesPartVec_;
 
    VectorFieldType * coordinatesField_;
+   VectorFieldType * edgesField_;
    ProcIdFieldType * processorIdField_;
    SolutionFieldType * loadBalField_;
    

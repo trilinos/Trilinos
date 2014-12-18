@@ -110,8 +110,10 @@ struct ViewAssignable
 namespace Kokkos {
 namespace Impl {
 
-template< class ExecSpace , class Type >
-struct DefaultConstruct ;
+template< class ExecSpace , class Type , bool Initialize >
+struct ViewDefaultConstruct
+{ ViewDefaultConstruct( Type * , size_t ) {} };
+
 
 /** \brief  ViewDataHandle provides the type of the 'data handle' which the view
  *          uses to access data with the [] operator. It also provides
@@ -180,14 +182,14 @@ private:
     { if ( is_managed() ) StaticViewTraits::memory_space::decrement( ptr ); }
   
   KOKKOS_INLINE_FUNCTION
-  void increment( const void * ptr , const StaticallyUnmanaged & ) const {}
+  void increment( const void * , const StaticallyUnmanaged & ) const {}
   
   KOKKOS_INLINE_FUNCTION
-  void decrement( const void * ptr , const StaticallyUnmanaged & ) const {}
+  void decrement( const void * , const StaticallyUnmanaged & ) const {}
 
 public:
 
-  using typename ViewDataHandle< StaticViewTraits >::handle_type ;
+  typedef typename ViewDataHandle< StaticViewTraits >::handle_type handle_type;
 
   KOKKOS_INLINE_FUNCTION
   ViewDataManagement() : m_traits( DefaultTraits ) {}
@@ -241,11 +243,11 @@ public:
     { decrement( ptr , StaticManagementTag() ); }
 
 
+  template< bool Initialize >
   static
   handle_type allocate( const std::string & label
                       , const Impl::ViewOffset< typename StaticViewTraits::shape_type
-                                              , typename StaticViewTraits::array_layout > & offset_map
-                      , const bool default_construct )
+                                              , typename StaticViewTraits::array_layout > & offset_map )
     {
       typedef typename StaticViewTraits::execution_space  execution_space ;
       typedef typename StaticViewTraits::memory_space     memory_space ;
@@ -256,10 +258,8 @@ public:
       value_type * ptr = (value_type*)
         memory_space::allocate( label , typeid(value_type) , sizeof(value_type) , count );
 
-      if ( default_construct ) {
         // Default construct within the view's execution space.
-        (void) DefaultConstruct< execution_space , value_type >( ptr , count );
-      }
+      (void) ViewDefaultConstruct< execution_space , value_type , Initialize >( ptr , count );
 
       return typename ViewDataHandle< StaticViewTraits >::handle_type(ptr);
     }
@@ -339,7 +339,7 @@ struct ViewRemap< OutputView ,  InputView , 0 >
 //----------------------------------------------------------------------------
 
 template< class ExecSpace , class Type >
-struct DefaultConstruct
+struct ViewDefaultConstruct< ExecSpace , Type , true >
 {
   Type * const m_ptr ;
 
@@ -347,7 +347,7 @@ struct DefaultConstruct
   void operator()( const typename ExecSpace::size_type i ) const
     { new( m_ptr + i ) Type(); }
 
-  DefaultConstruct( Type * pointer , size_t capacity )
+  ViewDefaultConstruct( Type * pointer , size_t capacity )
     : m_ptr( pointer )
     {
       Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
@@ -446,13 +446,10 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocate
   typedef size_t               size_type ;
   typedef const ViewAllocate & property_type ;
 
+  enum { Initialize = true };
+
   inline
   static const std::string & label( property_type p ) { return p.label ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  static bool initialize() { return true ; }
 };
 
 template< class Traits >
@@ -465,13 +462,10 @@ struct ViewAllocProp< Traits , std::string
   typedef size_t              size_type ;
   typedef const std::string & property_type ;
 
+  enum { Initialize = true };
+
   inline
   static const std::string & label( property_type s ) { return s ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  static bool initialize() { return true ; }
 };
 
 template< class Traits , unsigned N >
@@ -488,14 +482,10 @@ public:
   typedef size_t             size_type ;
   typedef const label_type & property_type ;
 
+  enum { Initialize = true };
+
   inline
   static std::string label( property_type s ) { return std::string(s) ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  inline
-  static bool initialize() { return true ; }
 };
 
 template< class Traits >
@@ -508,14 +498,10 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocateWithoutInitializing
   typedef size_t size_type ;
   typedef const Kokkos::ViewAllocateWithoutInitializing & property_type ;
 
+  enum { Initialize = false };
+
   inline
   static std::string label( property_type s ) { return s.label ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  inline
-  static bool initialize() { return false ; }
 };
 
 } // namespace Impl

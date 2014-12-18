@@ -83,51 +83,8 @@ namespace Sacado {
        */
       //@{
 
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      KOKKOS_INLINE_FUNCTION
-      ViewFad() :
-        ExprType() {}
-
-      //! Constructor with supplied value \c x convertible to ValueT
-      /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty.
-       */
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      ViewFad(const S& x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        ExprType(x) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      KOKKOS_INLINE_FUNCTION
-      ViewFad(const int sz, const ValueT& x) :
-        ExprType(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      KOKKOS_INLINE_FUNCTION
-      ViewFad(const int sz, const int i, const ValueT & x) :
-        ExprType(sz,i,x) {}
-
-      //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      ViewFad(const ViewFad& x) :
-        ExprType(x) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S>
-      KOKKOS_INLINE_FUNCTION
-      ViewFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
-        ExprType(x) {}
+      // ViewFad cannot be created with the usual constructors, so we remove
+      // them here.
 
       //! Constructor with supplied storage \c s
       KOKKOS_INLINE_FUNCTION
@@ -239,7 +196,7 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator += (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator += (const Expr<S>& x) {
         GeneralFadType::operator+=(x);
         return *this;
       }
@@ -247,7 +204,7 @@ namespace Sacado {
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator -= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator -= (const Expr<S>& x) {
         GeneralFadType::operator-=(x);
         return *this;
       }
@@ -255,7 +212,7 @@ namespace Sacado {
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator *= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator *= (const Expr<S>& x) {
         GeneralFadType::operator*=(x);
         return *this;
       }
@@ -263,7 +220,7 @@ namespace Sacado {
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator /= (const Expr<S>& x) {
+      SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator /= (const Expr<S>& x) {
         GeneralFadType::operator/=(x);
         return *this;
       }

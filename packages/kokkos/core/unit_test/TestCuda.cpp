@@ -59,6 +59,7 @@
 #include <TestAtomic.hpp>
 
 #include <TestViewAPI.hpp>
+#include <TestViewSubview.hpp>
 #include <TestCrsArray.hpp>
 #include <TestTile.hpp>
 
@@ -161,6 +162,38 @@ TEST_F( cuda, view_api )
   // y(0) = 10 ;
 #endif
 }
+
+
+TEST_F( cuda, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::CudaUVMSpace >();
+}
+
+TEST_F( cuda, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::CudaUVMSpace >();
+}
+
+TEST_F( cuda, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::CudaUVMSpace >();
+}
+
+TEST_F( cuda, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::CudaUVMSpace >();
+}
+
+TEST_F( cuda, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::CudaUVMSpace >();
+}
+
+TEST_F( cuda, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::CudaUVMSpace >();
+}
+
+TEST_F( cuda, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::CudaUVMSpace >();
+}
+
+
+
 
 TEST_F( cuda, range_tag )
 {

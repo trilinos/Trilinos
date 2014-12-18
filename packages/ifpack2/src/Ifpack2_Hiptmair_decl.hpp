@@ -76,7 +76,7 @@ namespace Ifpack2 {
   /// Ifpack2::Hiptmair does smoothing on two spaces; a primary space
   /// and an auxiliary space. This situation arises when preconditioning
   /// Maxwell's equations discretized by edge elements.
-  /// 
+  ///
   /// For a list of all run-time parameters that this class accepts,
   /// see the documentation of setParameters().
   template<class MatrixType>
@@ -111,7 +111,7 @@ namespace Ifpack2 {
     TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-    //! The type of the Kokkos Node used by the input MatrixType.
+    //! The Node type used by the input MatrixType.
     typedef typename MatrixType::node_type node_type;
 
     //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -142,8 +142,8 @@ namespace Ifpack2 {
 
     //! Constructor that takes 3 Tpetra matrices.
     explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
-		       const Teuchos::RCP<const row_matrix_type>& PtAP,
-		       const Teuchos::RCP<const row_matrix_type>& P);
+                       const Teuchos::RCP<const row_matrix_type>& PtAP,
+                       const Teuchos::RCP<const row_matrix_type>& P);
 
     //! Destructor
     virtual ~Hiptmair ();
@@ -193,14 +193,14 @@ namespace Ifpack2 {
 
     void
     applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type,
-			  typename MatrixType::local_ordinal_type,
-			  typename MatrixType::global_ordinal_type,
-			  typename MatrixType::node_type>& X,
-			  Tpetra::MultiVector<typename MatrixType::scalar_type,
-			  typename MatrixType::local_ordinal_type,
-			  typename MatrixType::global_ordinal_type,
-			  typename MatrixType::node_type>& Y) const;
-    
+                          typename MatrixType::local_ordinal_type,
+                          typename MatrixType::global_ordinal_type,
+                          typename MatrixType::node_type>& X,
+                          Tpetra::MultiVector<typename MatrixType::scalar_type,
+                          typename MatrixType::local_ordinal_type,
+                          typename MatrixType::global_ordinal_type,
+                          typename MatrixType::node_type>& Y) const;
+
     //! Tpetra::Map representing the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 

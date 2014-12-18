@@ -73,7 +73,7 @@ public:
   typedef typename MatrixType::local_ordinal_type                         local_ordinal_type;
   //! Type of the global indices of the input matrix.
   typedef typename MatrixType::global_ordinal_type                        global_ordinal_type;
-  //! Kokkos Node type of the input matrix.
+  //! Node type of the input matrix.
   typedef typename MatrixType::node_type                                  node_type;
 
   //! Type of the absolute value (magnitude) of a \c scalar_type value.

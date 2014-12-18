@@ -1,7 +1,0 @@
-# Source this file to set up to be able to build this document
-#
-#  $ source source_set_env
-#
-
-export TEXINPUTS=$PWD/../environment/latex:$TEXINPUTS
-export BSTINPUTS=$PWD/../environment/bibtex:$BSTINPUTS

@@ -48,8 +48,8 @@ INCLUDE(PrintVar)
 # @FUNCTION: TRIBITS_ADD_ADVANCED_TEST()
 #
 # Function that creates an advanced test defined by stringing together one or
-# more executables and/or commands that is run as a ``cmake -P`` script with
-# very flexible pass/fail criteria.
+# more executable and/or command invocations that is run as a ``cmake -P``
+# script with very flexible pass/fail criteria.
 #
 # Usage::
 #
