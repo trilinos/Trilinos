@@ -159,6 +159,8 @@ private:
   Real              scale0_; ///< Scale for inexact gradient computation.
   Real              scale1_; ///< Scale for inexact gradient computation.
 
+  bool              softUp_;
+
   /** \brief Update gradient to iteratively satisfy inexactness condition.
 
       This function attempts to ensure that the inexact gradient condition,
@@ -269,6 +271,9 @@ public:
       int BBtype = parlist.get("Barzilai-Borwein Type",1);
       secant_ = getSecant<Real>(esec_,L,BBtype);
     }
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
   }
 
   /** \brief Constructor.
@@ -306,6 +311,9 @@ public:
     max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
     alpha_init_       = parlist.get("Initial Linesearch Parameter", 1.0);
     trustRegion_      = Teuchos::rcp( new TrustRegion<Real>(parlist) );
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
   }
 
   /** \brief Initialize step.
@@ -468,9 +476,14 @@ public:
     algo_state.iter++;
     trustRegion_->update(x,fnew,state->searchSize,TR_nfval_,TR_ngrad_,TRflag_,
                                s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
-    algo_state.value = fnew;
     algo_state.nfval += TR_nfval_;
     algo_state.ngrad += TR_ngrad_;
+    if ( softUp_ ) {
+      pObj.update(x,true,algo_state.iter);
+      fnew = pObj.value(x,tol);
+      algo_state.nfval++;
+    }
+    algo_state.value = fnew;
 
     // Compute new gradient and update secant storage
     if ( TRflag_ == 0 || TRflag_ == 1 ) {  
@@ -485,7 +498,12 @@ public:
         xnew_->axpy(-alpha*alpha_init_,gp_->dual());
         con.project(*xnew_);
         // Compute new objective value
-        obj.update(*xnew_,true,algo_state.iter);
+        if ( softUp_ ) {
+          obj.update(*xnew_);
+        } 
+        else {
+          obj.update(*xnew_,true,algo_state.iter);
+        }
         Real ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
@@ -495,7 +513,12 @@ public:
           xnew_->set(x);
           xnew_->axpy(-alpha*alpha_init_,gp_->dual());
           con.project(*xnew_);
-          obj.update(*xnew_,true,algo_state.iter);
+          if ( softUp_ ) {
+            obj.update(*xnew_);
+          }
+          else {
+            obj.update(*xnew_,true,algo_state.iter);
+          }
           ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= max_fval_ ) {
@@ -507,6 +530,12 @@ public:
         // Store objective function and iteration information
         fnew = ftmp;
         x.set(*xnew_);
+        if ( softUp_ ) {
+          obj.update(x,true,algo_state.iter);
+          fnew = pObj.value(x,tol);
+          algo_state.nfval++;
+        }
+        algo_state.value = fnew; 
       }
 
       // Store previous gradient for secant update

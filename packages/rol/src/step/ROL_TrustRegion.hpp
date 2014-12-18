@@ -101,6 +101,18 @@ private:
 
   bool useCGTCP_; 
 
+  bool softUp_;
+
+  void updateObj( Vector<Real> &x, int iter, ProjectedObjective<Real> &pObj ) {
+    if ( !softUp_ ) {
+      pObj.update(x,true,iter);
+    }
+    else {
+      pObj.update(x);
+    }
+  }
+
+
 public:
 
   virtual ~TrustRegion() {}
@@ -139,6 +151,9 @@ public:
     force_       = parlist.get("Value Update Forcing Sequence Initial Value",1.0);
     updateIter_  = parlist.get("Value Update Forcing Sequence Update Frequency",10);
     forceFactor_ = parlist.get("Value Update Forcing Sequence Reduction Factor",0.1);
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);  
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &g) {
@@ -193,12 +208,14 @@ public:
         ftol_old_ = ftol;
         fold1 = pObj.value(x,ftol_old_);
       }
-      pObj.update(*xupdate_,true,iter);
+      updateObj(*xupdate_,iter,pObj);
+      //pObj.update(*xupdate_,true,iter);
       fnew = pObj.value(*xupdate_,ftol);
       cnt_++;
     }
     else {
-      pObj.update(*xupdate_,true,iter);
+      updateObj(*xupdate_,iter,pObj);
+      //pObj.update(*xupdate_,true,iter);
       fnew = pObj.value(*xupdate_,tol);
     }
     nfval = 1;   
@@ -258,7 +275,8 @@ public:
     
     // Accept or Reject Step and Update Trust Region
     if ((rho < eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
-      pObj.update(x,true,iter);
+      updateObj(x,iter,pObj);
+      //pObj.update(x,true,iter);
       fnew = fold1;
       if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
         Real gs = s.dot(g.dual());
