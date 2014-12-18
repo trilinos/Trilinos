@@ -2192,6 +2192,7 @@ private:
 
   typedef typename SrcViewType::array_layout  SrcViewLayout ;
 
+  // Choose array layout, attempting to preserve original layout if at all possible.
   typedef typename Impl::if_c<
      ( // Same Layout IF
        // OutputRank 0
@@ -2206,6 +2207,7 @@ private:
        ( OutputRank <= 2 && R0_rev && Impl::is_same<SrcViewLayout,LayoutRight>::value )
      ), SrcViewLayout , Kokkos::LayoutStride >::type OutputViewLayout ;
 
+  // Choose data type as a purely dynamic rank array to accomodate a runtime range.
   typedef typename Impl::if_c< OutputRank == 0 , typename SrcViewType::value_type ,
           typename Impl::if_c< OutputRank == 1 , typename SrcViewType::value_type *,
           typename Impl::if_c< OutputRank == 2 , typename SrcViewType::value_type **,
@@ -2217,6 +2219,14 @@ private:
                                                  typename SrcViewType::value_type ********
   >::type >::type >::type >::type >::type >::type >::type >::type  OutputData ;
 
+  // Choose space.
+  // If the source view's template arg1 or arg2 is a space then use it,
+  // otherwise use the source view's execution space.
+
+  typedef typename Impl::if_c< Impl::is_space< SrcArg1Type >::value , SrcArg1Type ,
+          typename Impl::if_c< Impl::is_space< SrcArg2Type >::value , SrcArg2Type , typename SrcViewType::execution_space 
+  >::type >::type OutputSpace ;
+
 public:
 
   // If keeping the layout then match non-data type arguments
@@ -2224,8 +2234,7 @@ public:
   typedef typename
     Impl::if_c< Impl::is_same< SrcViewLayout , OutputViewLayout >::value
               , Kokkos::View< OutputData , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
-              , Kokkos::View< OutputData , OutputViewLayout
-                            , typename SrcViewType::execution_space
+              , Kokkos::View< OutputData , OutputViewLayout , OutputSpace
                             , typename SrcViewType::memory_traits
                             , Impl::ViewDefault >
               >::type  type ;
@@ -2239,6 +2248,7 @@ public:
 
 namespace Kokkos {
 
+// Construct subview of a Rank 8 view
 template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
 template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
         , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
@@ -2315,6 +2325,484 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R5::begin( arg5 )
                                         , R6::begin( arg6 )
                                         , R7::begin( arg7 ) );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 7 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type , class SubArg6_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    , const SubArg5_type & arg5
+    , const SubArg6_type & arg6
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , SubArg5_type , SubArg6_type , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+    typedef Impl::ViewOffsetRange< SubArg5_type > R5 ;
+    typedef Impl::ViewOffsetRange< SubArg6_type > R6 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , R5::dimension( src.m_offset_map.N5 , arg5 )
+                                 , R6::dimension( src.m_offset_map.N6 , arg6 )
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , R5::begin( arg5 )
+                                        , R6::begin( arg6 )
+                                        , 0 );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 6 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    , const SubArg5_type & arg5
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , SubArg5_type , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+    typedef Impl::ViewOffsetRange< SubArg5_type > R5 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , R5::dimension( src.m_offset_map.N5 , arg5 )
+                                 , 0
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , R5::begin( arg5 )
+                                        , 0
+                                        , 0 );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 5 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , 0
+                                 , 0
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , 0
+                                        , 0
+                                        , 0 );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 4 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , 0
+                                 , 0
+                                 , 0
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , 0
+                                        , 0
+                                        , 0
+                                        , 0 );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 3 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , void , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , 0 , 0 , 0 , 0 , 0);
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , 0 , 0 , 0 , 0 , 0 );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 2 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , SubArg1_type , void , void , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , 0 , 0 , 0 , 0 , 0 , 0 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , 0 , 0 , 0 , 0 , 0 , 0 );
+      m_management.increment( m_ptr_on_device );
+    }
+  }
+}
+
+// Construct subview of a Rank 1 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewDefault >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault > & src
+    , const SubArg0_type & arg0
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_offset_map()
+  , m_management()
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewDefault >
+                           , SubArg0_type , void , void , void , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
       m_management.increment( m_ptr_on_device );
     }
   }

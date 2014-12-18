@@ -54,6 +54,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestViewSubview.hpp>
 
 #include <TestCrsArray.hpp>
 #include <TestRange.hpp>
@@ -103,6 +104,37 @@ TEST_F( openmp, view_impl) {
 TEST_F( openmp, view_api) {
   TestViewAPI< double , Kokkos::OpenMP >();
 }
+
+
+TEST_F( openmp, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::OpenMP >();
+}
+
+
 
 TEST_F( openmp , range_tag )
 {

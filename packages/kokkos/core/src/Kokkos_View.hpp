@@ -689,9 +689,8 @@ public:
     }
 
   //------------------------------------
-
-  /** \brief  Constructor for subview requires the following
-   *          type-compatibility condition enforces via StaticAssert.
+  /** \brief  Constructors for subviews requires following
+   *          type-compatibility condition, enforce via StaticAssert.
    *
    *  Impl::is_same< View ,
    *                 typename Impl::ViewSubview< View<D,A1,A2,A3,Impl::ViewDefault>
@@ -700,25 +699,83 @@ public:
    *                 >::type >::value
    */
   template< class D , class A1 , class A2 , class A3
-          , class SubArg0_type
-          , class SubArg1_type
-          , class SubArg2_type
-          , class SubArg3_type
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type , class SubArg5_type , class SubArg6_type , class SubArg7_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4 , const SubArg5_type & arg5
+      , const SubArg6_type & arg6 , const SubArg7_type & arg7
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type , class SubArg5_type , class SubArg6_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4 , const SubArg5_type & arg5
+      , const SubArg6_type & arg6
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type , class SubArg5_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4 , const SubArg5_type & arg5
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
           , class SubArg4_type
-          , class SubArg5_type
-          , class SubArg6_type
-          , class SubArg7_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type
           >
   KOKKOS_INLINE_FUNCTION
   View( const View<D,A1,A2,A3,Impl::ViewDefault> & src
       , const SubArg0_type & arg0
-      , const SubArg1_type & arg1
-      , const SubArg2_type & arg2
-      , const SubArg3_type & arg3
-      , const SubArg4_type & arg4
-      , const SubArg5_type & arg5
-      , const SubArg6_type & arg6
-      , const SubArg7_type & arg7
       );
 
   //------------------------------------
@@ -1118,6 +1175,12 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type capacity() const
   { return m_offset_map.capacity(); }
+
+  // If the view data can be treated (deep copied)
+  // as a contiguous block of memory.
+  KOKKOS_INLINE_FUNCTION
+  bool is_contiguous() const
+  { return m_management.is_contiguous(); }
 };
 
 } /* namespace Kokkos */
@@ -1617,6 +1680,170 @@ subview( const View<D,A1,A2,A3,S> & src ,
       DstViewType ;
 
   return DstViewType( src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 , class ArgType6 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , ArgType5 , ArgType6 , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 ,
+         const ArgType6 & arg6 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , ArgType5 , ArgType6 , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , ArgType5 , void , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , ArgType5 , void , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0, arg1, arg2, arg3, arg4, arg5 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , void , void , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , void , void , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0, arg1, arg2, arg3, arg4 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , void , void , void , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0, arg1, arg2, arg3 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 , class ArgType1 , class ArgType2 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , ArgType1 , ArgType2 , void
+                          , void , void , void , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , ArgType1 , ArgType2 , void
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0, arg1, arg2 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 , class ArgType1 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , ArgType1 , void , void
+                          , void , void , void , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , ArgType1 , void , void
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0, arg1 );
+}
+
+template< class D , class A1 , class A2 , class A3 , class S ,
+          class ArgType0 >
+KOKKOS_INLINE_FUNCTION
+typename Impl::ViewSubview< View<D,A1,A2,A3,S>
+                          , ArgType0 , void , void , void
+                          , void , void , void , void
+                          >::type
+subview( const View<D,A1,A2,A3,S> & src ,
+         const ArgType0 & arg0 )
+{
+  typedef typename
+    Impl::ViewSubview< View<D,A1,A2,A3,S>
+                 , ArgType0 , void , void , void
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
+
+  return DstViewType( src, arg0 );
 }
 
 } // namespace Kokkos
