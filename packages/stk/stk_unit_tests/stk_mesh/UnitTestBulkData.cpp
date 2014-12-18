@@ -4760,7 +4760,33 @@ struct edge_finder
     }
 };
 
+/*
+TEST(BulkData, test_edge_finder)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
 
+    int num_procs = stk::parallel_machine_size(comm);
+
+    std::ostringstream os;
+    os << "generated:2x2x" << num_procs;
+
+    std::string filename = os.str();
+
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::io::StkMeshIoBroker reader(mesh.parallel());
+
+    reader.set_bulk_data(mesh);
+    reader.add_mesh_database("generated:2x2x2", stk::io::READ_MESH);
+    reader.create_input_mesh();
+    reader.populate_bulk_data();
+
+    edge_finder edge(mesh, 10, 11);
+
+
+}
+*/
 
 void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest > & child_node_requests)
 {
@@ -4798,7 +4824,10 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
             }
         }
 
-        if ( communicate_nodes == false ) break;
+        int more_work_to_be_done = communicate_nodes ? 1 : 0;
+        int global_result = 0;
+        stk::all_reduce_max(mesh.parallel(), &more_work_to_be_done, &global_result, 1);
+        if ( global_result == 0 ) break;
 
         std::sort(edgesToBeRefined.begin(), edgesToBeRefined.end(), edge_finder());
 
