@@ -299,9 +299,9 @@ int main(int argc, char *argv[]) {
       MLParameterListInterpreter mueLuFactory(MLList);      
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	      
       Teuchos::Ptr<FactoryManagerBase> LevelFactory = mueLuFactory.GetFactoryManager(1);
+      H->setlib(lib);
       H->AddNewLevel();
       H->GetLevel(1)->Keep("Nullspace",LevelFactory->GetFactory("Nullspace").get()); 
-
       H->GetLevel(0)->Set("A", A);
       mueLuFactory.SetupHierarchy(*H);
 
@@ -339,7 +339,8 @@ int main(int argc, char *argv[]) {
 
       MLParameterListInterpreter mueLuFactory(MLList);   
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
-      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	      
+      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	
+      H->setlib(lib);
       H->GetLevel(0)->Set("A", A);
       H->AddNewLevel();
 
@@ -380,7 +381,8 @@ int main(int argc, char *argv[]) {
 
       MLParameterListInterpreter mueLuFactory(MLList);   
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
-      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();	      
+      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+      H->setlib(lib);
       H->GetLevel(0)->Set("A", A);
       H->AddNewLevel();
       H->GetLevel(1)->Set("R", R);
