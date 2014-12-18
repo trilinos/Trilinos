@@ -18,7 +18,6 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
-  BlockedCoarseMapFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
@@ -48,6 +47,7 @@ APPEND_SET(SOURCES
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   APPEND_SET(SOURCES
+    BlockedCoarseMapFactory.cpp
     BlockedPFactory.cpp
     SubBlockAFactory.cpp
   )
