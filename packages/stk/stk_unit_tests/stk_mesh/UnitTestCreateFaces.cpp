@@ -36,6 +36,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/CreateEdges.hpp>  // for create_faces
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture, etc
@@ -192,6 +193,7 @@ TEST( UnitTestCreateFaces , Hex_3x1x1 )
     EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
+  stk::mesh::create_edges(fixture.m_bulk_data);
   stk::mesh::create_faces(fixture.m_bulk_data);
 
   {
