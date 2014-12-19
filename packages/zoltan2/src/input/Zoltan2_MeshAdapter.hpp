@@ -250,11 +250,7 @@ public:
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const {
-    if (!availAdjs(sourcetarget, through))
-      return false;
-    else {
-      return true;
-    }
+    return false;
   }
 
 
@@ -265,7 +261,7 @@ public:
   {
     /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
-    if (avail2ndAdjs(sourcetarget, through)) { // TODO:  Check use of avail2ndAdjs; maybe should be availAdjs
+    if (availAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -277,9 +273,6 @@ public:
       // TODO:  Default communicator may not be correct here
       RCP<const Comm<int> > comm =
 	DefaultPlatform::getDefaultPlatform ().getComm ();
-
-      // TODO:  kokkosnode may be default argument to Tpetra Maps.
-      RCP<Node> kokkosnode = DefaultPlatform::getDefaultPlatform ().getNode ();
 
       // Get node-element connectivity
 
@@ -304,21 +297,18 @@ public:
       int LocalNumOfNodes = getLocalNumOf(through);
       
       // Build a list of the ADJS global ids...
-      // TODO:  int is not the right cast here; probably GOs?
       adjsGIDs.resize (LocalNumOfNodes);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
-	adjsGIDs[i] = as<int> (Ids[i]);
+	adjsGIDs[i] = as<GO> (Ids[i]);
       }
 
       // TODO:  Ids is a view; shouldn't delete it.  delete [] Ids;
       getIDsViewOf(sourcetarget, Ids);
 
       //Generate Map for nodes.
-      // TODO:  can probably remove the kokkosnode from this constructor;
-      // TODO:  check for alternate constructors.
       // TODO:  Also, map is constructed with "through" (e.g., vertices) as rows;
       // TODO:  it should have "sourcetarget" (e.g., elements) as rows.
-      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, kokkosnode));
+      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -367,7 +357,7 @@ public:
       RCP<const map_type> ColMap = adjsMatrix->getColMap ();
       RCP<const map_type> globalMap =
 	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
-			   Tpetra::GloballyDistributed, kokkosnode));
+			   Tpetra::GloballyDistributed));
 
       // Create the exporter from this process' column Map to the global
       // 1-1 column map. (???)
@@ -454,7 +444,7 @@ public:
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
                                     MeshEntityType through) const {
-    if (!avail2ndAdjs(sourcetarget, through))
+    if (!availAdjs(sourcetarget, through))
       return 0;
     else {
       lno_t const *offsets;
@@ -484,7 +474,7 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-    if (!avail2ndAdjs(sourcetarget, through)) {
+    if (!availAdjs(sourcetarget, through)) {
       offsets = NULL;
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
