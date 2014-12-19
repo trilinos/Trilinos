@@ -5,12 +5,15 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+
 #include <MueLu.hpp>
-#include <MueLu_TpetraOperator.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
-#include <MueLu_Hierarchy.hpp>
+
 #include <MueLu_Exceptions.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_MasterList.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_TpetraOperator.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyUtils.hpp>
 
@@ -77,14 +80,16 @@ namespace MueLu {
 
     Teuchos::ParameterList serialList, nonSerialList;
     if (hasParamList) {
-      MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
+      MueLu::ExtractNonSerializableData(paramList, serialList, nonSerialList);
 
-      std::string Plist = paramList.get("parameterlist: syntax","muelu");
-      if(!Plist.compare("ml")) {
-	serialList.remove("parameterlist: syntax");
-	mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(serialList));
+      std::string syntaxStr = "parameterlist: syntax";
+      std::string Plist = paramList.get(syntaxStr, MasterList::getDefault<std::string>(syntaxStr));
+      if (!Plist.compare("ml")) {
+        serialList.remove(syntaxStr);
+        mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(serialList));
+      } else {
+        mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(serialList));
       }
-      else mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
       H = mueLuFactory->CreateHierarchy();
 
     } else {
