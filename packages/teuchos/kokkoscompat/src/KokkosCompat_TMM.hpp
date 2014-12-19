@@ -6,10 +6,10 @@
 //         Manycore Performance-Portable Multidimensional Arrays
 //
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -38,7 +38,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -54,8 +54,8 @@
 ///   backwards compatibility for any interface in this file, nor do
 ///   we even promise that this header file will continue to exist.
 
+#include <TeuchosKokkosCompat_config.h>
 #include <Kokkos_Core.hpp>
-#include <KokkosCompat_config.h>
 #include <Teuchos_ArrayView.hpp>
 
 #if 0
@@ -70,8 +70,8 @@ namespace Impl {
             class ST , class SL , class SD , class SM >
   template<class ValueType>
   struct ViewAssignment<View<ValueType, Threads>, Teuchos::ArrayView<const ValueType> > {
-    ViewAssignment (View<ValueType, Threads>& dst, 
-		    const Teuchos::ArrayView<const ValueType>& src,
+    ViewAssignment (View<ValueType, Threads>& dst,
+                    const Teuchos::ArrayView<const ValueType>& src,
                     typename enable_if< (
                       is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
                                typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
@@ -85,8 +85,8 @@ namespace Impl {
 
       View<ValueType, LayoutRight, Threads, MemoryUnmanaged> srcView; // (src.getRawPtr (), src.size ());
       srcView.m_shape.N0 = src.size ();
-      
-      
+
+
     }
 
     static void deep_copy (const DestViewType& dst, const Teuchos::ArrayView<const ValueType>& src);
@@ -106,7 +106,7 @@ namespace Kokkos {
     template<class ValueType>
     inline void
     deep_copy (const Kokkos::View<ValueType, Kokkos::Threads>& dst,
-	       const Teuchos::ArrayView<ValueType>& src)
+               const Teuchos::ArrayView<ValueType>& src)
     {
       using Kokkos::LayoutRight;
       using Kokkos::Threads;

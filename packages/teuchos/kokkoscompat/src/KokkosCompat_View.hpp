@@ -54,12 +54,9 @@
 ///   backwards compatibility for any interface in this file, nor do
 ///   we even promise that this header file will continue to exist.
 
-#include "KokkosCompat_config.h"
-
-// KokkosCore device types
-#include "Kokkos_Core.hpp"
-
-#include "Teuchos_ArrayView.hpp"
+#include <TeuchosKokkosCompat_config.h>
+#include <Kokkos_Core.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace Kokkos {
   namespace Compat {

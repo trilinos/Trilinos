@@ -19,15 +19,21 @@ LIST( APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 # No need to use DEPLIBS, since this subpackage will only make one library;
 # the subpackage's dependencies handle dependencies outside of the subpackage.
 TRIBITS_ADD_LIBRARY(
-    kokkoscompat
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
+  teuchoskokkoscompat
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )
 
+# FIXME (mfh 19 Dec 2014) Do we actually need to build this CUDA
+# library, now that we are using nvcc_wrapper to build everything
+# (meaning that we don't need separate .cu files)?
 IF (Kokkos_ENABLE_Cuda)
   FILE(GLOB CUDA_SOURCES *.cu)
-  PACKAGE_ADD_CUDA_LIBRARY(kokkoscompat_cuda SOURCES ${CUDA_SOURCES})
+  PACKAGE_ADD_CUDA_LIBRARY(teuchoskokkoscompat_cuda SOURCES ${CUDA_SOURCES})
 ENDIF()
+
+# FIXME (mfh 19 Dec 2014) We should rely on TriBITS to handle
+# installation.
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
 

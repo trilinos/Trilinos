@@ -13,9 +13,8 @@ LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
-    kokkosmpicomm
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    DEPLIBS
-    )
+  teuchoskokkoscomm
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )
 

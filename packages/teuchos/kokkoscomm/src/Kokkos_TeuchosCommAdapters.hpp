@@ -43,9 +43,10 @@
 #ifndef KOKKOS_TEUCHOS_COMM_ADAPTERS_HPP
 #define KOKKOS_TEUCHOS_COMM_ADAPTERS_HPP
 
-#include "Teuchos_CommHelpers.hpp"
-#include "Kokkos_Core.hpp"
-#include "KokkosCompat_View.hpp"
+#include <TeuchosKokkosComm_config.h>
+#include <Teuchos_CommHelpers.hpp>
+#include <Kokkos_Core.hpp>
+#include <KokkosCompat_View.hpp>
 
 /// \file Kokkos_TeuchosCommAdapters.hpp
 /// \brief Adapters for Teuchos::Comm functions for Kokkos:View.

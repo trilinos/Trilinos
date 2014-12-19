@@ -1,11 +1,14 @@
 #ifndef KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 #define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
+#include <TeuchosKokkosCompat_config.h>
+
+#include <KokkosCompat_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Kokkos_Core.hpp>
 #ifdef KOKKOS_HAVE_CUDA
   #ifndef KERNEL_PREFIX
     #ifdef __CUDACC__
@@ -13,14 +16,6 @@
     #endif
   #endif
 #endif
-
-#include <KokkosCompat_View.hpp>
-/*namespace KokkosClassic {
-      enum ReadWriteOption {
-        ReadWrite, // < Indicates that the view may be safely read and written.
-        WriteOnly  // < Indicates that the contents of the view are undefined until set on the host.
-      };
-}*/
 
 namespace Kokkos {
 namespace Compat {

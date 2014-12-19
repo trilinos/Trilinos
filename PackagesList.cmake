@@ -58,11 +58,11 @@
 # Define the Trilinos packages
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-  Teuchos               packages/teuchos                  PS
-  ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
-  RTOp                  packages/rtop                     PS
   Gtest                 commonTools/gtest                 SS
+  ThreadPool            packages/ThreadPool               PS # Depends on Pthreads
   Kokkos                packages/kokkos                   PS
+  Teuchos               packages/teuchos                  PS
+  RTOp                  packages/rtop                     PS
   Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
   Zoltan                packages/zoltan                   PS

@@ -48,4 +48,6 @@
 ///
 /// This file is currently empty, but will soon contain useful things.
 
+#include <TeuchosKokkosComm_config.h>
+
 #endif // KOKKOS_MPITYPETRAITS_HPP
