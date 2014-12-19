@@ -150,8 +150,11 @@ struct ViewAssignment< ViewTile , void , void >
      // Destination is always contiguous but source may be non-contiguous
      // so don't assign the whole view management object.
      // Just query and appropriately set the reference-count state.
+
      if ( ! src.m_management.is_managed() ) dst.m_management.set_unmanaged();
+
      dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.tile_begin(i_tile0,i_tile1);
+
      dst.m_management.increment( dst.m_ptr_on_device );
    }
 };
@@ -171,8 +174,7 @@ tile_subview( const View<T**,LayoutTileLeft<N0,N1,true>,A2,A3,Impl::ViewDefault>
 {
   View< T[N0][N1], LayoutLeft, A2, A3, Impl::ViewDefault > dst ;
 
-  Impl::ViewAssignment< Impl::ViewTile , void , void >
-    ::ViewAssignment( dst , src , i_tile0 , i_tile1 );
+  (void) Impl::ViewAssignment< Impl::ViewTile , void , void >( dst , src , i_tile0 , i_tile1 );
 
   return dst ;
 }

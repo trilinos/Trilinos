@@ -95,7 +95,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
     // Need input vector to matvec to be owned + received
     VectorType pAll ( "cg::p" , count_total );
 
-    VectorType p = Kokkos::subview< VectorType >( pAll , std::pair<size_t,size_t>(0,count_owned) );
+    VectorType p = Kokkos::subview( pAll , std::pair<size_t,size_t>(0,count_owned) );
     VectorType r ( "cg::r" , count_owned );
     VectorType Ap( "cg::Ap", count_owned );
 
