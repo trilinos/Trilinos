@@ -5039,7 +5039,7 @@ TEST(BulkData, create_node_along_shared_edge)
     }
 }
 
-TEST(BulkData, nodes_along_every_edge)
+TEST(BulkData, three_nodes_along_every_edge)
 {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
@@ -5059,13 +5059,16 @@ TEST(BulkData, nodes_along_every_edge)
         std::vector<size_t> counts;
         stk::mesh::comm_mesh_counts(mesh, counts);
 
-        EXPECT_EQ(27u, counts[stk::topology::NODE_RANK]);
+        size_t num_original_nodes = counts[stk::topology::NODE_RANK];
+
+        EXPECT_EQ(27u, num_original_nodes);
         EXPECT_EQ(8u, counts[stk::topology::ELEMENT_RANK]);
 
         stk::mesh::create_edges(mesh);
 
         stk::mesh::comm_mesh_counts(mesh, counts);
-        unsigned num_edges = counts[stk::topology::EDGE_RANK];
+        size_t num_edges = counts[stk::topology::EDGE_RANK];
+        EXPECT_EQ(54u, num_edges);
         std::vector<stk::mesh::Entity> newNodes(3*num_edges, stk::mesh::Entity());
         size_t new_node_counter = 0;
 
@@ -5108,6 +5111,7 @@ TEST(BulkData, nodes_along_every_edge)
                         ++new_node_counter;
                         child_node_requests.push_back(node_request);
                     }
+                    ASSERT_TRUE(new_node_counter <= 3*num_edges);
                 }
             }
         }
@@ -5138,7 +5142,7 @@ TEST(BulkData, nodes_along_every_edge)
 
         stk::mesh::comm_mesh_counts(mesh, counts);
 
-        size_t gold_number_nodes = 3*3*3 + 3*54;
+        size_t gold_number_nodes = num_original_nodes + 3*num_edges;
         EXPECT_EQ(gold_number_nodes, counts[stk::topology::NODE_RANK]);
         EXPECT_EQ(8u, counts[stk::topology::ELEMENT_RANK]);
 
