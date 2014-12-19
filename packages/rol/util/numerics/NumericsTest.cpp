@@ -47,6 +47,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "OrthogonalPolynomials.hpp"
 #include "LinearAlgebra.hpp"
+#include "Lagrange.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -80,15 +81,19 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > bp  = Teuchos::rcp( new std::vector<RealT>(N,0) );
     Teuchos::RCP<std::vector<RealT> > xgp = Teuchos::rcp( new std::vector<RealT>(N,0) );
     Teuchos::RCP<std::vector<RealT> > wgp = Teuchos::rcp( new std::vector<RealT>(N,0) );
+    Teuchos::RCP<std::vector<RealT> > fgp = Teuchos::rcp( new std::vector<RealT>(N,0) );
     Teuchos::RCP<std::vector<RealT> > xlp = Teuchos::rcp( new std::vector<RealT>(N,0) );
     Teuchos::RCP<std::vector<RealT> > wlp = Teuchos::rcp( new std::vector<RealT>(N,0) );
+    Teuchos::RCP<std::vector<RealT> > flp = Teuchos::rcp( new std::vector<RealT>(N,0) );
 
     ROL::StdVector<RealT> a(ap);
     ROL::StdVector<RealT> b(bp);
     ROL::StdVector<RealT> xg(xgp);
     ROL::StdVector<RealT> wg(wgp);
+    ROL::StdVector<RealT> fg(fgp);
     ROL::StdVector<RealT> xl(xlp);
     ROL::StdVector<RealT> wl(wlp);
+    ROL::StdVector<RealT> fl(flp);
 
     // Compute Legendre Recursion coefficients 
     rec_jacobi(0,0,a,b);
@@ -102,23 +107,31 @@ int main(int argc, char *argv[]) {
     // Compute Gauss nodes and weights
     gauss(lapack,a,b,xl,wl);
  
+    // Create a Lagrange interpolation object from the Lobatto to Gauss nodes
+    Lagrange<RealT> lagrange(xl,xg);
+
     // Numerically integrate k*sech(k*x) for somewhat large k
-    RealT fg = 0; 
-    RealT fl = 0;
     RealT k = 20;
- 
+
+    // Evaluate \f$ k\sech(kx) \f$ 
     for(int i=0;i<N;++i) {
-        fg += k*(*wgp)[i]/cosh(k*(*xgp)[i]);
-        fl += k*(*wlp)[i]/cosh(k*(*xlp)[i]);
+        (*flp)[i] = k/cosh(k*(*xlp)[i]);
     }
-   
-    if(fabs(fg-pi)>tol) {
+    
+    // Interpolate from the Lobatto nodes to the Gauss nodes
+    lagrange.interp(fl,fg);
+
+    // Numerically integrate the interpolated function
+    RealT sum = 0;
+    for(int i=0;i<N;++i){
+        sum += (*wgp)[i]*(*fgp)[i];
+    }   
+
+    if(fabs(sum-pi)>tol){
         ++errorFlag;
-    } 
-     if(fabs(fl-pi)>tol) {
-        ++errorFlag;
-    } 
- 
+    }
+
+
     if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
     else
