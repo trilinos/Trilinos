@@ -5046,7 +5046,7 @@ TEST(BulkData, nodes_along_every_edge)
 
         stk::mesh::comm_mesh_counts(mesh, counts);
         unsigned num_edges = counts[stk::topology::EDGE_RANK];
-        std::vector<stk::mesh::Entity> newNodes(num_edges, stk::mesh::Entity());
+        std::vector<stk::mesh::Entity> newNodes(3*num_edges, stk::mesh::Entity());
         size_t new_node_counter = 0;
 
         std::vector<ChildNodeRequest> child_node_requests;
@@ -5062,12 +5062,32 @@ TEST(BulkData, nodes_along_every_edge)
                 {
                     const stk::mesh::Entity* pnodes = mesh.begin_nodes(bucket[e]);
 
-                    std::vector<const stk::mesh::Entity*> node_parents;
-                    node_parents.push_back(pnodes);
-                    node_parents.push_back(pnodes+1);
-                    ChildNodeRequest node_request(node_parents, &newNodes[new_node_counter]);
-                    ++new_node_counter;
-                    child_node_requests.push_back(node_request);
+                    int child_index = 0;
+                    {
+                        std::vector<const stk::mesh::Entity*> node_parents;
+                        node_parents.push_back(pnodes);
+                        node_parents.push_back(pnodes+1);
+                        ChildNodeRequest node_request(node_parents, &newNodes[new_node_counter]);
+                        child_index = new_node_counter;
+                        ++new_node_counter;
+                        child_node_requests.push_back(node_request);
+                    }
+                    {
+                        std::vector<const stk::mesh::Entity*> node_parents;
+                        node_parents.push_back(&newNodes[child_index]);
+                        node_parents.push_back(pnodes+1);
+                        ChildNodeRequest node_request(node_parents, &newNodes[new_node_counter]);
+                        ++new_node_counter;
+                        child_node_requests.push_back(node_request);
+                    }
+                    {
+                        std::vector<const stk::mesh::Entity*> node_parents;
+                        node_parents.push_back(pnodes);
+                        node_parents.push_back(&newNodes[child_index]);
+                        ChildNodeRequest node_request(node_parents, &newNodes[new_node_counter]);
+                        ++new_node_counter;
+                        child_node_requests.push_back(node_request);
+                    }
                 }
             }
         }
@@ -5098,7 +5118,7 @@ TEST(BulkData, nodes_along_every_edge)
 
         stk::mesh::comm_mesh_counts(mesh, counts);
 
-        size_t gold_number_nodes = 3*3*3 + 54;
+        size_t gold_number_nodes = 3*3*3 + 3*54;
         EXPECT_EQ(gold_number_nodes, counts[stk::topology::NODE_RANK]);
         EXPECT_EQ(8u, counts[stk::topology::ELEMENT_RANK]);
 
