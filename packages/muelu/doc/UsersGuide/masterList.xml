@@ -69,6 +69,16 @@
       <description>Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.</description>
     </parameter>
 
+
+     <parameter>
+      <name>parameterlist: syntax</name>
+      <type>string</type>
+      <default>muelu</default>
+      <description>Syntax of ParameterList to use.  This should either be "muelu" or "ml." </description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
   </general>
 
   <smoothing_and_coarse>

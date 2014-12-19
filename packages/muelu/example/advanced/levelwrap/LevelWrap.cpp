@@ -465,6 +465,25 @@ int main(int argc, char *argv[]) {
     }
 
 
+    // =========================================================================
+    // Solve #6 (level wrap, the fast way, ML style list
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 6: Standard, ML List "<< prefSeparator <<std::endl;
+    {
+      // Use an ML-style parameter list for variety
+      Teuchos::ParameterList MLList,level1;
+      MLList.set("parameterlist: syntax","ml");
+      MLList.set("ML output", 10);
+      MLList.set("coarse: type","Amesos-Superlu");
+#ifdef HAVE_AMESOS2_KLU2
+      MLList.set("coarse: type","Amesos-KLU");
+#endif
+      solve_system_list(lib,A,X,B,MLList,SList);
+    }
+
+
+
     success = true;
   }
 

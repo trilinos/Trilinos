@@ -8,6 +8,7 @@
 #include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Utilities.hpp>
@@ -76,8 +77,13 @@ namespace MueLu {
     Teuchos::ParameterList serialList, nonSerialList;
     if (hasParamList) {
       MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
-      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
 
+      std::string Plist = paramList.get("parameterlist: syntax","muelu");
+      if(!Plist.compare("ml")) {
+	serialList.remove("parameterlist: syntax");
+	mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(serialList));
+      }
+      else mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
       H = mueLuFactory->CreateHierarchy();
 
     } else {
@@ -131,15 +137,8 @@ namespace MueLu {
       }
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
-
-
-    // Grab the non-serializable lists and then for each level number, do an AddLevel up to maxlevel and then start
-    // dumping the data on the level
-
-    // NOTE: This stuff should be in some utility function that isn't here
-
+    
     if (hasParamList) {
-      std::cout<<"%%%%%%%%%%%%%%%%% NonSerialList %%%%%%%%%%%%%%%%%"<<nonSerialList <<"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"<<std::endl;
       MueLu::Utils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H,nonSerialList);
       mueLuFactory->SetupHierarchy(*H);
     }

@@ -73,9 +73,14 @@ namespace MueLu {
     RCP<Hierarchy>        H;
     Teuchos::ParameterList serialList, nonSerialList;
     if (hasParamList) {
-        MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
-      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
+      MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
 
+      std::string Plist = paramList.get("parameterlist: syntax","muelu");
+      if(!Plist.compare("ml")) { 
+	serialList.remove("parameterlist: syntax");
+	mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(serialList));
+      }
+      else mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
       H = mueLuFactory->CreateHierarchy();
     } else {
       H = rcp(new Hierarchy());
