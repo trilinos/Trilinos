@@ -61,6 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
+#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -72,6 +73,7 @@ using Teuchos::rcp;
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -95,7 +97,7 @@ namespace panzer {
     RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
     RCP<panzer::GlobalData> gd;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
-    RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
@@ -106,11 +108,11 @@ namespace panzer {
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
-    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > globalIndexer;
+    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer;
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,panzer::Ordinal64>(comm,1,true,"",linearObjFactory,globalIndexer)); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory,globalIndexer)); }
   };
 
   void buildAssemblyPieces(bool parameter_on,
@@ -452,6 +454,259 @@ namespace panzer {
     }
   }
 
+  // Testing Ditributed Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    bool parameter_on = true;
+    AssemblyPieces ap;
+
+    buildAssemblyPieces(parameter_on,ap);
+
+    int distributed_parameter_index = -1;
+    Teuchos::RCP<panzer::LOCPair_GlobalEvaluationData> dataObject;
+    RCP<PME> me;
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
+
+      bool build_transient_support = false;
+      me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+      // extract the vector space for the distributed parameter
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs 
+          = Teuchos::rcp_dynamic_cast<const ThyraObjFactory<double> >(ap.lof,true)->getThyraDomainSpace();
+
+      // setup an initial value for the parameter
+      Teuchos::RCP<Thyra::VectorBase<double> > initial = Thyra::createMember(vs);
+      Thyra::put_scalar(0.0,initial.ptr());
+
+      // this object changes the parameter from a global object to a ghosted one
+      dataObject = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(ap.lof,panzer::LinearObjContainer::X));
+
+      // add the distributed parameter
+      distributed_parameter_index = me->addDistributedParameter("Transient Predictor",
+                                                                vs,
+                                                                dataObject,
+                                                                initial); 
+    }
+
+    // build inputs
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    // solution
+    RCP<Thyra::VectorBase<double> > x = Thyra::createMember(me->get_x_space());
+    Thyra::put_scalar(1.0,x.ptr());
+    
+    // locally replicated scalar parameter
+    RCP<Thyra::VectorBase<double> > p = Thyra::createMember(me->get_p_space(0));
+    Thyra::put_scalar(1.0,p.ptr());
+
+    // distributed parameter
+    RCP<Thyra::VectorBase<double> > distr_p = Thyra::createMember(me->get_p_space(distributed_parameter_index));
+    Thyra::put_scalar(3.14,distr_p.ptr());
+
+    // build outputs
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
+
+    // Test that the distributed parameter is updated correctly
+    {
+      InArgs in_args = me->createInArgs();
+      OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.Np() == 2);
+
+      in_args.set_x(x);
+      in_args.set_p(0,p);
+      in_args.set_p(distributed_parameter_index,distr_p);
+
+      out_args.set_f(f);
+
+      me->evalModel(in_args,out_args);
+    
+      // Export should have performed global to ghost, ghosted values should be 1
+      // Create a gold standard to compare against
+      RCP<const Thyra::VectorBase<double> > ghosted_distr_p 
+          = Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(dataObject->getGhostedLOC())->get_x_th();
+      RCP<Thyra::VectorBase<double> > gold_standard = Thyra::createMember(ghosted_distr_p->range());
+      Thyra::put_scalar(3.14,gold_standard.ptr());
+
+      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+      // note that all this tests is that the ghosted vector is correctly populated!
+      TEST_EQUALITY_CONST(testEqualityOfVectorValues(*ghosted_distr_p,*gold_standard,tol,true), true);
+    }
+  }
+
+  // Testing that nominal values are correctly built and initialized
+  //    specifically testing that adding distributed parameters doesn't wipe out
+  //    previously set nominal values (like the inital condition)
+  TEUCHOS_UNIT_TEST(model_evaluator, nominal_values)
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::rcp_const_cast;
+
+    double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+    bool parameter_on = true;
+    AssemblyPieces ap;
+
+    buildAssemblyPieces(parameter_on,ap);
+
+    Teuchos::RCP<panzer::LOCPair_GlobalEvaluationData> dataObject;
+    RCP<PME> me;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+
+    me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,true,0.0));
+
+    // setup some initial conditions
+    RCP<Thyra::VectorBase<double> > x0     = Thyra::createMember(me->get_x_space());
+    RCP<Thyra::VectorBase<double> > x0_dot = Thyra::createMember(me->get_x_space());
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      // why is this const cast neccessary. What is "correct" approach to setting initial conditions
+      Thyra::put_scalar(3.14,rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()).ptr());
+      Thyra::put_scalar(6.28,rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x_dot()).ptr());
+
+      // setup the comparison vectors
+      Thyra::put_scalar(3.14,x0.ptr());
+      Thyra::put_scalar(6.28,x0_dot.ptr());
+    }
+
+    // check the initial conditions
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      RCP<const Thyra::VectorBase<double> > x0_n     = nomValues.get_x();
+      RCP<const Thyra::VectorBase<double> > x0_dot_n = nomValues.get_x_dot();
+
+      // check the error of x0
+      TEST_ASSERT(testEqualityOfVectorValues(    *x0_n,     *x0, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(*x0_dot_n, *x0_dot, tol));
+    }
+ 
+    // add normal parameter
+    /////////////////////////////////////////////////////////////
+    int index_dummy = me->addParameter("SOURCE_TEMPERATURE");
+
+    // check the initial conditions
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      RCP<const Thyra::VectorBase<double> > x0_n     = nomValues.get_x();
+      RCP<const Thyra::VectorBase<double> > x0_dot_n = nomValues.get_x_dot();
+
+      // check the error of x0
+      TEST_ASSERT(testEqualityOfVectorValues(    *x0_n,     *x0, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(*x0_dot_n, *x0_dot, tol));
+    }
+
+    // set new parameter value
+    RCP<Thyra::VectorBase<double> > p0     = Thyra::createMember(me->get_p_space(index_dummy));
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      Thyra::put_scalar(9.42,rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_p(index_dummy)).ptr());
+      Thyra::put_scalar(9.42,p0.ptr());
+    }
+
+    // add first distributed parameter
+    /////////////////////////////////////////////////////////////
+    int index_distr_param1 = -1;
+    {
+      // the vector space for the distributed parameter
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = me->get_x_space();
+  
+      // setup an initial value for the parameter
+      Teuchos::RCP<Thyra::VectorBase<double> > initial = Thyra::createMember(vs);
+      Thyra::put_scalar(0.0,initial.ptr());
+  
+      // this object changes the parameter from a global object to a ghosted one
+      dataObject = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(ap.lof,panzer::LinearObjContainer::X));
+  
+      index_distr_param1 = me->addDistributedParameter("Distr Parameter 1",
+                                                       vs,
+                                                       dataObject,
+                                                       initial); 
+    }
+
+    // check the initial conditions
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      RCP<const Thyra::VectorBase<double> > x0_n     = nomValues.get_x();
+      RCP<const Thyra::VectorBase<double> > x0_dot_n = nomValues.get_x_dot();
+      RCP<const Thyra::VectorBase<double> > p0_n     = nomValues.get_p(index_dummy);
+
+      // check the error of x0
+      TEST_ASSERT(testEqualityOfVectorValues(    *x0_n,     *x0, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(*x0_dot_n, *x0_dot, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(    *p0_n,     *p0, tol));
+    }
+
+    // set new parameter value
+    RCP<Thyra::VectorBase<double> > p1     = Thyra::createMember(me->get_p_space(index_distr_param1));
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      Thyra::put_scalar(-3.14,rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_p(index_distr_param1)).ptr());
+      Thyra::put_scalar(-3.14,p1.ptr());
+    }
+
+    // add second distributed parameter
+    /////////////////////////////////////////////////////////////
+    {
+      // the vector space for the distributed parameter
+      Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = me->get_x_space();
+  
+      // setup an initial value for the parameter
+      Teuchos::RCP<Thyra::VectorBase<double> > initial = Thyra::createMember(vs);
+      Thyra::put_scalar(0.0,initial.ptr());
+  
+      // this object changes the parameter from a global object to a ghosted one
+      dataObject = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(ap.lof,panzer::LinearObjContainer::X));
+  
+      // we are really just interested in what happens when we call this
+      me->addDistributedParameter("Distr Parameter 2",
+                                  vs,
+                                  dataObject,
+                                  initial); 
+    }
+
+    // check the initial conditions
+    {
+      InArgs nomValues = me->getNominalValues();
+
+      RCP<const Thyra::VectorBase<double> > x0_n     = nomValues.get_x();
+      RCP<const Thyra::VectorBase<double> > x0_dot_n = nomValues.get_x_dot();
+      RCP<const Thyra::VectorBase<double> > p0_n     = nomValues.get_p(index_dummy);
+      RCP<const Thyra::VectorBase<double> > p1_n     = nomValues.get_p(index_distr_param1);
+
+      // check the error of x0
+      TEST_ASSERT(testEqualityOfVectorValues(    *x0_n,     *x0, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(*x0_dot_n, *x0_dot, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(    *p0_n,     *p0, tol));
+      TEST_ASSERT(testEqualityOfVectorValues(    *p1_n,     *p1, tol));
+    }
+  }
+
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
                                   const Thyra::VectorBase<double> & b, 
                                   double tolerance, bool write_to_cout)
@@ -567,6 +822,7 @@ namespace panzer {
     factory.setParameterList(pl);
     RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -615,16 +871,17 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > 
+      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
-    panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager 
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
     ap.dofManager = dofManager;
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Comm.getConst(),dofManager));
+        // = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Comm.getConst(),dofManager));
+        = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
     ap.lof = linObjFactory;
     linObjFactory = ap.lof;
 

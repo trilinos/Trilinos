@@ -153,21 +153,10 @@ public:
       evaluator.  This function registers the parameter and any
       needed machinery to perform the global to ghost call.
 
-      NOTE: We can't use the LinearObjFactory and
-      LinearObjContainers here because those objects require a
-      unique global indexer to build.  In general, the distributed
-      parameters may NOT be coming from an object that has an
-      associated unique global indexer.  An example of this is
-      multiphysics coupling.  The parameters will be coming form
-      another code that may not have a PDE discretization.
-      Generalizing this function to hide the linear algebra type may
-      not be possible unless we refactor the linear object support
-      or write new wrapper objects.  Also note that Thyra has no
-      concept of an import/export object so we can't use Thyra here
-      to abstract the objects.
-
-      \param[in]  name Name of the distributed parameter
-      \param[ged] ged Global evaluation data object that handles ghosting
+      \param[in] name Name of the distributed parameter
+      \param[in] vs   Vector space that this corresponds to
+      \param[in] ged  Global evaluation data object that handles ghosting
+      \param[in] initial Initial value to use for this parameter (defaults in the equation set)
 
       \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
   */
@@ -316,6 +305,9 @@ private:
 
   //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
   bool required_basic_dfdp(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Initialize the nominal values with good starting conditions
+  void initializeNominalValues();
 
 private: // data members
 

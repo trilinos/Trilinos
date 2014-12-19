@@ -1,0 +1,25 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="low"/>
+  <Parameter        name="max levels"                           type="int"      value="6"/>
+  <Parameter        name="coarse: max size"                     type="int"      value="500"/>
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+  <Parameter        name="number of equations"                  type="int"      value="2"/>
+
+  <Parameter        name="filtered matrix: use lumping"         type="bool"     value="false"/>
+
+  <Parameter        name="emin: pattern order"                  type="int"      value="1"/>
+  <Parameter        name="emin: num iterations"                 type="int"      value="3"/>
+
+  <Parameter        name="reuse: type"                          type="string"   value="RP"/>
+  <Parameter        name="emin: num reuse iterations"           type="int"      value="1"/>
+
+  <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>>
+    <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="20"/>
+    <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+    <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+  </ParameterList>
+
+</ParameterList>
