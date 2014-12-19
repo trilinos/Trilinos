@@ -297,10 +297,9 @@ public:
       int LocalNumOfNodes = getLocalNumOf(through);
       
       // Build a list of the ADJS global ids...
-      // TODO:  int is not the right cast here; probably GOs?
       adjsGIDs.resize (LocalNumOfNodes);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
-	adjsGIDs[i] = as<int> (Ids[i]);
+	adjsGIDs[i] = as<GO> (Ids[i]);
       }
 
       // TODO:  Ids is a view; shouldn't delete it.  delete [] Ids;
