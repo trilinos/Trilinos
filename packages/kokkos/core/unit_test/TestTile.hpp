@@ -96,7 +96,7 @@ void test( const size_t dim0 , const size_t dim1 )
   const size_t tile_dim1 = ( dim1 + N1 - 1 ) / N1 ;
   
   typename functor_type::array_type array("",dim0,dim1);
-  
+
   Kokkos::parallel_for( Kokkos::RangePolicy<Space,size_t>(0,dim0*dim1) , functor_type( array ) );
 
   ptrdiff_t error = 0 ;

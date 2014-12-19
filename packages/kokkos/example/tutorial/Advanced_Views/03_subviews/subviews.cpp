@@ -158,19 +158,18 @@ int main (int narg, char* arg[]) {
   // A pair of indices in a particular dimension means the contiguous
   // zero-based index range in that dimension, including the first
   // entry of the pair but _not_ including the second entry.
-  inner_mesh_type Ai =
-    subview<inner_mesh_type> (A, pair<size_type, size_type> (1, size+1),
-                              pair<size_type, size_type> (1, size+1),
-                              pair<size_type, size_type> (1, size+1));
+  inner_mesh_type Ai = subview(A, pair<size_type, size_type> (1, size+1),
+                                  pair<size_type, size_type> (1, size+1),
+                                  pair<size_type, size_type> (1, size+1));
   // A has six boundaries, one for each face of the cube.
   // Create a View of each of these boundaries.
   // ALL() means "select all indices in that dimension."
-  xy_plane_type Zneg_halo = subview<xy_plane_type> (A, ALL (), ALL (), 0);
-  xy_plane_type Zpos_halo = subview<xy_plane_type> (A, ALL (), ALL (), 101);
-  xz_plane_type Yneg_halo = subview<xz_plane_type> (A, ALL (), 0, ALL ());
-  xz_plane_type Ypos_halo = subview<xz_plane_type> (A, ALL (), 101, ALL ());
-  yz_plane_type Xneg_halo = subview<yz_plane_type> (A, 0, ALL (), ALL ());
-  yz_plane_type Xpos_halo = subview<yz_plane_type> (A, 101, ALL (), ALL ());
+  xy_plane_type Zneg_halo = subview(A, ALL (), ALL (), 0);
+  xy_plane_type Zpos_halo = subview(A, ALL (), ALL (), 101);
+  xz_plane_type Yneg_halo = subview(A, ALL (), 0, ALL ());
+  xz_plane_type Ypos_halo = subview(A, ALL (), 101, ALL ());
+  yz_plane_type Xneg_halo = subview(A, 0, ALL (), ALL ());
+  yz_plane_type Xpos_halo = subview(A, 101, ALL (), ALL ());
 
   // Set the boundaries to their initial conditions.
   parallel_for (Zneg_halo.dimension_0 (), set_boundary<xy_plane_type> (Zneg_halo,  1));

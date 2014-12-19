@@ -227,7 +227,7 @@ void cgsolve(
   // Need input vector to matvec to be owned + received
   vector_type pAll ( "cg::p" , count_total );
 
-  vector_type p = Kokkos::subview< vector_type >( pAll , std::pair<size_t,size_t>(0,count_owned) );
+  vector_type p = Kokkos::subview( pAll , std::pair<size_t,size_t>(0,count_owned) );
   vector_type r ( "cg::r" , count_owned );
   vector_type Ap( "cg::Ap", count_owned );
 

@@ -152,7 +152,7 @@ void sort_array( const size_t array_length /* length of spans of array to sort *
 
     const std::pair<size_t,size_t> host_range(begin,end);
 
-    const host_array_type host_subarray = Kokkos::subview< host_array_type >( host_array , host_range );
+    const host_array_type host_subarray = Kokkos::subview( host_array , host_range );
 
     timer.reset();
 

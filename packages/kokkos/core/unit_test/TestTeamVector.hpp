@@ -192,7 +192,7 @@ struct functor_team_for {
               value += values(i);
             }
             if (test != value) {
-              printf ("FAILED team_parallel_for %i %i %lf %lf\n",
+              printf ("FAILED team_parallel_for %i %i %f %f\n",
                       team.league_rank (), team.team_rank (),
                       static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
@@ -228,7 +228,7 @@ struct functor_team_reduce {
          }
          if (test != value) {
            if(team.league_rank() == 0)
-           printf ("FAILED team_parallel_reduce %i %i %lf %lf %lu\n",
+           printf ("FAILED team_parallel_reduce %i %i %f %f %lu\n",
              team.league_rank (), team.team_rank (),
              static_cast<double> (test), static_cast<double> (value),sizeof(Scalar));
               flag() = 1;
@@ -267,7 +267,7 @@ struct functor_team_reduce_join {
            test += i - team.league_rank () + team.league_size () + team.team_size ();
          }
          if (test != value) {
-           printf ("FAILED team_vector_parallel_reduce_join %i %i %lf %lf\n",
+           printf ("FAILED team_vector_parallel_reduce_join %i %i %f %f\n",
              team.league_rank (), team.team_rank (),
              static_cast<double> (test), static_cast<double> (value));
               flag() = 1;
@@ -358,7 +358,7 @@ struct functor_team_vector_reduce {
       }
       if (test != value) {
         if(team.league_rank() == 0)
-        printf ("FAILED team_vector_parallel_reduce %i %i %lf %lf %lu\n",
+        printf ("FAILED team_vector_parallel_reduce %i %i %f %f %lu\n",
           team.league_rank (), team.team_rank (),
           static_cast<double> (test), static_cast<double> (value),sizeof(Scalar));
            flag() = 1;
@@ -396,7 +396,7 @@ struct functor_team_vector_reduce_join {
          test += i - team.league_rank () + team.league_size () + team.team_size ();
       }
       if (test != value) {
-        printf ("FAILED team_vector_parallel_reduce_join %i %i %lf %lf\n",
+        printf ("FAILED team_vector_parallel_reduce_join %i %i %f %f\n",
           team.league_rank (), team.team_rank (),
           static_cast<double> (test), static_cast<double> (value));
         flag() = 1;
@@ -435,7 +435,7 @@ struct functor_vec_single {
     },value2);
 
     if(value2!=(value*13)) {
-      printf("FAILED vector_single broadcast %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
+      printf("FAILED vector_single broadcast %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
       flag()=1;
     }
   }
@@ -477,7 +477,7 @@ struct functor_vec_for {
           value += values(13*team.team_rank() + i);
         }
         if (test != value) {
-          printf ("FAILED vector_par_for %i %i %lf %lf\n",
+          printf ("FAILED vector_par_for %i %i %f %f\n",
                   team.league_rank (), team.team_rank (),
                   static_cast<double> (test), static_cast<double> (value));
           flag() = 1;
@@ -509,7 +509,7 @@ struct functor_vec_red {
         test+=i;
       }
       if(test!=value) {
-        printf("FAILED vector_par_reduce %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        printf("FAILED vector_par_reduce %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
         flag()=1;
       }
     });
@@ -540,7 +540,7 @@ struct functor_vec_red_join {
         test*=i;
       }
       if(test!=value) {
-        printf("FAILED vector_par_reduce_join %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        printf("FAILED vector_par_reduce_join %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
         flag()=1;
       }
     });
@@ -565,7 +565,7 @@ struct functor_vec_scan {
           test+=k;
         }
         if(test!=val) {
-          printf("FAILED vector_par_scan %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) val);
+          printf("FAILED vector_par_scan %i %i %f %f\n",team.league_rank(),team.team_rank(),(double) test,(double) val);
           flag()=1;
         }
       }
