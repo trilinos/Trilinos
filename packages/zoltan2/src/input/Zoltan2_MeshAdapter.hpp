@@ -281,7 +281,7 @@ public:
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
       zgid_t const *Ids=NULL;
-      getIDsViewOf(through, Ids);
+      getIDsViewOf(sourcetarget, Ids);
 
       int LocalNumIDs = getLocalNumOf(sourcetarget);
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
@@ -290,25 +290,20 @@ public:
       /************************* BUILD MAPS FOR ADJS *************************/
       /***********************************************************************/
 
-      Array<GO> adjsGIDs;
-      RCP<const map_type> adjsMapG;
+      Array<GO> sourcetargetGIDs;
+      RCP<const map_type> sourcetargetMapG;
 
       // count owned nodes
       int LocalNumOfNodes = getLocalNumOf(through);
       
-      // Build a list of the ADJS global ids...
-      adjsGIDs.resize (LocalNumOfNodes);
+      // Build a list of the global sourcetarget ids...
+      sourcetargetGIDs.resize (LocalNumOfNodes);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
-	adjsGIDs[i] = as<GO> (Ids[i]);
+	sourcetargetGIDs[i] = as<GO> (Ids[i]);
       }
 
-      // TODO:  Ids is a view; shouldn't delete it.  delete [] Ids;
-      getIDsViewOf(sourcetarget, Ids);
-
-      //Generate Map for nodes.
-      // TODO:  Also, map is constructed with "through" (e.g., vertices) as rows;
-      // TODO:  it should have "sourcetarget" (e.g., elements) as rows.
-      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm));
+      //Generate Map for sourcetarget.
+      sourcetargetMapG = rcp (new map_type (-1, sourcetargetGIDs (), 0, comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -317,7 +312,7 @@ public:
       RCP<sparse_graph_type> adjsGraph;
 
       // Construct Tpetra::CrsGraph objects.
-      adjsGraph = rcp (new sparse_graph_type (adjsMapG, 0));
+      adjsGraph = rcp (new sparse_graph_type (sourcetargetMapG, 0));
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
 
@@ -340,9 +335,6 @@ public:
 	  adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
 	}// *** node loop ***
       }// *** element loop ***
-
-      // TODO:  probably shouldn't delete these delete [] offsets;
-      // TODO:  probably shouldn't delete these delete [] adjacencyIds;
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete ();
@@ -420,7 +412,6 @@ public:
 	}
       }
 
-      // TODO:  probably shouldn't delete these delete [] Ids;
       Ids = NULL;
       start[LocalNumIDs] = nadj;
 
