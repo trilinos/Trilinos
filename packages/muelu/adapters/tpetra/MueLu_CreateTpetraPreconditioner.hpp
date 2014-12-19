@@ -84,6 +84,8 @@ namespace MueLu {
       H = rcp(new Hierarchy());
     }
 
+    H->setlib(Xpetra::UseTpetra);
+
     // Wrap A
     RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
     H->GetLevel(0)->Set("A", A);

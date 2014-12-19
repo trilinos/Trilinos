@@ -74,13 +74,14 @@ namespace MueLu {
     Teuchos::ParameterList serialList, nonSerialList;
     if (hasParamList) {
         MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
-      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(paramList));
+      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
 
       H = mueLuFactory->CreateHierarchy();
-
     } else {
       H = rcp(new Hierarchy());
     }
+    
+    H->setlib(Xpetra::UseEpetra);
 
     // Wrap A
     RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);

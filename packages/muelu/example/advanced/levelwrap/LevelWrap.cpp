@@ -140,7 +140,8 @@ void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Ve
     typedef Epetra_MultiVector MV;
     typedef Epetra_Operator OP;
     RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));		
-    belosProblem->setRightPrec(Me);
+    Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
+    belosProblem->setRightPrec(PrecWrap);
     belosProblem->setProblem(Xe,Be);
     
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
@@ -190,8 +191,9 @@ void solve_system_list(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>
     RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
     typedef Epetra_MultiVector MV;
     typedef Epetra_Operator OP;
-    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));		
-    belosProblem->setRightPrec(Me);
+    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
+    Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
+    belosProblem->setRightPrec(PrecWrap);
     belosProblem->setProblem(Xe,Be);
     
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
