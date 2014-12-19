@@ -456,11 +456,18 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
 
    // Setup the linear solve: notice A is used directly 
    Epetra_LinearProblem problem(&*ep_container.get_A(),&*ep_container.get_x(),&*ep_container.get_f()); 
+  
+   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+   out.setShowProcRank(true);
+   out.setOutputToRootOnly(-1);
+   out << "SIZE = " << ep_container.get_x()->MyLength() << "/" 
+                    << ep_container.get_x()->GlobalLength() << std::endl;
 
    // build the solver
    AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
-   solver.SetAztecOption(AZ_kspace,1000);
+   solver.SetAztecOption(AZ_kspace,150); // something else might be better but there is a 
+                                         // chance to much memory is allocated
    solver.SetAztecOption(AZ_output,1);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
