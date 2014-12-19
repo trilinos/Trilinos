@@ -383,137 +383,157 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
     return;
   }
 
-  if ( 1 < p_size ) {
 
-    const unsigned id_total = nPerProc * p_size ;
-    const unsigned id_begin = nPerProc * p_rank ;
-    const unsigned id_end   = nPerProc * ( p_rank + 1 );
+  const unsigned id_total = nPerProc * p_size ;
+  const unsigned id_begin = nPerProc * p_rank ;
+  const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-    const int spatial_dimension = 3;
-    MetaData meta( spatial_dimension );
+  const int spatial_dimension = 3;
+  MetaData meta( spatial_dimension );
 
-    const PartVector no_parts ;
-    Part* edge_part = &meta.declare_part_with_topology("edge_part", stk::topology::LINE_2);
+  const PartVector no_parts ;
+  Part* edge_part = &meta.declare_part_with_topology("edge_part", stk::topology::LINE_2);
+  Part* tri_part  = &meta.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3);
 
-    meta.commit();
+  meta.commit();
 
-    BulkData bulk( meta , pm , 100 );
+  BulkData bulk( meta , pm , 100 );
 
-    bulk.modification_begin();
+  bulk.modification_begin();
 
-    // Ids for all entities (all entities have type 0):
+  // Ids for all entities (all entities have type 0):
 
-    std::vector<EntityId> ids( id_total );
-    std::vector<Entity> ents(id_total);
+  std::vector<EntityId> ids( id_total );
 
-    for ( unsigned i = 0 ; i < id_total ; ++i ) { ids[i] = i + 1; }
+  for ( unsigned i = 0 ; i < id_total ; ++i ) { ids[i] = i + 1; }
 
-    // Declare just those entities in my range of ids:
-    //    P0: node ids  1,...,10
-    //    P1: node ids 11,...,20
-    for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-      ents[i] = bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
-    }
+  // Declare just those entities in my range of ids:
+  //    P0: node ids  1,...,10
+  //    P1: node ids 11,...,20
+  for ( unsigned i = id_begin ; i < id_end ; ++i ) {
+    bulk.declare_entity( stk::topology::NODE_RANK , ids[i] , no_parts );
+  }
 
-    ASSERT_TRUE( bulk.modification_end() );
+  ASSERT_TRUE( bulk.modification_end() );
 
-    // Only one process create entities with previous process' last two ids
+  // Quick check that the ranks have different sets.
+  const unsigned id_get  = ( id_begin + id_total - 2 ) % id_total ;
+  ASSERT_TRUE( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] )) );
+  ASSERT_TRUE( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] )) );
 
-    const unsigned id_get  = ( id_begin + id_total - 2 ) % id_total ;
-
-    ASSERT_TRUE( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] )) );
-    ASSERT_TRUE( !bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] )) );
-
-    // Basic set-up done.  Interesting part begins now.
-
+  {
     ASSERT_TRUE( bulk.modification_begin() );
 
     if (0 == p_rank) {
-      Entity n9  = bulk.get_entity( stk::topology::NODE_RANK , 9 );
       Entity n10 = bulk.get_entity( stk::topology::NODE_RANK , 10 );
-      bulk.add_node_sharing( n9, 1);
+      Entity n11 = bulk.declare_entity( stk::topology::NODE_RANK,11, no_parts );
       bulk.add_node_sharing(n10, 1);
+      bulk.add_node_sharing(n11, 1);
     }
     else if ( 1 == p_rank ) {
-      // These declarations create entities that already exist,
-      // which will be an error.  Must create an owned entity
-      // to use them, thus they become shared.
-
-      Entity n9  = bulk.declare_entity( stk::topology::NODE_RANK ,  9 , no_parts );
       Entity n10 = bulk.declare_entity( stk::topology::NODE_RANK , 10 , no_parts );
-      bulk.add_node_sharing( n9, 0);
+      Entity n11 = bulk.get_entity( stk::topology::NODE_RANK , 11 );
       bulk.add_node_sharing(n10, 0);
-
-      Entity e_9_10 = bulk.declare_entity( stk::topology::EDGE_RANK , 1 , *edge_part );
-
-      bulk.declare_relation( e_9_10 ,  n9 , 0 );
-      bulk.declare_relation( e_9_10 , n10 , 1 );
-    }
-
-    bulk.modification_end();
-
-    if ( 1 == p_rank ) {
-      Entity n9     = bulk.get_entity( stk::topology::NODE_RANK , 9);
-      Entity n10    = bulk.get_entity( stk::topology::NODE_RANK , 10 );
-      Entity e_9_10 = bulk.get_entity( stk::topology::EDGE_RANK , 1 );
-      ASSERT_TRUE( bulk.is_valid(n9) );
-      ASSERT_TRUE( bulk.is_valid(n10) );
-      ASSERT_TRUE( bulk.is_valid(e_9_10) );
-      ASSERT_TRUE( 0 == bulk.parallel_owner_rank(n9) );
-      ASSERT_TRUE( 0 == bulk.parallel_owner_rank(n10) );
-      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(e_9_10) );
-    }
-
-    ASSERT_TRUE(bulk.modification_begin());
-
-    if ( 0 == p_rank ) {
-
-      Entity n17 = bulk.declare_entity( stk::topology::NODE_RANK , 17 , no_parts );
-      Entity n18 = bulk.declare_entity( stk::topology::NODE_RANK , 18 , no_parts );
-      Entity n19 = bulk.declare_entity( stk::topology::NODE_RANK , 19 , no_parts );
-      Entity n20 = bulk.declare_entity( stk::topology::NODE_RANK , 20 , no_parts );
-      bulk.add_node_sharing(n17, 1);
-      bulk.add_node_sharing(n18, 1);
-      bulk.add_node_sharing(n19, 1);
-      bulk.add_node_sharing(n20, 1);
-    }
-    else if (1 == p_rank) {
-
-      Entity n17 = bulk.get_entity( stk::topology::NODE_RANK , 17 );
-      Entity n18 = bulk.get_entity( stk::topology::NODE_RANK , 18 );
-      Entity n19 = bulk.get_entity( stk::topology::NODE_RANK , 19 );
-      Entity n20 = bulk.get_entity( stk::topology::NODE_RANK , 20 );
-      bulk.add_node_sharing(n17, 0);
-      bulk.add_node_sharing(n18, 0);
-      bulk.add_node_sharing(n19, 0);
-      bulk.add_node_sharing(n20, 0);
-
-      Entity e_19_20 = bulk.declare_entity( stk::topology::EDGE_RANK , 2 , *edge_part );
-      bulk.declare_relation( e_19_20 , n19 , 0 );
-      bulk.declare_relation( e_19_20 , n20 , 1 );
+      bulk.add_node_sharing(n11, 0);
     }
 
     ASSERT_TRUE(bulk.modification_end());
 
     {
-      Entity n17 = bulk.get_entity( stk::topology::NODE_RANK , 17 );
-      Entity n18 = bulk.get_entity( stk::topology::NODE_RANK , 18 );
-      Entity n19 = bulk.get_entity( stk::topology::NODE_RANK , 19 );
-      Entity n20 = bulk.get_entity( stk::topology::NODE_RANK , 20 );
-
-      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(n17)));
-      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(n18)));
-      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(n19)));
-      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(n20)));
-      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(n17) );
-      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(n18) );
-      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(n19) );
-      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(n20) );
+      Entity n10 = bulk.get_entity( stk::topology::NODE_RANK , 10 );
+      Entity n11 = bulk.get_entity( stk::topology::NODE_RANK , 11);
+      ASSERT_TRUE( bulk.in_shared(bulk.entity_key(n10)));
+      ASSERT_TRUE( bulk.in_shared(bulk.entity_key(n11)));
+      ASSERT_TRUE( 0 == bulk.parallel_owner_rank(n10) );
+      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(n11) );
     }
-
   }
 
+  {
+    ASSERT_TRUE(bulk.modification_begin());
+
+    if ( 0 == p_rank ) {
+
+      Entity n8 = bulk.get_entity( stk::topology::NODE_RANK , 8 );
+      Entity n9 = bulk.get_entity( stk::topology::NODE_RANK , 9 );
+      Entity n20 = bulk.declare_entity( stk::topology::NODE_RANK , 20 , no_parts );
+      bulk.add_node_sharing(n9, 1);
+      bulk.add_node_sharing(n20, 1);
+
+      Entity e_9_20 = bulk.declare_entity( stk::topology::EDGE_RANK , 1 , *edge_part );
+      bulk.declare_relation( e_9_20 , n9 , 0 );
+      bulk.declare_relation( e_9_20 , n20 , 1 );
+
+      Entity t_8_9_20 = bulk.declare_entity( stk::topology::FACE_RANK , 1 , *tri_part );
+      bulk.declare_relation( t_8_9_20 , n8 , 0 );
+      bulk.declare_relation( t_8_9_20 , n9 , 1 );
+      bulk.declare_relation( t_8_9_20 , n20 , 2 );
+      bulk.declare_relation( t_8_9_20 , e_9_20, 1 );
+    }
+    else if (1 == p_rank) {
+
+      Entity n18 = bulk.get_entity( stk::topology::NODE_RANK , 18 );
+      Entity n9 = bulk.declare_entity( stk::topology::NODE_RANK , 9, no_parts );
+      Entity n20 = bulk.get_entity( stk::topology::NODE_RANK , 20 );
+      bulk.add_node_sharing(n9, 0);
+      bulk.add_node_sharing(n20, 0);
+
+      Entity e_9_20 = bulk.declare_entity( stk::topology::EDGE_RANK , 1 , *edge_part );
+      bulk.declare_relation( e_9_20 , n9 , 0 );
+      bulk.declare_relation( e_9_20 , n20 , 1 );
+
+      Entity t_18_9_20 = bulk.declare_entity( stk::topology::FACE_RANK , 11 , *tri_part );
+      bulk.declare_relation( t_18_9_20 , n18 , 0 );
+      bulk.declare_relation( t_18_9_20 , n9 , 1 );
+      bulk.declare_relation( t_18_9_20 , n20 , 2 );
+      bulk.declare_relation( t_18_9_20 , e_9_20, 1 );
+    }
+
+    ASSERT_TRUE(bulk.modification_end());
+
+    {
+      Entity n9 = bulk.get_entity( stk::topology::NODE_RANK , 9 );
+      Entity n20 = bulk.get_entity( stk::topology::NODE_RANK , 20 );
+      Entity e_9_20 = bulk.get_entity( stk::topology::EDGE_RANK , 1);
+      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(n9)));
+      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(n20)));
+      ASSERT_TRUE(bulk.in_shared(bulk.entity_key(e_9_20)));
+      ASSERT_TRUE( 0 == bulk.parallel_owner_rank(n9) );
+      ASSERT_TRUE( 1 == bulk.parallel_owner_rank(n20) );
+      ASSERT_TRUE( 0 == bulk.parallel_owner_rank(e_9_20) );
+    }
+  }
+
+  {
+    // Trip an error condition: an edge or face can only be shared
+    // if there is a downward relation to it from a locally owned entity.
+    ASSERT_TRUE(bulk.modification_begin());
+    if ( 0 == p_rank ) {
+
+      Entity n6 = bulk.get_entity( stk::topology::NODE_RANK , 6 );
+      Entity n17 = bulk.declare_entity( stk::topology::NODE_RANK , 17 , no_parts );
+      bulk.add_node_sharing(n6, 1);
+      bulk.add_node_sharing(n17, 1);
+
+      Entity e_6_17 = bulk.declare_entity( stk::topology::EDGE_RANK , 2 , *edge_part );
+      bulk.declare_relation( e_6_17 , n6 , 0 );
+      bulk.declare_relation( e_6_17 , n17 , 1 );
+    }
+    else if (1 == p_rank) {
+
+      Entity n6 = bulk.declare_entity( stk::topology::NODE_RANK , 6, no_parts );
+      Entity n17 = bulk.get_entity( stk::topology::NODE_RANK , 17 );
+      bulk.add_node_sharing(n6, 0);
+      bulk.add_node_sharing(n17, 0);
+
+      Entity e_6_17 = bulk.declare_entity( stk::topology::EDGE_RANK , 2 , *edge_part );
+      bulk.declare_relation( e_6_17 , n6 , 0 );
+      bulk.declare_relation( e_6_17 , n17 , 1 );
+    }
+    ASSERT_THROW(bulk.modification_end(), std::runtime_error);
+  }
 }
+
 
 //----------------------------------------------------------------------
 TEST(BulkData, testBulkDataRankBeginEnd)
