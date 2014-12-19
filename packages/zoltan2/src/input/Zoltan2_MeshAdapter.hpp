@@ -250,11 +250,7 @@ public:
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const {
-    if (!availAdjs(sourcetarget, through))
-      return false;
-    else {
-      return true;
-    }
+    return false;
   }
 
 
@@ -265,7 +261,7 @@ public:
   {
     /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
-    if (avail2ndAdjs(sourcetarget, through)) { // TODO:  Check use of avail2ndAdjs; maybe should be availAdjs
+    if (availAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -454,7 +450,7 @@ public:
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
                                     MeshEntityType through) const {
-    if (!avail2ndAdjs(sourcetarget, through))
+    if (!availAdjs(sourcetarget, through))
       return 0;
     else {
       lno_t const *offsets;
@@ -484,7 +480,7 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-    if (!avail2ndAdjs(sourcetarget, through)) {
+    if (!availAdjs(sourcetarget, through)) {
       offsets = NULL;
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
