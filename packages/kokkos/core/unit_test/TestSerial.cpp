@@ -270,64 +270,29 @@ TEST_F( serial , atomics )
 
 //----------------------------------------------------------------------------
 
-TEST_F( serial, tile_1x1)
+TEST_F( serial, tile_layout )
 {
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<1,1> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+  TestTile::test< Kokkos::Serial , 1 , 1 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 1 , 1 >( 2 , 3 );
+  TestTile::test< Kokkos::Serial , 1 , 1 >( 9 , 10 );
 
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 2 , 3 );
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 4 , 4 );
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 9 , 9 );
 
-TEST_F( serial, tile_2x2)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<2,2> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+  TestTile::test< Kokkos::Serial , 2 , 4 >( 9 , 9 );
+  TestTile::test< Kokkos::Serial , 4 , 2 >( 9 , 9 );
 
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
-}
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 4 , 4 );
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 9 , 9 );
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 9 , 11 );
 
-TEST_F( serial, tile_4x4)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<4,4> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
-}
-
-TEST_F( serial, tile_8x8)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<8,8> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
-}
-
-TEST_F( serial, tile_16x16)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<16,16> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 4 , 4 );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 9 , 9 );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 9 , 11 );
 }
 
 //----------------------------------------------------------------------------

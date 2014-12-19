@@ -95,8 +95,10 @@ class Epetra_Vector;
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
 
-namespace MueLu {
+#include "MueLu_Hierarchy.hpp"
 
+
+namespace MueLu {
 // MPI helpers
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
@@ -111,6 +113,8 @@ namespace MueLu {
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
   Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class HierarchyManager;
 
   /*!
     @class Utils
@@ -405,7 +409,20 @@ namespace MueLu {
                                       std::vector<LO>& dirichletCols);
     static void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14);
 
+    /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+      calling AddNewLevel as appropriate.
+     */
+    static void AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & nonSerialList);
+
   }; // class Utils
+
+  /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
+    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level 
+    for which non-serializable data was provided. 
+  */ 
+  long ExtractNonSerializableData(const Teuchos::ParameterList & inList, Teuchos::ParameterList & serialList, Teuchos::ParameterList & nonSerialList);
+  
+
 
 #ifdef HAVE_MUELU_EPETRA
   //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.

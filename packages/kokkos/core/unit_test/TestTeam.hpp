@@ -101,7 +101,7 @@ struct TestTeamPolicy {
 
   struct ReduceTag {};
 
-  typedef int value_type ;
+  typedef long value_type ;
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & member , value_type & update ) const
@@ -120,15 +120,15 @@ struct TestTeamPolicy {
       TestTeamPolicy functor( league_size );
 
       const int team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( functor );
-      const int N = team_size * league_size ;
+      const long N = team_size * league_size ;
 
-      Kokkos::View<int,ExecSpace> total("total");
+      long total = 0 ;
 
       Kokkos::parallel_reduce( Kokkos::TeamPolicy< ExecSpace >( league_size , team_size ) , functor , total );
-      ASSERT_EQ( size_t((N-1)*(N))/2 , size_t(*total) );
+      ASSERT_EQ( size_t((N-1)*(N))/2 , size_t(total) );
 
       Kokkos::parallel_reduce( Kokkos::TeamPolicy< ExecSpace , ReduceTag >( league_size , team_size ) , functor , total );
-      ASSERT_EQ( (size_t(N)*size_t(N+1))/2 , size_t(*total) );
+      ASSERT_EQ( (size_t(N)*size_t(N+1))/2 , size_t(total) );
     }
 };
 

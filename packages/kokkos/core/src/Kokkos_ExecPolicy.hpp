@@ -108,9 +108,9 @@ private:
   enum { ArgOption_OK = Impl::StaticAssert< (
     ( Arg0_ExecSpace && Arg1_WorkTag && ( Arg2_IntConst || Arg2_IntType ) ) ||
     ( Arg0_ExecSpace && Arg1_WorkTag && Arg2_Void ) ||
-    ( Arg0_ExecSpace && ( Arg1_IntConst || Arg2_IntType ) && Arg2_Void ) ||
+    ( Arg0_ExecSpace && ( Arg1_IntConst || Arg1_IntType ) && Arg2_Void ) ||
     ( Arg0_ExecSpace && Arg1_Void && Arg2_Void ) ||
-    ( Arg0_WorkTag && ( Arg1_IntConst || Arg2_IntType ) && Arg2_Void ) ||
+    ( Arg0_WorkTag && ( Arg1_IntConst || Arg1_IntType ) && Arg2_Void ) ||
     ( Arg0_WorkTag && Arg1_Void && Arg2_Void ) ||
     ( ( Arg0_IntConst || Arg0_IntType ) && Arg1_Void && Arg2_Void ) ||
     ( Arg0_Void && Arg1_Void && Arg2_Void )

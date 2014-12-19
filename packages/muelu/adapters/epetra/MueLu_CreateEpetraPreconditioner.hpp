@@ -71,14 +71,17 @@ namespace MueLu {
 
     RCP<HierarchyManager> mueLuFactory;
     RCP<Hierarchy>        H;
+    Teuchos::ParameterList serialList, nonSerialList;
     if (hasParamList) {
-      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(paramList));
+        MueLu::ExtractNonSerializableData(paramList,serialList,nonSerialList);
+      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(serialList));
 
       H = mueLuFactory->CreateHierarchy();
-
     } else {
       H = rcp(new Hierarchy());
     }
+    
+    H->setlib(Xpetra::UseEpetra);
 
     // Wrap A
     RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);
@@ -127,8 +130,10 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    if (hasParamList)
+    if (hasParamList) {
+      MueLu::Utils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H,nonSerialList);
       mueLuFactory->SetupHierarchy(*H);
+    }
     else
       H->Setup();
 

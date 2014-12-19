@@ -45,6 +45,8 @@
 // @HEADER
 #include "MueLu_Utilities_def.hpp"
 
+#include <string>
+
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_Transpose_RowMatrix.h"
 #endif
@@ -375,5 +377,55 @@ namespace MueLu {
       throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
     }
   }
+
+
+  /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
+     and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level 
+     for which non-serializable data was provided. 
+  */
+  long ExtractNonSerializableData(const Teuchos::ParameterList & inList, Teuchos::ParameterList & serialList, Teuchos::ParameterList & nonSerialList) {
+    using Teuchos::ParameterList;
+    ParameterList dummy;
+    long max_level = 0;
+
+
+    for(ParameterList::ConstIterator it = inList.begin(); it!=inList.end(); it++) {
+      // Check for mach of the form "levelX" where X is a positive integer
+      if(inList.isSublist(it->first) && it->first.find("level ")==0) {
+	std::string levelstr = it->first.substr(6,std::string::npos);
+	long id =strtol(levelstr.c_str(),0,0);
+	if(id > 0)  {
+	  // Valid level sublist located; do the split copy
+	  const ParameterList & sublist = inList.sublist(it->first);
+	  max_level = std::max(max_level,id);
+
+	  serialList.set(it->first,dummy);
+	  nonSerialList.set(it->first,dummy);
+	  ParameterList & serialSublist    = serialList.sublist(it->first);
+	  ParameterList & nonSerialSublist = nonSerialList.sublist(it->first);
+
+	  for(ParameterList::ConstIterator it2 = sublist.begin(); it2!=sublist.end(); it2++) {
+	    if(!it2->first.compare("A") || !it2->first.compare("R") || !it2->first.compare("P") || !it2->first.compare("Nullspace") || !it2->first.compare("Coordinates")) {
+	      nonSerialSublist.setEntry(it2->first,it2->second);
+	    }
+	    else {
+	      serialSublist.setEntry(it2->first,it2->second);	
+	    }
+	  }	  
+	}
+	else {
+	  serialList.setEntry(it->first,it->second);	  
+	}
+      }
+      else {
+	serialList.setEntry(it->first,it->second);
+      }     
+    }    
+    return max_level;
+  }
+
+
+
+
 
 }

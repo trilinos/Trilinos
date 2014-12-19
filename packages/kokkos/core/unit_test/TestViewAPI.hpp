@@ -1154,10 +1154,10 @@ public:
     dView4 d4( "d4" , N0 );
 
     sView s0 = d0 ;
-    sView s1 = Kokkos::subview< sView >( d1 , 1 );
-    sView s2 = Kokkos::subview< sView >( d2 , 1 , 1 );
-    sView s3 = Kokkos::subview< sView >( d3 , 1 , 1 , 1 );
-    sView s4 = Kokkos::subview< sView >( d4 , 1 , 1 , 1 , 1 );
+    sView s1 = Kokkos::subview( d1 , 1 );
+    sView s2 = Kokkos::subview( d2 , 1 , 1 );
+    sView s3 = Kokkos::subview( d3 , 1 , 1 , 1 );
+    sView s4 = Kokkos::subview( d4 , 1 , 1 , 1 , 1 );
   }
 
   static void run_test_subview_strided()
@@ -1172,10 +1172,10 @@ public:
 
     view_left_2  xl2("xl2", 100 , 200 );
     view_right_2 xr2("xr2", 100 , 200 );
-    view_stride_1  yl1 = Kokkos::subview< view_stride_1 >( xl2 , 0 , Kokkos::ALL() );
-    view_stride_1  yl2 = Kokkos::subview< view_stride_1 >( xl2 , 1 , Kokkos::ALL() );
-    view_stride_1  yr1 = Kokkos::subview< view_stride_1 >( xr2 , 0 , Kokkos::ALL() );
-    view_stride_1  yr2 = Kokkos::subview< view_stride_1 >( xr2 , 1 , Kokkos::ALL() );
+    view_stride_1  yl1 = Kokkos::subview( xl2 , 0 , Kokkos::ALL() );
+    view_stride_1  yl2 = Kokkos::subview( xl2 , 1 , Kokkos::ALL() );
+    view_stride_1  yr1 = Kokkos::subview( xr2 , 0 , Kokkos::ALL() );
+    view_stride_1  yr2 = Kokkos::subview( xr2 , 1 , Kokkos::ALL() );
 
     ASSERT_EQ( yl1.dimension_0() , xl2.dimension_1() );
     ASSERT_EQ( yl2.dimension_0() , xl2.dimension_1() );
@@ -1190,8 +1190,8 @@ public:
     view_left_4 xl4( "xl4" , 10 , 20 , 30 , 40 );
     view_right_4 xr4( "xr4" , 10 , 20 , 30 , 40 );
 
-    view_stride_2 yl4 = Kokkos::subview< view_stride_2 >( xl4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
-    view_stride_2 yr4 = Kokkos::subview< view_stride_2 >( xr4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
+    view_stride_2 yl4 = Kokkos::subview( xl4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
+    view_stride_2 yr4 = Kokkos::subview( xr4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
 
     ASSERT_EQ( yl4.dimension_0() , xl4.dimension_1() );
     ASSERT_EQ( yl4.dimension_1() , xl4.dimension_3() );
@@ -1219,33 +1219,33 @@ public:
     multivector_type mv = multivector_type( "mv" , Length , Count );
     multivector_right_type mv_right = multivector_right_type( "mv" , Length , Count );
 
-    vector_type v1 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 0 );
-    vector_type v2 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 1 );
-    vector_type v3 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 2 );
+    vector_type v1 = Kokkos::subview( mv , Kokkos::ALL() , 0 );
+    vector_type v2 = Kokkos::subview( mv , Kokkos::ALL() , 1 );
+    vector_type v3 = Kokkos::subview( mv , Kokkos::ALL() , 2 );
 
-    vector_type rv1 = Kokkos::subview< vector_type >( mv_right , 0 , Kokkos::ALL() );
-    vector_type rv2 = Kokkos::subview< vector_type >( mv_right , 1 , Kokkos::ALL() );
-    vector_type rv3 = Kokkos::subview< vector_type >( mv_right , 2 , Kokkos::ALL() );
+    vector_type rv1 = Kokkos::subview( mv_right , 0 , Kokkos::ALL() );
+    vector_type rv2 = Kokkos::subview( mv_right , 1 , Kokkos::ALL() );
+    vector_type rv3 = Kokkos::subview( mv_right , 2 , Kokkos::ALL() );
 
-    multivector_type mv1 = Kokkos::subview< multivector_type >( mv , std::make_pair( 1 , 998 ) ,
-                                                                     std::make_pair( 2 , 5 ) );
-
-    multivector_right_type mvr1 =
-      Kokkos::subview< multivector_right_type >( mv_right ,
-                                                 std::make_pair( 1 , 998 ) ,
+    multivector_type mv1 = Kokkos::subview( mv , std::make_pair( 1 , 998 ) ,
                                                  std::make_pair( 2 , 5 ) );
 
-    const_vector_type cv1 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 0 );
-    const_vector_type cv2 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 1 );
-    const_vector_type cv3 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 2 );
+    multivector_right_type mvr1 =
+      Kokkos::subview( mv_right ,
+                       std::make_pair( 1 , 998 ) ,
+                       std::make_pair( 2 , 5 ) );
 
-    vector_right_type vr1 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 0 );
-    vector_right_type vr2 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 1 );
-    vector_right_type vr3 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 2 );
+    const_vector_type cv1 = Kokkos::subview( mv , Kokkos::ALL(), 0 );
+    const_vector_type cv2 = Kokkos::subview( mv , Kokkos::ALL(), 1 );
+    const_vector_type cv3 = Kokkos::subview( mv , Kokkos::ALL(), 2 );
 
-    const_vector_right_type cvr1 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 0 );
-    const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 1 );
-    const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 2 );
+    vector_right_type vr1 = Kokkos::subview( mv , Kokkos::ALL() , 0 );
+    vector_right_type vr2 = Kokkos::subview( mv , Kokkos::ALL() , 1 );
+    vector_right_type vr3 = Kokkos::subview( mv , Kokkos::ALL() , 2 );
+
+    const_vector_right_type cvr1 = Kokkos::subview( mv , Kokkos::ALL() , 0 );
+    const_vector_right_type cvr2 = Kokkos::subview( mv , Kokkos::ALL() , 1 );
+    const_vector_right_type cvr3 = Kokkos::subview( mv , Kokkos::ALL() , 2 );
 
     ASSERT_TRUE( & v1[0] == & v1(0) );
     ASSERT_TRUE( & v1[0] == & mv(0,0) );

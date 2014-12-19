@@ -74,7 +74,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
       COMM serial mpi
     )
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
-      SOURCE_FILES reuse.xml
+      SOURCE_FILES reuse_emin_emin.xml reuse_sa_RP.xml
     )
   ENDIF()
 

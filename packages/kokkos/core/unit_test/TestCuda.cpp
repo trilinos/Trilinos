@@ -197,15 +197,15 @@ TEST_F( cuda, view_subview_right_3 ) {
 
 TEST_F( cuda, range_tag )
 {
-  // TestRange< Kokkos::Cuda >::test_for(1000);
-  // TestRange< Kokkos::Cuda >::test_reduce(1000);
-  // TestRange< Kokkos::Cuda >::test_scan(1000);
+  TestRange< Kokkos::Cuda >::test_for(1000);
+  TestRange< Kokkos::Cuda >::test_reduce(1000);
+  TestRange< Kokkos::Cuda >::test_scan(1000);
 }
 
 TEST_F( cuda, team_tag )
 {
-  // TestTeamPolicy< Kokkos::Cuda >::test_for(1000);
-  // TestTeamPolicy< Kokkos::Cuda >::test_reduce(1000);
+  TestTeamPolicy< Kokkos::Cuda >::test_for(1000);
+  TestTeamPolicy< Kokkos::Cuda >::test_reduce(1000);
 }
 
 TEST_F( cuda, crsarray )
@@ -277,62 +277,29 @@ TEST_F( cuda, atomic )
 
 //----------------------------------------------------------------------------
 
-TEST_F( cuda, tile )
+TEST_F( cuda, tile_layout)
 {
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<1,1> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Cuda, tile_layout > functor_type;
+  TestTile::test< Kokkos::Cuda , 1 , 1 >( 1 , 1 );
+  TestTile::test< Kokkos::Cuda , 1 , 1 >( 2 , 3 );
+  TestTile::test< Kokkos::Cuda , 1 , 1 >( 9 , 10 );
 
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
+  TestTile::test< Kokkos::Cuda , 2 , 2 >( 1 , 1 );
+  TestTile::test< Kokkos::Cuda , 2 , 2 >( 2 , 3 );
+  TestTile::test< Kokkos::Cuda , 2 , 2 >( 4 , 4 );
+  TestTile::test< Kokkos::Cuda , 2 , 2 >( 9 , 9 );
 
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<2,2> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Cuda, tile_layout > functor_type;
+  TestTile::test< Kokkos::Cuda , 2 , 4 >( 9 , 9 );
+  TestTile::test< Kokkos::Cuda , 4 , 4 >( 9 , 9 );
 
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
+  TestTile::test< Kokkos::Cuda , 4 , 4 >( 1 , 1 );
+  TestTile::test< Kokkos::Cuda , 4 , 4 >( 4 , 4 );
+  TestTile::test< Kokkos::Cuda , 4 , 4 >( 9 , 9 );
+  TestTile::test< Kokkos::Cuda , 4 , 4 >( 9 , 11 );
 
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<4,4> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Cuda, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
-
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<8,8> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Cuda, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
-
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<16,16> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Cuda, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
+  TestTile::test< Kokkos::Cuda , 8 , 8 >( 1 , 1 );
+  TestTile::test< Kokkos::Cuda , 8 , 8 >( 4 , 4 );
+  TestTile::test< Kokkos::Cuda , 8 , 8 >( 9 , 9 );
+  TestTile::test< Kokkos::Cuda , 8 , 8 >( 9 , 11 );
 }
 
 

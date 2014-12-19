@@ -88,7 +88,9 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Vector.hpp>
@@ -97,6 +99,7 @@
 #include <XpetraExt_MatrixMatrix.hpp>
 
 #include <MueLu_Utilities_decl.hpp>
+#include <MueLu_HierarchyManager.hpp>
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
 #include <ml_operator.h>
@@ -1590,6 +1593,49 @@ namespace MueLu {
     A=NewMatrix;
 
   }
+
+  
+  /* Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+     calling AddNewLevel as appropriate.
+  */
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & List) {
+    using Teuchos::ParameterList;
+    ParameterList dummy;
+
+    for(ParameterList::ConstIterator it = List.begin(); it!=List.end(); it++) {
+      // Check for mach of the form "levelX" where X is a positive integer
+      if(List.isSublist(it->first) && it->first.find("level ")==0) {
+	std::string levelstr = it->first.substr(6,std::string::npos);
+	int id = (int) strtol(levelstr.c_str(),0,0);
+	if(id > 0)  {
+	  // Do enough level adding so we can be sure to add the data to the right place
+	  for(int i=H.GetNumLevels(); i<=id; i++)
+	      H.AddNewLevel();
+	  RCP<FactoryManager> Mfact = rcp(new FactoryManager());
+
+	  // Grab the level sublist & loop over parameters
+	  const ParameterList & sublist = List.sublist(it->first);
+	  for(ParameterList::ConstIterator it2 = sublist.begin(); it2!=sublist.end(); it2++) {	   
+	    if(!it2->first.compare("A") || !it2->first.compare("R") || !it2->first.compare("P")) {
+	      H.GetLevel(id)->Set(it2->first,Teuchos::getValue<RCP<Matrix > >(it2->second));
+	      Mfact->SetFactory(it2->first,MueLu::NoFactory::getRCP());
+	    }	    
+	    else if (!it2->first.compare("Nullspace") || !it2->first.compare("Coordinates")) {
+	      H.GetLevel(id)->Set(it2->first,Teuchos::getValue<RCP<MultiVector > >(it2->second));
+	      Mfact->SetFactory(it2->first,MueLu::NoFactory::getRCP());
+	    }
+	    else
+	      throw std::runtime_error("MueLu::Utils::AddNonSerializableDataToHierarchy: List contains unknown data type");
+	  }
+	  HM.AddFactoryManager(id,1,Mfact);
+	}    
+      }
+    }
+  }
+
+
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
