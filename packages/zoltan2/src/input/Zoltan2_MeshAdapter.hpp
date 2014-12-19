@@ -274,9 +274,6 @@ public:
       RCP<const Comm<int> > comm =
 	DefaultPlatform::getDefaultPlatform ().getComm ();
 
-      // TODO:  kokkosnode may be default argument to Tpetra Maps.
-      RCP<Node> kokkosnode = DefaultPlatform::getDefaultPlatform ().getNode ();
-
       // Get node-element connectivity
 
       offsets=NULL;
@@ -310,11 +307,9 @@ public:
       getIDsViewOf(sourcetarget, Ids);
 
       //Generate Map for nodes.
-      // TODO:  can probably remove the kokkosnode from this constructor;
-      // TODO:  check for alternate constructors.
       // TODO:  Also, map is constructed with "through" (e.g., vertices) as rows;
       // TODO:  it should have "sourcetarget" (e.g., elements) as rows.
-      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, kokkosnode));
+      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -363,7 +358,7 @@ public:
       RCP<const map_type> ColMap = adjsMatrix->getColMap ();
       RCP<const map_type> globalMap =
 	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
-			   Tpetra::GloballyDistributed, kokkosnode));
+			   Tpetra::GloballyDistributed));
 
       // Create the exporter from this process' column Map to the global
       // 1-1 column map. (???)
