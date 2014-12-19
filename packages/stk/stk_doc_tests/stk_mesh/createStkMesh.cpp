@@ -49,6 +49,7 @@ namespace
   TEST(StkMeshHowTo, UsingStkIO)
   {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     const std::string fileName = "generated:8x8x8";
     //The 'generated:' syntax in fileName causes a hex mesh to be generated in memory.
     //If an exodus file-name is used instead, then the mesh is read from file. The code

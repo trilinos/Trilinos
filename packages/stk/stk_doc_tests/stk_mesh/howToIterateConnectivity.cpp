@@ -54,6 +54,7 @@ namespace
 TEST(StkMeshHowTo, iterateConnectivityThroughBulkData)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     // Generate a mesh of hexes with a sideset
     const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
@@ -102,6 +103,7 @@ TEST(StkMeshHowTo, iterateConnectivityThroughBulkData)
 TEST(StkMeshHowTo, iterateConnectivityThroughBuckets)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     // Generate a mesh of hexes with a sideset
     const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";

@@ -50,6 +50,7 @@ namespace
   TEST(StkMeshHowTo, CreateStkMesh)
   {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     const std::string exodusFileName = "example.exo";
 
 //-END

@@ -51,6 +51,7 @@ namespace
     // ============================================================
     // INITIALIZATION
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkIo(communicator);
 
     const std::string generatedFileName = "generated:8x8x8";

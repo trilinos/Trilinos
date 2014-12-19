@@ -191,6 +191,8 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
   bulk.modification_begin();
   if (bulk.parallel_rank() == 0) {
       bulk.destroy_relation(element1, node1, 0);
+      stk::mesh::Entity new_node = bulk.declare_entity(stk::topology::NODE_RANK,15);
+      bulk.declare_relation(element1,new_node,0);
   }
   if (bulk.parallel_rank() == 0) {
       EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );

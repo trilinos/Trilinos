@@ -50,6 +50,7 @@ namespace
 TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     const std::string generatedMeshSpecification = "generated:1x1x1"; // syntax creates a 1x1x1 cube
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
@@ -74,6 +75,7 @@ TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
 TEST(StkMeshHowTo, makeSureYouAreNotIntersectingNothingSelector)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     // syntax creates faces for surface on the positive: 'x-side', 'y-side', and 'z-side'
     // of a 1x1x1 cube, these parts are given the names: 'surface_1', 'surface_2', and 'surface_3'

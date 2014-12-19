@@ -54,6 +54,7 @@ namespace
     // ============================================================
     // INITIALIZATION
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkIo(communicator);
 
     // Generate a mesh containing 1 hex part and 6 shell parts

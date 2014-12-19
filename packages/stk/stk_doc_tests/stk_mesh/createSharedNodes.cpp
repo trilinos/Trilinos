@@ -65,7 +65,7 @@ TEST(stkMeshHowTo, createSharedNodes)
     const unsigned nodesPerElem = 3;
     stk::mesh::EntityId elemIds[] = {1, 2};//one elemId for each proc
     stk::mesh::EntityId elemNodeIds[][nodesPerElem] = { {1, 3, 2}, {4, 2, 3} };
-    int myproc = mesh.parallel_rank();
+    const int myproc = mesh.parallel_rank();
     int otherproc = 1;
     if (myproc == 1) otherproc = 0;
 
@@ -87,8 +87,53 @@ TEST(stkMeshHowTo, createSharedNodes)
     //now verify there are 4 nodes globally, since nodes 2 and 3 are shared.
     std::vector<size_t> entity_counts;
     stk::mesh::comm_mesh_counts(mesh, entity_counts);
-    size_t expectedTotalNumNodes = 4;
+    const size_t expectedTotalNumNodes = 4;
     EXPECT_EQ(expectedTotalNumNodes, entity_counts[stk::topology::NODE_RANK]);
 }
 //END
+
+//BEGIN_INDEP
+TEST(stkMeshHowTo, createIndependentSharedNodes)
+{
+    const unsigned spatialDimension = 2;
+    stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+    metaData.commit();
+
+    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
+    if (mesh.parallel_size() != 2) {
+      return; //this test only runs on 2 procs
+    }
+    mesh.modification_begin();
+
+    //   proc 0  |   proc 1
+    //         2 | 2
+    //           |
+    //       1   |   4
+    //           |
+    //         3 | 3
+
+    const unsigned nodesPerProc = 3;
+    stk::mesh::EntityId nodeIds[][nodesPerProc] = { {1, 3, 2}, {4, 2, 3} };
+    const int myproc = mesh.parallel_rank();
+    int otherproc = 1;
+    if (myproc == 1) otherproc = 0;
+
+    stk::mesh::Entity nodes[nodesPerProc];
+    nodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
+    nodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
+    nodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
+
+    mesh.add_node_sharing(nodes[1], otherproc);
+    mesh.add_node_sharing(nodes[2], otherproc);
+
+    mesh.modification_end();
+
+    //now verify there are 4 nodes globally, since nodes 2 and 3 are shared.
+    std::vector<size_t> entity_counts;
+    stk::mesh::comm_mesh_counts(mesh, entity_counts);
+    const size_t expectedTotalNumNodes = 4;
+    EXPECT_EQ(expectedTotalNumNodes, entity_counts[stk::topology::NODE_RANK]);
+}
+//END_INDEP
+
 }

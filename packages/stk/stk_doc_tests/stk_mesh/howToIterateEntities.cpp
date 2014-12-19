@@ -55,6 +55,7 @@ namespace
 TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
     // this part is given the name 'surface_1' when it is created [create_input_mesh()]
@@ -93,6 +94,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
 TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) != 1) { return; }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
     // this part is given the name 'surface_1' when it is created [create_input_mesh()]
