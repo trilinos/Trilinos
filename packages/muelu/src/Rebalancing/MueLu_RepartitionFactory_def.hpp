@@ -132,8 +132,8 @@ namespace MueLu {
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
       GetOStream(Statistics0) << "Repartitioning?  NO:" <<
-          "\n  current level = " << toString(currentLevel.GetLevelID()) <<
-          ", first level where repartitioning can happen is " + toString(startLevel) << std::endl;
+	"\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
+	", first level where repartitioning can happen is " + Teuchos::toString(startLevel) << std::endl;
 
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
@@ -156,7 +156,7 @@ namespace MueLu {
 
       if (numActiveProcesses == 1) {
         GetOStream(Statistics0) << "Repartitioning?  NO:" <<
-            "\n  # processes with rows = " << toString(numActiveProcesses) << std::endl;
+	  "\n  # processes with rows = " << Teuchos::toString(numActiveProcesses) << std::endl;
 
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
@@ -180,7 +180,7 @@ namespace MueLu {
       if (numWithFewRows > 0)
         test3 = true;
 
-      msg3 = "\n  min # rows per proc = " + toString(minNumRows) + ", min allowable = " + toString(minRowsPerProcessor);
+      msg3 = "\n  min # rows per proc = " + Teuchos::toString(minNumRows) + ", min allowable = " + Teuchos::toString(minRowsPerProcessor);
     }
 
     // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
@@ -193,7 +193,7 @@ namespace MueLu {
       if (imbalance > nonzeroImbalance)
         test4 = true;
 
-      msg4 = "\n  nonzero imbalance = " + toString(imbalance) + ", max allowable = " + toString(nonzeroImbalance);
+      msg4 = "\n  nonzero imbalance = " + Teuchos::toString(imbalance) + ", max allowable = " + Teuchos::toString(nonzeroImbalance);
     }
 
     if (!test3 && !test4) {
@@ -350,8 +350,8 @@ namespace MueLu {
     decompEntries = Teuchos::null;
 
     if (IsPrint(Statistics2)) {
-      size_t numLocalKept = myGIDs.size(), numGlobalKept, numGlobalRows = A->getGlobalNumRows();
-      sumAll(comm, numLocalKept, numGlobalKept);
+      GO numLocalKept = myGIDs.size(), numGlobalKept, numGlobalRows = A->getGlobalNumRows();
+      sumAll(comm,numLocalKept, numGlobalKept);
       GetOStream(Statistics2) << "Unmoved rows: " << numGlobalKept << " / " << numGlobalRows << " (" << 100*Teuchos::as<double>(numGlobalKept)/numGlobalRows << "%)" << std::endl;
     }
 
