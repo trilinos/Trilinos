@@ -136,4 +136,94 @@ TEST(stkMeshHowTo, createIndependentSharedNodes)
 }
 //END_INDEP
 
+//BEGIN_INDEP_DEP
+TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
+{
+    const unsigned spatialDimension = 2;
+    stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+    stk::mesh::Part &tri_part = metaData.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3_2D);
+    metaData.commit();
+
+    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
+    if (mesh.parallel_size() != 2) {
+      return; //this test only runs on 2 procs
+    }
+    mesh.modification_begin();
+
+    /*   proc 0  |   proc 1
+               2 | 2
+              /| | |\
+          1  1 | | | 4  2
+              \| | |/
+               3 | 3
+    */
+
+    const unsigned nodesPerProc = 3;
+    stk::mesh::EntityId nodeIds[][nodesPerProc] = { {1, 3, 2}, {4, 2, 3} };
+    const int myproc = mesh.parallel_rank();
+    int otherproc = 1;
+    if (myproc == 1) otherproc = 0;
+
+    stk::mesh::Entity nodes[nodesPerProc];
+    nodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
+    nodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
+    nodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
+
+    mesh.add_node_sharing(nodes[1], otherproc);
+    mesh.add_node_sharing(nodes[2], otherproc);
+
+    {
+        //until modification_end, there appear to be 6 nodes globally.
+        std::vector<size_t> entity_counts;
+        stk::mesh::comm_mesh_counts(mesh, entity_counts);
+        const size_t expectedTotalNumNodes = 6;
+        EXPECT_EQ(expectedTotalNumNodes, entity_counts[stk::topology::NODE_RANK]);
+    }
+
+    mesh.modification_end();
+
+    {
+        //now verify there are 4 nodes globally, since nodes 2 and 3 are shared.
+        std::vector<size_t> entity_counts;
+        stk::mesh::comm_mesh_counts(mesh, entity_counts);
+        const size_t expectedTotalNumNodes = 4;
+        EXPECT_EQ(expectedTotalNumNodes, entity_counts[stk::topology::NODE_RANK]);
+    }
+
+    const unsigned elemsPerProc = 1;
+    stk::mesh::EntityId elemIds[][elemsPerProc] = { {1}, {2} };
+
+    mesh.modification_begin();
+    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, elemIds[myproc][0], tri_part);
+    mesh.declare_relation(elem, nodes[0], 0);
+    mesh.declare_relation(elem, nodes[1], 1);
+    mesh.declare_relation(elem, nodes[2], 2);
+    EXPECT_NO_THROW(mesh.modification_end());
+
+    mesh.modification_begin();
+    mesh.destroy_entity(elem);
+    mesh.modification_end();
+
+   if (myproc == 0)
+   {
+       EXPECT_TRUE(mesh.is_valid(nodes[0]));
+       ASSERT_TRUE(mesh.is_valid(nodes[1]));
+       ASSERT_TRUE(mesh.is_valid(nodes[2]));
+       EXPECT_FALSE(mesh.bucket(nodes[1]).shared());
+       EXPECT_FALSE(mesh.bucket(nodes[2]).shared());
+   }
+   else  // myproc == 1
+   {
+       EXPECT_TRUE (mesh.is_valid(nodes[0]));
+       // These nodes were deleted because the special marking for "independent"
+       // nodes was removed when the nodes became connected to the element and
+       // now that the element is deleted, these nodes are no longer needed on
+       // proc 1.
+       EXPECT_FALSE(mesh.is_valid(nodes[1]));
+       EXPECT_FALSE(mesh.is_valid(nodes[2]));
+   }
+
+}
+//END_INDEP_DEP
+
 }
