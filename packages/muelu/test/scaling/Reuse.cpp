@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
     bool        printTimings = true;        clp.setOption("timings", "notimings", &printTimings, "print timings to screen");
     int         first_matrix = 0;           clp.setOption("firstMatrix",          &first_matrix, "first matrix in the sequence to use");
     int         last_matrix  = 1;           clp.setOption("lastMatrix",            &last_matrix, "last matrix in the sequence to use");
+    bool        inMemory     = false;       clp.setOption("inmemory", "noinmemory",   &inMemory, "load all matrices in memory");
     bool        doReuse      = true;        clp.setOption("reuse",  "noreuse",         &doReuse, "if you want to try reuse");
     const int   numPDEs      = 2;
 
@@ -139,15 +140,17 @@ int main(int argc, char *argv[]) {
     typedef Belos::OperatorT<MV> OP;
 
     // Stats tracking
-    int ArraySize = last_matrix - first_matrix + 1;
-    Array<Array<int>    > iteration_counts(ArraySize);
-    Array<Array<double> > iteration_times (ArraySize);
-    Array<Array<double> > setup_times     (ArraySize);
+    int numSteps = last_matrix - first_matrix + 1;
+    Array<Array<int>    >       iteration_counts(numSteps);
+    Array<Array<double> >       iteration_times (numSteps);
+    Array<Array<double> >       setup_times     (numSteps);
+    Array<RCP<Matrix> >         matrices        (numSteps);
+    Array<RCP<MultiVector> >    rhss            (numSteps);
 
-    for (int i = 0; i < ArraySize; i++) {
-      iteration_counts[i].resize(ArraySize);
-      iteration_times[i] .resize(ArraySize);
-      setup_times[i]     .resize(ArraySize);
+    for (int i = 0; i < numSteps; i++) {
+      iteration_counts[i].resize(numSteps);
+      iteration_times[i] .resize(numSteps);
+      setup_times[i]     .resize(numSteps);
     }
 
     ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
@@ -162,11 +165,21 @@ int main(int argc, char *argv[]) {
       sprintf(matrixFileName,"%s%d.mm", matrixPrefix.c_str(), i);
 
       // Load the matrix
-      RCP<Matrix> Aprecond;
-      out << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
-      Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
-      out << "done" << std::endl;
-      Aprecond->SetFixedBlockSize(numPDEs);
+      RCP<Matrix> Aprecond = matrices[i];
+      if (Aprecond.is_null()) {
+        out << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
+        Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+        out << "done" << std::endl;
+
+        Aprecond->SetFixedBlockSize(numPDEs);
+
+        if (inMemory)
+          matrices[i] = Aprecond;
+
+      } else {
+        // Reset estimate
+        Aprecond->SetMaxEigenvalueEstimate(-one);
+      }
 
       // Build the nullspace
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(Aprecond->getRowMap(), numPDEs);
@@ -207,14 +220,23 @@ int main(int argc, char *argv[]) {
         sprintf(matrixFileName, "%s%d.mm", matrixPrefix.c_str(), j);
         sprintf(rhsFileName,    "%s%d.mm", rhsPrefix.c_str(),    j);
 
-        RCP<Matrix> Amatvec;
+        RCP<Matrix> Amatvec = matrices[j];
         if (j != i) {
-          // Load the matrix
-          out << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
-          Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
-          Amatvec->SetFixedBlockSize(numPDEs);
+          if (Amatvec.is_null()) {
+            // Load the matrix
+            out << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
+            Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+            out << "done" << std::endl;
 
-          out << "done" << std::endl;
+            Amatvec->SetFixedBlockSize(numPDEs);
+
+            if (inMemory)
+              matrices[j] = Amatvec;
+
+          } else {
+            // Reset estimate
+            Amatvec->SetMaxEigenvalueEstimate(-one);
+          }
 
           // Preconditioner update
           sprintf(timerName, "Reuse: Preconditioner Update i=%d", i);
@@ -239,8 +261,15 @@ int main(int argc, char *argv[]) {
         }
 
         // Load the RHS
-        out << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
-        RCP<MultiVector> rhs = Utils2::ReadMultiVector(string(rhsFileName), Amatvec->getRowMap());
+        RCP<MultiVector> rhs = rhss[j];
+        if (rhs.is_null()) {
+          out << "[" << j << "] Loading rhs " << rhsFileName << "\"... ";
+          rhs = Utils2::ReadMultiVector(string(rhsFileName), Amatvec->getRowMap());
+          out << "done" << std::endl;
+
+          if (inMemory)
+            rhss[j] = rhs;
+        }
 
         // Create an LHS
         RCP<Vector> X = VectorFactory::Build(Amatvec->getRowMap());
@@ -256,7 +285,7 @@ int main(int argc, char *argv[]) {
 
         // Belos parameter list
         int    maxIts = 100;
-        double tol    = 1e-12;
+        double tol    = 1e-4;
         Teuchos::ParameterList belosList;
         belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
         belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
@@ -308,9 +337,9 @@ int main(int argc, char *argv[]) {
 
     if (!mypid) {
       printf("************************* Iteration Counts ***********************\n");
-      for (int i = 0; i < ArraySize; i++) {
+      for (int i = 0; i < numSteps; i++) {
         for (int j = 0; j < i;         j++) printf("        ");
-        for (int j = i; j < ArraySize; j++) {
+        for (int j = i; j < numSteps; j++) {
           if (STS::isnaninf(setup_times[i][j])) {
             if (i == j)
               printf("       -");
@@ -320,38 +349,55 @@ int main(int argc, char *argv[]) {
         }
         printf("\n");
       }
+      // For convenince, print data without reuse in a single line
+      for (int i = 0; i < numSteps; i++)
+        printf(" %7d", iteration_counts[i][i]);
+      printf("\n");
 
       printf("************************* Iteration Times ***********************\n");
-      for (int i = 0; i < ArraySize; i++) {
+      for (int i = 0; i < numSteps; i++) {
         for (int j = 0; j < i;         j++) printf("        ");
-        for (int j = i; j < ArraySize; j++) {
+        for (int j = i; j < numSteps; j++) {
           if (STS::isnaninf(setup_times[i][j]))
             break;
           printf(" %7.2f", iteration_times[i][j]);
         }
         printf("\n");
       }
+      // For convenince, print data without reuse in a single line
+      for (int i = 0; i < numSteps; i++)
+        printf(" %7.2f", iteration_times[i][i]);
+      printf("\n");
 
       printf("************************* Setup Times ***********************\n");
-      for (int i = 0; i < ArraySize; i++) {
+      for (int i = 0; i < numSteps; i++) {
         for (int j = 0; j < i;         j++) printf("        ");
-        for (int j = i; j < ArraySize; j++) {
+        for (int j = i; j < numSteps; j++) {
           if (STS::isnaninf(setup_times[i][j]))
             break;
           printf(" %7.2f", setup_times[i][j]);
         }
         printf("\n");
       }
+      // For convenince, print data without reuse in a single line
+      for (int i = 0; i < numSteps; i++)
+        printf(" %7.2f", setup_times[i][i]);
+      printf("\n");
+
       printf("************************* Total Times ***********************\n");
-      for (int i = 0; i < ArraySize; i++) {
+      for (int i = 0; i < numSteps; i++) {
         for (int j = 0; j < i;         j++) printf("        ");
-        for (int j = i; j < ArraySize; j++) {
+        for (int j = i; j < numSteps; j++) {
           if (STS::isnaninf(setup_times[i][j]))
             break;
           printf(" %7.2f", setup_times[i][j] + iteration_times[i][j]);
         }
         printf("\n");
       }
+      // For convenince, print data without reuse in a single line
+      for (int i = 0; i < numSteps; i++)
+        printf(" %7.2f", setup_times[i][i] + iteration_times[i][i]);
+      printf("\n");
     }
 
     success = true;
