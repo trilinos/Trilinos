@@ -45,6 +45,7 @@
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/FieldParallel.hpp>
+#include <stk_mesh/base/CreateEdges.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
@@ -4633,7 +4634,7 @@ TEST(BulkData, can_we_create_shared_nodes)
     }
 }
 
-typedef std::pair< std::vector<stk::mesh::Entity*>, stk::mesh::Entity* > ChildNodeRequest;
+typedef std::pair< std::vector<const stk::mesh::Entity*>, stk::mesh::Entity* > ChildNodeRequest;
 
 struct edgeToBeRefined
 {
@@ -4806,7 +4807,7 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
         for (unsigned it_req=0; it_req<child_node_requests.size(); ++it_req)
         {
             ChildNodeRequest & request = child_node_requests[it_req];
-            std::vector<stk::mesh::Entity*> & request_parents = request.first;
+            std::vector<const stk::mesh::Entity*> & request_parents = request.first;
 
             ThrowRequireMsg(request_parents.size() == 2, "Invalid size of request, needed exactly 2 parents, found " << request_parents.size() << ". Contact sierra-help.");
             if (mesh.is_valid(*request_parents[0]) && mesh.is_valid(*request_parents[1]) && communicate_edge[it_req] == false )
@@ -4895,10 +4896,39 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
     ThrowRequireMsg(iter == communicate_edge.end(), "Invalid edge requests. Contact sierra-help.");
 }
 
+void set_coords_on_new_node(stk::mesh::MetaData& meta, stk::mesh::Entity nodeA, stk::mesh::Entity nodeB, stk::mesh::Entity new_node)
+{
+    stk::mesh::FieldBase const * coord = meta.coordinate_field();
+
+    //typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
+    //CoordFieldType& field = meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "model_coordinates");
+
+    double x = 0, y = 0, z = 0;
+
+    double *fieldValue = static_cast<double *>(stk::mesh::field_data(*coord, nodeA));
+    x += fieldValue[0]*0.5;
+    y += fieldValue[1]*0.5;
+    z += fieldValue[2]*0.5;
+
+    fieldValue = static_cast<double *>(stk::mesh::field_data(*coord, nodeB));
+    x += fieldValue[0]*0.5;
+    y += fieldValue[1]*0.5;
+    z += fieldValue[2]*0.5;
+
+    fieldValue = static_cast<double *>(stk::mesh::field_data(*coord, new_node));
+    fieldValue[0] = x;
+    fieldValue[1] = y;
+    fieldValue[2] = z;
+}
+
 TEST(BulkData, create_node_along_shared_edge)
 {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::Part& node_part = meta.declare_part_with_topology("nodelist_1", stk::topology::NODE);
+    stk::io::put_io_part_attribute(node_part);
+//    meta.commit();
+
     stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
     stk::io::StkMeshIoBroker reader(mesh.parallel());
 
@@ -4930,7 +4960,7 @@ TEST(BulkData, create_node_along_shared_edge)
 
             stk::mesh::Entity node_between_10_and_11= stk::mesh::Entity();
             {
-                std::vector<stk::mesh::Entity*> node_parents;
+                std::vector<const stk::mesh::Entity*> node_parents;
                 node_parents.push_back(&node_10);
                 node_parents.push_back(&node_11);
                 ChildNodeRequest node_request(node_parents, &node_between_10_and_11);
@@ -4939,7 +4969,7 @@ TEST(BulkData, create_node_along_shared_edge)
 
             stk::mesh::Entity node_between_10_and_new_node = stk::mesh::Entity();
             {
-                std::vector<stk::mesh::Entity*> node_parents;
+                std::vector<const stk::mesh::Entity*> node_parents;
                 node_parents.push_back(&node_10);
                 node_parents.push_back(&node_between_10_and_11);
                 ChildNodeRequest node_request(node_parents, &node_between_10_and_new_node);
@@ -4948,16 +4978,35 @@ TEST(BulkData, create_node_along_shared_edge)
 
             stk::mesh::Entity node_between_10_and_second_new_node = stk::mesh::Entity();
             {
-                std::vector<stk::mesh::Entity*> node_parents;
+                std::vector<const stk::mesh::Entity*> node_parents;
                 node_parents.push_back(&node_10);
                 node_parents.push_back(&node_between_10_and_new_node);
                 ChildNodeRequest node_request(node_parents, &node_between_10_and_second_new_node);
                 child_node_requests.push_back(node_request);
             }
 
+
             mesh.modification_begin();
+
             batch_create_child_nodes_new(mesh, child_node_requests);
+
+            stk::mesh::PartVector add_parts_vec;
+            stk::mesh::PartVector rem_parts_vec;
+            add_parts_vec.push_back(&node_part);
+            mesh.change_entity_parts(node_between_10_and_11, add_parts_vec, rem_parts_vec);
+            mesh.change_entity_parts(node_between_10_and_new_node, add_parts_vec, rem_parts_vec);
+            mesh.change_entity_parts(node_between_10_and_second_new_node, add_parts_vec, rem_parts_vec);
+
+
             ASSERT_NO_THROW(mesh.modification_end());
+
+            for (size_t i=0;i<child_node_requests.size();++i)
+            {
+                ChildNodeRequest & request = child_node_requests[i];
+                std::vector<const stk::mesh::Entity*> & request_parents = request.first;
+                stk::mesh::Entity *new_node = request.second;
+                set_coords_on_new_node(mesh.mesh_meta_data(), *request_parents[0], *request_parents[1], *new_node);
+            }
         }
 
         stk::mesh::comm_mesh_counts(mesh, counts);
@@ -4965,8 +5014,96 @@ TEST(BulkData, create_node_along_shared_edge)
         EXPECT_EQ(30u,counts[stk::topology::NODE_RANK]);
         EXPECT_EQ(8u,counts[stk::topology::ELEMENT_RANK]);
 
-        std::string filename = "test.exo";
-        write_mesh(filename, mesh);
+        //std::string filename = "test.exo";
+        //write_mesh(filename, mesh);
+    }
+}
+
+TEST(BulkData, nodes_along_every_edge)
+{
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::Part& node_part = meta.declare_part_with_topology("nodelist_1", stk::topology::NODE);
+    stk::io::put_io_part_attribute(node_part);
+
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+    stk::io::StkMeshIoBroker reader(mesh.parallel());
+
+    if(mesh.parallel_size() == 2)
+    {
+        reader.set_bulk_data(mesh);
+        reader.add_mesh_database("generated:2x2x2", stk::io::READ_MESH);
+        reader.create_input_mesh();
+        reader.populate_bulk_data();
+
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(mesh, counts);
+
+        EXPECT_EQ(27u, counts[stk::topology::NODE_RANK]);
+        EXPECT_EQ(8u, counts[stk::topology::ELEMENT_RANK]);
+
+        stk::mesh::create_edges(mesh);
+
+        stk::mesh::comm_mesh_counts(mesh, counts);
+        unsigned num_edges = counts[stk::topology::EDGE_RANK];
+        std::vector<stk::mesh::Entity> newNodes(num_edges, stk::mesh::Entity());
+        size_t new_node_counter = 0;
+
+        std::vector<ChildNodeRequest> child_node_requests;
+
+        const stk::mesh::BucketVector &buckets = mesh.buckets(stk::topology::EDGE_RANK);
+
+        for(size_t b = 0; b < buckets.size(); ++b)
+        {
+            const stk::mesh::Bucket &bucket = *buckets[b];
+            if(!bucket.in_aura())
+            {
+                for (size_t e=0;e<bucket.size();++e)
+                {
+                    const stk::mesh::Entity* pnodes = mesh.begin_nodes(bucket[e]);
+
+                    std::vector<const stk::mesh::Entity*> node_parents;
+                    node_parents.push_back(pnodes);
+                    node_parents.push_back(pnodes+1);
+                    ChildNodeRequest node_request(node_parents, &newNodes[new_node_counter]);
+                    ++new_node_counter;
+                    child_node_requests.push_back(node_request);
+                }
+            }
+        }
+
+        {
+            mesh.modification_begin();
+
+            batch_create_child_nodes_new(mesh, child_node_requests);
+
+            stk::mesh::PartVector add_parts_vec;
+            stk::mesh::PartVector rem_parts_vec;
+            add_parts_vec.push_back(&node_part);
+            for (size_t e=0;e<new_node_counter;++e)
+            {
+                mesh.change_entity_parts(newNodes[e], add_parts_vec, rem_parts_vec);
+            }
+
+            ASSERT_NO_THROW(mesh.modification_end());
+
+            for(size_t i = 0; i < child_node_requests.size(); ++i)
+            {
+                ChildNodeRequest & request = child_node_requests[i];
+                std::vector<const stk::mesh::Entity*> & request_parents = request.first;
+                stk::mesh::Entity *new_node = request.second;
+                set_coords_on_new_node(mesh.mesh_meta_data(), *request_parents[0], *request_parents[1], *new_node);
+            }
+        }
+
+        stk::mesh::comm_mesh_counts(mesh, counts);
+
+        size_t gold_number_nodes = 3*3*3 + 54;
+        EXPECT_EQ(gold_number_nodes, counts[stk::topology::NODE_RANK]);
+        EXPECT_EQ(8u, counts[stk::topology::ELEMENT_RANK]);
+
+        //std::string filename = "test.exo";
+        //write_mesh(filename, mesh);
     }
 }
 
@@ -4976,6 +5113,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     unsigned spatialDim = 2;
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::Part& elem_part = meta.declare_part_with_topology("triangle", stk::topology::TRIANGLE_3_2D);
+
     meta.commit();
 
     stk::mesh::unit_test::BulkDataTester bulk(meta, MPI_COMM_WORLD);
@@ -5033,14 +5171,14 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     std::vector<ChildNodeRequest> child_node_requests;
 
     stk::mesh::Entity node5 = stk::mesh::Entity(); // "child" of 1 and 2 is 5
-    std::vector<stk::mesh::Entity*> node5_parents;
+    std::vector<const stk::mesh::Entity*> node5_parents;
     node5_parents.push_back(&node1);
     node5_parents.push_back(&node2);
     ChildNodeRequest node5_request(node5_parents, &node5);
     child_node_requests.push_back(node5_request);
 
     stk::mesh::Entity node6 = stk::mesh::Entity(); // "child" of 1 and 5 is 6
-    std::vector<stk::mesh::Entity*> node6_parents;
+    std::vector<const stk::mesh::Entity*> node6_parents;
     node6_parents.push_back(&node1);
     node6_parents.push_back(&node5);
     ChildNodeRequest node6_request(node6_parents, &node6);
@@ -5091,6 +5229,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 
     ASSERT_NO_THROW(bulk.modification_end());
 
+
     ASSERT_TRUE(bulk.is_valid(node5));
     ASSERT_TRUE(bulk.is_valid(node6));
     ASSERT_TRUE(bulk.bucket(node5).shared());
@@ -5100,6 +5239,9 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 
     EXPECT_EQ(6u,counts[stk::topology::NODE_RANK]);
     EXPECT_EQ(8u,counts[stk::topology::ELEMENT_RANK]);
+
+    //std::string filename = "test.exo";
+    //write_mesh(filename, bulk);
 }
 
 TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
