@@ -41,8 +41,6 @@
 // @HEADER
 */
 
-// Macros to ensure that if CUDA and KokkosCompat are enabled,
-// only the .cu version of this file is actually compiled.
 #include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -50,7 +48,6 @@
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Details_makeOptimizedColMap.hpp>
-//#include <Tpetra_Vector.hpp>
 
 // Test cases:
 //
@@ -466,7 +463,6 @@ namespace {
     typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef typename GetImportType<map_type>::import_type import_type;
-    //typedef Tpetra::Vector<double, LO, GO, NT> vector_type;
 
     Teuchos::OSTab tab0 (out);
     out << "\"Tpetra::makeOptimizedColMap\": Test 1" << endl;

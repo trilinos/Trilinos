@@ -308,7 +308,7 @@ public:
   /// \param rw [in] 0 if read-only, 1 if read-write.  This is an
   ///   <tt>int</tt> and not a KokkosClassic::ReadWriteOption, in
   ///   order to avoid a circular dependency between KokkosCompat
-  ///   and KokkosClassic.
+  ///   and TpetraClassic.
   template <class T> inline
   Teuchos::ArrayRCP<T>
   viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {

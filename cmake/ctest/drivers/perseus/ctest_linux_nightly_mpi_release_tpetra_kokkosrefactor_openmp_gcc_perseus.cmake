@@ -67,16 +67,16 @@ SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Tpetra KokokosCore KokkosCompat KokkosContainers KokkosLinalg KokkosClassic)
+SET(Trilinos_PACKAGES KokkosCore KokkosContainers KokkosAlgorithms TeuchosKokkosCompat TeuchosKokkosComm TpetraKernels TpetraClassic Tpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosCore=ON"
-  "-DTrilinos_ENABLE_KokkosCompat=ON"
   "-DTrilinos_ENABLE_KokkosContainers=ON"
-  "-DTrilinos_ENABLE_KokkosLinalg=ON"
   "-DTrilinos_ENABLE_KokkosAlgorithms=ON"
-  "-DTrilinos_ENABLE_KokkosClassic=ON"
-  "-DTrilinos_ENABLE_KokkosMpiComm=ON"
+  "-DTrilinos_ENABLE_TpetraClassic=ON"
+  "-DTrilinos_ENABLE_TpetraKernels=ON"
+  "-DTrilinos_ENABLE_TeuchosKokkosCompat=ON"
+  "-DTrilinos_ENABLE_TeuchosKokkosComm=ON"
   "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"

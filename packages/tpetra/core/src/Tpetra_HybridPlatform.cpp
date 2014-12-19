@@ -65,7 +65,7 @@ namespace Tpetra {
   TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::ThrustGPUNode)
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::Compat::KokkosSerialWrapperNode)
 #endif // KOKKOS_HAVE_SERIAL
@@ -81,18 +81,18 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::Compat::KokkosThreadsWrapperN
 #ifdef KOKKOS_HAVE_CUDA
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::Compat::KokkosCudaWrapperNode)
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
 // Make sure that the default Node type is always supported.  We can
 // only do this if it's not any of the Node types listed above.
 #if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
-#  ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #    if ! defined(KOKKOS_HAVE_OPENMP) && ! defined(KOKKOS_HAVE_PTHREAD) && ! defined(KOKKOS_HAVE_CUDA) && ! defined(KOKKOS_HAVE_SERIAL)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNodeType)
 #    endif
 #  else
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNodeType)
-#  endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #endif
 
   HybridPlatform::
@@ -218,7 +218,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
             nodeType_ = THRUSTGPUNODE;
           }
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
           else if (desigNode == "Kokkos::Compat::KokkosSerialWrapperNode") {
             nodeType_ = SERIAL_WRAPPER_NODE;
@@ -239,7 +239,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
             nodeType_ = CUDA_WRAPPER_NODE;
           }
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
           else {
             matchFound = false;
           }
@@ -304,7 +304,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
       list->set("=-5",subpl);
     }
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
     {
       ParameterList subpl;
@@ -337,7 +337,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
       list->set ("=-7", subpl);
     }
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
     return list;
   }
 
@@ -381,7 +381,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
       thrustNode_ = rcp (new KokkosClassic::ThrustGPUNode (instList_));
       break;
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
     case SERIAL_WRAPPER_NODE:
       serialWrapperNode_ = rcp (new Kokkos::Compat::KokkosSerialWrapperNode (instList_));
@@ -402,7 +402,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
       cudaWrapperNode_ = rcp (new Kokkos::Compat::KokkosCudaWrapperNode (instList_));
       break;
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
         "Tpetra::HybridPlatform::createNode: Invalid Node type.");

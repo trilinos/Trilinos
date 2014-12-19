@@ -67,15 +67,13 @@ SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Tpetra KokkosCore KokkosLinAlg KokkosContainers KokkosCompat KokkosClassic KokkosMpiComm Belos Ifpack2 MueLu  Amesos Amesos2 Ifpack  Epetra EpetraExt Zoltan Zoltan2)
-
+SET(Trilinos_PACKAGES KokkosCore KokkosContainers KokkosAlgorithms TeuchosKokkosCompat TeuchosKokkosComm TpetraKernels TpetraClassic Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU=ON"
 
   "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
   "-DTeptra_ENABLE_Kokkos_Refactor_Map:BOOL=ON"
-  "-DTpetra_ENABLE_KokkosCompat:BOOL=ON"
   "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=OFF"
 
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -87,7 +85,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
     
   "-DTPL_ENABLE_CUSPARSE:STRING=OFF"
   "-DTpetra_ENABLE_Thrust:BOOL=OFF"
-  "-DKokkosClassic_ENABLE_Thrust=OFF"
+  "-DTpetraClassic_ENABLE_Thrust=OFF"
   "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
 
   "-DAmesos_ENABLE_TESTS=OFF"
@@ -105,13 +103,14 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DZoltan2_ENABLE_TESTS=OFF"
   "-DZoltan2_ENABLE_EXAMPLES=OFF"
   
+  "-DTrilinos_ENABLE_Tpetra=ON"
   "-DTrilinos_ENABLE_KokkosCore=ON"
-  "-DTrilinos_ENABLE_KokkosCompat=ON"
   "-DTrilinos_ENABLE_KokkosContainers=ON"
-  "-DTrilinos_ENABLE_KokkosLinAlg=ON"
   "-DTrilinos_ENABLE_KokkosAlgorithms=ON"
-  "-DTrilinos_ENABLE_KokkosClassic=ON"
-  "-DTrilinos_ENABLE_KokkosMpiComm=ON"
+  "-DTrilinos_ENABLE_TpetraClassic=ON"
+  "-DTrilinos_ENABLE_TpetraKernels=ON"
+  "-DTrilinos_ENABLE_TeuchosKokkosCompat=ON"
+  "-DTrilinos_ENABLE_TeuchosKokkosComm=ON"
 )
 
 #"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"

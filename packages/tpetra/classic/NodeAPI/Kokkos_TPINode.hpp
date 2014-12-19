@@ -47,7 +47,7 @@
 #include "Kokkos_NodeHelpers.hpp"
 #include <TPI.h>
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "Kokkos_Core.hpp"
 #endif
 
@@ -213,7 +213,7 @@ namespace KokkosClassic {
 
 } // namespace KokkosClassic
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#if defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
 namespace Kokkos {
   namespace Compat {
     template <>

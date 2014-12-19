@@ -11,7 +11,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
+IF (TpetraCore_ENABLE_TpetraClassic AND TpetraClassic_ENABLE_TBB AND ${PACKAGE_NAME}_ENABLE_MPI)
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   MultiVectorFiller_TbbTest
   #   SOURCES MultiVectorFiller_TbbTest
@@ -20,7 +20,7 @@ IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
   #   )
 ENDIF()
 
-IF (KokkosClassic_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
+IF (TpetraCore_ENABLE_TpetraClassic AND TpetraClassic_ENABLE_ThreadPool AND ${PACKAGE_NAME}_ENABLE_MPI)
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   MultiVectorFiller_ThreadPoolTest
   #   SOURCES MultiVectorFiller_ThreadPoolTest
@@ -29,7 +29,7 @@ IF (KokkosClassic_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
   #   )
 ENDIF()
 
-IF (KokkosClassic_ENABLE_Thrust AND KokkosClassic_ENABLE_CUDA_DOUBLE AND Tpetra_ENABLE_MPI)
+IF (TpetraCore_ENABLE_TpetraClassic AND TpetraClassic_ENABLE_Thrust AND TpetraClassic_ENABLE_CUDA_DOUBLE AND ${PACKAGE_NAME}_ENABLE_MPI)
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   MultiVectorFiller_ThrustTest
   #   SOURCES MultiVectorFiller_ThrustTest

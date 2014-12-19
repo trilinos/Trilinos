@@ -116,41 +116,41 @@ IF (${PACKAGE_NAME}_ENABLE_TBB)
 ENDIF()
 
 # Check whether to add the new Kokkos wrapper Nodes to the list.
-# These Nodes live in the KokkosCompat subpackage.
+# These Nodes live in the TeuchosKokkosCompat subpackage.
 #
 # FIXME (mfh 17 Dec 2014) The relative path to
 # KokkosCompat_ClassicNodeAPI_Wrapper.hpp is a hack.  Come up with a
 # more generalized way to point to that file.
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_KokkosCompat)
-IF (${PACKAGE_NAME}_ENABLE_KokkosCompat)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat)
+IF (${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat)
   ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
   IF (Kokkos_ENABLE_OpenMP)
     LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosOpenMPWrapperNode")
     MESSAGE(STATUS "Enabling node: OpenMP/Wrapper")
-    APPEND_SET(HEADERS ../../../kokkos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+    APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
   ENDIF()
   
   ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
   IF (Kokkos_ENABLE_Pthread)
     LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosThreadsWrapperNode")
     MESSAGE(STATUS "Enabling node: Threads/Wrapper")
-    APPEND_SET(HEADERS ../../../kokkos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+    APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
   ENDIF()
   
   ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
   IF (Kokkos_ENABLE_Cuda)
     LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosCudaWrapperNode")
     MESSAGE(STATUS "Enabling node: Cuda/Wrapper")
-    APPEND_SET(HEADERS ../../../kokkos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+    APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
   ENDIF()
   
   ASSERT_DEFINED(Kokkos_ENABLE_Serial)
   IF (Kokkos_ENABLE_Serial)
     LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosSerialWrapperNode")
     MESSAGE(STATUS "Enabling node: Serial/Wrapper")
-    APPEND_SET(HEADERS ../../../kokkos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+    APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
   ENDIF()
-ENDIF() # ${PACKAGE_NAME}_ENABLE_KokkosCompat
+ENDIF() # ${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat
 
 
 IF(NOT DEFINED KokkosClassic_DefaultNode)
@@ -176,7 +176,7 @@ ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosThreadsWrapperN
 ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosSerialWrapperNode")
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE ON CACHE BOOL "")
 ELSE()
-  MESSAGE(WARNING "Unrecognized or disabled node type; setting default node to KokkosClassic::SerialNode.")
+  MESSAGE(WARNING "Unrecognized or disabled node type \"${KokkosClassic_DefaultNode}\"; setting default node to KokkosClassic::SerialNode.")
   SET(KokkosClassic_DefaultNode "KokkosClassic::SerialNode")
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
 ENDIF()

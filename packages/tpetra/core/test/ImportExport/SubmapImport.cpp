@@ -41,25 +41,21 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <iostream>
-
-// Teuchos
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-// Tpetra
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Import.hpp>
+
+#include <iostream>
 
 using Teuchos::ArrayView;
 using Teuchos::FancyOStream;

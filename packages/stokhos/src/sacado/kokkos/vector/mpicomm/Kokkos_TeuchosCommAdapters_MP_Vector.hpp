@@ -43,7 +43,7 @@
 #define KOKKOS_TEUCHOS_COMM_ADAPTERS_MP_VECTOR_HPP
 
 #include "Stokhos_ConfigDefs.h"
-#if defined(HAVE_STOKHOS_KOKKOSMPICOMM)
+#if defined(HAVE_STOKHOS_TEUCHOSKOKKOSCOMM)
 
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector_Contiguous.hpp"

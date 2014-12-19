@@ -98,7 +98,7 @@ template <>
 class ViewAccepter<KokkosClassic::OpenMPNode> : public ViewAccepterSupportedNode {};
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 // Full specializations for the new Kokkos wrapper Node types.
 
 #  ifdef KOKKOS_HAVE_CUDA
@@ -116,7 +116,7 @@ template<>
 class ViewAccepter< ::Kokkos::Compat::KokkosThreadsWrapperNode> : public ViewAccepterSupportedNode {};
 #  endif // KOKKOS_HAVE_PTHREAD
 
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
 } // end of namespace Tpetra::details
 } // end of namespace Tpetra

@@ -62,7 +62,7 @@
 #ifdef HAVE_TPETRACLASSIC_THRUST
 #  include "Kokkos_ThrustGPUNode.hpp"
 #endif
-#ifdef HAVE_TPETRACLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #endif
 
@@ -120,7 +120,7 @@ namespace Details {
       typedef OpenMPNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
       typedef ThrustGPUNode DefaultNodeType;
-#elif defined(HAVE_TPETRACLASSIC_KOKKOSCOMPAT)
+#elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
 #  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
@@ -133,7 +133,7 @@ namespace Details {
       typedef SerialNode DefaultNodeType;
 #  else
 #    error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
-#  endif // defined(HAVE_TPETRACLASSIC_KOKKOSCOMPAT)
+#  endif // defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
 #elif defined(HAVE_TPETRACLASSIC_SERIAL)
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;

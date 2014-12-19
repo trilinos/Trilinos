@@ -193,7 +193,7 @@ namespace {
   {
     // The old "view mode constructors" don't work for the Kokkos
     // refactor version of Tpetra.  We skip the test in that case.
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(HAVE_TPETRA_KOKKOSCOMPAT)
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #  ifdef KOKKOS_HAVE_CUDA
     if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
 #  endif
@@ -204,7 +204,8 @@ namespace {
     if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
 #  endif
     if(typeid(Node)==typeid(Kokkos::Compat::KokkosSerialWrapperNode)) return;
-#endif
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
+
 
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<double,int,int,Node> MV;
@@ -248,7 +249,7 @@ namespace {
   {
     // The old "view mode constructors" don't work for the Kokkos
     // refactor version of Tpetra.  We skip the test in that case.
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(HAVE_TPETRA_KOKKOSCOMPAT)
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #  ifdef KOKKOS_HAVE_CUDA
     if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
 #  endif
@@ -259,7 +260,7 @@ namespace {
     if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
 #  endif
     if(typeid(Node)==typeid(Kokkos::Compat::KokkosSerialWrapperNode)) return;
-#endif
+#endif //HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<double,int,int,Node> Vec;

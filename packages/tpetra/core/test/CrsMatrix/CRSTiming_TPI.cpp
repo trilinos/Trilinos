@@ -41,10 +41,7 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>

@@ -45,7 +45,7 @@
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "KokkosCore_config.h"
 #  ifdef KOKKOS_HAVE_SERIAL
 #    include "Kokkos_Serial.hpp"
@@ -119,7 +119,7 @@ namespace KokkosClassic {
 } // namespace KokkosClassic
 
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
+#if defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 namespace Kokkos {
   namespace Compat {
     template <>
@@ -128,7 +128,7 @@ namespace Kokkos {
     };
   } // namespace Compat
 } // namespace Kokkos
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
+#endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
 
 
 #endif

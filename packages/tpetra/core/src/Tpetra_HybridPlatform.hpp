@@ -157,7 +157,7 @@ private:
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
     , THRUSTGPUNODE
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
     // FIXME (mfh 02 Oct 2014) There is currently no macro
     // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial
     // Kokkos device is enabled.  If that changes, we'll need to
@@ -172,7 +172,7 @@ private:
 #ifdef KOKKOS_HAVE_CUDA
     , CUDA_WRAPPER_NODE
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
   } nodeType_;
 
   //! Instance of the default Node type.
@@ -193,7 +193,7 @@ private:
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
   Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
     // FIXME (mfh 19 Oct 2014) There is currently no macro
     // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial
     // Kokkos device is enabled.  If that changes, we'll need to
@@ -208,7 +208,7 @@ private:
 #ifdef KOKKOS_HAVE_CUDA
   Teuchos::RCP<Kokkos::Compat::KokkosCudaWrapperNode> cudaWrapperNode_;
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 };
 
 
@@ -253,7 +253,7 @@ HybridPlatform::runUserCode (UserCode& codeobj)
     codeobj.template run<KokkosClassic::ThrustGPUNode> (instList_, comm_, thrustNode_);
     break;
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
   // FIXME (mfh 02 Oct 2014) There is currently no macro
   // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos
   // device is enabled.  If that changes, we'll need to protect these
@@ -280,7 +280,7 @@ HybridPlatform::runUserCode (UserCode& codeobj)
                                                                  cudaWrapperNode_);
     break;
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::runtime_error, Teuchos::typeName(*this) << "::runUserCode: "
@@ -322,7 +322,7 @@ HybridPlatform::runUserCode ()
     UserCode<KokkosClassic::ThrustGPUNode>::run (instList_, comm_, thrustNode_);
     break;
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
   // FIXME (mfh 02 Oct 2014) There is currently no macro
   // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos
   // device is enabled.  If that changes, we'll need to protect these
@@ -349,7 +349,7 @@ HybridPlatform::runUserCode ()
                                                           cudaWrapperNode_);
     break;
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::runtime_error, Teuchos::typeName(*this) << "::runUserCode: "
@@ -377,7 +377,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TPINode)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 // FIXME (mfh 19 Oct 2014) There is currently no macro
 // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos device
 // is enabled.  If that changes, we'll need to protect this line
@@ -395,12 +395,12 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosThreadsWrapper
 #ifdef KOKKOS_HAVE_CUDA
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosCudaWrapperNode)
 #endif // KOKKOS_HAVE_CUDA
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
 // Make sure that the default Node type is always supported.  We can
 // only do this if it's not any of the Node types listed above.
 #if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
-#  ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 // FIXME (mfh 19 Oct 2014) There is currently no macro
 // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos device
 // is enabled.  If that changes, we'll need to protect this line
@@ -410,7 +410,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultN
 #    endif
 #  else
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultNodeType)
-#  endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #endif
 
 } // namespace Tpetra

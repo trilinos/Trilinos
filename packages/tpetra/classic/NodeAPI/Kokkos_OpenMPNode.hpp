@@ -48,7 +48,7 @@
 
 #include <omp.h>
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "Kokkos_Core.hpp"
 #endif
 
@@ -168,7 +168,7 @@ namespace KokkosClassic {
 
 } // namespace KokkosClassic
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 namespace Kokkos {
   namespace Compat {
     template <>

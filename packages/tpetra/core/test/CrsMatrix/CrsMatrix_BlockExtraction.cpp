@@ -39,18 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
-#include <numeric>
-#include <algorithm>
-
 #include <Tpetra_TestingUtilities.hpp>
-
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <TpetraExt_BlockExtraction.hpp>
+#include <algorithm>
+#include <numeric>
 
 namespace {
 

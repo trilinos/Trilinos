@@ -41,10 +41,7 @@
 // @HEADER
 */
 
-// Ensure that if CUDA and KokkosCompat are enabled, then
-// only the .cu version of this file is actually compiled.
 #include <Tpetra_ConfigDefs.hpp>
-
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 

@@ -46,7 +46,7 @@
 #include "Kokkos_CUDANodeMemoryModel.hpp"
 #include "Kokkos_ThrustGPUWrappers.hpp"
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "Kokkos_Core.hpp"
 #endif
 
@@ -126,7 +126,7 @@ ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd)
 } // namespace KokkosClassic
 
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#if defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
 namespace Kokkos {
   namespace Compat {
     template <>

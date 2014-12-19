@@ -20,11 +20,12 @@
 #  define HAVE_KOKKOSCLASSIC_OPENMP
 #endif // HAVE_TPETRACLASSIC_OPENMP
 
-/* Define if the KokkosCompat subpackage is available in KokkosClassic */
-#cmakedefine HAVE_TPETRACLASSIC_KOKKOSCOMPAT
-#ifdef HAVE_TPETRACLASSIC_KOKKOSCOMPAT
+/* Define if the TeuchosKokkosCompat subpackage is available in TpetraClassic */
+#cmakedefine HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
+#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
+#  define HAVE_KOKKOSCLASSIC_TEUCHOSKOKKOSCOMPAT
 #  define HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#endif // HAVE_TPETRACLASSIC_KOKKOSCOMPAT
+#endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 
 /* Define if you want to build kokkos-experimental */
 #cmakedefine HAVE_TPETRACLASSIC_EXPERIMENTAL

@@ -40,13 +40,13 @@ IF(${PACKAGE_NAME}_ENABLE_Thrust)
   # do int separately, because we will instantiate vector in it
   TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_INT "S=int|long|unsigned int"                       "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
   #
-  ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_DOUBLE)
-  IF(NOT KokkosClassic_ENABLE_CUDA_DOUBLE)
+  ASSERT_DEFINED(TpetraClassic_ENABLE_CUDA_DOUBLE)
+  IF(NOT TpetraClassic_ENABLE_CUDA_DOUBLE)
     APPEND_SET(${PACKAGE_NAME}_ETI_EXCLUDE_SET "S=double SIN=double SOUT=double LO=.* GO=.* N=KokkosClassic::ThrustGPUNode")
   ENDIF()
   #
-  ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_FLOAT)
-  IF(NOT KokkosClassic_ENABLE_CUDA_FLOAT)
+  ASSERT_DEFINED(TpetraClassic_ENABLE_CUDA_FLOAT)
+  IF(NOT TpetraClassic_ENABLE_CUDA_FLOAT)
     APPEND_SET(${PACKAGE_NAME}_ETI_EXCLUDE_SET "S=float SIN=float SOUT=float LO=.* GO=.* N=KokkosClassic::ThrustGPUNode")
   ENDIF()
 ENDIF()

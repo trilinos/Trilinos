@@ -14,9 +14,9 @@ EXTRA_ARGS=$@
 
 #
 # My NVIDIA GPU does not have hardware support for double-precison
-# floating-point values, so I disable them in KokkosClassic.
+# floating-point values, so I disable them in TpetraClassic.
 #
-#-D KokkosClassic_ENABLE_CUDA_DOUBLE:BOOL=ON
+#-D TpetraClassic_ENABLE_CUDA_DOUBLE:BOOL=ON
 
 #
 # Each one of the "echo" statements below sets up the CMake
@@ -53,7 +53,7 @@ echo "
 -D CUDA_HOST_COMPILER:FILEPATH=\"${CXX}\"
 -D BUILD_SHARED_LIBS:BOOL=ON
 -D Trilinos_ENABLE_Fortran:BOOL=OFF
--D KokkosClassic_ENABLE_TSQR:BOOL=ON
+-D Tpetra_ENABLE_TSQR:BOOL=ON
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
 -D Teuchos_ENABLE_COMPLEX:BOOL=OFF
 -D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON
@@ -77,7 +77,7 @@ echo "
 -D CUDA_HOST_COMPILER:FILEPATH=\"${CXX}\"
 -D BUILD_SHARED_LIBS:BOOL=ON
 -D Trilinos_ENABLE_Fortran:BOOL=OFF
--D KokkosClassic_ENABLE_TSQR:BOOL=ON
+-D Tpetra_ENABLE_TSQR:BOOL=ON
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
 -D Teuchos_ENABLE_COMPLEX:BOOL=OFF
 -D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON

@@ -622,7 +622,7 @@ namespace Sacado {
 } // namespace Sacado
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_KOKKOSMPICOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #include "Kokkos_TeuchosCommAdapters.hpp"
 #include "Kokkos_View_Fad.hpp"

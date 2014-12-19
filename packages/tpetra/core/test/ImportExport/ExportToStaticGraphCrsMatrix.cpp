@@ -44,8 +44,6 @@
 // This test demonstrates an Export to a CrsMatrix with a static
 // graph.  In that case, all combine modes but INSERT are valid.
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -55,7 +53,6 @@
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-// Tpetra includes
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <MatrixMarket_Tpetra.hpp>

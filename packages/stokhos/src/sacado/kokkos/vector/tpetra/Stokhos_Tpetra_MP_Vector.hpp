@@ -51,7 +51,7 @@
 // Kokkos includes
 #include "KokkosClassic_config.h"
 #include "Kokkos_Core.hpp"
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
@@ -83,7 +83,7 @@ struct DeviceForNode {
   typedef Kokkos::Serial type;
 };
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 template <typename Device>
 struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;

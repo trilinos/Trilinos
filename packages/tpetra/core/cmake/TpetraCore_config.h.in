@@ -87,33 +87,41 @@
 /* Define when enabling KokkosCore in Tpetra */
 #cmakedefine HAVE_TPETRACORE_KOKKOSCORE
 #ifdef HAVE_TPETRACORE_KOKKOSCORE
+// For backwards compatibility
 #  define HAVE_TPETRA_KOKKOSCORE
 #endif // HAVE_TPETRACORE_KOKKOSCORE
 
-/* Define when enabling KokkosCompat in Tpetra */
-#cmakedefine HAVE_TPETRACORE_KOKKOSCOMPAT
-#ifdef HAVE_TPETRACORE_KOKKOSCOMPAT
+/* Define when enabling KokkosCompat in TpetraCore */
+#cmakedefine HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
+// For backwards compatibility
+#  define HAVE_TPETRACORE_KOKKOSCOMPAT
+#  define HAVE_TPETRA_TEUCHOSKOKKOSCOMPAT
 #  define HAVE_TPETRA_KOKKOSCOMPAT
-#endif // HAVE_TPETRACORE_KOKKOSCOMPAT
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
 /* Define when enabling TpetraKernels in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_TPETRAKERNELS
 #ifdef HAVE_TPETRACORE_TPETRAKERNELS
+// For backwards compatibility
 #  define HAVE_TPETRA_TPETRAKERNELS
 #  define HAVE_TPETRA_KOKKOSLINALG
 #endif // HAVE_TPETRACORE_TPETRAKERNELS
 
-/* Define when enabling KokkosContainers in Tpetra */
+/* Define when enabling KokkosContainers in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_KOKKOSCONTAINERS
 #ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
+// For backwards compatibility
 #  define HAVE_TPETRA_KOKKOSCONTAINERS
 #endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
 
-/* Define when enabling KokkosContainers in Tpetra */
-#cmakedefine HAVE_TPETRACORE_KOKKOSMPICOMM
-#ifdef HAVE_TPETRACORE_KOKKOSMPICOMM
+/* Define when enabling KokkosComm in TpetraCore */
+#cmakedefine HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
+#ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
+// For backwards compatibility
+#  define HAVE_TPETRACORE_KOKKOSMPICOMM
 #  define HAVE_TPETRA_KOKKOSMPICOMM
-#endif // HAVE_TPETRACORE_KOKKOSMPICOMM
+#endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
 
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT

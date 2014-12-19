@@ -47,7 +47,7 @@
 
 // Don't bother compiling anything, or even including anything else,
 // unless KokkosSerialWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
@@ -70,5 +70,5 @@ namespace Tpetra {
 } // namespace Tpetra
 
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
 

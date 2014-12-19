@@ -91,21 +91,21 @@ cmake \
   \
   -D Trilinos_Enable_Kokkos:BOOL=ON \
   -D Trilinos_ENABLE_KokkosCore:BOOL=ON \
-  -D Trilinos_ENABLE_KokkosCompat:BOOL=ON \
+  -D Trilinos_ENABLE_TeuchosKokkosCompat:BOOL=ON \
   -D Trilinos_ENABLE_KokkosContainers:BOOL=ON \
   -D Trilinos_ENABLE_TpetraKernels:BOOL=ON \
   -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \
-  -D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON \
+  -D Trilinos_ENABLE_TeuchosKokkosComm:BOOL=ON \
   -D Trilinos_ENABLE_KokkosTPL:BOOL=ON \
   -D Trilinos_ENABLE_KokkosExample:BOOL=ON \
   -D Kokkos_ENABLE_EXAMPLES:BOOL=ON \
   -D Kokkos_ENABLE_TESTS:BOOL=OFF \
   -D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosCudaWrapperNode" \
-  -D KokkosClassic_ENABLE_CUDA_DOUBLE:BOOL=ON \
-  -D KokkosClassic_ENABLE_OpenMP=OFF \
-  -D KokkosClassic_ENABLE_ThreadPool=OFF \
-  -D KokkosClassic_ENABLE_Thrust=OFF \
-  -D KokkosClassic_ENABLE_MKL=OFF \
+  -D TpetraClassic_ENABLE_CUDA_DOUBLE:BOOL=ON \
+  -D TpetraClassic_ENABLE_OpenMP=OFF \
+  -D TpetraClassic_ENABLE_ThreadPool=OFF \
+  -D TpetraClassic_ENABLE_Thrust=OFF \
+  -D TpetraClassic_ENABLE_MKL=OFF \
   -D Kokkos_ENABLE_Cuda_UVM=ON \
   \
   \

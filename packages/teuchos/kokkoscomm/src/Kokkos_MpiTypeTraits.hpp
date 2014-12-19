@@ -44,7 +44,7 @@
 #define KOKKOS_MPITYPETRAITS_HPP
 
 /// \file Kokkos_MpiTypeTraits.hpp
-/// \brief KokkosMpiComm's mapping from Packet type to MPI_Datatype.
+/// \brief Mapping from Packet type to MPI_Datatype.
 ///
 /// This file is currently empty, but will soon contain useful things.
 

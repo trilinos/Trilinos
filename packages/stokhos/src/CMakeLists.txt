@@ -603,7 +603,7 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
-    IF (Stokhos_ENABLE_KokkosMpiComm)
+    IF (Stokhos_ENABLE_TeuchosKokkosComm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
       LIST(APPEND SACADO_HEADERS
