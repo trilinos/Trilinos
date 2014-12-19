@@ -43,33 +43,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to SLFad types
-  template <typename ValueT, int Num>
-  struct Promote< CacheFad::SLFad<ValueT,Num>,
-                  CacheFad::SLFad<ValueT,Num> > {
-    typedef CacheFad::SLFad<ValueT,Num> type;
-  };
-
-  //! Specialization of %Promote to SLFad types
-  template <typename ValueT, int Num, typename R>
-  struct Promote< CacheFad::SLFad<ValueT,Num>, R > {
-    typedef typename ValueType< CacheFad::SLFad<ValueT,Num> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef CacheFad::SLFad<value_type,Num> type;
-  };
-
-  //! Specialization of %Promote to SLFad types
-  template <typename L, typename ValueT, int Num>
-  struct Promote< L, CacheFad::SLFad<ValueT, Num> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< CacheFad::SLFad<ValueT,Num> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef CacheFad::SLFad<value_type,Num> type;
-  };
+  SACADO_SFAD_PROMOTE_SPEC( CacheFad, SLFad )
 
   //! Specialization of %ScalarType to SLFad types
   template <typename ValueT, int Num>
@@ -128,6 +102,7 @@ namespace Sacado {
   //! Specialization of %IsEqual to DFad types
   template <typename ValueT, int Num>
   struct IsEqual< CacheFad::SLFad<ValueT,Num> > {
+     KOKKOS_INLINE_FUNCTION
     static bool eval(const CacheFad::SLFad<ValueT,Num>& x,
                      const CacheFad::SLFad<ValueT,Num>& y) {
       return x.isEqualTo(y);

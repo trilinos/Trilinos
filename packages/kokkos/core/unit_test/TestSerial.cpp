@@ -56,6 +56,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
 #include <TestRange.hpp>
@@ -64,11 +65,13 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -88,6 +91,34 @@ TEST_F( serial, view_impl) {
 
 TEST_F( serial, view_api) {
   TestViewAPI< double , Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::Serial >();
 }
 
 TEST_F( serial , range_tag )
@@ -199,6 +230,7 @@ TEST_F( serial , view_remap )
 TEST_F( serial , view_aggregate )
 {
   TestViewAggregate< Kokkos::Serial >();
+  TestViewAggregateReduction< Kokkos::Serial >();
 }
 
 //----------------------------------------------------------------------------
@@ -317,12 +349,21 @@ TEST_F( serial , memory_space )
 TEST_F( serial , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Serial >( 10 );
+  TestTaskPolicy::test_future_array< Kokkos::Serial >( 40 );
   TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
   for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
   for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
 }
 
 //----------------------------------------------------------------------------
+
+TEST_F( serial , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Serial >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
 TEST_F( serial , cxx11 )
 {
@@ -344,6 +385,11 @@ TEST_F( serial , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(4) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(10) ) );
 }
 #endif
 } // namespace test

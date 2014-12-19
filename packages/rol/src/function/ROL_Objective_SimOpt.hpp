@@ -101,7 +101,7 @@ public:
       unew->axpy(h,*(u.basis(i)));
       this->update(*unew,z);
       deriv = (this->value(*unew,z,ftol) - v)/h;
-      g.axpy(deriv,*(u.basis(i)));
+      g.axpy(deriv,*(g.basis(i)));
     }
     this->update(u,z);
   }
@@ -121,7 +121,7 @@ public:
       znew->axpy(h,*(z.basis(i)));
       this->update(u,*znew);
       deriv = (this->value(u,*znew,ftol) - v)/h;
-      g.axpy(deriv,*(z.basis(i)));
+      g.axpy(deriv,*(g.basis(i)));
     }
     this->update(u,z);
   }
@@ -245,13 +245,13 @@ public:
       Teuchos::dyn_cast<const ROL::Vector<Real> >(v));
     const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    Teuchos::RCP<Vector<Real> > h11 = (xs.get_1())->clone();
+    Teuchos::RCP<Vector<Real> > h11 = (hvs.get_1())->clone();
     this->hessVec_11(*h11,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    Teuchos::RCP<Vector<Real> > h12 = (xs.get_1())->clone();
+    Teuchos::RCP<Vector<Real> > h12 = (hvs.get_1())->clone();
     this->hessVec_12(*h12,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
-    Teuchos::RCP<Vector<Real> > h21 = (xs.get_2())->clone();
+    Teuchos::RCP<Vector<Real> > h21 = (hvs.get_2())->clone();
     this->hessVec_21(*h21,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    Teuchos::RCP<Vector<Real> > h22 = (xs.get_2())->clone();
+    Teuchos::RCP<Vector<Real> > h22 = (hvs.get_2())->clone();
     this->hessVec_22(*h22,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     h11->plus(*h12);
     hvs.set_1(*h11);

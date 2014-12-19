@@ -51,6 +51,7 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
@@ -62,6 +63,7 @@
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
@@ -207,8 +209,8 @@ namespace MueLu {
 
     //@{ Matrix configuration
 
-    //! Setup Matrix object
-    virtual void SetupMatrix(Matrix & Op) const;
+    //! Setup Operator object
+    virtual void SetupOperator(Operator & Op) const;
 
     //! Matrix configuration storage
     int blksize_;

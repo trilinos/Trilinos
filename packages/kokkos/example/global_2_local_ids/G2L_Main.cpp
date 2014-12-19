@@ -49,8 +49,12 @@ namespace G2L {
 
 size_t run_serial(unsigned num_ids, unsigned num_find_iterations)
 {
+#ifdef KOKKOS_HAVE_SERIAL
   std::cout << "Serial" << std::endl;
   return run_test<Kokkos::Serial>(num_ids,num_find_iterations);
+#else
+  return 0;
+#endif // KOKKOS_HAVE_SERIAL
 }
 
 size_t run_threads(unsigned num_ids, unsigned num_find_iterations)
@@ -73,14 +77,15 @@ size_t run_openmp(unsigned num_ids, unsigned num_find_iterations)
 #endif
 }
 
-#ifdef KOKKOS_HAVE_CUDA
-extern size_t run_cuda(unsigned num_ids, unsigned num_find_iterations);
-#else
 size_t run_cuda(unsigned num_ids, unsigned num_find_iterations)
 {
+#ifdef KOKKOS_HAVE_CUDA
+  std::cout << "Cuda" << std::endl;
+  return run_test<Kokkos::Cuda>(num_ids,num_find_iterations);
+#else
   return 0;
-}
 #endif
+}
 
 } // namespace G2L
 
@@ -101,11 +106,7 @@ int main(int argc, char *argv[])
 
 
   // query the topology of the host
-  unsigned team_count = 1 ;
   unsigned threads_count = 4 ;
-
-  //avoid unused variable warning
-  (void)team_count;
 
   if (Kokkos::hwloc::available()) {
     threads_count = Kokkos::hwloc::get_available_numa_count() *

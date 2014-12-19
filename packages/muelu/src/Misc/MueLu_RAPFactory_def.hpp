@@ -107,6 +107,8 @@ namespace MueLu {
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
+      std::ostringstream levelstr;
+      levelstr << coarseLevel.GetLevelID();
 
       // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();
@@ -128,7 +130,7 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2));
+        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
       }
       Set(coarseLevel, "AP Pattern", AP);
 
@@ -137,6 +139,9 @@ namespace MueLu {
         GetOStream(Runtime0) << "Ac: Using previous RAP pattern" << std::endl;
 
         Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
+        // Some eigenvalue may have been cached with the matrix in the previous run.
+        // As the matrix values will be updated, we need to reset the eigenvalue.
+        Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
 
       // If we do not modify matrix later, allow optimization of storage.
@@ -147,13 +152,13 @@ namespace MueLu {
       const bool doFillComplete = true;
       if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-        Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
+        Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-implicit-")+levelstr.str());
 
       } else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-        Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
+        Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-explicit-")+levelstr.str());
       }
 
       CheckRepairMainDiagonal(Ac);
@@ -296,7 +301,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
       if (diagVal2[r] == zero) {
-        std::cout << "Error: there are zeros left on diagonal after repair..." << std::endl;
+        GetOStream(Errors,-1) << "Error: there are zeros left on diagonal after repair..." << std::endl;
         break;
       }
     }

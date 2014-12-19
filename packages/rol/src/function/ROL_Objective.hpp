@@ -102,6 +102,12 @@ public:
       @param[out]         g   is the gradient.
       @param[in]          x   is the current iterate.
       @param[in]          tol is a tolerance for inexact objective function computation.
+
+      The default implementation is a finite-difference approximation based on the function value.
+      This requires the definition of a basis \f$\{\phi_i\}\f$ for the optimization vectors x and
+      the definition of a basis \f$\{\psi_j\}\f$ for the dual optimization vectors (gradient vectors g).
+      The bases must be related through the Riesz map, i.e., \f$ R \{\phi_i\} = \{\psi_j\}\f$,
+      and this must be reflected in the implementation of the ROL::Vector::dual() method.
   */
   virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) ;
 
@@ -143,7 +149,7 @@ public:
       @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Pv.set(v);
+    Pv.set(v.dual());
   }
 
   /** \brief Finite-difference gradient check.
@@ -156,13 +162,41 @@ public:
       \f]
       @param[in]      x             is an optimization variable.
       @param[in]      d             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
                                                          const Vector<Real> &d,
-                                                         const bool printToScreen = true,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
+
+    return checkGradient(x, x, d, printToStream, outStream, numSteps);
+
+  }
+
+  /** \brief Finite-difference gradient check.
+
+      This function computes a sequence of one-sided finite-difference checks for the gradient.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left| \frac{f(x+td) - f(x)}{t} - \langle \nabla f(x),d\rangle_{\mathcal{X}^*,\mathcal{X}}\right|.
+      \f]
+      @param[in]      x             is an optimization variable.
+      @param[in]      g             is used to create a temporary gradient vector.
+      @param[in]      d             is a direction vector.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+  */
+  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
+                                                         const Vector<Real> &g,
+                                                         const Vector<Real> &d,
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS );
 
   /** \brief Finite-difference Hessian-applied-to-vector check.
 
@@ -174,12 +208,40 @@ public:
       \f]
       @param[in]      x             is an optimization variable.
       @param[in]      d             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
   */
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
                                                         const Vector<Real> &v,
-                                                        const bool printToScreen = true,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
+
+    return checkHessVec(x, x, v, printToStream, outStream, numSteps);
+
+  }
+
+  /** \brief Finite-difference Hessian-applied-to-vector check.
+
+      This function computes a sequence of one-sided finite-difference checks for the Hessian.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+      \f]
+      @param[in]      x             is an optimization variable.
+      @param[in]      hv            is used to create temporary gradient and Hessian-times-vector vectors.
+      @param[in]      d             is a direction vector.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+  */
+  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
+                                                        const Vector<Real> &hv,
+                                                        const Vector<Real> &v,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
 
   /** \brief Hessian symmetry check.
@@ -193,12 +255,40 @@ public:
       @param[in]      x             is an optimization variable.
       @param[in]      v             is a direction vector.
       @param[in]      w             is a direction vector.
-      @param[in]      printToScreen is a flag which determines if the output is printed to the screen.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
   */
   virtual std::vector<Real> checkHessSym( const Vector<Real> &x,
                                           const Vector<Real> &v,
                                           const Vector<Real> &w,
-                                          const bool printToScreen = true ) ;
+                                          const bool printToStream = true,
+                                          std::ostream & outStream = std::cout ) {
+
+    return checkHessSym(x, x, v, w, printToStream, outStream);
+
+  }
+
+  /** \brief Hessian symmetry check.
+
+      This function checks the symmetry of the Hessian by comparing 
+      \f[
+         \langle \nabla^2f(x)v,w\rangle_{\mathcal{X}^*,\mathcal{X}}
+         \quad\text{and}\quad
+         \langle \nabla^2f(x)w,v\rangle_{\mathcal{X}^*,\mathcal{X}}.
+      \f]
+      @param[in]      x             is an optimization variable.
+      @param[in]      hv            is used to create temporary Hessian-times-vector vectors.
+      @param[in]      v             is a direction vector.
+      @param[in]      w             is a direction vector.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+  */
+  virtual std::vector<Real> checkHessSym( const Vector<Real> &x,
+                                          const Vector<Real> &hv,
+                                          const Vector<Real> &v,
+                                          const Vector<Real> &w,
+                                          const bool printToStream = true,
+                                          std::ostream & outStream = std::cout );
   
   // struct StepState (scalars, vectors) map?
 

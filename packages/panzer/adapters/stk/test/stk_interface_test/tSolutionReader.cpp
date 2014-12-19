@@ -70,6 +70,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
+#ifdef PANZER_HAVE_FEI
 Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
@@ -211,3 +212,4 @@ Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
 
   return mesh;
 }
+#endif

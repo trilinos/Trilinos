@@ -60,7 +60,7 @@ Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
 matchPeriodicSides(const std::string & left,const std::string & right,
                      const STK_Interface & mesh,
                      const Matcher & matcher,
-                     const std::vector<std::pair<std::size_t,std::size_t> >  & ownedToMapped)
+                     const std::vector<std::pair<std::size_t,std::size_t> >  & ownedToMapped, const std::string type_)
 {
   //
   // Overview:
@@ -85,7 +85,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // on the left hand side: requires All-2-All!
   /////////////////////////////////////////////////////////////////////////
   std::pair<RCP<std::vector<std::size_t> >,
-            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(mesh,left);
+            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
   std::vector<std::size_t> & sideIds = *idsAndCoords.first;
   std::vector<Tuple<double,3> > & sideCoords = *idsAndCoords.second;
 
@@ -96,7 +96,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
 
   bool failure = false;
   try {
-     locallyMatchedIds = getLocallyMatchedSideIds(sideIds,sideCoords,mesh,right,matcher);
+     locallyMatchedIds = getLocallyMatchedSideIds(sideIds,sideCoords,mesh,right,matcher,type_);
   } catch(std::logic_error & e) {
      locallyMatchedIds = Teuchos::rcp(new std::vector<std::pair<std::size_t,std::size_t> >);
      failure = true;
@@ -122,7 +122,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   for(std::size_t i=0;i<ownedToMapped.size();i++)
      reverseMap[ownedToMapped[i].second].push_back(ownedToMapped[i].first);
   
-  Teuchos::RCP<std::vector<std::size_t> > locallyRequiredIds = getLocalSideIds(mesh,left);
+  Teuchos::RCP<std::vector<std::size_t> > locallyRequiredIds = getLocalSideIds(mesh,left,type_);
   std::vector<std::size_t> saved_locallyRequiredIds = *locallyRequiredIds; // will be required
                                                                            // to check owner/ghostship
                                                                            // of IDs
@@ -199,7 +199,7 @@ template <typename Matcher>
 Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
 matchPeriodicSides(const std::string & left,const std::string & right,
                      const STK_Interface & mesh,
-                     const Matcher & matcher)
+                     const Matcher & matcher, const std::string type_)
 {
   //
   // Overview:
@@ -224,7 +224,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // on the left hand side: requires All-2-All!
   /////////////////////////////////////////////////////////////////////////
   std::pair<RCP<std::vector<std::size_t> >,
-            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(mesh,left);
+            RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(mesh,left,type_);
   std::vector<std::size_t> & sideIds = *idsAndCoords.first;
   std::vector<Tuple<double,3> > & sideCoords = *idsAndCoords.second;
 
@@ -235,7 +235,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
 
   bool failure = false;
   try {
-     locallyMatchedIds = getLocallyMatchedSideIds(sideIds,sideCoords,mesh,right,matcher);
+     locallyMatchedIds = getLocallyMatchedSideIds(sideIds,sideCoords,mesh,right,matcher,type_);
   } catch(std::logic_error & e) {
      locallyMatchedIds = Teuchos::rcp(new std::vector<std::pair<std::size_t,std::size_t> >);
      failure = true;
@@ -253,7 +253,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   /////////////////////////////////////////////////////////////////////////
 
   // next line requires communication
-  Teuchos::RCP<std::vector<std::size_t> > locallyRequiredIds = getLocalSideIds(mesh,left);
+  Teuchos::RCP<std::vector<std::size_t> > locallyRequiredIds = getLocalSideIds(mesh,left,type_);
   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds
         = getGlobalPairing(*locallyRequiredIds,*locallyMatchedIds,mesh,failure);
 
@@ -268,7 +268,7 @@ Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
 getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
                          const std::vector<Teuchos::Tuple<double,3> > & side_coords,
                          const panzer_stk_classic::STK_Interface & mesh,
-                         const std::string & sideName,const Matcher & matcher)
+                         const std::string & sideName,const Matcher & matcher, std::string type_)
 {
    using Teuchos::RCP;
    using Teuchos::Tuple;
@@ -281,7 +281,7 @@ getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
 
    std::pair<Teuchos::RCP<std::vector<std::size_t> >,
              Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > > sidePair =
-          getLocalSideIdsAndCoords(mesh,sideName);
+          getLocalSideIdsAndCoords(mesh,sideName,type_);
 
    std::vector<std::size_t> & local_side_ids = *sidePair.first;
    std::vector<Teuchos::Tuple<double,3> > & local_side_coords = *sidePair.second;
@@ -296,7 +296,7 @@ getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
       std::size_t local_gid = local_side_ids[localNode];
       const Tuple<double,3> & local_coord = local_side_coords[localNode];
 
-      // loop over globally distributed coordinates and fine a match
+      // loop over globally distributed coordinates and find a match
       for(std::size_t globalNode=0;globalNode<side_ids.size();globalNode++) { 
          std::size_t global_gid = side_ids[globalNode];
          const Tuple<double,3> & global_coord = side_coords[globalNode];

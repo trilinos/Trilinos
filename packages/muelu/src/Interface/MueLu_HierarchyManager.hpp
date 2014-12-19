@@ -51,7 +51,7 @@
 
 #include <Teuchos_Array.hpp>
 
-#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -73,13 +73,13 @@ namespace MueLu {
   class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
+    typedef std::pair<std::string, const FactoryBase*> keep_pair;
 
   public:
 
     //!
-    // TODO: default values should be query from Hierarchy class to avoid duplication
-    HierarchyManager() :
-        numDesiredLevel_        (MasterList::getDefault<int>("max levels")),
+    HierarchyManager(int numDesiredLevel = MasterList::getDefault<int>("max levels")) :
+        numDesiredLevel_        (numDesiredLevel),
         maxCoarseSize_          (MasterList::getDefault<int>("coarse: max size")),
         verbosity_              (Medium),
         doPRrebalance_          (MasterList::getDefault<bool>("repartition: rebalance P and R")),
@@ -135,13 +135,13 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level>  l  = H.GetLevel(0);
-      RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
+      RCP<Level>    l0 = H.GetLevel(0);
+      RCP<Operator> Op = l0->Get<RCP<Operator> >("A");
 
-      Xpetra::UnderlyingLib lib = Op->getRowMap()->lib();
+      Xpetra::UnderlyingLib lib = Op->getDomainMap()->lib();
       H.setlib(lib);
 
-      SetupMatrix(*Op);
+      SetupOperator(*Op);
       SetupExtra(H);
 
       // Setup Hierarchy
@@ -153,9 +153,38 @@ namespace MueLu {
       H.SetPRrebalance(doPRrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);
 
-      // TODO: coarsestLevelManager
-
       H.Clear();
+
+      // There are few issues with using Keep in the interpreter:
+      //   1. Hierarchy::Keep interface takes a name and a factory. If
+      //      factories are different on different levels, the AddNewLevel() call
+      //      in Hierarchy does not work properly, as it assume that factories are
+      //      the same.
+      //   2. FactoryManager does not have a Keep option, only Hierarchy and
+      //      Level have it
+      //   3. Interpreter constructs factory managers, but not levels. So we
+      //      cannot set up Keep flags there.
+      //
+      // The solution implemented here does the following:
+      //   1. Construct hierarchy with dummy levels. This avoids
+      //      Hierarchy::AddNewLevel() calls which will propagate wrong
+      //      inheritance.
+      //   2. Interpreter constructs keep_ array with names and factories for
+      //      that level
+      //   3. For each level, we call Keep(name, factory) for each keep_
+      for (int i = 0; i < numDesiredLevel_; i++) {
+        std::map<int, std::vector<keep_pair> >::const_iterator it = keep_.find(i);
+        if (it != keep_.end()) {
+          RCP<Level> l = H.GetLevel(i);
+          const std::vector<keep_pair>& keeps = it->second;
+          for (size_t j = 0; j < keeps.size(); j++)
+            l->Keep(keeps[j].first, keeps[j].second);
+        }
+        if (i < numDesiredLevel_-1) {
+          RCP<Level> newLevel = rcp(new Level());
+          H.AddLevel(newLevel);
+        }
+      }
 
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
@@ -199,7 +228,7 @@ namespace MueLu {
   protected: //TODO: access function
 
     //! Setup Matrix object
-    virtual void SetupMatrix(Matrix& Op) const { }
+    virtual void SetupOperator(Operator& Op) const { }
 
     //! Setup extra data
     // TODO: merge with SetupMatrix ?
@@ -235,6 +264,8 @@ namespace MueLu {
     Teuchos::Array<int>   matricesToPrint_;
     Teuchos::Array<int>   prolongatorsToPrint_;
     Teuchos::Array<int>   restrictorsToPrint_;
+
+    std::map<int, std::vector<keep_pair> > keep_;
 
   private:
 

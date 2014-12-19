@@ -89,7 +89,7 @@ namespace Details {
 ///   is not a true Tpetra::CrsMatrix, this class will perform a deep copy to produce
 ///   a CrsMatrix.  This will happen, for example, if you are doing additive Schwarz
 ///   with nonzero overlap, and apply Amesos2 as the subdomain solve.  This deep copy
-///   is required by Amesos2, and is in addition to any data copying that Amesos2 may 
+///   is required by Amesos2, and is in addition to any data copying that Amesos2 may
 ///   do internally to satisfy TPL storage formats.
 ///
 template<class MatrixType>
@@ -128,7 +128,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".

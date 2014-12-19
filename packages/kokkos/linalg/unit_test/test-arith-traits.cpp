@@ -41,14 +41,8 @@
 
 #include <iostream>
 
-#include "Kokkos_ArithTraitsTest.hpp"
 #include "Kokkos_Core.hpp"
-
-#ifdef KOKKOS_HAVE_CUDA
-// We annoyingly have to build the CUDA tests in a separate .cu file,
-// but we can still invoke them from this .cpp file.
-extern bool runAllArithTraitsCudaTests (std::ostream& out, const bool verbose);
-#endif // KOKKOS_HAVE_CUDA
+#include "Kokkos_ArithTraitsTest.hpp"
 
 int
 main (int argc, char* argv[])
@@ -61,6 +55,7 @@ main (int argc, char* argv[])
   bool success = true;
   const bool verbose = false;
 
+#ifdef KOKKOS_HAVE_SERIAL
   {
     Kokkos::Serial::initialize (); // Start up the Kokkos device
     bool serialSuccess = true;
@@ -74,6 +69,7 @@ main (int argc, char* argv[])
     }
     Kokkos::Serial::finalize (); // Close down the Kokkos device
   }
+#endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
   {
@@ -108,9 +104,13 @@ main (int argc, char* argv[])
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-  // Start up the Cuda device's host mirror device (must be done
-  // before starting up the Cuda device)
-  Kokkos::HostSpace::execution_space::initialize ();
+  // Start up the Cuda device's host mirror execution space (must be
+  // done before starting up the Cuda execution space).  This may be
+  // the same as one of the execution spaces that we already
+  // initialized above; don't initialize it twice in that case.
+  if (! Kokkos::HostSpace::execution_space::is_initialized ()) {
+    Kokkos::HostSpace::execution_space::initialize ();
+  }
 
   bool cudaWorked = false;
   try {
@@ -128,7 +128,15 @@ main (int argc, char* argv[])
   }
 
   if (cudaWorked) {
-    success = success && runAllArithTraitsCudaTests (cout, verbose);
+    success = success && runAllArithTraitsDeviceTests<Kokkos::Cuda> (cout, verbose);
+
+    if (success) {
+      if (verbose) {
+        cout << endl << "Kokkos::Cuda host and device: TEST PASSED" << endl;
+      }
+    } else {
+      cout << endl << "Kokkos::Cuda host and device: TEST FAILED" << endl;
+    }
 
     try {
       Kokkos::Cuda::finalize (); // Close down the Kokkos device

@@ -501,9 +501,13 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // If X and Y alias one another, then we need to create an
       // auxiliary vector, Xcopy (a deep copy of X).
       RCP<const MV> Xcopy;
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+      if (false) { // FIXME (mfh 16 Dec 2014) Add test for aliasing!
+#else
       // FIXME (mfh 12 Sep 2014) This test for aliasing is both
       // incomplete, and a dependence on KokkosClassic.
       if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
         Xcopy = rcp (new MV (X, Teuchos::Copy));
       }
       else {

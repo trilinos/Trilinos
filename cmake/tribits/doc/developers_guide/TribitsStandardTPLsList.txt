@@ -1,3 +1,0 @@
-FindTPLCUDA.cmake
-FindTPLMPI.cmake
-FindTPLPETSC.cmake

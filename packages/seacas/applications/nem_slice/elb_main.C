@@ -708,7 +708,7 @@ namespace {
       {
 	printf("\tElement Block weights specified\n");
 	for (size_t cnt=0; cnt < weight->elemblk.size(); cnt++)
-	  printf("\telement block: "ST_ZU", weight: "ST_ZU"\n",
+	  printf("\telement block: " ST_ZU ", weight: " ST_ZU "\n",
 		 (size_t)weight->elemblk[cnt],
 		 (size_t)weight->elemblk_wgt[cnt]);
       }

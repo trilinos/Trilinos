@@ -38,22 +38,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <boost/static_assert.hpp>
 
-// #define TRACKABLE_STK_PARALLEL_COMM
-
-#ifdef TRACKABLE_STK_PARALLEL_COMM
-#define BABBLE_STK_PARALLEL_COMM(comm, msg)                                              \
-{                                                                                        \
-  if (stk::CommAll::sm_verbose                                                           \
-      && !(CommAll::sm_verbose_proc0_only && (stk::parallel_machine_rank(comm) != 0))) { \
-    std::ostringstream string_maker;                                                     \
-    string_maker << "P" << stk::parallel_machine_rank(comm) << ": " << msg << "\n";      \
-    std::cout << string_maker.str();                                                     \
-  }                                                                                      \
-}
-#else
-#define BABBLE_STK_PARALLEL_COMM(comm, msg)
-#endif
-
 namespace stk { template <unsigned int N> struct CommBufferAlign; }
 
 //------------------------------------------------------------------------
@@ -213,7 +197,7 @@ public:
   /** Construct for undefined communication.
    *  No buffers are allocated.
    */
-  CommAll();
+  CommAll(bool propagate_local_error_flags=true);
 
   /** Allocate send and receive buffers based upon input sizes.
    *  If recv_size == NULL then the receive size
@@ -252,7 +236,7 @@ public:
    *  3) Send buffers are identically packed; however, this
    *     packing copies data into the send buffers.
    */
-  explicit CommAll( ParallelMachine );
+  explicit CommAll( ParallelMachine, bool propagate_local_error_flags=true );
 
   /** Allocate asymmetric communication based upon
    *  sizing from the surrogate send buffer packing.
@@ -294,6 +278,7 @@ private:
                          bool local_flag );
 
   ParallelMachine m_comm ;
+  bool            m_propagate_local_error_flags;
   int             m_size ;
   int             m_rank ;
   unsigned        m_bound ;

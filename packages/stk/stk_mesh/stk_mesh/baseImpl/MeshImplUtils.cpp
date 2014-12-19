@@ -230,10 +230,7 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
             {
                 if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
                 {
-                    EntityVector entity_nodes(num_nodes_on_entity);
-
                     Entity const * nodes = bucket.begin_nodes(entityIndex);
-                    entity_nodes.assign(nodes, nodes+num_nodes_on_entity);
 
                     //do we need to do some sorting operation here?
                     //sort entity nodes into lexicographical smallest permutation?
@@ -242,20 +239,20 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
                     bool shared_entity = true;
                     for(size_t n = 0; n < num_nodes_on_entity; ++n)
                     {
-                        Entity node = entity_nodes[n];
+                        Entity node = nodes[n];
                         shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.is_entity_marked(node) == BulkData::IS_SHARED));
                     }
 
                     if(shared_entity)
                     {
-                        std::sort(entity_nodes.begin(),entity_nodes.end(),EntityLess(mesh));
                         shared_entity_type sentity;
                         sentity.topology = topology;
                         sentity.nodes.resize(num_nodes_on_entity);
                         for(size_t n = 0; n < num_nodes_on_entity; ++n)
                         {
-                            sentity.nodes[n]=mesh.entity_key(entity_nodes[n]);
+                            sentity.nodes[n]=mesh.entity_key(nodes[n]);
                         }
+                        std::sort(sentity.nodes.begin(),sentity.nodes.end());
                         const EntityKey &entity_key = mesh.entity_key(entity);
                         sentity.local_key = entity_key;
                         sentity.global_key = entity_key;
@@ -269,10 +266,11 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
 }
 
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes)
+        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes)
 {
     // get node entity ids
-    std::vector<stk::mesh::EntityId> nodeIdsForEdge(2);
+    ThrowRequireMsg(numNodes==2,"connectEntityToEdge ERROR, numNodes must be 2 currently.");
+    std::vector<stk::mesh::EntityId> nodeIdsForEdge(numNodes);
     nodeIdsForEdge[0] = stkMeshBulkData.identifier(nodes[0]);
     nodeIdsForEdge[1] = stkMeshBulkData.identifier(nodes[1]);
 
@@ -434,11 +432,9 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
       }
     }
     if (phase == 0) { // allocation phase
-      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          generate_parallel_change calling allocate_buffers");
       comm.allocate_buffers( p_size / 4 , 0 );
     }
     else { // communication phase
-      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          generate_parallel_change calling communicate");
       comm.communicate();
     }
   }
@@ -519,7 +515,7 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void internal_get_processor_dependencies_shared_or_ghosted(
   const BulkData &mesh,
   const EntityProc                  shared_or_ghosted_entity ,
-  stk::mesh::NodeToDependentProcessorsMap & node_to_dependent_processors_map)
+  stk::mesh::EntityToDependentProcessorsMap & node_to_dependent_processors_map)
 {
     Entity moving_entity = shared_or_ghosted_entity.first;
     int new_owning_proc = shared_or_ghosted_entity.second;
@@ -761,6 +757,7 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
   std::pair<const unsigned *,const unsigned *>
     part_ordinals = bucket.superset_part_ordinals();
 
+  error_log << __FILE__ << ":" << __LINE__ << ": ";
   error_log << "P" << p_rank << ": " ;
   error_log << key;
   error_log << " owner(" << mesh.parallel_owner_rank(entity) << ")" ;
@@ -1006,6 +1003,7 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
         CommBuffer & buf = all.send_buffer( share_proc );
 
         put_tag(buf,PACK_TAG_ENTITY_SHARED);
+
         pack_entity_info(mesh, buf , i->entity );
 
         put_tag(buf,PACK_TAG_SHARED_COUNT);
@@ -1025,19 +1023,6 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
         // see if we also have ghosts
         unsigned ghost_count = 0 ;
         for ( size_t kk = 0 ; kk < comm.size() ; ++kk ) {
-          if ( comm[kk].ghost_id == 1 && comm[kk].proc == share_proc )
-          {
-              std::cerr << "[" << mesh.parallel_rank() << "] bad news for entity " << i->key << " with id: " << mesh.identifier(i->entity) << std::endl;
-              stk::mesh::Entity const * nodes = mesh.begin_nodes(i->entity);
-              stk::mesh::Entity const * nodes_end = mesh.end_nodes(i->entity);
-              std::cerr << "( ";
-              for (; nodes != nodes_end; nodes++)
-              {
-                  std::cerr << mesh.identifier(*nodes) << " ";
-              }
-              std::cerr << ") " << std::endl;
-          }
-
           ThrowRequireMsg( !(comm[kk].ghost_id == 1 && comm[kk].proc == share_proc ) ,
                            "error - shouldn't have shared and aura, only shared and custom ghost");
           if ( comm[kk].ghost_id > 1 && comm[kk].proc == share_proc ) {
@@ -1118,6 +1103,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     const bool     owned_closure = in_owned_closure( M, entity , p_rank );
 
     if ( ! ordered ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "Problem is unordered" << std::endl;
       this_result = false ;
     }
@@ -1125,6 +1111,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     // Owner consistency:
 
     if (   has_owns_part && p_owner != p_rank ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is owner-consistency check 1: "
                 << "has_owns_part: " << has_owns_part << ", "
                 << "p_owner: " << p_owner << ", "
@@ -1133,6 +1120,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     }
 
     if ( ! has_owns_part && p_owner == p_rank ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is owner-consistency check 2: "
                 << "has_owns_part: " << has_owns_part << ", "
                 << "p_owner: " << p_owner << ", "
@@ -1141,6 +1129,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     }
 
     if ( has_shares_part != shares ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is owner-consistency check 3: "
                 << "has_shares_part: " << has_shares_part << ", "
                 << "shares: " << shares << " has entity key " << M.entity_key(entity).m_value << std::endl;
@@ -1150,6 +1139,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     // Definition of 'closure'
 
     if ( ( has_owns_part || has_shares_part ) != owned_closure ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is closure check: "
                 << "has_owns_part: " << has_owns_part << ", "
                 << "has_shares_part: " << has_shares_part << ", "
@@ -1160,10 +1150,12 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     // Must be either owned_closure or recv_ghost but not both.
 
     if (   owned_closure &&   recv_ghost ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem: entity is both recv ghost and in owned_closure;"<<std::endl;
       this_result = false ;
     }
     if ( ! owned_closure && ! recv_ghost ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem: entity is neither recv_ghost nor in owned_closure;"<<std::endl;
       this_result = false ;
     }
@@ -1171,6 +1163,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     // If sending as a ghost then I must own it
 
     if ( ! has_owns_part && send_ghost ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is send ghost check: "
                 << "has_owns_part: " << has_owns_part << ", "
                 << "send_ghost: " << send_ghost << std::endl;
@@ -1183,6 +1176,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
       PairIterEntityComm ip = M.entity_comm_map_shared(M.entity_key(entity));
       for ( ; ! ip.empty() && p_owner != ip->proc ; ++ip );
       if ( ip.empty() ) {
+        error_log << __FILE__ << ":" << __LINE__ << ": ";
         error_log << "problem: entity shared-not-owned, but entity_comm_map_shared returns empty;" << std::endl;
         this_result = false ;
       }
@@ -1192,6 +1186,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
 
     if ( ! this_result ) {
       result = false ;
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "P" << M.parallel_rank() << ": " << " entity " << M.entity_rank(entity)<< ",id="<<M.identifier(entity);
       error_log << " details: owner(" << p_owner<<"), node-connectivity(";
       const Entity* nodes = M.begin_nodes(entity);
@@ -1222,18 +1217,21 @@ bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count
     const PairIterEntityComm ec = M.entity_comm_map(i->key);
 
     if ( ec.empty() ) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << i->key.id();
       error_log << " ERROR: in entity_comm but has no comm info" << std::endl ;
       result = false ;
     }
 
     if (i->key != M.entity_key(i->entity)) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << i->key.id();
       error_log << " ERROR: out of sync entity keys in comm list, real key is " << M.entity_key(i->entity).id() << std::endl ;
       result = false ;
     }
 
     if (i->owner != M.parallel_owner_rank(i->entity)) {
+      error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << i->key.id();
       error_log << " ERROR: out of sync owners, in comm-info " << i->owner << ", in entity " << M.parallel_owner_rank(i->entity) << std::endl ;
       result = false ;
@@ -1241,6 +1239,7 @@ bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count
   }
 
   if ( M.comm_list().size() != comm_count ) {
+    error_log << __FILE__ << ":" << __LINE__ << ": ";
     error_log << " ERROR: entity_comm.size() = " << M.comm_list().size();
     error_log << " != " << comm_count << " = entities with comm info" ;
     error_log << std::endl ;
@@ -1297,12 +1296,10 @@ bool comm_mesh_verify_parallel_consistency(
 
     pack_owned_verify( all , M );
 
-    BABBLE_STK_PARALLEL_COMM(M.parallel(), "          comm_mesh_verify_parallel_consistency calling allocate_buffers");
     all.allocate_buffers( all.parallel_size() / 4 );
 
     pack_owned_verify( all , M );
 
-    BABBLE_STK_PARALLEL_COMM(M.parallel(), "          comm_mesh_verify_parallel_consistency calling communicate");
     all.communicate();
 
     result = unpack_not_owned_verify( all , M , error_log );
@@ -1388,6 +1385,47 @@ void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mes
       destroy_dependent_ghosts( mesh , entity );
     }
   }
+}
+
+bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm)
+{
+    Selector shared = mesh.mesh_meta_data().globally_shared_part();
+    bool local_any_shared_entities_modified = false;
+    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; ++rank ) {
+        const stk::mesh::BucketVector& buckets = rank==stk::topology::ELEM_RANK ? mesh.buckets(rank) : mesh.get_buckets(rank, shared);
+        for(size_t b=0; b<buckets.size(); ++b) {
+            const stk::mesh::Bucket& bkt = *buckets[b];
+            for(size_t i=0; i<bkt.size(); ++i) {
+                if (mesh.state(bkt[i]) == Modified) {
+                    if (rank == stk::topology::ELEM_RANK) {
+                        unsigned num_nodes = mesh.num_nodes(bkt[i]);
+                        const stk::mesh::Entity* nodes = mesh.begin_nodes(bkt[i]);
+                        for(unsigned j=0; j<num_nodes; ++j) {
+                            if (mesh.bucket(nodes[j]).shared()) {
+                                local_any_shared_entities_modified = true;
+                                break;
+                            }
+                        }
+                    }
+                    else { 
+                        local_any_shared_entities_modified = true;
+                        break;
+                    }
+                }
+            }
+            if (local_any_shared_entities_modified) {
+                break;
+            }
+        }
+        if (local_any_shared_entities_modified) {
+            break;
+        }
+    }
+
+    int local_shared_modified = local_any_shared_entities_modified ? 1 : 0;
+    int global_shared_modified = 0;
+    stk::all_reduce_max(comm, &local_shared_modified, &global_shared_modified, 1);
+    return global_shared_modified > 0;
 }
 
 parallel::DistributedIndex::KeySpanVector

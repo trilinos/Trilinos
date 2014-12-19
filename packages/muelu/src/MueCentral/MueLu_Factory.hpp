@@ -172,9 +172,30 @@ namespace MueLu {
     void EnableMultipleCallCheck() const       { multipleCallCheck_       = ENABLED;  }
     void DisableMultipleCallCheck() const      { multipleCallCheck_       = DISABLED; }
     void ResetDebugData() const {
+      if (multipleCallCheck_ == FIRSTCALL && lastLevelID_ == -1)
+        return;
+
       multipleCallCheck_ = FIRSTCALL;
       lastLevelID_       = -1;
+
+      const ParameterList& paramList = GetParameterList();
+
+      // We cannot use just FactoryManager to specify which factories call ResetDebugData().
+      // The problem is that some factories are not present in the manager, but
+      // instead are only accessible through a parameter list of some factory.
+      // For instance, FilteredAFactory is only accessible from SaPFactory but
+      // nowhere else. So we miss those, and do not reset the data, resulting
+      // in problems.
+      // Therefore, for each factory we need to go through its dependent
+      // factories, and call reset on them.
+      for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++)
+        if (paramList.isType<RCP<const FactoryBase> >(it->first)) {
+          RCP<const Factory> fact = rcp_dynamic_cast<const Factory >(paramList.get<RCP<const FactoryBase> >(it->first));
+          if (fact != Teuchos::null && fact != NoFactory::getRCP())
+            fact->ResetDebugData();
+        }
     }
+
     static void EnableMultipleCheckGlobally()  { multipleCallCheckGlobal_ = ENABLED;  }
     static void DisableMultipleCheckGlobally() { multipleCallCheckGlobal_ = DISABLED; }
 

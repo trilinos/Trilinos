@@ -47,7 +47,7 @@
 //=======================================================================
 //=======================================================================
 void 
-panzer::buildBCs(std::vector<panzer::BC>& bcs,const Teuchos::ParameterList& p)
+panzer::buildBCs(std::vector<panzer::BC>& bcs,const Teuchos::ParameterList& p, const Teuchos::RCP<panzer::GlobalData> global_data)
 {
   using Teuchos::ParameterList;
   
@@ -64,7 +64,7 @@ panzer::buildBCs(std::vector<panzer::BC>& bcs,const Teuchos::ParameterList& p)
 				"Error - All objects in the boundary condition sublist must be BC sublists!" );
     ParameterList& sublist = bc_pl->second.getValue(&sublist);
     
-    panzer::BC bc(bc_index,sublist);
+    panzer::BC bc(bc_index,sublist,global_data);
     bcs.push_back(bc);
   }
   
@@ -113,6 +113,31 @@ panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
   *params = p;
+
+  this->validateParameters(*params);
+
+  m_bc_id = bc_id;
+  std::string type = params->get<std::string>("Type");
+  if (type == "Dirichlet")
+    m_bc_type = BCT_Dirichlet;
+  else if (type == "Neumann")
+    m_bc_type = BCT_Neumann;
+
+  m_sideset_id = params->get<std::string>("Sideset ID");
+  m_element_block_id = params->get<std::string>("Element Block ID");
+  m_equation_set_name = params->get<std::string>("Equation Set Name");
+  m_strategy = params->get<std::string>("Strategy");
+  m_params = Teuchos::sublist(params,"Data");
+}
+
+//=======================================================================
+//=======================================================================
+panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p, const Teuchos::RCP<panzer::GlobalData> gd)
+{
+  Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
+  *params = p;
+
+  m_gd = gd;
 
   this->validateParameters(*params);
 
@@ -182,6 +207,13 @@ std::string panzer::BC::strategy() const
 Teuchos::RCP<const Teuchos::ParameterList> panzer::BC::params() const
 {
   return m_params;
+}
+
+//=======================================================================
+//=======================================================================
+Teuchos::RCP<panzer::GlobalData> panzer::BC::global_data() const
+{
+  return m_gd;
 }
 
 //=======================================================================

@@ -108,6 +108,19 @@ private:
 };
 
 //----------------------------------------------------------------------
+inline
+PairIterEntityComm shared_comm_info_range(const EntityCommInfoVector& comm_info_vector) {
+    EntityCommInfoVector::const_iterator i = comm_info_vector.begin();
+    EntityCommInfoVector::const_iterator e = comm_info_vector.end();
+
+    // EntityCommInfo(1,0) is the smallest entry in the table that is not shared,
+    // and we want everything before this, i.e. the shared stuff.
+    e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
+                                                 0 ) ); // proc
+
+    // Contains everything up to the first aura comm (IE, only contains shared comms)
+    return PairIterEntityComm( i , e );
+}
 
 void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity );
 

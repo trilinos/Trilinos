@@ -32,6 +32,7 @@
 
 #include "Sacado_ScalarFlopCounterTraits.hpp"
 #include "Sacado_Base.hpp"
+#include "Sacado_SFINAE_Macros.hpp"
 #include <cmath>
 #include <algorithm>    // for std::min and std::max
 #include <ostream>      // for std::ostream
@@ -191,6 +192,12 @@ namespace Sacado {
     class ScalarFlopCounter : public Base< ScalarFlopCounter<T> > {
     public:
 
+      //! Typename of values
+      typedef typename RemoveConst<T>::type value_type;
+
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
       //! Turn ScalarFlopCounter into a meta-function class usable with mpl::apply
       template <typename U>
       struct apply {
@@ -230,7 +237,8 @@ namespace Sacado {
       ScalarFlopCounter() {}
 
       /// Construct to scalar value
-      ScalarFlopCounter(const T &v) : val_(v) {}
+      template <typename S>
+      ScalarFlopCounter(const S &v, SACADO_ENABLE_VALUE_CTOR_DECL) : val_(v) {}
 
       /// Return the current value
       const T& val() const { return val_; }

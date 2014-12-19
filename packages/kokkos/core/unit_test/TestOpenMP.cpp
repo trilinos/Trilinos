@@ -54,6 +54,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestViewSubview.hpp>
 
 #include <TestCrsArray.hpp>
 #include <TestRange.hpp>
@@ -61,10 +62,12 @@
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -101,6 +104,37 @@ TEST_F( openmp, view_impl) {
 TEST_F( openmp, view_api) {
   TestViewAPI< double , Kokkos::OpenMP >();
 }
+
+
+TEST_F( openmp, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::OpenMP >();
+}
+
+
 
 TEST_F( openmp , range_tag )
 {
@@ -232,6 +266,7 @@ TEST_F( openmp , view_remap )
 TEST_F( openmp , view_aggregate )
 {
   TestViewAggregate< Kokkos::OpenMP >();
+  TestViewAggregateReduction< Kokkos::OpenMP >();
 }
 
 //----------------------------------------------------------------------------
@@ -267,6 +302,13 @@ TEST_F( openmp , memory_space )
 
 //----------------------------------------------------------------------------
 
+TEST_F( openmp , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::OpenMP >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 TEST_F( openmp , cxx11 )
 {
@@ -288,6 +330,11 @@ TEST_F( openmp , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(10) ) );
 }
 #endif
 } // namespace test

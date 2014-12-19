@@ -1,0 +1,86 @@
+
+\chapter{Initialization}
+
+In order to use Kokkos an initialization call is required. 
+That call is responsible for aquiring hardware resources such as threads. 
+Typically this call should be placed right at the start of a program similar to 'MPI\_Init'.
+If both MPI and Kokkos are used, the Kokkos initialization should happen right after the MPI initialization, 
+so that potential process binding masks are set up.
+
+\section{Default Initialization}
+The most simple way to initialize Kokkos is calling the generic:
+
+\begin{lstlisting}
+Kokkos::initialize(int argc, char* argv[]); 
+\end{lstlisting}
+function, which interprets command line arguments to determine the requested settings.
+Using this function will initialize the default execution space
+\lstinline|Kokkos::DefaultExecutionSpace|
+ and its default host execution space 
+\lstinline|Kokkos::DefaultHostExecutionSpace|
+if applicable.
+What the default execution spaces are depends on the Kokkos configuration. 
+The current order from from low to high ranking is 
+\lstinline|Kokkos::Serial|, 
+\lstinline|Kokkos::Threads|, 
+\lstinline|Kokkos::OpenMP|, 
+\lstinline|Kokkos::Cuda| with the highest enabled one being the respective defaults.
+For example: if  \lstinline|Kokkos::Cuda|, \lstinline|Kokkos::Threads|, and 
+\lstinline|Kokkos::Serial| are enabled, than \lstinline|Kokkos::Cuda| is the
+default execution space and \lstinline|Kokkos::Threads| is the default host execution space.
+
+Command line arguments come in a 'prefixed' and 'non-prefixed' version. 
+The former will be removed from the list of arguments while the latter are not.
+Argument options are given with a '=' sign.
+If the same argument occures more than once, the last one counts. 
+Furthermore, prefixed versions of the command line arguments take precedence over the non-prefixed ones.
+For example \lstinline|--kokkos-threads=4 --threads=2| results in number of threads to be set to 4,
+ while \newline\lstinline|--kokkos-threads=4 --threads=2 --kokkos-threads=3| results in threads being set to 3.
+A full list of command line options is given in table \ref{TBL:CommandLineOptions}.
+
+\begin{table}
+\caption{Table of command line options for \lstinline|Kokkos::initialize|}
+\label{TBL:CommandLineOptions}
+\begin{small}
+\begin{tabular}[t]{lp{0.5\textwidth}}
+\hline
+Argument & Description \\\hline
+\lstinline|--kokkos-help| & print this message \\
+\lstinline|--kokkos-threads=INT| & 
+specify total number of threads or number of threads per NUMA region if used in conjunction with '--numa' option. \\
+\lstinline|--kokkos-numa=INT| & specify number of NUMA regions used by process. \\
+\lstinline|--kokkos-device=INT| & specify device id to be used by Kokkos. \\
+\lstinline|--kokkos-ndevices=INT[,INT]| & used when running MPI jobs. Specify number of
+devices per node to be used. Process to device
+mapping happens by obtaining the local MPI rank
+and assigning devices round-robin. The optional
+second argument allows for an existing device
+to be ignored. This is most useful on workstations
+with multiple GPUs of which one is used to drive
+screen output.\\
+\hline
+\end{tabular}
+\end{small}
+\end{table}
+
+Instead of giving \lstinline|Kokkos::initialize()| command line arguments, one can directly provide the necessary parameters for intialization.
+Used that way the call accepts one to three integer arguments. The meaning of those arguments depends on the default execution space. 
+If the default execution space is a host space the first argument is the number of threads per numa region and the second (optional) argument is the number of numa regions to be used by this process.
+When \lstinline|Kokkos::Cuda| is the default execution space, the last given argument is the device id to be used by this process. 
+
+At the end of each program Kokkos needs to be shut down in order to free resources. 
+This is achieved by calling:
+\begin{lstlisting}
+Kokkos::finalize(); 
+\end{lstlisting}
+
+\section{Execution Space Specific Initialization}
+
+Instead of calling the generic initialization, one can call initialization for each execution space on its own. 
+If the associated host execution space of an execution space is not identical to the latter, it has to be initialized first.
+For example when compiling with support for pthreads and Cuda, \lstinline|Kokkos::Threads| has to be initialized before \lstinline|Kokkos::Cuda|.
+The initialization calls take different arguments for each of the execution spaces.
+\lstinline|Kokkos::Cuda| 
+
+
+

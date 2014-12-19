@@ -147,6 +147,30 @@ string trim_copy(
 }
 
 template <typename Adapter>
+void print_boxAssign_result(
+  const char *str,
+  int dim, 
+  typename Adapter::scalar_t *lower,
+  typename Adapter::scalar_t *upper,
+  size_t nparts, 
+  typename Adapter::part_t *parts
+)
+{
+  std::cout << "boxAssign test " << str << ":  Box (";
+  for (int j = 0; j < dim; j++) std::cout << lower[j] << " ";
+  std::cout << ") x (";
+  for (int j = 0; j < dim; j++) std::cout << upper[j] << " ";
+
+  if (nparts == 0) 
+    std::cout << ") does not overlap any parts" << std::endl;
+  else {
+    std::cout << ") overlaps parts ";
+    for (size_t k = 0; k < nparts; k++) std::cout << parts[k] << " ";
+    std::cout << std::endl;
+  }
+}
+
+template <typename Adapter>
 int run_pointAssign_tests(
   Zoltan2::PartitioningProblem<Adapter> *problem,
   RCP<tMVector_t> &coords)
@@ -182,7 +206,7 @@ int run_pointAssign_tests(
           pointDrop[i] = coords->getData(i)[localID];
 
         try {
-          part = problem->pointAssign(coordDim, pointDrop);
+          part = problem->getSolution().pointAssign(coordDim, pointDrop);
         }
         CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + ": pointAssign -- OwnedPoints");
 
@@ -208,11 +232,26 @@ int run_pointAssign_tests(
       }
     }
 
+    {
+      const vector<Zoltan2::coordinateModelPartBox<zscalar_t, 
+                                                   typename Adapter::part_t> >
+            pBoxes = problem->getSolution().getPartBoxesView();
+      for (size_t i = 0; i < pBoxes.size(); i++) {
+        zscalar_t *lmin = pBoxes[i].getlmins(); 
+        zscalar_t *lmax = pBoxes[i].getlmaxs();;
+        std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId() 
+                  << " (" << lmin[0] << "," << lmin[1] << ","
+                  << (coordDim > 2 ? lmin[2] : 0) << ") x "
+                  << " (" << lmax[0] << "," << lmax[1] << ","
+                  << (coordDim > 2 ? lmax[2] : 0) << ")" << std::endl;
+      }
+    }
+
     // test the origin
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = 0.;
       try {
-        part = problem->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Origin");
       std::cout << me << " OriginPoint (" << pointDrop[0];
@@ -225,7 +264,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = -100.+i;
       try {
-        part = problem->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Negative Point");
       std::cout << me << " NegativePoint (" << pointDrop[0];
@@ -238,7 +277,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = i*5;
       try {
-        part = problem->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- i*5 Point");
       std::cout << me << " i*5-Point (" << pointDrop[0];
@@ -251,7 +290,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = 10+i*5;
       try {
-        part = problem->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- WoopWoop");
       std::cout << me << " WoopWoop-Point (" << pointDrop[0];
@@ -261,6 +300,198 @@ int run_pointAssign_tests(
     }
 
     delete [] pointDrop;
+    return ierr;
+}
+
+template <typename Adapter>
+int run_boxAssign_tests(
+  Zoltan2::PartitioningProblem<Adapter> *problem,
+  RCP<tMVector_t> &coords)
+{
+    int ierr = 0;
+
+    // boxAssign tests
+    int coordDim = coords->getNumVectors();
+    zscalar_t *lower = new zscalar_t[coordDim];
+    zscalar_t *upper = new zscalar_t[coordDim];
+
+    char mechar[10];
+    sprintf(mechar, "%d", problem->getComm()->getRank());
+    string me(mechar);
+
+    const vector<Zoltan2::coordinateModelPartBox<zscalar_t, 
+                                                 typename Adapter::part_t> >
+          pBoxes = problem->getSolution().getPartBoxesView();
+    size_t nBoxes = pBoxes.size();
+
+    // test a box that is smaller than a part
+    {
+      size_t nparts;
+      typename Adapter::part_t *parts;
+      size_t pickabox = nBoxes / 2;
+      for (int i = 0; i < coordDim; i++) {
+        zscalar_t dd = 0.2 * (pBoxes[pickabox].getlmaxs()[i] - 
+                              pBoxes[pickabox].getlmins()[i]);
+        lower[i] = pBoxes[pickabox].getlmins()[i] + dd;
+        upper[i] = pBoxes[pickabox].getlmaxs()[i] - dd;
+      }
+      try {
+        problem->getSolution().boxAssign(coordDim, lower, upper,
+                                         nparts, &parts);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- smaller");
+      if (nparts > 1) {
+        std::cout << me << " FAIL boxAssign error: smaller test, nparts > 1" 
+                  << std::endl;
+        ierr++;
+      }
+      print_boxAssign_result<Adapter>("smallerbox", coordDim,
+                                      lower, upper, nparts, parts);
+      delete [] parts;
+    }
+
+    // test a box that is larger than a part
+    {
+      size_t nparts;
+      typename Adapter::part_t *parts;
+      size_t pickabox = nBoxes / 2;
+      for (int i = 0; i < coordDim; i++) {
+        zscalar_t dd = 0.2 * (pBoxes[pickabox].getlmaxs()[i] - 
+                              pBoxes[pickabox].getlmins()[i]);
+        lower[i] = pBoxes[pickabox].getlmins()[i] - dd;
+        upper[i] = pBoxes[pickabox].getlmaxs()[i] + dd;
+      }
+      try {
+        problem->getSolution().boxAssign(coordDim, lower, upper,
+                                         nparts, &parts);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- larger");
+
+      // larger box should have at least two parts in it for k > 1.
+      if ((nBoxes > 1) && (nparts < 2)) {
+        std::cout << me << " FAIL boxAssign error: "
+                  << "larger test, nparts < 2" 
+                  << std::endl;
+        ierr++;
+      }
+
+      // parts should include pickabox's part
+      bool found_pickabox = 0;
+      for (size_t i = 0; i < nparts; i++)
+        if (parts[i] == pBoxes[pickabox].getpId()) {
+           found_pickabox = 1;
+           break;
+        }
+      if (!found_pickabox) {
+        std::cout << me << " FAIL boxAssign error: "
+                  << "larger test, pickabox not found" 
+                  << std::endl;
+        ierr++;
+      }
+
+      print_boxAssign_result<Adapter>("largerbox", coordDim,
+                                      lower, upper, nparts, parts);
+      delete [] parts;
+    }
+     
+    // test a box that includes all parts
+    {
+      size_t nparts;
+      typename Adapter::part_t *parts;
+      for (int i = 0; i < coordDim; i++) {
+        lower[i] = std::numeric_limits<zscalar_t>::max();
+        upper[i] = std::numeric_limits<zscalar_t>::min();
+      }
+      for (size_t j = 0; j < nBoxes; j++) {
+        for (int i = 0; i < coordDim; i++) {
+          if (pBoxes[j].getlmins()[i] <= lower[i]) 
+            lower[i] = pBoxes[j].getlmins()[i];
+          if (pBoxes[j].getlmaxs()[i] >= upper[i]) 
+            upper[i] = pBoxes[j].getlmaxs()[i];
+        }
+      }
+      try {
+        problem->getSolution().boxAssign(coordDim, lower, upper,
+                                         nparts, &parts);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- global");
+
+      // global box should have all parts
+      if (nparts != nBoxes) {
+        std::cout << me << " FAIL boxAssign error: "
+                  << "global test, nparts found " << nparts 
+                  << " != num global parts " << nBoxes
+                  << std::endl;
+        ierr++;
+      }
+      print_boxAssign_result<Adapter>("globalbox", coordDim,
+                                      lower, upper, nparts, parts);
+      delete [] parts;
+    }
+
+    // test a box that is bigger than the entire domain
+    // Assuming lower and upper are still set to the global box boundary
+    // from the previous test
+    {
+      size_t nparts;
+      typename Adapter::part_t *parts;
+      for (int i = 0; i < coordDim; i++) {
+        lower[i] -= 2.;
+        upper[i] += 2.;
+      }
+      
+      try {
+        problem->getSolution().boxAssign(coordDim, lower, upper,
+                                         nparts, &parts);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- bigdomain");
+
+      // bigdomain box should have all parts
+      if (nparts != nBoxes) {
+        std::cout << me << " FAIL boxAssign error: "
+                  << "bigdomain test, nparts found " << nparts 
+                  << " != num global parts " << nBoxes
+                  << std::endl;
+        ierr++;
+      }
+      print_boxAssign_result<Adapter>("bigdomainbox", coordDim,
+                                      lower, upper, nparts, parts);
+      delete [] parts;
+    }
+
+    // test a box that is way out there
+    // Assuming lower and upper are still set to at least the global box 
+    // boundary from the previous test
+    {
+      size_t nparts;
+      typename Adapter::part_t *parts;
+      for (int i = 0; i < coordDim; i++) {
+        lower[i] = upper[i] + 10;
+        upper[i] += 20;
+      }
+
+      try {
+        problem->getSolution().boxAssign(coordDim, lower, upper,
+                                         nparts, &parts);
+      }
+      CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- out there");
+
+      // For now, boxAssign returns zero if there is no box overlap.
+      // TODO:  this result should be changed in boxAssign definition
+      if (nparts != 0) {
+        std::cout << me << " FAIL boxAssign error: "
+                  << "outthere test, nparts found " << nparts 
+                  << " != zero"
+                  << std::endl;
+        ierr++;
+      }
+      print_boxAssign_result<Adapter>("outthere box", coordDim,
+                                      lower, upper, nparts, parts);
+      delete [] parts;
+    }
+
+    delete [] lower;
+    delete [] upper;
     return ierr;
 }
 
@@ -457,8 +688,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     problem->printTimers();
 
     // run pointAssign tests
-    if (test_boxes)
+    if (test_boxes) {
       ierr = run_pointAssign_tests<inputAdapter_t>(problem, tmVector);
+      ierr += run_boxAssign_tests<inputAdapter_t>(problem, tmVector);
+    }
 
     if(numWeightsPerCoord){
         for(int i = 0; i < numWeightsPerCoord; ++i)
@@ -571,8 +804,10 @@ int testFromDataFile(
     problem->printTimers();
 
     // run pointAssign tests
-    if (test_boxes)
+    if (test_boxes) {
       ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords);
+      ierr += run_boxAssign_tests<inputAdapter_t>(problem, coords);
+    }
 
     delete problem;
     return ierr;
@@ -744,8 +979,10 @@ int testFromSeparateDataFiles(
     problem->printTimers();
 
     // run pointAssign tests
-    if (test_boxes)
+    if (test_boxes) {
       ierr = run_pointAssign_tests<inputAdapter_t>(problem, coords);
+      ierr += run_boxAssign_tests<inputAdapter_t>(problem, coords);
+    }
 
     delete problem;
     return ierr;

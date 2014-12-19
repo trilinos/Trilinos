@@ -272,7 +272,7 @@ namespace ROL {
         return des;
       }
     }
-    return DESCENT_STEEPEST;
+    return DESCENT_SECANT;
   }
   
   /** \enum   ROL::ESecant
@@ -509,6 +509,7 @@ namespace ROL {
       \arg    GOLDENSECTION   describe
       \arg    CUBICINTERP     describe
       \arg    BRENTS          describe
+      \arg    USERDEFINED     describe
    */
   enum ELineSearch{
     LINESEARCH_ITERATIONSCALING = 0,
@@ -517,6 +518,7 @@ namespace ROL {
     LINESEARCH_GOLDENSECTION,
     LINESEARCH_CUBICINTERP,
     LINESEARCH_BRENTS,
+    LINESEARCH_USERDEFINED,
     LINESEARCH_LAST
   };
 
@@ -529,6 +531,7 @@ namespace ROL {
       case LINESEARCH_GOLDENSECTION:    retString = "Golden Section";      break;
       case LINESEARCH_CUBICINTERP:      retString = "Cubic Interpolation"; break;
       case LINESEARCH_BRENTS:           retString = "Brents";              break;
+      case LINESEARCH_USERDEFINED:      retString = "User Defined";        break;
       case LINESEARCH_LAST:             retString = "Last Type (Dummy)";   break;
       default:                          retString = "INVALID ELineSearch";
     }
@@ -546,7 +549,8 @@ namespace ROL {
             (ls == LINESEARCH_BISECTION)        ||
             (ls == LINESEARCH_GOLDENSECTION)    ||
             (ls == LINESEARCH_CUBICINTERP)      ||
-            (ls == LINESEARCH_BRENTS)
+            (ls == LINESEARCH_BRENTS)           ||
+            (ls == LINESEARCH_USERDEFINED)
           );
   }
 
@@ -1145,7 +1149,26 @@ namespace ROL {
  */
 
 /** @defgroup examples_group Examples
- *  \brief ROL's examples.
+ *  \brief ROL's examples
+ *  <ul>
+ *  <li><b>Unconstrained Examples</b>   
+ *  <ol>
+ *  <li>\link rol/example/rosenbrock/example_01.cpp Minimizing the Rosenbrock function\endlink</li>
+ *  <li>\link rol/example/zakharov/example_01.cpp Minimizing the Zakharov function\endlink</li>
+ *  <li>\link rol/example/sacado/example_01.hpp Using Sacado with ROL\endlink</li>
+ *  <li>\link rol/example/dual-spaces/rosenbrock-1/example_01.cpp Using Dual Spaces\endlink</li>
+ *  </ol>
+ *  <li><b>Constrained Examples</b></li>
+ *  <ol>
+ *  <li>\link rol/example/dual-spaces/simple-eq-constr-1/example_01.cpp Using Dual Spaces\endlink</li>
+ *  <li>\link rol/example/sacado/example_02.hpp Using Sacado with ROL\endlink</li>
+ *  <li>\link rol/example/poisson-control/example_01.cpp Poisson control\endlink</li>
+ *  <li>\link rol/example/poisson-inversion/example_01.cpp Poisson inversion\endlink</li>
+ *  <li>\link rol/example/burgers-control/example_01.cpp Burgers control\endlink</li>
+ *  <li>\link rol/example/gross-pitaevskii/example_01.hpp Minimizing the Gross-Pitaevskii functional \endlink</li>
+ *  <li>\link rol/example/gross-pitaevskii/example_02.hpp Gross-Pitaevskii functional with \f$H^1\f$ gradient \endlink</li>
+ *  </ol>
+ *  </ul> 
 */  
 
 #endif

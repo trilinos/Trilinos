@@ -43,6 +43,8 @@
 #ifndef __Panzer_DOFManagerFactory_decl_hpp__
 #define __Panzer_DOFManagerFactory_decl_hpp__
 
+#include "Panzer_config.hpp"
+
 #include "Panzer_UniqueGlobalIndexerFactory.hpp"
 
 namespace panzer {
@@ -74,7 +76,13 @@ public:
    { useDOFManagerFEI_ = flag; }
 
    bool getUseDOFManagerFEI() const
-   { return useDOFManagerFEI_; }
+   { 
+     #ifdef PANZER_HAVE_FEI
+     return useDOFManagerFEI_; 
+     #else
+     return false;
+     #endif
+   }
 
    void setUseTieBreak(bool flag) 
    { useTieBreak_ = flag; }

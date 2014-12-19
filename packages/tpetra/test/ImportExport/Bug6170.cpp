@@ -44,20 +44,6 @@
 // Ensure that if CUDA and KokkosCompat are both enabled,
 // then Tpetra only compiles the .cu version of this file.
 #include <Tpetra_config.h>
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#  include <KokkosCore_config.h>
-#  ifdef KOKKOS_USE_CUDA_BUILD
-#    define DO_COMPILATION
-#  else
-#    ifndef KOKKOS_HAVE_CUDA
-#      define DO_COMPILATION
-#    endif // KOKKOS_HAVE_CUDA
-#  endif // KOKKOS_USE_CUDA_BUILD
-#else
-#  define DO_COMPILATION
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-
-#ifdef DO_COMPILATION
 
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
@@ -280,4 +266,3 @@ int main (int argc, char *argv[])
   return EXIT_SUCCESS;
 }
 
-#endif // DO_COMPILATION

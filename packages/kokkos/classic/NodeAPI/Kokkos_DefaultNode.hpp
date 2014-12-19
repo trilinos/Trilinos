@@ -123,7 +123,6 @@ namespace Details {
 #elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 #  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
-#    pragma message "Kokkos default Node type: Kokkos::Compat::CudaWrapperNode"
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)

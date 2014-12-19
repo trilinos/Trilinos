@@ -128,7 +128,7 @@ void IOShell::Interface::enroll_options()
 		  NULL);
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
-		  "Use the lineary method to decompose the input mesh in a parallel run. "
+		  "Use the linear method to decompose the input mesh in a parallel run. "
 		  "elements in order first n/p to proc 0, next to proc 1.",
 		  NULL);
 

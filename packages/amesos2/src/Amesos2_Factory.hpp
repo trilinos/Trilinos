@@ -92,7 +92,10 @@
 #include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_ctassert.hpp"
 
-#if defined(HAVE_AMESOS2_KLU2) & !(defined HAVE_TPETRA_INST_COMPLEX_FLOAT)
+#ifdef HAVE_AMESOS2_BASKER
+#include "Amesos2_Basker.hpp"
+#endif
+#if defined(HAVE_AMESOS2_KLU2)
 #include "Amesos2_KLU2.hpp"
 #endif
 #ifdef HAVE_AMESOS2_SUPERLUDIST // Distributed-memory SuperLU
@@ -504,18 +507,22 @@ struct throw_no_scalar_support_exception {
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
     //
     // We use compiler guards in case a user does want to disable KLU2
+#ifdef HAVE_AMESOS2_BASKER
+    if((solverName == "Basker") || (solverName == "basker"))
+      {
+	
+	return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
+      }
+#endif
+
+
+
 #ifdef HAVE_AMESOS2_KLU2 
 
 if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
    (solverName == "amesos2_klu")  || (solverName == "klu")){
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    std::string err_msg = solver_name + " is not is not supported with complex<float>";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
-    return( Teuchos::null );
-#else
       return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
     }
-#endif
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLUDIST

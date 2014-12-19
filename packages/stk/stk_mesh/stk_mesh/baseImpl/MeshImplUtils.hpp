@@ -58,12 +58,13 @@ void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsi
 
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes);
 
+bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm);
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
 void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
 bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes);
+        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes);
 
 void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               const std::vector<EntityProc> & local_change ,
@@ -73,7 +74,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 void internal_get_processor_dependencies_shared_or_ghosted(
           const BulkData &mesh,
           const EntityProc                  shared_or_ghosted_entry ,
-          stk::mesh::NodeToDependentProcessorsMap & owned_node_sharing_map);
+          stk::mesh::EntityToDependentProcessorsMap & owned_node_sharing_map);
 
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,

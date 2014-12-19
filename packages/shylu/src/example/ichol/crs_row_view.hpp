@@ -16,10 +16,10 @@ namespace Example {
   template<typename CrsMatBaseType>
   class CrsRowView : public Disp {
   public:
-    typedef typename CrsMatBaseType::ordinal_type       ordinal_type;
-    typedef typename CrsMatBaseType::value_type         value_type;
-    typedef typename CrsMatBaseType::ordinal_type_array ordinal_type_array;
-    typedef typename CrsMatBaseType::value_type_array   value_type_array;
+    typedef typename CrsMatBaseType::ordinal_type            ordinal_type;
+    typedef typename CrsMatBaseType::value_type              value_type;
+    typedef typename CrsMatBaseType::ordinal_type_array_view ordinal_type_array_view;
+    typedef typename CrsMatBaseType::value_type_array_view   value_type_array_view;
     
   private:
     ordinal_type _offn;    // offset in columns
@@ -27,8 +27,8 @@ namespace Example {
     ordinal_type _nnz;     // # of nonzeros in row
 
     // this assumes a contiguous memory buffer
-    ordinal_type_array _aj;      // column index compressed format in row
-    value_type_array   _ax;      // values 
+    ordinal_type_array_view _aj;      // column index compressed format in row
+    value_type_array_view   _ax;      // values 
 
   public:
     KOKKOS_INLINE_FUNCTION
@@ -73,11 +73,11 @@ namespace Example {
         _ax() 
     { }
 
-    CrsRowView(const ordinal_type       offn,
-               const ordinal_type       n,
-               const ordinal_type       nnz,
-               const ordinal_type_array aj,
-               const value_type_array   ax) 
+    CrsRowView(const ordinal_type            offn,
+               const ordinal_type            n,
+               const ordinal_type            nnz,
+               const ordinal_type_array_view aj,
+               const value_type_array_view   ax) 
       : _offn(offn),
         _n(n),
         _nnz(nnz),
@@ -86,11 +86,14 @@ namespace Example {
     { }
 
     ostream& showMe(ostream &os) const {                                                
-      const int w = 6;
-      os << " offset = " << setw(w) << _offn << endl; 
+      os << "  offset = " << _offn
+         << ", nnz = " << _nnz 
+         << endl; 
       for (ordinal_type j=0;j<_nnz;++j) {
-        os << setw(w) << Col(j) << "  "
-           << _ax[j] << endl;
+        const value_type val = _ax[j];
+        os << "(" << Col(j) << ", "
+           << val << ")"
+           << endl;
       }                                                                                                   
       return os;
     }

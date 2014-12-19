@@ -162,22 +162,13 @@ public:
   static Threads & instance( int = 0 );
 
   //----------------------------------------
-  /** \brief  Maximum size of a single thread team.
-   *
-   *  If a parallel_{for,reduce,scan} operation requests a team_size that
-   *  does not satisfy the condition: 0 == team_max() % team_size
-   *  then some threads will idle.
-   */
 
-   static int thread_pool_size( int depth = 0 );
+  static int thread_pool_size( int depth = 0 );
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-   static int thread_pool_rank();
+  static int thread_pool_rank();
 #else
   KOKKOS_INLINE_FUNCTION static int thread_pool_rank() { return 0 ; }
 #endif
-
-  inline static unsigned team_recommended() { return thread_pool_size(2); }
-  inline static unsigned team_max()         { return thread_pool_size(1); }
 
   inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
   KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }

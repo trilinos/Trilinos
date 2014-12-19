@@ -54,87 +54,61 @@
 // Forward declarations
 namespace Sacado {
   namespace ELRCacheFad {
-    template <typename T,unsigned,unsigned> class ViewFad;
+    template <typename T,unsigned,unsigned,typename> class ViewFad;
   }
 }
 
 namespace Sacado {
 
   //! Specialization of %Promote to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct Promote< ELRCacheFad::ViewFad<ValueT,Size,Stride>,
-                  ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
-    typedef ELRCacheFad::ViewFad<ValueT,Size,Stride> type;
-  };
-
-  //! Specialization of %Promote to ViewFad types
-  template <typename ValueT, typename R, unsigned Size, unsigned Stride>
-  struct Promote< ELRCacheFad::ViewFad<ValueT,Size,Stride>, R > {
-    typedef typename ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ELRCacheFad::ViewFad<value_type,Size,Stride> type;
-  };
-
-  //! Specialization of %Promote to ViewFad types
-  template <typename L, typename ValueT, unsigned Size, unsigned Stride>
-  struct Promote< L, ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef ELRCacheFad::ViewFad<value_type,Size,Stride> type;
-  };
+  SACADO_VFAD_PROMOTE_SPEC( ELRCacheFad )
 
   //! Specialization of %ScalarType to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct ScalarType< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
-    typedef typename ELRCacheFad::ViewFad<ValueT,Size,Stride>::ScalarT type;
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ScalarType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef typename ELRCacheFad::ViewFad<ValueT,Size,Stride,Base>::ScalarT type;
   };
 
   //! Specialization of %ValueType to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
     typedef ValueT type;
   };
 
   //! Specialization of %IsADType to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct IsADType< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct IsADType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct IsScalarType< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct IsScalarType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct Value< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
-    typedef typename ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride> >::type value_type;
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct Value< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef typename ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> >::type value_type;
     KOKKOS_INLINE_FUNCTION
-    static const value_type& eval(const ELRCacheFad::ViewFad<ValueT,Size,Stride>& x) {
+    static const value_type& eval(const ELRCacheFad::ViewFad<ValueT,Size,Stride,Base>& x) {
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct ScalarValue< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
-    typedef typename ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride> >::type value_type;
-    typedef typename ScalarType< ELRCacheFad::ViewFad<ValueT,Size,Stride> >::type scalar_type;
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ScalarValue< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef typename ValueType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> >::type value_type;
+    typedef typename ScalarType< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> >::type scalar_type;
     KOKKOS_INLINE_FUNCTION
-    static const scalar_type& eval(const ELRCacheFad::ViewFad<ValueT,Size,Stride>& x) {
+    static const scalar_type& eval(const ELRCacheFad::ViewFad<ValueT,Size,Stride,Base>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct StringName< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct StringName< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
     KOKKOS_INLINE_FUNCTION
     static std::string eval() {
       return std::string("Sacado::ELRCacheFad::ViewFad< ") +
@@ -142,18 +116,18 @@ namespace Sacado {
   };
 
   //! Specialization of %IsEqual to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct IsEqual< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct IsEqual< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
     KOKKOS_INLINE_FUNCTION
-    static bool eval(const ELRCacheFad::ViewFad<ValueT,Size,Stride>& x,
-                     const ELRCacheFad::ViewFad<ValueT,Size,Stride>& y) {
+    static bool eval(const ELRCacheFad::ViewFad<ValueT,Size,Stride,Base>& x,
+                     const ELRCacheFad::ViewFad<ValueT,Size,Stride,Base>& y) {
       return x.isEqualTo(y);
     }
   };
 
   //! Specialization of %IsStaticallySized to ViewFad types
-  template <typename ValueT, unsigned Size, unsigned Stride>
-  struct IsStaticallySized< ELRCacheFad::ViewFad<ValueT,Size,Stride> > {
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct IsStaticallySized< ELRCacheFad::ViewFad<ValueT,Size,Stride,Base> > {
     static const bool value = false;
   };
 

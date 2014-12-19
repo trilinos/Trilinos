@@ -1,0 +1,24 @@
+# Ignore generated files
+/TriBITS.README.DIRECTORY_CONTENTS.rst
+/TriBITS.README.DIRECTORY_CONTENTS.rst.tmp
+/TribitsCommonTPLsList.txt
+/TribitsCommonTPLsList.txt.tmp
+/TribitsDevelopersGuide.html
+/TribitsDevelopersGuide.pdf
+/TribitsGitVersion.txt
+/TribitsGitVersion.txt.tmp
+/TribitsHelloWorldDirAndFiles.txt
+/TribitsHelloWorldDirAndFiles.txt.tmp
+/TribitsMacroFunctionDoc.rst
+/TribitsMacroFunctionDoc.rst.tmp
+/TribitsStandardTPLsList.txt
+/TribitsStandardTPLsList.txt.tmp
+/UtilsMacroFunctionDoc.rst
+/UtilsMacroFunctionDoc.rst.tmp
+/checkin-test-help.txt
+/checkin-test-help.txt.tmp
+/gitdist-help.txt
+/gitdist-help.txt.tmp
+/snapshot-dir-help.txt
+/snapshot-dir-help.txt.tmp
+

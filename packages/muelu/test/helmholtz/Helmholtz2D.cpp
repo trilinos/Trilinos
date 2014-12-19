@@ -163,29 +163,29 @@ int main(int argc, char *argv[]) {
     SLSolver -> initialize();
 
     // vector of frequencies
-    std::vector<double> omegas; omegas.resize(3);
-    omegas[0]=omega;
-    omegas[1]=omega+10;
-    omegas[2]=omega+20;
+    std::vector<double> omegas;
+    omegas.push_back(omega);
+    omegas.push_back(omega+10);
+    omegas.push_back(omega+20);
     int total_iters = 0;
 
     // loop over frequencies
     for(size_t i=0; i<omegas.size(); i++) {
 
       Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
-								h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omegas[i], 0.0, mx, my, mz, model);
+                                                                h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omegas[i], 0.0, mx, my, mz, model);
       Galeri::Xpetra::Parameters<GO> matrixParameters_shifted(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
-							      h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omegas[i], shift, mx, my, mz, model);
+                                                              h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omegas[i], shift, mx, my, mz, model);
 
       Teuchos::ParameterList matrixParams_helmholtz = matrixParameters_helmholtz.GetParameterList();
       Teuchos::ParameterList matrixParams_shifted   = matrixParameters_shifted.GetParameterList();
 
       RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
-	Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
+        Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
       RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
       
       RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
-	Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shifted.GetMatrixType(), map, matrixParams_shifted);
+        Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shifted.GetMatrixType(), map, matrixParams_shifted);
       RCP<Matrix> Pmat = Pr_shifted->BuildMatrix();
 
       // set Helmholtz operator (Amat), Shifted Laplacian operator (Pmat),
@@ -197,10 +197,10 @@ int main(int argc, char *argv[]) {
       std::vector<SC> shifts;
       int maxLevels=5;
       for(int j=0; j<maxLevels; j++) {
-	double alpha=1.0;
-	double beta=shift+((double) j)*0.2;
-	SC curshift(alpha,beta);
-	shifts.push_back(-curshift);
+        double alpha=1.0;
+        double beta=shift+((double) j)*0.2;
+        SC curshift(alpha,beta);
+        shifts.push_back(-curshift);
       }
       SLSolver -> setLevelShifts(shifts);
       // setup hierarchy with variable complex shifts
@@ -213,12 +213,16 @@ int main(int argc, char *argv[]) {
       B->putScalar((SC) 0.0);
       int pointsourceid=nx*ny/2+nx/2;
       if(map->isNodeGlobalElement(pointsourceid)==true) {
-	B->replaceGlobalValue(pointsourceid, 0, (SC) 1.0);
+        B->replaceGlobalValue(pointsourceid, 0, (SC) 1.0);
       }
       SLSolver -> solve(B,X);
       
       // sum up number of iterations
       total_iters += SLSolver->GetIterations();
+
+#     ifdef HAVE_MUELU_DEBUG
+      SLSolver->Manager_->ResetDebugData();
+#     endif
       
     }
 

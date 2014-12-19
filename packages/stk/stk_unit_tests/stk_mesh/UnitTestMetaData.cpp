@@ -59,6 +59,7 @@ namespace stk { namespace mesh { class Part; } }
 
 
 using stk::mesh::MetaData;
+using stk::mesh::BulkData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::EntityRank;
@@ -217,6 +218,21 @@ TEST( UnitTestMetaData, declare_attribute_no_delete )
   Part &pa = metadata.declare_part( std::string("a") , stk::topology::NODE_RANK );
   metadata.declare_attribute_no_delete( pa, singleton);
   metadata.commit();
+}
+
+TEST( UnitTestMetaData, set_mesh_bulk_data )
+{
+  const int spatial_dimension = 3;
+  MetaData meta(spatial_dimension);
+  BulkData* bulk1 = new BulkData(meta, MPI_COMM_WORLD);
+  ASSERT_THROW(BulkData bulk2(meta, MPI_COMM_WORLD), std::logic_error);
+
+  //But if we first clear the original BulkData, we should be able to
+  //add another one with the same MetaData.
+  delete bulk1;
+  BulkData bulk2(meta, MPI_COMM_WORLD);
+  meta.set_mesh_bulk_data(&bulk2);
+  ASSERT_TRUE(&meta.mesh_bulk_data() == &bulk2);
 }
 
 }

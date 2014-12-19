@@ -63,6 +63,12 @@ template <class Real>
 class CompositeStepSQP : public Step<Real> {
 private:
 
+  // Vectors used for cloning.
+  Teuchos::RCP<Vector<Real> > xvec_;
+  Teuchos::RCP<Vector<Real> > gvec_;
+  Teuchos::RCP<Vector<Real> > cvec_;
+  Teuchos::RCP<Vector<Real> > lvec_;
+
   // Diagnostic return flags for subalgorithms. 
   int flagCG_;
   int flagAC_;
@@ -136,17 +142,18 @@ public:
     flagAC_ = 0;
     iterCG_ = 0;
 
-    maxiterCG_ = 20;
-    tolCG_ = 1e-2;
-
     Real nominal_tol = parlist.get("Nominal SQP Optimality Solver Tolerance", 1e-3);
+ 
+    maxiterCG_  = parlist.get("Maximum Number of Krylov Iterations",20);
+    tolCG_      = parlist.get("Absolute Krylov Tolerance",1e-2);
+
     lmhtol_  = nominal_tol;
     qntol_   = nominal_tol;
-    pgtol_   = nominal_tol;       
-    projtol_ = nominal_tol;     
+    pgtol_   = nominal_tol;
+    projtol_ = nominal_tol;
     tangtol_ = nominal_tol;
     tntmax_  = 2.0;
-    
+
     zeta_    = 0.8;
     Delta_   = 1e2;
     penalty_ = 1.0;
@@ -178,10 +185,18 @@ public:
 
   /** \brief Initialize step.
   */
-  void initialize( Vector<Real> &x, Vector<Real> &l,
-                   Objective<Real> &obj, EqualityConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
+                   Objective<Real> &obj, EqualityConstraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+
+    xvec_ = x.clone();
+    gvec_ = g.clone();
+    lvec_ = l.clone();
+    cvec_ = c.clone();
+
+    Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > gl  = gvec_->clone();
 
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -190,23 +205,19 @@ public:
     Real zerotol = 0.0;
 
     // Update objective and constraint.
-    obj.update(x,true,algo_state.iter);    
-    algo_state.value = obj.value(x, zerotol); 
+    obj.update(x,true,algo_state.iter);
+    algo_state.value = obj.value(x, zerotol);
     algo_state.nfval++;
     con.update(x,true,algo_state.iter);
-    Teuchos::RCP<Vector<Real> > c = l.clone();
-    con.value(*c, x, zerotol);    
-    algo_state.cnorm = c->norm(); 
+    con.value(*cvec_, x, zerotol);
+    algo_state.cnorm = cvec_->norm();
     algo_state.ncval++;
-    Teuchos::RCP<Vector<Real> > g = x.clone();
-    obj.gradient(*g, x, zerotol);
+    obj.gradient(*gvec_, x, zerotol);
 
     // Compute gradient of Lagrangian at new multiplier guess.
-    computeLagrangeMultiplier(l, x, *g, con);
-    Teuchos::RCP<Vector<Real> > ajl = x.clone();
+    computeLagrangeMultiplier(l, x, *gvec_, con);
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
-    Teuchos::RCP<Vector<Real> > gl = x.clone();
-    gl->set(*g); gl->plus(*ajl);
+    gl->set(*gvec_); gl->plus(*ajl);
     algo_state.ngrad++;
     algo_state.gnorm = gl->norm();
   }
@@ -214,25 +225,25 @@ public:
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
-                Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                Objective<Real> &obj, EqualityConstraint<Real> &con,
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Real zerotol = 0.0;
     Real f = 0.0;
-    Teuchos::RCP<Vector<Real> > n   = s.clone();
-    Teuchos::RCP<Vector<Real> > c   = l.clone();
-    Teuchos::RCP<Vector<Real> > t   = s.clone();
-    Teuchos::RCP<Vector<Real> > tCP = s.clone();
-    Teuchos::RCP<Vector<Real> > g   = x.clone();
-    Teuchos::RCP<Vector<Real> > gf  = x.clone();
-    Teuchos::RCP<Vector<Real> > Wg  = x.clone();
-    Teuchos::RCP<Vector<Real> > ajl = x.clone();
+    Teuchos::RCP<Vector<Real> > n   = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > c   = cvec_->clone();
+    Teuchos::RCP<Vector<Real> > t   = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > tCP = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > g   = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > gf  = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > Wg  = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
 
     Real f_new = 0.0;
-    Teuchos::RCP<Vector<Real> > l_new  = l.clone();
-    Teuchos::RCP<Vector<Real> > c_new  = l.clone();
-    Teuchos::RCP<Vector<Real> > g_new  = x.clone();
-    Teuchos::RCP<Vector<Real> > gf_new = x.clone();
+    Teuchos::RCP<Vector<Real> > l_new  = lvec_->clone();
+    Teuchos::RCP<Vector<Real> > c_new  = cvec_->clone();
+    Teuchos::RCP<Vector<Real> > g_new  = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > gf_new = gvec_->clone();
 
     // Evaluate objective ... should have been stored.
     f = obj.value(x, zerotol);
@@ -262,7 +273,7 @@ public:
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
-               Objective<Real> &obj, EqualityConstraint<Real> &con, 
+               Objective<Real> &obj, EqualityConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
@@ -271,10 +282,10 @@ public:
     Real zerotol = zero;
     Real ratio = zero;
 
-    Teuchos::RCP<Vector<Real> > g   = x.clone();
-    Teuchos::RCP<Vector<Real> > ajl = x.clone();
-    Teuchos::RCP<Vector<Real> > gl = x.clone();
-    Teuchos::RCP<Vector<Real> > c = l.clone();
+    Teuchos::RCP<Vector<Real> > g   = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > gl  = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > c   = cvec_->clone();
 
     // Determine if the step gives sufficient reduction in the merit function,
     // update the trust-region radius.
@@ -299,7 +310,7 @@ public:
       obj.update(x,false,algo_state.iter);
       con.update(x,false,algo_state.iter);
       flagAC_ = 0;
-    } // if (ratio >= eta) 
+    } // if (ratio >= eta)
 
     Real val = obj.value(x, zerotol);
     algo_state.nfval++;
@@ -327,12 +338,12 @@ public:
                         BoundConstraint<Real> &con,
                         AlgorithmState<Real> &algo_state ) {}
 
-  /** \brief Update step, for bound constraints; here only to satisfy the 
+  /** \brief Update step, for bound constraints; here only to satisfy the
              interface requirements, does nothing, needs refactoring.
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj,
                        BoundConstraint<Real> &con,
-                       AlgorithmState<Real> &algo_state ) {} 
+                       AlgorithmState<Real> &algo_state ) {}
 
   /** \brief Print iterate header.
   */
@@ -386,19 +397,19 @@ public:
       hist << "\n";
     }
     else {
-      hist << "  "; 
-      hist << std::setw(6)  << std::left << algo_state.iter;  
-      hist << std::setw(15) << std::left << algo_state.value; 
-      hist << std::setw(15) << std::left << algo_state.cnorm; 
-      hist << std::setw(15) << std::left << algo_state.gnorm; 
-      hist << std::setw(15) << std::left << algo_state.snorm; 
+      hist << "  ";
+      hist << std::setw(6)  << std::left << algo_state.iter;
+      hist << std::setw(15) << std::left << algo_state.value;
+      hist << std::setw(15) << std::left << algo_state.cnorm;
+      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << std::setw(15) << std::left << algo_state.snorm;
       hist << std::scientific << std::setprecision(2);
-      hist << std::setw(10) << std::left << Delta_; 
-      hist << std::setw(10) << std::left << nnorm_; 
-      hist << std::setw(10) << std::left << tnorm_; 
+      hist << std::setw(10) << std::left << Delta_;
+      hist << std::setw(10) << std::left << nnorm_;
+      hist << std::setw(10) << std::left << tnorm_;
       hist << std::scientific << std::setprecision(6);
-      hist << std::setw(8) << std::left << algo_state.nfval;              
-      hist << std::setw(8) << std::left << algo_state.ngrad;              
+      hist << std::setw(8) << std::left << algo_state.nfval;
+      hist << std::setw(8) << std::left << algo_state.ngrad;
       hist << std::setw(8) << std::left << iterCG_;
       hist << std::setw(8) << std::left << flagCG_;
       hist << std::setw(8) << std::left << flagAC_;
@@ -431,21 +442,21 @@ public:
     }
 
     /* Apply adjoint of constraint Jacobian to current multiplier. */
-    Teuchos::RCP<Vector<Real> > ajl = x.clone();
+    Teuchos::RCP<Vector<Real> > ajl = gvec_->clone();
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
 
     /* Form right-hand side of the augmented system. */
-    Teuchos::RCP<Vector<Real> > b1 = x.clone();
-    Teuchos::RCP<Vector<Real> > b2 = l.clone();
+    Teuchos::RCP<Vector<Real> > b1 = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > b2 = cvec_->clone();
     // b1 is the negative gradient of the Lagrangian
     b1->set(gf); b1->plus(*ajl); b1->scale(-1.0);
     // b2 is zero
     b2->zero();
 
     /* Declare left-hand side of augmented system. */
-    Teuchos::RCP<Vector<Real> > v1 = x.clone();
-    Teuchos::RCP<Vector<Real> > v2 = l.clone();
-    
+    Teuchos::RCP<Vector<Real> > v1 = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > v2 = lvec_->clone();
+
     /* Compute linear solver tolerance. */
     Real b1norm  = b1->norm();
     Real tol = lmhtol_*b1norm;
@@ -461,7 +472,7 @@ public:
     l.plus(*v2);
 
   }  // computeLagrangeMultiplier
- 
+
 
   /** \brief Compute quasi-normal step by minimizing the norm of
              the linearized constraint.
@@ -499,18 +510,21 @@ public:
     std::vector<Real> augiters;
 
     /* Compute Cauchy step nCP. */
-    Teuchos::RCP<Vector<Real> > nCP     = n.clone();
-    Teuchos::RCP<Vector<Real> > nCPtemp = n.clone();
-    Teuchos::RCP<Vector<Real> > nN      = n.clone();
-    Teuchos::RCP<Vector<Real> > ctemp   = c.clone();
-    con.applyAdjointJacobian(*nCP, c, x, zerotol);
+    Teuchos::RCP<Vector<Real> > nCP     = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > nCPdual = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > nN      = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > ctemp   = cvec_->clone();
+    Teuchos::RCP<Vector<Real> > dualc0  = lvec_->clone();
+    dualc0->set(c.dual());
+    con.applyAdjointJacobian(*nCPdual, *dualc0, x, zerotol);
+    nCP->set(nCPdual->dual());
     con.applyJacobian(*ctemp, *nCP, x, zerotol);
 
     Real normsquare_ctemp = ctemp->dot(*ctemp);
     if (normsquare_ctemp != zero) {
       nCP->scale( -(nCP->dot(*nCP))/normsquare_ctemp );
     }
-    
+
     /* If the  Cauchy step nCP is outside the trust region,
        return the scaled Cauchy step. */
     Real norm_nCP = nCP->norm();
@@ -533,13 +547,13 @@ public:
     Real tol = qntol_*ctemp->norm();
     // Form right-hand side.
     ctemp->scale(-one);
-    nCPtemp->set(*nCP);
-    nCPtemp->scale(-one);
+    nCPdual->set(nCP->dual());
+    nCPdual->scale(-one);
     // Declare left-hand side of augmented system.
-    Teuchos::RCP<Vector<Real> > dn = n.clone();
-    Teuchos::RCP<Vector<Real> > y  = c.clone();
+    Teuchos::RCP<Vector<Real> > dn = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > y  = lvec_->clone();
     // Solve augmented system.
-    augiters = con.solveAugmentedSystem(*dn, *y, *nCPtemp, *ctemp, x, tol);
+    augiters = con.solveAugmentedSystem(*dn, *y, *nCPdual, *ctemp, x, tol);
     totalCallLS_++;
     totalIterLS_ = totalIterLS_ + augiters.size();
     printInfoLS(augiters);
@@ -583,7 +597,7 @@ public:
 
              @param[out]      t     is the solution of the tangential subproblem; an optimization-space vector
              @param[out]      tCP   is the Cauchy point for the tangential subproblem; an optimization-space vector
-             @param[out]      Wg    is the projected gradient of the Lagrangian; a dual optimization-space vector
+             @param[out]      Wg    is the dual of the projected gradient of the Lagrangian; an optimization-space vector
              @param[in]       x     is the current iterate; an optimization-space vector
              @param[in]       g     is the gradient of the Lagrangian; a dual optimization-space vector
              @param[in]       n     is the quasi-normal step; an optimization-space vector
@@ -612,19 +626,21 @@ public:
     flagCG_ = 0;
     t.zero();
     tCP.zero();
-    Teuchos::RCP<Vector<Real> > r = g.clone();
-    Teuchos::RCP<Vector<Real> > pdesc = g.clone();
-    Teuchos::RCP<Vector<Real> > tprev = t.clone();
-    Teuchos::RCP<Vector<Real> > Wr = g.clone();
-    Teuchos::RCP<Vector<Real> > vtemp = g.clone();
-    Teuchos::RCP<Vector<Real> > ltemp = l.clone();
-    Teuchos::RCP<Vector<Real> > czero = l.clone();
+    Teuchos::RCP<Vector<Real> > r     = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > pdesc = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > tprev = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > Wr    = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > Hp    = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > xtemp = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > gtemp = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > ltemp = lvec_->clone();
+    Teuchos::RCP<Vector<Real> > czero = cvec_->clone();
     czero->zero();
     r->set(g);
-    obj.hessVec(*vtemp, n, x, zerotol);
-    r->plus(*vtemp);
-    con.applyAdjointHessian(*vtemp, l, n, x, zerotol);
-    r->plus(*vtemp);
+    obj.hessVec(*gtemp, n, x, zerotol);
+    r->plus(*gtemp);
+    con.applyAdjointHessian(*gtemp, l, n, x, zerotol);
+    r->plus(*gtemp);
     Real normg  = r->norm();
     Real normWg = zero;
     Real pHp    = zero;
@@ -635,10 +651,10 @@ public:
     Real normt  = zero;
     std::vector<Real> normWr(maxiterCG_+1, zero);
 
-    std::vector<Teuchos::RCP<Vector<Real > > >  p;   // stores search directions
-    std::vector<Teuchos::RCP<Vector<Real > > >  Hp;  // stores hessvec's applied to p's
-    std::vector<Teuchos::RCP<Vector<Real > > >  rs;  // stores residuals
-    std::vector<Teuchos::RCP<Vector<Real > > >  Wrs; // stores projected residuals
+    std::vector<Teuchos::RCP<Vector<Real > > >  p;    // stores search directions
+    std::vector<Teuchos::RCP<Vector<Real > > >  Hps;  // stores duals of hessvec's applied to p's
+    std::vector<Teuchos::RCP<Vector<Real > > >  rs;   // stores duals of residuals
+    std::vector<Teuchos::RCP<Vector<Real > > >  Wrs;  // stores duals of projected residuals
 
     Real rptol = 1e-12;
 
@@ -680,7 +696,7 @@ public:
         Wg.set(*Wr);
         normWg = Wg.norm();
         if (orthocheck) {
-          Wrs.push_back(Wr->clone());
+          Wrs.push_back(xvec_->clone());
           (Wrs[iterCG_-1])->set(*Wr);
         }
         // Check if done (small initial projected residual).
@@ -695,10 +711,12 @@ public:
           return;
         }
         // Set first residual to projected gradient.
-        r->set(Wg);
+        // change r->set(Wg);
+        r->set(Wg.dual());
         if (orthocheck) {
-          rs.push_back(r->clone());
-          (rs[0])->set(*r);
+          rs.push_back(xvec_->clone());
+          // change (rs[0])->set(*r);
+          (rs[0])->set(r->dual());
         }
       }
       else {
@@ -710,7 +728,7 @@ public:
         printInfoLS(augiters);
 
         if (orthocheck) {
-          Wrs.push_back(Wr->clone());
+          Wrs.push_back(xvec_->clone());
           (Wrs[iterCG_-1])->set(*Wr);
         }
       }
@@ -718,7 +736,7 @@ public:
       normWr[iterCG_-1] = Wr->norm();
 
       if (infoTS_) {
-        Teuchos::RCP<Vector<Real> > ct = l.clone();
+        Teuchos::RCP<Vector<Real> > ct = cvec_->clone();
         con.applyJacobian(*ct, t, x, zerotol);
         Real linc = ct->norm();
         std::stringstream hist;
@@ -780,23 +798,30 @@ public:
       }
 
       // Full orthogonalization.
-      p.push_back(Wr->clone());
+      p.push_back(xvec_->clone());
       (p[iterCG_-1])->set(*Wr);
       (p[iterCG_-1])->scale(-one);
       for (int j=1; j<iterCG_; j++) {
-        Real scal = (p[iterCG_-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
-        Teuchos::RCP<Vector<Real> > pj = (p[j-1])->clone();
+        Real scal = (p[iterCG_-1])->dot(*(Hps[j-1])) / (p[j-1])->dot(*(Hps[j-1]));
+        Teuchos::RCP<Vector<Real> > pj = xvec_->clone();
         pj->set(*p[j-1]);
         pj->scale(-scal);
         (p[iterCG_-1])->plus(*pj);
       }
 
-      Hp.push_back(x.clone());
-      obj.hessVec(*(Hp[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
-      con.applyAdjointHessian(*vtemp, l, *(p[iterCG_-1]), x, zerotol);
-      (Hp[iterCG_-1])->plus(*vtemp);
-      pHp = (p[iterCG_-1])->dot(*(Hp[iterCG_-1]));
-      rp  = (p[iterCG_-1])->dot(*r);
+      // change Hps.push_back(gvec_->clone());
+      Hps.push_back(xvec_->clone());
+      // change obj.hessVec(*(Hps[iterCG_-1]), *(p[iterCG_-1]), x, zerotol);
+      obj.hessVec(*Hp, *(p[iterCG_-1]), x, zerotol);
+      con.applyAdjointHessian(*gtemp, l, *(p[iterCG_-1]), x, zerotol);
+      // change (Hps[iterCG_-1])->plus(*gtemp);
+      Hp->plus(*gtemp);
+      // "Preconditioning" step.
+      (Hps[iterCG_-1])->set(Hp->dual());
+
+      pHp = (p[iterCG_-1])->dot(*(Hps[iterCG_-1]));
+      // change rp  = (p[iterCG_-1])->dot(*r);
+      rp  = (p[iterCG_-1])->dot(*(rs[iterCG_-1]));
 
       normp = (p[iterCG_-1])->norm();
       normr = r->norm();
@@ -813,9 +838,9 @@ public:
         Real c = t.dot(t) - delta*delta;
         // Positive root of a*theta^2 + 2*b*theta + c = 0.
         Real theta = (-b + std::sqrt(b*b - a*c)) / a;
-        vtemp->set(*(p[iterCG_-1]));
-        vtemp->scale(theta);
-        t.plus(*vtemp);
+        xtemp->set(*(p[iterCG_-1]));
+        xtemp->scale(theta);
+        t.plus(*xtemp);
         // Store as tangential Cauchy point if terminating in first iteration.
         if (iterCG_ == 1) {
           tCP.set(t);
@@ -843,9 +868,9 @@ public:
 
       // Iterate update.
       tprev->set(t);
-      vtemp->set(*(p[iterCG_-1]));
-      vtemp->scale(alpha);
-      t.plus(*vtemp);
+      xtemp->set(*(p[iterCG_-1]));
+      xtemp->scale(alpha);
+      t.plus(*xtemp);
 
       // Trust-region stopping condition.
       normt = t.norm();
@@ -859,10 +884,10 @@ public:
         Real c = tprev->dot(*tprev) - delta*delta;
         // Positive root of a*theta^2 + 2*b*theta + c = 0.
         Real theta = (-b + std::sqrt(b*b - a*c)) / a;
-        vtemp->set(*(p[iterCG_-1]));
-        vtemp->scale(theta);
+        xtemp->set(*(p[iterCG_-1]));
+        xtemp->scale(theta);
         t.set(*tprev);
-        t.plus(*vtemp);
+        t.plus(*xtemp);
         // Store as tangential Cauchy point if terminating in first iteration.
         if (iterCG_ == 1) {
           tCP.set(t);
@@ -877,12 +902,15 @@ public:
       }
 
       // Residual update.
-      vtemp->set(*(Hp[iterCG_-1]));
-      vtemp->scale(alpha);
-      r->plus(*vtemp);
+      xtemp->set(*(Hps[iterCG_-1]));
+      xtemp->scale(alpha);
+      // change r->plus(*gtemp);
+      r->plus(xtemp->dual());
       if (orthocheck) {
-        rs.push_back(r->clone());
-        (rs[iterCG_])->set(*r);
+        // change rs.push_back(gvec_->clone());
+        rs.push_back(xvec_->clone());
+        // change (rs[iterCG_])->set(*r);
+        (rs[iterCG_])->set(r->dual());
       }
 
       iterCG_++;
@@ -898,7 +926,7 @@ public:
 
   } // solveTangentialSubproblem
 
-  
+
   /** \brief Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
   */
   void accept(Vector<Real> &s, Vector<Real> &n, Vector<Real> &t, Real f_new, Vector<Real> &c_new,
@@ -914,9 +942,9 @@ public:
                                            // false - if subsolver tolerances are adjusted in this routine, discard adjusted values
     Real tol_fdiff    = 1e-12;             // relative objective function difference for ared computation
     int ct_max        = 10;                // maximum number of globalization tries
-    int mintol        = 1e-16;             // smallest projection tolerance value
+    Real mintol       = 1e-16;             // smallest projection tolerance value
 
-    // Determines max value of |rpred|/pred. 
+    // Determines max value of |rpred|/pred.
     Real rpred_over_pred = 0.5*(1-eta_);
 
     if (infoAC_) {
@@ -946,20 +974,21 @@ public:
     bool try_tCP = false;
     Real fdiff = zero;
 
-    Teuchos::RCP<Vector<Real> > xtrial = x.clone();
-    Teuchos::RCP<Vector<Real> > Jl = x.clone();
-    Teuchos::RCP<Vector<Real> > gfJl = x.clone();
-    Teuchos::RCP<Vector<Real> > Jnc = c.clone();
-    Teuchos::RCP<Vector<Real> > t_orig = t.clone();
-    Teuchos::RCP<Vector<Real> > Jt_orig = c.clone();
-    Teuchos::RCP<Vector<Real> > t_m_tCP = t.clone();
-    Teuchos::RCP<Vector<Real> > ltemp = l.clone();
-    Teuchos::RCP<Vector<Real> > xtemp = x.clone();
-    Teuchos::RCP<Vector<Real> > rt = c.clone();
-    Teuchos::RCP<Vector<Real> > Hn = x.clone();
-    Teuchos::RCP<Vector<Real> > Hto = x.clone();
-    Teuchos::RCP<Vector<Real> > cxxvec = x.clone();
-    Teuchos::RCP<Vector<Real> > czero = c.clone();
+    Teuchos::RCP<Vector<Real> > xtrial  = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > Jl      = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > gfJl    = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > Jnc     = cvec_->clone();
+    Teuchos::RCP<Vector<Real> > t_orig  = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > t_dual  = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > Jt_orig = cvec_->clone();
+    Teuchos::RCP<Vector<Real> > t_m_tCP = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > ltemp   = lvec_->clone();
+    Teuchos::RCP<Vector<Real> > xtemp   = xvec_->clone();
+    Teuchos::RCP<Vector<Real> > rt      = cvec_->clone();
+    Teuchos::RCP<Vector<Real> > Hn      = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > Hto     = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > cxxvec  = gvec_->clone();
+    Teuchos::RCP<Vector<Real> > czero   = cvec_->clone();
     czero->zero();
     Real Jnc_normsquared = zero;
     Real c_normsquared = zero;
@@ -1008,7 +1037,9 @@ public:
         }
         // Solve augmented system.
         Real tol = tangtol;
-        augiters = con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);
+        // change augiters = con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);
+        t_dual->set(t_orig->dual());
+        augiters = con.solveAugmentedSystem(t, *ltemp, *t_dual, *czero, x, tol);
         totalCallLS_++;
         totalIterLS_ = totalIterLS_ + augiters.size();
         printInfoLS(augiters);
@@ -1043,12 +1074,16 @@ public:
         part_pred = - Wg.dot(*t_orig);
         gfJl->set(gf);
         gfJl->plus(*Jl);
-        part_pred -= gfJl->dot(n);
-        part_pred -= half*Hn->dot(n);
-        part_pred -= half*Hto->dot(*t_orig);
+        // change part_pred -= gfJl->dot(n);
+        part_pred -= n.dot(gfJl->dual());
+        // change part_pred -= half*Hn->dot(n);
+        part_pred -= half*n.dot(Hn->dual());
+        // change part_pred -= half*Hto->dot(*t_orig);
+        part_pred -= half*t_orig->dot(Hto->dual());
         ltemp->set(l_new);
         ltemp->axpy(-one, l);
-        part_pred -= Jnc->dot(*ltemp);
+        // change part_pred -= Jnc->dot(*ltemp);
+        part_pred -= Jnc->dot(ltemp->dual());
 
         if ( part_pred < -half*penalty_*(c_normsquared-Jnc_normsquared) ) {
           penalty_ = ( -two * part_pred / (c_normsquared-Jnc_normsquared) ) + beta;
@@ -1057,7 +1092,11 @@ public:
         pred = part_pred + penalty_*(c_normsquared-Jnc_normsquared);
 
         // Computation of rpred.
-        rpred = - ltemp->dot(*rt) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+        // change rpred = - ltemp->dot(*rt) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+        rpred = - rt->dot(ltemp->dual()) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+        // change Teuchos::RCP<Vector<Real> > lrt   = lvec_->clone();
+        //lrt->set(*rt);
+        //rpred = - ltemp->dot(*rt) - penalty_ * std::pow(rt->norm(), 2) - two * penalty_ * lrt->dot(*Jnc);
         flag = 1;
 
       } // while (std::abs(rpred)/pred > rpred_over_pred)
@@ -1130,7 +1169,9 @@ public:
     if (std::abs(fdiff / (f+1e-24)) < tol_fdiff) {
       fdiff = 1e-14;
     }
-    ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
+    // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
+    // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(std::pow(c.norm(),2) - std::pow(c_new.norm(),2));
+    ared = fdiff  + (c.dot(l.dual()) - c_new.dot(l_new.dual())) + penalty_*(c.dot(c) - c_new.dot(c_new));
 
     // Store actual and predicted reduction.
     ared_ = ared;
@@ -1160,7 +1201,7 @@ public:
         hist <<   "         ||t_tilde||/||n+t|| = " << t_orig->norm() / snorm_ << "\n";
         hist <<   "         # projections       = " << num_proj << "\n";
         hist <<   "         penalty param       = " << penalty_ << "\n";
-       	hist <<   "         ared                = " << ared_ << "\n";
+        hist <<   "         ared                = " << ared_ << "\n";
         hist <<   "         pred                = " << pred_ << "\n";
         hist <<   "         ared/pred           = " << ared_/pred_ << "\n";
         std::cout << hist.str();

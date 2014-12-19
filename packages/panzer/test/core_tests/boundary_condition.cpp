@@ -72,14 +72,19 @@ namespace panzer {
     bc_1.set("Equation Set Name", "UX");
     bc_1.set("Strategy", "Constant");
     bc_1.sublist("Data").set("Value",1.0);
+    
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
-    panzer::buildBCs(bcs, bc_params);
+    panzer::buildBCs(bcs, bc_params, gd);
 
     TEST_EQUALITY(bcs.size(), 2);
     TEST_EQUALITY(bcs[0].bcID(), 0);
     TEST_EQUALITY(bcs[1].bcID(), 1);
     TEST_EQUALITY(bcs[0].bcType(), panzer::BCT_Dirichlet);
     TEST_EQUALITY(bcs[1].bcType(), panzer::BCT_Neumann);
+
+    TEST_ASSERT(bcs[0].global_data()!=Teuchos::null);
+    TEST_ASSERT(bcs[0].global_data()!=Teuchos::null);
   }
 
 

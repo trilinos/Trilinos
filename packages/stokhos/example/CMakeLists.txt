@@ -1,4 +1,3 @@
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   hermite_example
   SOURCES simple/hermite_example.cpp
@@ -389,6 +388,12 @@ IF (Stokhos_ENABLE_EpetraExt)
 ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
+
+  TRIBITS_ADD_EXECUTABLE(
+    uq_handbook_example
+    SOURCES sacado/uq_handbook_example.cpp
+    COMM serial mpi
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     sacado_example

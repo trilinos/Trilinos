@@ -11,7 +11,7 @@ Level 0
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
-
+ 
 Level 1
  Prolongator minimization (MueLu::EminPFactory)
   Build (MueLu::TentativePFactory)
@@ -21,7 +21,7 @@ Level 1
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
-
+    
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
@@ -39,26 +39,26 @@ Level 1
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-
+   
    Build (MueLu::AmalgamationFactory)
    [empty list]
-
+   
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-
+   
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-
+   
   [empty list]
-
+  
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
    emin: pattern order = 1   [default]
-
+   
   [empty list]
-
+  
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
  emin: iterative method = cg   [default]
@@ -66,17 +66,17 @@ Level 1
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
-
+ 
  Transpose P (MueLu::TransPFactory)
  [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
-
+ 
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -89,7 +89,7 @@ Level 1
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
-
+ 
 Level 2
  Prolongator minimization (MueLu::EminPFactory)
   Build (MueLu::TentativePFactory)
@@ -99,7 +99,7 @@ Level 2
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
-
+    
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
@@ -117,26 +117,26 @@ Level 2
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-
+   
    Build (MueLu::AmalgamationFactory)
    [empty list]
-
+   
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-
+   
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-
+   
   [empty list]
-
+  
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
    emin: pattern order = 1   [default]
-
+   
   [empty list]
-
+  
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
  emin: iterative method = cg   [default]
@@ -144,21 +144,21 @@ Level 2
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
-
+ 
  Transpose P (MueLu::TransPFactory)
  [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
-
+ 
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother ->
+ presmoother -> 
   [empty list]
-
+ 
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

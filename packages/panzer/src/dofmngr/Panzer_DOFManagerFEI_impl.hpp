@@ -43,6 +43,10 @@
 #ifndef PANZER_DOF_MANAGER_FEI_IMPL_HPP
 #define PANZER_DOF_MANAGER_FEI_IMPL_HPP
 
+#include "Panzer_config.hpp"
+
+#ifdef PANZER_HAVE_FEI
+
 // FEI includes
 #include "fei_Factory_Trilinos.hpp"
 
@@ -800,4 +804,5 @@ void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::
 
 }
 
+#endif
 #endif

@@ -80,12 +80,13 @@ public:
 
   /** \brief Initialize step with bound constraint.
   */
-  virtual void initialize( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  virtual void initialize( Vector<Real> &x, const Vector<Real> &g, 
+                           Objective<Real> &obj, BoundConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
     // Initialize state descent direction and gradient storage
     state_->descentVec   = x.clone();
-    state_->gradientVec  = x.clone();
+    state_->gradientVec  = g.clone();
     state_->searchSize = 0.0;
     // Project x onto constraint set
     if ( con.isActivated() ) {
@@ -96,10 +97,11 @@ public:
     algo_state.value = obj.value(x,tol);
     algo_state.nfval++;
     obj.gradient(*(state_->gradientVec),x,tol);
+    algo_state.ngrad++;
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
       xnew->set(x);
-      xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+      xnew->axpy(-1.0,(Step<Real>::state_->gradientVec)->dual());
       con.project(*xnew);
       xnew->axpy(-1.0,x);
       algo_state.gnorm = xnew->norm();
@@ -107,12 +109,12 @@ public:
     else {
       algo_state.gnorm = (state_->gradientVec)->norm();
     }
-    algo_state.ngrad++;
   }
 
   /** \brief Initialize step with equality constraint.
   */
-  virtual void initialize( Vector<Real> &x, Vector<Real> &l, Objective<Real> &obj, EqualityConstraint<Real> &con, 
+  virtual void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
+                           Objective<Real> &obj, EqualityConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
   }
 

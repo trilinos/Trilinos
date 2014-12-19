@@ -241,7 +241,7 @@ SUBGROUPING            = YES
 # Private class members and static file members will be hidden unless 
 # the EXTRACT_PRIVATE and EXTRACT_STATIC tags are set to YES
 
-EXTRACT_ALL            = NO
+EXTRACT_ALL            = YES
 
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class 
 # will be included in the documentation.
@@ -482,9 +482,12 @@ WARN_LOGFILE           =
 INPUT                  = \
 ../src/vector \
 ../src/function/ROL_Objective.hpp \
+../src/function/ROL_BoundConstraint.hpp \
 ../src/function/ROL_EqualityConstraint.hpp \
-../src/function/ROL_InequalityConstraint.hpp \
-../src/function/ROL_Constraints.hpp \
+../src/function/ROL_LinearOperator.hpp \
+../src/function/ROL_Objective_SimOpt.hpp \
+../src/function/ROL_EqualityConstraint_SimOpt.hpp \
+../src/function/ROL_Reduced_Objective_SimOpt.hpp \
 ../src/function/ \
 ../src/algorithm \
 ../src/status \
@@ -493,7 +496,15 @@ INPUT                  = \
 ../test/function \
 ../test/step \
 ../test/vector \
-../example/rosenbrock
+../example/rosenbrock \ 
+../example/sacado \
+../example/zakharov \
+../example/dual-spaces/rosenbrock-1 \
+../example/dual-spaces/simple-eq-constr-1 \
+../example/burgers-control \
+../example/poisson-control \
+../example/poisson-inversion \
+../example/gross-pitaevskii
 
 # This tag can be used to specify the character encoding of the source files that 
 # doxygen parses. Internally doxygen uses the UTF-8 encoding, which is also the default 
@@ -660,7 +671,7 @@ VERBATIM_HEADERS       = YES
 # of all compounds will be generated. Enable this if the project 
 # contains a lot of classes, structs, unions or interfaces.
 
-ALPHABETICAL_INDEX     = NO
+ALPHABETICAL_INDEX     = YES
 
 # If the alphabetical index is enabled (see ALPHABETICAL_INDEX) then 
 # the COLS_IN_ALPHA_INDEX tag can be used to specify the number of columns 
@@ -1317,4 +1328,5 @@ MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
 # used. If set to NO the values of all tags below this one will be ignored.
 
 SEARCHENGINE           = NO
+
 

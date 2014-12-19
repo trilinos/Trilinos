@@ -50,10 +50,16 @@
 #ifndef _ZOLTAN2_ALGORITHM_HPP_
 #define _ZOLTAN2_ALGORITHM_HPP_
 
+namespace Zoltan2 {
+template <typename Adapter>
+class Algorithm;
+}
+
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
 #define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
   { \
@@ -111,10 +117,21 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
 
+  //! \brief  for partitioning methods, return bounding boxes of the 
+  //          computed parts
+  //          Not all partitioning algorithms will support
+  //          this method.
+  //
+  virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
+  getPartBoxesView() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
+
   //! \brief pointAssign method: Available only for some partitioning algorithms
   //          when a point lies on a part boundary, the lowest part
   //          number on that boundary is returned.
-  //          Note that not all partitioning algorithms will support
+  //          Not all partitioning algorithms will support
   //          this method.
   //
   //   \param dim : the number of dimensions specified for the point in space
@@ -140,6 +157,25 @@ public:
   //   \param parts :  (out) array of parts overlapping the box
   virtual void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
                          size_t &nParts, part_t **partsFound) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
+
+  //! \brief returns serial communication graph of a computed partition
+  //  Returned graph is identical on all processors, and represents the
+  //  global communication pattern in the partition.
+  //  
+  //  \param comXAdj:  (out) the offset array:  offsets into comAdj
+  //                         Format is comXAdj[0] = # nbor parts of part 0
+  //                         Format is comXAdj[i] = Sum of # nbor parts of parts
+  //                                                0 through i
+  //                         TODO:  Change this array to standard CSR format
+  //  \param comAdj    (out) the neighboring parts
+  virtual void getCommunicationGraph(
+    const PartitioningSolution<Adapter> *solution,
+    ArrayRCP<part_t> &comXAdj,
+    ArrayRCP<part_t> &comAdj)
+    // TODO:  Should the return args be ArrayViews?
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }

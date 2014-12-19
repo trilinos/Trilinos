@@ -149,6 +149,8 @@ namespace Sacado {
       //! Typename of scalar's (which may be different from value_type)
       typedef typename ScalarType<value_type>::type scalar_type;
 
+      typedef Vector base_expr_type;
+
       //! Turn Vector into a meta-function class usable with mpl::apply
       template < class NewStorageType >
       struct apply {
@@ -1568,6 +1570,27 @@ namespace Sacado {
     };
 
   } // namespace MP
+
+  template <typename T>
+  struct IsExpr< MP::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< MP::Expr<T> > {
+    typedef typename MP::Expr<T>::derived_type derived_type;
+    typedef typename derived_type::base_expr_type type;
+  };
+
+  template <typename S>
+  struct IsExpr< MP::Vector<S> > {
+    static const bool value = true;
+  };
+
+  template <typename S>
+  struct BaseExprType< MP::Vector<S> > {
+    typedef MP::Vector<S> type;
+  };
 
   //! Trait class to determine if a scalar type is a Vector
   template <typename T> struct is_mp_vector {

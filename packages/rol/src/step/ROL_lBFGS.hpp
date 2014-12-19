@@ -60,22 +60,22 @@ public:
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
-    Hv.set(v);
+    Hv.set(v.dual());
     std::vector<Real> alpha(state->current+1,0.0);
     for (int i = state->current; i>=0; i--) {
       alpha[i]  = state->iterDiff[i]->dot(Hv);
       alpha[i] /= state->product[i];
-      Hv.axpy(-alpha[i],*(state->gradDiff[i]));
+      Hv.axpy(-alpha[i],(state->gradDiff[i])->dual());
     }
 
     // Apply initial inverse Hessian approximation to v   
     Teuchos::RCP<Vector<Real> > tmp = Hv.clone();
-    this->applyH0(*tmp,Hv,x);
+    Secant<Real>::applyH0(*tmp,Hv.dual(),x);
     Hv.set(*tmp);
 
     Real beta = 0.0;
     for (int i = 0; i <= state->current; i++) {
-      beta  = state->gradDiff[i]->dot(Hv);
+      beta  = Hv.dot((state->gradDiff[i])->dual());
       beta /= state->product[i];
       Hv.axpy((alpha[i]-beta),*(state->iterDiff[i]));
     }
@@ -87,30 +87,30 @@ public:
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     // Apply initial Hessian approximation to v   
-    this->applyB0(Bv,v,x);
+    Secant<Real>::applyB0(Bv,v,x);
 
     std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
     Real bv = 0.0, av = 0.0, bs = 0.0, as = 0.0;
     for (int i = 0; i <= state->current; i++) {
-      b[i] = v.clone();
+      b[i] = Bv.clone();
       b[i]->set(*(state->gradDiff[i]));
       b[i]->scale(1.0/sqrt(state->product[i]));
-      bv = b[i]->dot(v);
+      bv = v.dot(b[i]->dual());
       Bv.axpy(bv,*b[i]);
 
-      a[i] = v.clone();
-      this->applyB0(*a[i],*(state->iterDiff[i]),x);
+      a[i] = Bv.clone();
+      Secant<Real>::applyB0(*a[i],*(state->iterDiff[i]),x);
 
       for (int j = 0; j < i; j++) {
-        bs = b[j]->dot(*(state->iterDiff[i]));
+        bs = (state->iterDiff[i])->dot(b[j]->dual());
         a[i]->axpy(bs,*b[j]);
-        as = a[j]->dot(*(state->iterDiff[i]));
+        as = (state->iterDiff[i])->dot(a[j]->dual());
         a[i]->axpy(-as,*a[j]);
       }
-      as = a[i]->dot(*(state->iterDiff[i]));
+      as = (state->iterDiff[i])->dot(a[i]->dual());
       a[i]->scale(1.0/sqrt(as));
-      av = a[i]->dot(v);
+      av = v.dot(a[i]->dual());
       Bv.axpy(-av,*a[i]);
     }
   }

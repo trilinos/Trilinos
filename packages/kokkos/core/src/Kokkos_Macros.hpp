@@ -176,6 +176,9 @@
   #endif
 #endif /* #if defined( __NVCC__ ) */
 
+#if defined( KOKKOS_HAVE_CXX11 ) && !defined (KOKKOS_LAMBDA)
+  #define KOKKOS_LAMBDA [=]
+#endif
 
 #if ! defined( __CUDA_ARCH__ ) /* Not compiling Cuda code to 'ptx'. */
 
@@ -237,8 +240,8 @@
     #define KOKKOS_ENABLE_ASM 1
   #endif
 
-  #if ! defined( KOKKOS_FORCEINLINE_FUNCTION )
-    #define KOKKOS_FORCEINLINE_FUNCTION  __forceinline
+  #if ( 1200 <= KOKKOS_COMPILER_INTEL ) && ! defined( KOKKOS_FORCEINLINE_FUNCTION )
+    #define KOKKOS_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
   #endif
 
   #if defined( __MIC__ )

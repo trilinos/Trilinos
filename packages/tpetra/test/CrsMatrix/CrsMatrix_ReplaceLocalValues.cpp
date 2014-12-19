@@ -43,20 +43,6 @@
 // version of this file will actually be compiled.
 #include <Tpetra_config.h>
 
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#  include <KokkosCore_config.h>
-#  ifdef KOKKOS_USE_CUDA_BUILD
-#    define DO_COMPILATION
-#  else
-#    ifndef KOKKOS_HAVE_CUDA
-#      define DO_COMPILATION
-#    endif // KOKKOS_HAVE_CUDA
-#  endif // KOKKOS_USE_CUDA_BUILD
-#else
-#  define DO_COMPILATION
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-
-#ifdef DO_COMPILATION
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
@@ -117,6 +103,30 @@ namespace { // (anonymous)
     // generate problem
     LO nEle = 63;
     RCP<const map_type> map = rcp (new map_type (nEle, 0, comm));
+
+#ifdef KOKKOS_HAVE_OPENMP
+    if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> >::value) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! Kokkos::OpenMP::is_initialized (), std::logic_error,
+        "OpenMP execution space not initialized!" );
+    }
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+    if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> >::value) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! Kokkos::Threads::is_initialized (), std::logic_error,
+        "Threads execution space not initialized!" );
+    }
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_SERIAL
+    if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> >::value) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! Kokkos::Serial::is_initialized (), std::logic_error,
+        "Serial execution space not initialized!" );
+    }
+#endif // KOKKOS_HAVE_SERIAL
 
     RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10));
     const LO NumMyElements = map->getNodeNumElements ();
@@ -620,11 +630,7 @@ namespace { // (anonymous)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  //TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
-
-  typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_type;
-  UNIT_TEST_GROUP( double, int, int, default_node_type )
+  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
 
-#endif // DO_COMPILATION

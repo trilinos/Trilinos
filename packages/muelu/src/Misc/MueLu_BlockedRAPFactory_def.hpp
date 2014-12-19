@@ -115,8 +115,8 @@ namespace MueLu {
                                "R is " << bR->Rows() << "x" << bR->Cols() <<
                                "P is " << bP->Rows() << "x" << bP->Cols());
 
-    RCP<BlockedCrsMatrix> bAP = Utils::TwoMatrixMultiplyBlock(*bA, false, *bP,  false, true, true);
-    RCP<BlockedCrsMatrix> bAc = Utils::TwoMatrixMultiplyBlock(*bR, false, *bAP, false, true, true);
+    RCP<BlockedCrsMatrix> bAP = Utils::TwoMatrixMultiplyBlock(*bA, false, *bP,  false, GetOStream(Statistics2), true, true);
+    RCP<BlockedCrsMatrix> bAc = Utils::TwoMatrixMultiplyBlock(*bR, false, *bAP, false, GetOStream(Statistics2), true, true);
 
     if (checkAc_)
       CheckMainDiagonal(bAc);

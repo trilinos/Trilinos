@@ -46,7 +46,12 @@
 #ifndef MUELU_MASTERLIST_HPP
 #define MUELU_MASTERLIST_HPP
 
+#include <sstream>
+#include <map>
+
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ParameterEntry.hpp>
+#include <Teuchos_any.hpp>
 
 namespace MueLu {
 
@@ -81,6 +86,29 @@ namespace MueLu {
     static const Teuchos::ParameterEntry& getEntry(const std::string& name) {
       return List()->getEntry(name);
     }
+    
+    //! @brief Create xml string for given MueLu parameter (easy xml input format)
+    //!
+    //! @note: We should check whether template type T is the same as the expected parameter type in the parameter list
+    template<typename T>
+    static std::string generateXMLParameterString(const std::string& name, T data) {
+      Teuchos::ParameterEntry entry = getEntry(name);
+      std::stringstream ss;
+      // TODO: check whether getAny().typeName() matches the typeid(T)
+      //       One could use a technique as described here: http://stackoverflow.com/questions/4484982/how-to-convert-typename-t-to-string-in-c
+      ss << "<Parameter name=\"" << name << "\" type=\"" << entry.getAny().typeName() << "\" value=\"" << data << "\"/>";
+      return ss.str();
+    }
+
+    //! @brief Translate ML parameter to corresponding MueLu parameter
+    static std::string ML2MueLu(const std::string& name) {
+      std::map<std::string,std::string>::iterator it;
+      it = ML2MueLuLists_.find(name);
+      if(it!=ML2MueLuLists_.end()) return it->second;
+      else return "";
+    }
+
+    static std::string interpretParameterName(const std::string& name, const std::string& value);
 
   private:
     MasterList();
@@ -97,6 +125,8 @@ namespace MueLu {
     static std::string                           problemType_;
     //! @brief Map of string equivalents of the problemSpecificList_.  The first entry is the problem type, the second is the string equivalent.
     static std::map<std::string,std::string>     DefaultProblemTypeLists_;
+    //! @brief Map of ML parameter strings to corresponding MueLu parametes
+    static std::map<std::string,std::string>     ML2MueLuLists_;
   };
 
   /*!

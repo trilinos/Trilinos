@@ -105,3 +105,6 @@
 
 /* Define if you want to enable experimental features */
 #cmakedefine HAVE_AMESOS2_EXPERIMENTAL
+
+/*Define if you want to use amesos-Basker*/
+#cmakedefine HAVE_AMESOS2_BASKER

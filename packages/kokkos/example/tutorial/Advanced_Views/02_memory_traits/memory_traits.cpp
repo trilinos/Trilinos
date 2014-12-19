@@ -76,7 +76,7 @@ struct localsum {
   KOKKOS_INLINE_FUNCTION
   void operator() (const int i) const {
     double tmp = 0.0;
-    for (int j = 0; j < idx.dimension_1 (); ++j) {
+    for (int j = 0; j < (int) idx.dimension_1 (); ++j) {
       const double val = src(idx(i,j));
       tmp += val*val + 0.5*(idx.dimension_0()*val -idx.dimension_1()*val);
     }
@@ -117,7 +117,7 @@ int main(int narg, char* arg[]) {
   Kokkos::fence();
   double sec2 = time2.seconds();
 
-  printf("Time with Trait RandomAccess: %lf with Plain: %lf \n",sec1,sec2);
+  printf("Time with Trait RandomAccess: %f with Plain: %f \n",sec1,sec2);
 
   Kokkos::finalize();
 }

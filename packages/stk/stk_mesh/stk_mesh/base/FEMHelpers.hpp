@@ -74,22 +74,20 @@ Entity declare_element( BulkData & mesh ,
  *  The element must be a member of a Part with a topology.
  */
 Entity declare_element_side( BulkData & mesh ,
-                               const stk::mesh::EntityId global_side_id ,
-                               Entity elem ,
-                               const unsigned local_side_id ,
-                               Part * part = NULL,
-                               bool check_pre_existing = false);
+			     const stk::mesh::EntityId global_side_id ,
+			     Entity elem ,
+			     const unsigned local_side_id ,
+			     Part * part = NULL);
 
 /** \brief  Create (or find) an element edge.
  *
  *  The element must be a member of a Part with a topology.
  */
 Entity declare_element_edge( BulkData & mesh ,
-                               const stk::mesh::EntityId global_side_id ,
-                               Entity elem ,
-                               const unsigned local_side_id ,
-                               Part * part = NULL,
-                               bool check_pre_existing = false );
+			     const stk::mesh::EntityId global_side_id ,
+			     Entity elem ,
+			     const unsigned local_side_id ,
+			     Part * part = NULL);
 
 /** \brief  Create (or find) an element side.
  *

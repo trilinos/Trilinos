@@ -64,50 +64,59 @@ namespace { // anonymous
   // \param numCols [out] The number of columns in the matrix.
   // \param nnz [out] The number of stored entries in the matrix.
   // \param whichMatrix [in] The index of the matrix to create.
-  template<typename Device>
+  template<typename MemorySpace>
   void
-  makeSparseMatrix (Kokkos::View<size_t*, Device>& ptr,
-		    Kokkos::View<int*, Device>& ind,
-		    Kokkos::View<double*, Device>& val,
-		    int& numRows,
-		    int& numCols,
-		    int& nnz,
-		    const int whichMatrix)
+  makeSparseMatrix (Kokkos::View<size_t*, MemorySpace>& ptr,
+                    Kokkos::View<int*, MemorySpace>& ind,
+                    Kokkos::View<double*, MemorySpace>& val,
+                    int& numRows,
+                    int& numCols,
+                    int& nnz,
+                    const int whichMatrix)
   {
+    using Kokkos::HostSpace;
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+
     if (whichMatrix == 0) {
       numRows = 10;
       numCols = 10;
       nnz = 21;
       const size_t ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
-      const int indRaw[] = {0, 1, 9, 
-			    1, 2,
-			    2, 3,
-			    3, 4,
-			    4, 5, 
-			    5, 6, 
-			    6, 7, 
-			    7, 8,
-			    8, 9,
-			    1, 9};
+      const int indRaw[] = {0, 1, 9,
+                            1, 2,
+                            2, 3,
+                            3, 4,
+                            4, 5,
+                            5, 6,
+                            6, 7,
+                            7, 8,
+                            8, 9,
+                            1, 9};
       const double valRaw[] = {1.0, 4.0, 0.5,
-			       0.5, 5.0,
-			       1.0, 6.0,
-			       1.5, 7.0,
-			       2.0, 8.0,
-			       2.5, 9.0,
-			       3.0, 10.0,
-			       3.5, 11.0,
-			       4.0, 12.0,
-			       4.5, 13.0};
-      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-      Kokkos::View<const size_t*, Kokkos::Serial, Kokkos::MemoryUnmanaged> ptrIn (ptrRaw, numRows+1);
-      Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> indIn (indRaw, nnz);
-      Kokkos::View<const double*, Kokkos::Serial, Kokkos::MemoryUnmanaged> valIn (valRaw, nnz);
+                               0.5, 5.0,
+                               1.0, 6.0,
+                               1.5, 7.0,
+                               2.0, 8.0,
+                               2.5, 9.0,
+                               3.0, 10.0,
+                               3.5, 11.0,
+                               4.0, 12.0,
+                               4.5, 13.0};
+
+      typedef View<size_t*,MemorySpace> ptr_type ;
+      typedef View<int*,   MemorySpace> ind_type ;
+      typedef View<double*,MemorySpace> val_type ;
 
       // Create the output Views.
-      ptr = Kokkos::View<size_t*, Device> ("ptr", numRows + 1);
-      ind = Kokkos::View<int*, Device> ("ind", nnz);
-      val = Kokkos::View<double*, Device> ("val", nnz);
+      ptr = ptr_type("ptr", numRows + 1);
+      ind = ind_type("ind", nnz);
+      val = val_type("val", nnz);
+
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
+      typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
+      typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
 
       Kokkos::deep_copy (ptr, ptrIn);
       Kokkos::deep_copy (ind, indIn);
@@ -115,39 +124,48 @@ namespace { // anonymous
     }
     else { // whichMatrix != 0
       std::ostringstream os;
-      os << "Invalid whichMatrix value " << whichMatrix << ".  Valid value(s) include " << 0 << ".";
+      os << "Invalid whichMatrix value " << whichMatrix
+         << ".  Valid value(s) include " << 0 << ".";
       throw std::invalid_argument (os.str ());
     }
   }
 
   // Return the Kokkos::CrsMatrix corresponding to makeSparseMatrix().
-  template<typename Device>
-  Kokkos::CrsMatrix<double, int, Device>
+  template<typename MemorySpace>
+  Kokkos::CrsMatrix<double, int, MemorySpace>
   makeCrsMatrix ()
   {
-    Kokkos::View<size_t*, Device> ptr;
-    Kokkos::View<int*, Device> ind;
-    Kokkos::View<double*, Device> val;
+    Kokkos::View<size_t*, MemorySpace> ptr;
+    Kokkos::View<int*, MemorySpace> ind;
+    Kokkos::View<double*, MemorySpace> val;
     int numRows;
     int numCols;
     int nnz;
 
     const int whichMatrix = 0;
-    makeSparseMatrix<Device> (ptr, ind, val, numRows, numCols, nnz, whichMatrix);
-    return Kokkos::CrsMatrix<double, int, Device> ("A", numRows, numCols, nnz, val, ptr, ind);
+    makeSparseMatrix<MemorySpace> (ptr, ind, val, numRows, numCols, nnz, whichMatrix);
+    typedef Kokkos::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
+    return crs_matrix_type ("A", numRows, numCols, nnz, val, ptr, ind);
   }
 
-  // Create a Kokkos::CrsMatrix.
-  // This mainly tests that the class compiles.
-  template<typename Device>
+  // Create a Kokkos::CrsMatrix.  This mainly tests that the class
+  // compiles.  However, it does need to initialize the MemorySpace's
+  // default execution space, because it allocates Views and calls
+  // deep_copy a few times.
+  template<typename MemorySpace>
   void
   testCrsMatrix ()
   {
-    Kokkos::CrsMatrix<double, int, Device> A = makeCrsMatrix<Device> ();
+    Kokkos::initialize();
+
+    typedef Kokkos::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
+    crs_matrix_type A = makeCrsMatrix<MemorySpace> ();
     // mfh 28 Sep 2013: Use A in some way, so the compiler can't
     // optimize it away completely.  This forces the compiler to
     // compile CrsMatrix, which is the whole point of this test.
     printf ("A is %d by %d\n", A.numRows (), A.numCols ());
+
+    Kokkos::finalize ();
   }
 
 } // namespace (anonymous)
@@ -162,7 +180,7 @@ protected:
 
 // Just test that CrsMatrix compiles.
 TEST_F( CrsMatrix, Compile ) {
-  testCrsMatrix<Kokkos::Serial> ();
+  testCrsMatrix<Kokkos::DefaultExecutionSpace> ();
 }
 
 } // namespace test

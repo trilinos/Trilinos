@@ -56,7 +56,7 @@ struct hello_world {
   void operator() ( const team_member & thread, int& sum) const {
     sum+=1;
     // With each team run a parallel for with its threads
-    thread.team_par_for(31, [&] (const int& i) {
+    Kokkos::parallel_for(Kokkos::TeamThreadLoop(thread,31), [&] (const int& i) {
        printf("Hello World: (%i , %i) executed loop %i \n",thread.league_rank(),thread.team_rank(),i);
     });
   }
@@ -66,7 +66,7 @@ int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
   // 3 teams of the maximum number of threads per team
-  const team_policy policy( 3 , team_policy::execution_space::team_max() );
+  const team_policy policy( 3 , team_policy::team_size_max( hello_world() ) );
   
   int sum = 0;
   Kokkos::parallel_reduce( policy , hello_world() , sum );

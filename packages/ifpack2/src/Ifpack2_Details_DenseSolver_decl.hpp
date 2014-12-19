@@ -82,7 +82,7 @@ struct LapackSupportsScalar<double> {
 };
 
 // FIXME (mfh 15 Nov 2013) Should we write IFPACK2_HAVE_COMPLEX ?
-#ifdef TEUCHOS_HAVE_COMPLEX
+#ifdef HAVE_TEUCHOS_COMPLEX
 template<>
 struct LapackSupportsScalar<std::complex<float> > {
   static const bool value = true;
@@ -92,7 +92,7 @@ template<>
 struct LapackSupportsScalar<std::complex<double> > {
   static const bool value = true;
 };
-#endif // TEUCHOS_HAVE_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX
 #endif //  IFPACK2_LAPACKSUPPORTSSCALAR
 
 /// \class DenseSolver
@@ -151,7 +151,7 @@ public:
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the absolute value (magnitude) of a \c scalar_type.
@@ -427,7 +427,7 @@ public:
   //! The type of global indices in the input (global) matrix.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Kokkos Node type of the input (global) matrix.
+  //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the absolute value (magnitude) of a \c scalar_type.

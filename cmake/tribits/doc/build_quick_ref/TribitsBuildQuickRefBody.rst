@@ -149,22 +149,25 @@ b) Create a CMake file fragment and point to it [Recommended].
      
   where MyConfigureOptions.cmake might look like::
 
-    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "" FORCE)
-    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "" FORCE)
-    SET(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "")
+    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "")
+    SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
     ...
 
   Using a configuration fragment file allows for better reuse of configure
   options across different configure scripts and better version control of
-  configure options.
+  configure options.  Also, when this file changes, CMake will automatically
+  trigger a reconfgure during a make (because it knows about the file and will
+  check its time stamp).
 
   NOTE: You can actually pass in a list of configuration fragment files
   which will be read in the order they are given.
 
-  NOTE: If you do not use 'FORCE' shown above, then the option can be
-  overridden on the cmake command line with -D options.  Also, if you don't
-  use 'FORCE' then the option will not be set if it is already set in the
-  case (e.g. by another configuration fragment file prior in the list).
+  NOTE: You can use the ``FORCE`` option in the ``SET()`` shown above and that
+  will override any value of the options that might already be set.  However,
+  that will not allow the user to override the options on the CMake
+  comamndline using ``-D<VAR>=<value>`` so it is generally desired to use
+  ``FORCE``.
 
 c) Using ccmake to configure
 
@@ -597,6 +600,32 @@ In order to pre-set and/or override the C++11 compiler flags used, set the
 cache variable::
 
   -D <Project>_CXX11_FLAGS="<compiler flags>"
+
+
+Enabling explicit template instantiation for C++
+------------------------------------------------
+
+To enable explicit template instantiation for C++ code for packages that
+support it, configure with::
+
+  -D <Project>_ENABLE_EXPLICIT_INSTANTIATION=ON
+
+When ``OFF``, all packages that have templated C++ code will use implicit
+template instantiation.
+
+Explicit template instantiation can be enabled (``ON``) or disabled (``OFF``)
+for individual packages with::
+
+
+  -D <TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION=[ON|OFF]
+
+The default value for ``<TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION`` is
+set by ``<Project>_ENABLE_EXPLICIT_INSTANTIATION``.
+
+For packages that support it, explicit template instantation can massively
+reduce the compile times for the C++ code involved.  To see what packages
+support explicit instantation just search the CMakeCache.txt file for varibles
+with ``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
 
 
 Disabling the Fortran compiler and all Fortran code
@@ -1140,6 +1169,19 @@ where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 ``-E`` argument.
 
 
+Trace test addition or exclusion
+--------------------------------
+
+To see what tests get added and see those that don't get added for various
+reasons, configure with::
+
+  -D <Project>_TRACE_ADD_TEST=ON
+
+That will print one line per show that the test got added and if not then why
+the test was not added (i.e. due to the test's ``COMM``, ``NUM_MPI_PROCS``,
+``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
+arguments).
+
 Setting test timeouts at configure time
 ---------------------------------------
 
@@ -1175,7 +1217,7 @@ timeouts for the individual tests that have their own timeout set (through the
 ``TIMEOUT`` argument for each individual test) can be scaled by a constant
 factor ``<testTimeoutScaleFactor>`` by configuring with::
 
-  -D <Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT=<testTimeoutScaleFactor>
+  -D <Project>_SCALE_TEST_TIMEOUT=<testTimeoutScaleFactor>
 
 Here, ``<testTimeoutScaleFactor>`` can be an integral number like ``5`` or can
 be fractional number like ``1.5``.
@@ -1738,7 +1780,7 @@ directory, do::
 
   $ ctest -T memcheck -L <TRIBITS_PACKAGE>
 
-To run valgrind on a specific test, from the **base** project directory, do:
+To run valgrind on a specific test, from the **base** project directory, do::
 
   $ ctest -T memcheck -R ^<FULL_TEST_NAME>$
 

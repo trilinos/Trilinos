@@ -56,8 +56,10 @@
 //Our test interfaces
 #include "shylu.h"
 #include "shylu_partition_interface.hpp"
+#include "shylu_directsolver_interface.hpp"
 
 using namespace std;
+
 
 int main(int argc, char** argv)
 {
@@ -99,6 +101,7 @@ int main(int argc, char** argv)
   b = new Epetra_MultiVector(vecMap,1,false);
   b->Random();
   x = new Epetra_MultiVector(vecMap,1,false);
+  x->Random();
 
   cout << "Epetra matrices loaded" << endl;
 
@@ -136,6 +139,9 @@ int main(int argc, char** argv)
   partI.partition();
   AHat = partI.reorderMatrix();
   bHat = partI.reorderVector(b);
+
+  EpetraExt::RowMatrixToMatlabFile("Epetra_Isorropia_Parmetis.mat", *AHat);
+
 
    cout << "Done with graph - parmetis" << endl;
 
@@ -187,7 +193,64 @@ int main(int argc, char** argv)
   bHat = partI3.reorderVector(b);
   cout << "Done with graph - parmetis" << endl;
 
+  EpetraExt::RowMatrixToMatlabFile("Epetra_Zoltan2_Parmetis.mat", *AHat);
+
+#endif
+
+
+
+  /*----------------------Direct Solver Interfaces----------------*/
+  //#ifdef HAVE_SHYLU_AMESOS
+
+  //Amesos - klu
+  pLUList->set("Direct Solver Package", "Amesos");
+  ptemp = pLUList->sublist("Amesos Input");
+  pptemp = ptemp.sublist("Amesos_Klu Input");
+
+
+  pptemp.set("PrintTiming", true);
+  pptemp.set("PrintStatus", true);
+  ptemp.set("Solver", "Amesos_Klu");
+  ptemp.set("Amesos_Klu Input", pptemp);
+  pLUList->set("Amesos Input", ptemp);
+
+
+  cout << " \n\n--------------------BIG BREAK --------------\n\n";
+  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+  
+  ShyLU::DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector> directsolver(A, pLUList.get());
+  directsolver.solve(b,x);
+
+  cout << "Done with Amesos-KLU" << endl;
+
+  //#endif
+
+  //Amesos2 -klu2
+#ifdef HAVE_SHYLU_AMESOS2
+  
+  pLUList->set("Direct Solver Package", "Amesos2");
+  ptemp = pLUList->sublist("Amesos2 Input");
+  //pptemp = ptemp.sublist("Amesos_Klu Input");
+
+
+  pptemp.set("PrintTiming", true);
+  pptemp.set("PrintStatus", true);
+  ptemp.set("Solver", "KLU2");
+  //ptemp.set("Amesos_Klu Input", pptemp);
+  pLUList->set("Amesos2 Input", ptemp);
+
+
+  cout << " \n\n--------------------BIG BREAK --------------\n\n";
+  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+  
+  ShyLU::DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector> directsolver2(A, pLUList.get());
+  directsolver2.solve(b,x);
+
+  cout << "Done with Amesos-KLU2" << endl;
   
 #endif
+
+
+
 }
 

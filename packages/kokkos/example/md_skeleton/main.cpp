@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
 
   double2 ev = force(system,1);
 
-  printf("-> Calculate Energy: %lf Virial: %lf\n",ev.x,ev.y);
+  printf("-> Calculate Energy: %f Virial: %f\n",ev.x,ev.y);
 
   printf("-> Running %i force calculations\n",iter);
 

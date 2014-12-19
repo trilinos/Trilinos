@@ -695,9 +695,9 @@ void ILUT<MatrixType>::compute ()
         pattern[L_vals_heap[j]] = UNUSED;
       }
 
-      // L has a one on the diagonal, but we don't explicitly store it.
-      // If we don't store it, then the Tpetra/Kokkos kernel which performs
-      // the triangular solve can assume a unit diagonal, take a short-cut
+      // L has a one on the diagonal, but we don't explicitly store
+      // it.  If we don't store it, then the kernel which performs the
+      // triangular solve can assume a unit diagonal, take a short-cut
       // and perform faster.
 
       L_->insertLocalValues (row_i, tmp_idx (), tmpv ());

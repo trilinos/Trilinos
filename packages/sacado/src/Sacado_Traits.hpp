@@ -50,6 +50,11 @@
 #define SACADO_TRAITS_HPP
 
 #include "Sacado_ConfigDefs.h"
+#include "Sacado_dummy_arg.hpp"
+#include "Sacado_mpl_enable_if.hpp"
+#include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_convertible.hpp"
+#include "Sacado_mpl_is_same.hpp"
 #include <string>
 
 #ifdef HAVE_SACADO_COMPLEX
@@ -63,19 +68,94 @@ namespace Sacado {
    * The %Promote classes provide a mechanism for computing the
    * promoted type of a binary operation.
    */
-  template <typename A, typename B> struct Promote {};
+  template <typename A, typename B, typename Enabled = void> struct Promote {};
+
+  //! Specialize this for a given type T to disable default Promote rules
+  template <typename T> struct OverrideDefaultPromote {
+    static const bool value = false;
+  };
 
   //! Specialization of %Promote for a single type
-  template <typename A> struct Promote<A,A> {
+  template <typename A>
+  struct Promote< A, A,
+                  typename mpl::enable_if_c< !OverrideDefaultPromote<A>::value >::type > {
     typedef A type;
   };
 
+  //! Specialization of %Promote when A is convertible to B but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                            !mpl::is_convertible<B,A>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef B type;
+  };
+
+  //! Specialization of %Promote when B is convertible to A but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<B,A>::value &&
+                                            !mpl::is_convertible<A,B>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef A type;
+  };
+
+  //! Is a type an expression
+  template <typename T>
+  struct IsExpr {
+    static const bool value = false;
+  };
+
+  //! Determine whether a given type is a view
+  template <typename T>
+  struct IsView {
+    static const bool value = false;
+  };
+
+  //! Get the base Fad type from a view/expression
+  template <typename T>
+  struct BaseExprType {
+    typedef T type;
+  };
+
+  //! Get view type for any Fad type
+  template <typename T,unsigned,unsigned> struct ViewFadType {};
+
+  //! Specialization of %Promote for View-types
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< IsView<A>::value ||
+                                             IsView<B>::value >::type > {
+    typedef typename BaseExprType<A>::type base_fad_type_A;
+    typedef typename BaseExprType<B>::type base_fad_type_B;
+    typedef typename Promote<base_fad_type_A,base_fad_type_B>::type type;
+  };
+
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                             mpl::is_convertible<B,A>::value &&
+                                             !mpl::is_same<A,B>::value &&
+                                             !IsView<A>::value &&
+                                             !IsView<B>::value &&
+                                             ( IsExpr<A>::value ||
+                                               IsExpr<B>::value ) >::type >
+  {
+    typedef typename BaseExprType<A>::type A_base_fad_type;
+    typedef typename BaseExprType<B>::type B_base_fad_type;
+    typedef typename Promote< A_base_fad_type, B_base_fad_type >::type type;
+  };
+
   //! Specialization of %Promote to builtin types
-#define SACADO_PROMOTE_SPECIALIZATION(type1,type2,type3) \
-  template <> struct Promote< type1, type2 > {             \
+#define SACADO_PROMOTE_SPECIALIZATION(type1,type2,type3)   \
+  template <> struct Promote< type1, type2, void > {       \
     typedef type3 type;                                    \
   };                                                       \
-  template <> struct Promote< type2, type1 > {             \
+  template <> struct Promote< type2, type1, void > {       \
     typedef type3 type;                                    \
   };
 
@@ -96,6 +176,85 @@ namespace Sacado {
 #endif // HAVE_SACADO_COMPLEX
 
 #undef SACADO_PROMOTE_SPECIALIZATION
+
+   // Macros for building proper Promote specialization for AD types
+
+#define SACADO_AD_PROMOTE_SPEC(NS, AD) /* */
+
+#define SACADO_AD_PROMOTE_SPEC2(NS, AD) /* */
+
+#define SACADO_FAD_PROMOTE_SPEC(NS, FAD) /* */
+
+#define SACADO_SFAD_PROMOTE_SPEC(NS, FAD) /* */
+
+#define SACADO_EXPR_PROMOTE_SPEC(NS)                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< NS :: Expr <T>, U,                                    \
+                  typename mpl::enable_if_c<                            \
+                    mpl::is_convertible< U, typename BaseExprType< typename NS :: Expr <T>::value_type >::type >::value && \
+                   !IsView<U>::value >::type > {                        \
+    typedef typename NS :: Expr <T>::base_expr_type type;               \
+  };                                                                    \
+  template <typename T, typename U>                                     \
+  struct Promote< U, NS :: Expr <T>,                                    \
+                  typename mpl::enable_if_c<                            \
+                    mpl::is_convertible< U, typename BaseExprType< typename NS :: Expr <T>::value_type >::type >::value && \
+                  !IsView<U>::value >::type > {                         \
+    typedef typename NS :: Expr <T>::base_expr_type type;               \
+  };
+
+#define SACADO_VFAD_PROMOTE_SPEC(NS)                                    \
+  namespace NS {                                                        \
+    template <typename,unsigned,unsigned,typename> class ViewFad;       \
+  }                                                                     \
+  template <typename T, unsigned l, unsigned s, typename U>             \
+  struct OverrideDefaultPromote< NS :: ViewFad<T,l,s,U> > {             \
+    static const bool value = true;                                     \
+  };                                                                    \
+
+#define SACADO_RAD_PROMOTE_SPEC(NS)                                     \
+  namespace NS {                                                        \
+    template <typename> class ADvar;                                    \
+    template <typename> class ADvari;                                   \
+  }                                                                     \
+  template <typename T>                                                 \
+  struct OverrideDefaultPromote< NS :: ADvari <T>& > {                  \
+    static const bool value = true;                                     \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  typename NS :: ADvari <T>::value_type > {             \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename NS :: ADvari <T>::value_type,                \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  typename dummy< typename NS :: ADvari <T>::value_type, \
+                                  typename NS :: ADvari <T>::scalar_type \
+                                  >::type > {                           \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename dummy< typename NS :: ADvari <T>::value_type, \
+                                  typename NS :: ADvari <T>::scalar_type \
+                                  >::type,                              \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };
 
   //
   // We define defaults for all of the traits to make Sacado easier to use.
@@ -203,6 +362,18 @@ namespace Sacado {
     static const unsigned value = 0;
   };
 
+  //! Remove const from a type
+  template <typename T>
+  struct RemoveConst {
+    typedef T type;
+  };
+
+  //! Remove const from a type
+  template <typename T>
+  struct RemoveConst< const T > {
+    typedef T type;
+  };
+
   //! Specialization of above classes to builtin types
 #define SACADO_BUILTIN_SPECIALIZATION(t,NAME)             \
   template <> struct ScalarType< t > {                    \
@@ -252,16 +423,6 @@ namespace Sacado {
 #endif
 
 #undef SACADO_BUILTIN_SPECIALIZATION
-
-  template <typename T>
-  struct RemoveConst {
-    typedef T type;
-  };
-
-  template <typename T>
-  struct RemoveConst< const T > {
-    typedef T type;
-  };
 
 } // namespace Sacado
 

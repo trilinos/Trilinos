@@ -115,7 +115,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.

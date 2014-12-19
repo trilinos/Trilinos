@@ -59,6 +59,7 @@
 #include "ROL_Types.hpp"
 
 namespace ROL {
+namespace ZOO {
 
   /** \brief W. Hock and K. Schittkowski 2nd test function.
    */
@@ -78,8 +79,8 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > eg =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
-      (*eg)[0] = -4.0 * 100.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)) * (*ex)[0] - 2.0 * (1.0-(*ex)[0]);
-      (*eg)[1] = 2.0 * 100.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)); 
+      (*eg)[0] = -400.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)) * (*ex)[0] - 2.0 * (1.0-(*ex)[0]);
+      (*eg)[1] =  200.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)); 
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
@@ -90,13 +91,15 @@ namespace ROL {
       Teuchos::RCP<std::vector<Real> > ehv =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
 
-      Real h11 = -4.0 * 100.0 * (*ex)[1] + 12.0 * 100.0 * std::pow((*ex)[0],2.0) + 2.0; 
-      Real h22 = 2.0 * 100.0;
-      Real h12 = -4.0 * 100.0 * (*ex)[0];
-      Real h21 = -4.0 * 100.0 * (*ex)[0];
+      Real h11 = -400.0 * (*ex)[1] + 1200.0 * std::pow((*ex)[0],2.0) + 2.0; 
+      Real h22 =  200.0;
+      Real h12 = -400.0 * (*ex)[0];
+      Real h21 = -400.0 * (*ex)[0];
 
-      (*ehv)[0] = h11 * (*ev)[0] + h12 * (*ev)[1];
-      (*ehv)[1] = h21 * (*ev)[0] + h22 * (*ev)[1];
+      Real alpha = 1.0;
+
+      (*ehv)[0] = (h11+alpha) * (*ev)[0] + h12 * (*ev)[1];
+      (*ehv)[1] = h21 * (*ev)[0] + (h22+alpha) * (*ev)[1];
     } 
 #endif
     void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
@@ -107,10 +110,10 @@ namespace ROL {
       Teuchos::RCP<std::vector<Real> > ehv =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
       
-      Real h11 = -4.0 * 100.0 * (*ex)[1] + 12.0 * 100.0 * std::pow((*ex)[0],2.0) + 2.0; 
-      Real h22 = 2.0 * 100.0;
-      Real h12 = -4.0 * 100.0 * (*ex)[0];
-      Real h21 = -4.0 * 100.0 * (*ex)[0];
+      Real h11 = -400.0 * (*ex)[1] + 1200.0 * std::pow((*ex)[0],2.0) + 2.0; 
+      Real h22 =  200.0;
+      Real h12 = -400.0 * (*ex)[0];
+      Real h21 = -400.0 * (*ex)[0];
   
       (*ehv)[0] = 1.0/(h11*h22 - h12*h21) * (h22 * (*ev)[0] - h12 * (*ev)[1]);
       (*ehv)[1] = 1.0/(h11*h22 - h12*h21) * (-h21 * (*ev)[0] + h11 * (*ev)[1]);
@@ -133,8 +136,8 @@ namespace ROL {
     // Instantiate Objective Function
     obj = Teuchos::rcp( new Objective_HS2<Real> );
     // Instantiate BoundConstraint
-    std::vector<Real> l (n,0.0); l[0] = -ROL_OVERFLOW; l[1] = 1.5;
-    std::vector<Real> u (n,0.0); u[0] = ROL_OVERFLOW;  u[1] = ROL_OVERFLOW;
+    std::vector<Real> l (n,0.0); l[0] = -0.1*ROL_OVERFLOW; l[1] = 1.5;
+    std::vector<Real> u (n,0.0); u[0] = 0.1*ROL_OVERFLOW;  u[1] = 0.1*ROL_OVERFLOW;
     con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
     // Get Initial Guess
     (*x0p)[0] =  -2.0;
@@ -147,6 +150,7 @@ namespace ROL {
   }
 
 
-}// End ROL Namespace
+} // End ZOO Namespace
+} // End ROL Namespace
 
 #endif

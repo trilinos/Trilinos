@@ -50,6 +50,11 @@
 namespace MueLu {
 
   /* See also: ML_Epetra::UpdateList */
+  //! @brief: merge two parameter lists
+  //!
+  //! @param source [in]: parameter lists with source parameters which are to be merged in into the dest parameter list
+  //! @param dest [in,out]: parameter list with, e.g., default parameters which is extended by parameters from source parameter list
+  //! @param overWrite (bool): if true, overwrite parameters in dest with entries from source
   void MergeParameterList(const Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool overWrite){
     for(Teuchos::ParameterList::ConstIterator param=source.begin(); param!=source.end(); ++param)
       if (dest.isParameter(source.name(param)) == false || overWrite)
@@ -166,4 +171,15 @@ namespace MueLu {
     return subList;
   }
 
+  // replace all string occurences "from" with "to" in "str"
+  void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if(from.empty())
+      return;
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+      str.replace(start_pos, from.length(), to);
+      start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+  }
+   
 } // namespace MueLu

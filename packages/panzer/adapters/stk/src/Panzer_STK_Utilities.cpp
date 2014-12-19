@@ -53,10 +53,12 @@ static void gather_in_block(const std::string & blockId, const panzer::UniqueGlo
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                             std::map<std::string,Intrepid::FieldContainer<double> > & fc);
 
+#ifdef PANZER_HAVE_FEI
 void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<int,int> & dofMngr,
                        const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
                        const std::vector<std::size_t> & localCellIds,
                        Epetra_Vector & x);
+#endif
 
 static void build_local_ids(const panzer_stk_classic::STK_Interface & mesh,
                             std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds);
@@ -115,6 +117,7 @@ void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,pa
    }
 }
 
+#ifdef PANZER_HAVE_FEI
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_MultiVector & x)
 {
    read_solution_data(dofMngr,mesh,*x(0));
@@ -148,6 +151,7 @@ void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const pan
       scatter_to_vector(blockId,dofMngr,data,localCellIds,x);
    }
 }
+#endif
 
 void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,int> & dofMngr,
                      const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
@@ -185,6 +189,7 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
    }
 }
 
+#ifdef PANZER_HAVE_FEI
 void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<int,int> & dofMngr,
                        const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
                        const std::vector<std::size_t> & localCellIds,
@@ -220,6 +225,7 @@ void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<
       }
    }
 }
+#endif
 
 void build_local_ids(const panzer_stk_classic::STK_Interface & mesh,
                    std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds)

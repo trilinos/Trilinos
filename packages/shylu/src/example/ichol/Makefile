@@ -6,7 +6,7 @@ info :
 
 OBJ   = 
 
-TEST  = ichol_left_blocked
+TEST  = ichol_left_by_blocks
 
 TESTS = \
 	crs_matrix_base \
@@ -15,12 +15,16 @@ TESTS = \
 	partition \
 	dot \
 	ichol_left_unblocked \
-	ichol_left_blocked 
-	# scotch \
+	ichol_left_blocked \
+	scotch \
+	qthread \
+	kokkos_array \
+	crs_hier_base \
+	crs_task_view \
+	ichol_left_by_blocks 
+
 	# symbolic_task \
-	# crs_hier_base \
-	# crs_task_view \
-	# ichol_left_by_blocks 
+
 
 
 TRILINOS_DIR = ${HOME}/Work/lib/trilinos/kokkos-openmp
@@ -31,7 +35,7 @@ include $(TRILINOS_DIR)/include/Makefile.export.Kokkos
 include $(TRILINOS_DIR)/include/Makefile.export.KokkosExample
 
 CC = g++
-CCFLAGS = -g -O3 -std=c++11 -fopenmp -march=native
+CCFLAGS = -g -O0 -std=c++11 -fopenmp -march=native
 
 CCINCS = -I. -I${QTHREADS_DIR}/include -I${TRILINOS_DIR}/include -I${SCOTCH_DIR}/include
 CCWARN = -Wno-pointer-arith

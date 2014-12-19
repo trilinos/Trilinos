@@ -74,11 +74,18 @@ int main()
   double x = 1.0;
   double y = std::acosh(x);
   return 0;
-} 
+}
   "
   )
-CHECK_CXX_SOURCE_COMPILES("${SOURCE_C99_TR1_CMATH}" 
+CHECK_CXX_SOURCE_COMPILES("${SOURCE_C99_TR1_CMATH}"
   HAS_C99_TR1_CMATH)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Sacado_ENABLE_CXX11
+  HAVE_SACADO_CXX11
+  "Enable C++11 support in Sacado."
+  "${Trilinos_ENABLE_CXX11}"
+  )
 
 #
 # C) Add the libraries, tests, and examples

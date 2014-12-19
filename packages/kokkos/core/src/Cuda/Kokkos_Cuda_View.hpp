@@ -211,8 +211,10 @@ public:
       return *this ;
     }
 
+
   KOKKOS_INLINE_FUNCTION
-  ValueType * raw_ptr() const { return m_alloc_ptr + m_offset ; }
+  operator const ValueType * () const { return m_alloc_ptr + m_offset ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -268,8 +270,10 @@ public:
     return *this;
   }
 
+
   KOKKOS_INLINE_FUNCTION
-  ValueType * raw_ptr() const { return m_ptr ; }
+  operator const ValueType * () const { return m_ptr ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -307,27 +311,12 @@ class ViewDataHandle< ViewTraits ,
                     >::type >
 {
 public:
-  enum { ReferenceAble = 0 };
+  enum { ReturnTypeIsReference = false };
 
   typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
-                                , typename ViewTraits::memory_space > type;
+                                , typename ViewTraits::memory_space > handle_type;
 
   typedef typename ViewTraits::value_type return_type;
-
-  static type allocate( const std::string & label , size_t count )
-    {
-      return type( (typename ViewTraits::value_type*)
-                    ViewTraits::memory_space::allocate(
-                      label ,
-                      typeid(typename ViewTraits::value_type) ,
-                      sizeof(typename ViewTraits::value_type) ,
-                      count )
-                 );
-    }
-
-  KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr( const type & handle )
-    { return handle.raw_ptr(); }
 };
 
 }

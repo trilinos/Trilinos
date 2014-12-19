@@ -46,6 +46,9 @@ namespace Sacado {
 
   namespace Tay {
 
+    // Forward declaration
+    template <typename T> class CacheTaylor;
+
     //! Taylor polynomial class using caching expression templates
     /*!
      * This class provides the implementation of the Taylor object required
@@ -59,6 +62,9 @@ namespace Sacado {
 
       //! Typename of values
       typedef T value_type;
+
+      //! Typename of scalar's (which may be different from ValueT)
+      typedef typename ScalarType<T>::type scalar_type;
 
       //! Default constructor
       CacheTaylorImplementation() : coeff_(T(0.),1) {}
@@ -189,6 +195,9 @@ namespace Sacado {
       public CacheTaylorImplementation<T> {
 
     public:
+
+      //! Typename of base-expressions
+      typedef CacheTaylor<T> base_expr_type;
 
       //! Default constructor
       Expr() : CacheTaylorImplementation<T>() {}

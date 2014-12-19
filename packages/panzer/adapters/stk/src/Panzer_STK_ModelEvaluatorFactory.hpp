@@ -89,7 +89,9 @@ namespace panzer {
   template <typename> class LinearObjFactory;
 
   template <typename,typename> class BlockedDOFManager;
+#ifdef PANZER_HAVE_FEI
   template <typename,typename> class DOFManagerFEI;
+#endif
   template <typename,typename> class DOFManager;
   template <typename> class ConnManagerBase;
 }
@@ -185,7 +187,8 @@ namespace panzer_stk_classic {
                               const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                               const panzer::BCStrategyFactory & bc_factory,
                               const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
-                              bool is_transient,bool is_explicit) const;
+                              bool is_transient,bool is_explicit,
+                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
 
   protected:
  
@@ -239,6 +242,7 @@ namespace panzer_stk_classic {
     void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
+#ifdef PANZER_HAVE_FEI
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
       * \param[in] fieldName Field to fill associative container with
@@ -248,6 +252,7 @@ namespace panzer_stk_classic {
     template <typename GO>
     void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+#endif
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -302,8 +307,10 @@ namespace panzer_stk_classic {
     template <typename GO>
     void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
 
+#ifdef PANZER_HAVE_FEI
     template <typename GO>
     void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
+#endif
 
   private:
 

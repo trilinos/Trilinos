@@ -62,6 +62,51 @@
 #include <typeinfo> // typeid (T)
 #include <cstdio>
 
+
+namespace {
+  // Whether Kokkos::Details::ArithTraits<ScalarType> implements
+  // transcendental functions.  These include sqrt, pow, log, and
+  // log10.
+  template<class ScalarType>
+  struct HasTranscendentals {
+    static const bool value = false;
+  };
+
+  template<>
+  struct HasTranscendentals<float> {
+    static const bool value = true;
+  };
+
+  template<>
+  struct HasTranscendentals<double> {
+    static const bool value = true;
+  };
+
+  template<>
+  struct HasTranscendentals<long double> {
+    static const bool value = true;
+  };
+
+  // template<>
+  // struct HasTranscendentals< ::Kokkos::complex<float> > {
+  //   static const bool value = true;
+  // };
+
+  // template<>
+  // struct HasTranscendentals< ::Kokkos::complex<double> > {
+  //   static const bool value = true;
+  // };
+
+  // template<>
+  // struct HasTranscendentals< ::Kokkos::complex<long double> > {
+  //   static const bool value = true;
+  // };
+
+} // namespace (anonymous)
+
+
+
+
 /// \class ArithTraitsTesterBase
 /// \brief Base class providing tests for Kokkos::Details::ArithTraits
 /// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
@@ -101,7 +146,7 @@ public:
   /// \brief Set the initial value (\c 1) of the reduction.
   ///
   /// Subclasses need not and must not override this method.
-  KOKKOS_INLINE_FUNCTION void init (volatile value_type& dst) const {
+  KOKKOS_INLINE_FUNCTION void init ( value_type& dst) const {
     dst = 1;
   }
 
@@ -217,110 +262,6 @@ public:
       success = 0;
     }
 
-    const ScalarType two = one + one;
-    const ScalarType three = one + one + one;
-    const ScalarType four = two * two;
-    const ScalarType five = four + one;
-    const ScalarType six = three * two;
-    const ScalarType seven = four + three;
-    const ScalarType eight = four * two;
-    const ScalarType nine = eight + one;
-    const ScalarType eleven = five + six;
-    const ScalarType twentySeven = nine * three;
-    const ScalarType thirtySix = six * six;
-    const ScalarType fortyTwo = six * seven;
-    const ScalarType sixtyThree = eight * eight - one;
-    const ScalarType sixtyFour = eight * eight;
-    // max char value, for 8-bit char
-    const ScalarType oneTwentySeven = sixtyFour + sixtyThree;
-
-    ScalarType result;
-
-    // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
-    if (! AT::is_complex) {
-      result = AT::pow (two, three);
-      if (result != eight) {
-        printf ("AT::pow(2,3) != 8\n");
-        success = 0;
-      }
-    }
-    if (AT::pow (three, zero) != one) {
-      printf ("AT::pow(3,0) != 1\n");
-      success = 0;
-    }
-    if (AT::pow (three, one) != three) {
-      printf ("AT::pow(3,1) != 3\n");
-      success = 0;
-    }
-    if (AT::pow (three, two) != nine) {
-      printf ("AT::pow(3,2) != 9\n");
-      success = 0;
-    }
-
-    // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
-    if (! AT::is_complex) {
-      result = AT::pow (three, three);
-      if (result != twentySeven) {
-        printf ("AT::pow(3,3) != 27\n");
-        success = 0;
-      }
-    }
-
-    // These fail inexplicably for complex numbers on gcc 4.2.1 on Mac.
-    if (AT::is_signed && ! AT::is_complex) {
-      result = AT::pow (-three, one);
-      if (result != -three) {
-        printf ("AT::pow(-3,1) != -3\n");
-        success = 0;
-      }
-      result = AT::pow (-three, two);
-      if (result != nine) {
-        printf ("AT::pow(-3,2) != 9\n");
-        success = 0;
-      }
-      result = AT::pow (-three, three);
-      if (result != -twentySeven) {
-        printf ("AT::pow(-3,3) != 27\n");
-        success = 0;
-      }
-    }
-
-    if (AT::sqrt (zero) != zero) {
-      printf ("AT::sqrt(0) != 0\n");
-      success = 0;
-    }
-    if (AT::sqrt (one) != one) {
-      printf ("AT::sqrt(1) != 1\n");
-      success = 0;
-    }
-    if (AT::sqrt (thirtySix) != six) {
-      printf ("AT::sqrt(36) != 6\n");
-      success = 0;
-    }
-    if (AT::sqrt (sixtyFour) != eight) {
-      printf ("AT::sqrt(64) != 8\n");
-      success = 0;
-    }
-    if (AT::is_integer) {
-      if (AT::sqrt (fortyTwo) != six) {
-        printf ("AT:sqrt(42) != 6\n");
-        success = 0;
-      }
-      if (AT::sqrt (oneTwentySeven) != eleven) {
-        printf ("AT::sqrt(127) != 11\n");
-        success = 0;
-      }
-    }
-
-    if (AT::log (one) != zero) {
-      printf ("AT::log(1) != 0\n");
-      success = 0;
-    }
-    if (AT::log10 (one) != zero) {
-      printf ("AT::log10(1) != 0\n");
-      success = 0;
-    }
-
     dst = dst && success;
   }
 
@@ -429,16 +370,287 @@ public:
       out << "AT::abs (zero) > AT::abs (AT::max ())" << endl;
       success = 0;
     }
-    //success = success && (AT::abs (AT::min ()) <= AT::abs (AT::max ()));
 
-    // Need enable_if to do a complex test.
-    // if (AT::is_complex) {
+    // Run the parent class' remaining tests, if any.
+    const int parentSuccess = testHostImpl (out);
+    success = success && parentSuccess;
 
-    // }
-    // else {
+    return success;
+  }
+};
 
-    // }
 
+/// \class ArithTraitsTesterTranscendentalBase
+/// \brief Base class of ArithTraitsTester that exercises
+///   transcendental functions, if and only if ArithTraits<ScalarType>
+///   implements them.
+/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+///   implements transcendental functions, along with the requirements
+///   imposed by ArithTraitsTesterBase.
+/// \tparam DeviceType A Kokkos parallel device type.
+/// \tparam hasTranscendentals Whether ArithTraits<ScalarType>
+///   implements transcendental functions.
+///
+/// Some tests will be executed whether or not ArithTraits<ScalarType>
+/// implements transcendental functions, but the specific tests that
+/// are run will depend on \c ScalarType.
+template<class ScalarType,
+         class DeviceType,
+         const int has_transcendentals =
+         (HasTranscendentals<ScalarType>::value ? 1 : 0) >
+class ArithTraitsTesterTranscendentalBase :
+  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef int value_type;
+
+  /// \brief The "parallel for" part of the reduction.
+  ///
+  /// See comments of ArithTraitsTesterBase's operator().
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const;
+
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterTranscendentalBase ();
+
+protected:
+  // The host hook gets implemented in the "transcendental functions
+  // are implemented" specialization of this class.
+  virtual int testHostImpl (std::ostream& out) const;
+};
+
+
+//
+// Specialization of ArithTraitsTesterTranscendentalBase when
+// ArithTraits<ScalarType> does NOT implement transcendentals.
+//
+template<class ScalarType,
+         class DeviceType>
+class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 0> :
+  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef int value_type;
+
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterTranscendentalBase () {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const {
+    //typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // forestall compiler warning for unused variable
+    int success = 1;
+
+    if (HasTranscendentals<ScalarType>::value) {
+      success = 0;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of operator() must do this, in order to include
+    // the parent class' tests.
+    int baseResult = 1;
+    base_type::operator () (iwork, baseResult);
+    success = success && baseResult;
+
+    dst = dst && success;
+  }
+
+protected:
+  virtual int testHostImpl (std::ostream& out) const {
+    using std::endl;
+    //typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    int success = 1;
+
+    if (HasTranscendentals<ScalarType>::value) {
+      out << "HasTranscendentals<T>::value is true" << endl;
+      success = 0;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testHostImpl() should (must) do this, in
+    // order to include the parent class' tests.  In the case of this
+    // particular class, the base class' implementation doesn't do
+    // anything, but that's OK.
+    const int parentSuccess = base_type::testHostImpl (out);
+    success = success && parentSuccess;
+
+    return success;
+  }
+};
+
+
+//
+// Specialization of ArithTraitsTesterTranscendentalBase when
+// ArithTraits<ScalarType> DOES implement transcendentals.
+//
+template<class ScalarType,
+         class DeviceType>
+class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1> :
+  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef int value_type;
+
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterTranscendentalBase () {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // forestall compiler warning for unused variable
+    int success = 1;
+
+    if (! HasTranscendentals<ScalarType>::value) {
+      success = 0;
+    }
+
+    const ScalarType zero = AT::zero ();
+    const ScalarType one = AT::one ();
+    const ScalarType two = one + one;
+    const ScalarType three = one + one + one;
+    const ScalarType four = two * two;
+    const ScalarType five = four + one;
+    const ScalarType six = three * two;
+    const ScalarType seven = four + three;
+    const ScalarType eight = four * two;
+    const ScalarType nine = eight + one;
+    const ScalarType eleven = five + six;
+    const ScalarType twentySeven = nine * three;
+    const ScalarType thirtySix = six * six;
+    const ScalarType fortyTwo = six * seven;
+    const ScalarType sixtyThree = eight * eight - one;
+    const ScalarType sixtyFour = eight * eight;
+    // max char value, for 8-bit char
+    const ScalarType oneTwentySeven = sixtyFour + sixtyThree;
+
+    ScalarType result;
+
+    // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
+    if (! AT::is_complex) {
+      result = AT::pow (two, three);
+      if (result != eight) {
+        printf ("AT::pow(2,3) != 8\n");
+        success = 0;
+      }
+    }
+    if (AT::pow (three, zero) != one) {
+      printf ("AT::pow(3,0) != 1\n");
+      success = 0;
+    }
+    if (AT::pow (three, one) != three) {
+      printf ("AT::pow(3,1) != 3\n");
+      success = 0;
+    }
+    if (AT::pow (three, two) != nine) {
+      printf ("AT::pow(3,2) != 9\n");
+      success = 0;
+    }
+
+    // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
+    if (! AT::is_complex) {
+      result = AT::pow (three, three);
+      if (result != twentySeven) {
+        printf ("AT::pow(3,3) != 27\n");
+        success = 0;
+      }
+    }
+
+    // These fail inexplicably for complex numbers on gcc 4.2.1 on Mac.
+    if (AT::is_signed && ! AT::is_complex) {
+      result = AT::pow (-three, one);
+      if (result != -three) {
+        printf ("AT::pow(-3,1) != -3\n");
+        success = 0;
+      }
+      result = AT::pow (-three, two);
+      if (result != nine) {
+        printf ("AT::pow(-3,2) != 9\n");
+        success = 0;
+      }
+      result = AT::pow (-three, three);
+      if (result != -twentySeven) {
+        printf ("AT::pow(-3,3) != 27\n");
+        success = 0;
+      }
+    }
+
+    if (AT::sqrt (zero) != zero) {
+      printf ("AT::sqrt(0) != 0\n");
+      success = 0;
+    }
+    if (AT::sqrt (one) != one) {
+      printf ("AT::sqrt(1) != 1\n");
+      success = 0;
+    }
+    if (AT::sqrt (thirtySix) != six) {
+      printf ("AT::sqrt(36) != 6\n");
+      success = 0;
+    }
+    if (AT::sqrt (sixtyFour) != eight) {
+      printf ("AT::sqrt(64) != 8\n");
+      success = 0;
+    }
+    if (AT::is_integer) {
+      if (AT::sqrt (fortyTwo) != six) {
+        printf ("AT:sqrt(42) != 6\n");
+        success = 0;
+      }
+      if (AT::sqrt (oneTwentySeven) != eleven) {
+        printf ("AT::sqrt(127) != 11\n");
+        success = 0;
+      }
+    }
+
+    if (AT::log (one) != zero) {
+      printf ("AT::log(1) != 0\n");
+      success = 0;
+    }
+    if (AT::log10 (one) != zero) {
+      printf ("AT::log10(1) != 0\n");
+      success = 0;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of operator() must do this, in order to include
+    // the parent class' tests.
+    int baseResult = 1;
+    base_type::operator () (iwork, baseResult);
+    success = success && baseResult;
+
+    dst = dst && success;
+  }
+
+protected:
+  virtual int testHostImpl (std::ostream& out) const {
+    using std::endl;
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    int success = 1;
+
+    if (! HasTranscendentals<ScalarType>::value) {
+      out << "HasTranscendentals<T>::value is false" << endl;
+      success = 0;
+    }
+
+    const ScalarType zero = AT::zero ();
+    const ScalarType one = AT::one ();
     const ScalarType two = one + one;
     const ScalarType three = one + one + one;
     const ScalarType four = two * two;
@@ -547,8 +759,12 @@ public:
       success = 0;
     }
 
-    // Run the parent class' remaining tests, if any.
-    const int parentSuccess = testHostImpl (out);
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testHostImpl() should (must) do this, in
+    // order to include the parent class' tests.  In the case of this
+    // particular class, the base class' implementation doesn't do
+    // anything, but that's OK.
+    const int parentSuccess = base_type::testHostImpl (out);
     success = success && parentSuccess;
 
     return success;
@@ -571,10 +787,11 @@ public:
 template<class ScalarType,
          class DeviceType,
          const int is_complex = Kokkos::Details::ArithTraits<ScalarType>::is_complex>
-class ArithTraitsTesterComplexBase : public ArithTraitsTesterBase<ScalarType, DeviceType> {
+class ArithTraitsTesterComplexBase :
+  public ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> {
 private:
   //! The base class of this class.
-  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+  typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
 public:
   typedef DeviceType device_type;
@@ -603,10 +820,10 @@ protected:
 template<class ScalarType,
          class DeviceType>
 class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0> :
-  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+  public ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> {
 private:
   //! The base class of this class.
-  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+  typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
 public:
   typedef DeviceType device_type;
@@ -673,10 +890,10 @@ protected:
 template<class ScalarType,
          class DeviceType>
 class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1> :
-  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+  public ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> {
 private:
   //! The base class of this class.
-  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+  typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
 public:
   typedef DeviceType device_type;
@@ -1134,6 +1351,13 @@ int runAllArithTraitsDeviceTests (std::ostream& out, const int verbose)
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<double, DeviceType> (out, verbose);
 
+  //
+  // Kokkos' complex floating-point types
+  //
+
+  success = success && curSuccess; curSuccess = testArithTraitsOnDevice<Kokkos::complex<float>, DeviceType> (out, verbose);
+  success = success && curSuccess; curSuccess = testArithTraitsOnDevice<Kokkos::complex<double>, DeviceType> (out, verbose);
+
   return success;
 }
 
@@ -1194,6 +1418,14 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<float>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<double>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<long double>, DeviceType> (out, verbose);
+
+  //
+  // Kokkos' complex floating-point types
+  //
+
+  success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<float>, DeviceType> (out, verbose);
+  success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<double>, DeviceType> (out, verbose);
+  //success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<long double>, DeviceType> (out, verbose);
 
   return success;
 }

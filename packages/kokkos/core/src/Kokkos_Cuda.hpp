@@ -113,6 +113,7 @@ public:
   typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
 
   //@}
+  //--------------------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
@@ -157,10 +158,28 @@ public:
   //! Free any resources being consumed by the device.
   static void finalize();
 
+  //! Has been initialized
+  static int is_initialized();
+
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
+  //--------------------------------------------------
+  //! \name  Cuda space instances
+
+  ~Cuda() {}
+  Cuda();
+  explicit Cuda( const int instance_id );
+
+#if defined( KOKKOS_HAVE_CXX11 )
+  Cuda & operator = ( const Cuda & ) = delete ;
+#else
+private:
+  Cuda & operator = ( const Cuda & );
+public:
+#endif
+
   //--------------------------------------------------------------------------
   //! \name Device-specific functions
   //@{
@@ -172,11 +191,8 @@ public:
   };
 
   //! Initialize, telling the CUDA run-time library which device to use.
-  static void initialize( const SelectDevice = SelectDevice() );
-  static void initialize( int device );
-  static void initialize( int device , int );
-
-  static int is_initialized();
+  static void initialize( const SelectDevice = SelectDevice()
+                        , const size_t num_instances = 1 );
 
   /// \brief Cuda device architecture of the selected device.
   ///
@@ -191,11 +207,11 @@ public:
    */
   static std::vector<unsigned> detect_device_arch();
 
-  static unsigned team_max();
-  static unsigned team_recommended();
-
   //@}
   //--------------------------------------------------------------------------
+
+  const cudaStream_t m_stream ;
+  const int          m_device ;
 };
 
 } // namespace Kokkos

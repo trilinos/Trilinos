@@ -59,7 +59,10 @@
 namespace Kokkos {
 
 class HostSpace ; ///< Memory space for main process and CPU execution spaces
+
+#if defined( KOKKOS_HAVE_SERIAL )
 class Serial ;    ///< Execution space main process on CPU
+#endif // defined( KOKKOS_HAVE_SERIAL )
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 class Threads ;  ///< Execution space with pthreads back-end
@@ -96,6 +99,8 @@ namespace Kokkos {
   typedef Threads DefaultExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
   typedef Serial DefaultExecutionSpace ;
+#else
+#  error "At least one of the following execution spaces must be defined in order to use Kokkos: Kokkos::Cuda, Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads."
 #endif
 
 } // namespace Kokkos

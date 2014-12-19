@@ -227,7 +227,7 @@ public:
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    const unsigned team_size   = device_type::team_max();
+    const unsigned team_size   = policy_type::team_size_recommended( functor_type(nwork) );
     const unsigned league_size = ( nwork + team_size - 1 ) / team_size ;
 
     policy_type team_exec( league_size , team_size );
@@ -305,7 +305,7 @@ public:
     const long int answer =
       ( ind.league_rank() + 1 ) * ind.team_rank() +
       ( ind.team_rank() * ( ind.team_rank() + 1 ) ) / 2 ;
-    
+
     const long int result =
       ind.team_scan( ind.league_rank() + 1 + ind.team_rank() + 1 );
 
@@ -345,14 +345,14 @@ public:
 
   void run_test( const size_t nteam )
   {
-    typedef Kokkos::View< long int , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
+    typedef Kokkos::View< long int , Kokkos::HostSpace , Kokkos::MemoryUnmanaged >  result_type ;
 
     const unsigned REPEAT = 100000 ;
     const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
 
-    policy_type team_exec( nteam , device_type::team_max() );
-
     functor_type functor ;
+
+    policy_type team_exec( nteam , policy_type::team_size_max( functor ) );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       long int accum = 0 ;
@@ -406,20 +406,28 @@ struct SharedTeamFunctor {
     const shared_int_array_type shared_A( ind.team_shmem() , SHARED_COUNT );
     const shared_int_array_type shared_B( ind.team_shmem() , SHARED_COUNT );
 
-    for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
-      shared_A[i] = i + ind.league_rank();
-      shared_B[i] = 2 * i + ind.league_rank();
+    if ((shared_A.ptr_on_device () == NULL && SHARED_COUNT > 0) ||
+        (shared_B.ptr_on_device () == NULL && SHARED_COUNT > 0)) {
+      printf ("Failed to allocate shared memory of size %lu\n",
+              static_cast<unsigned long> (SHARED_COUNT));
+      ++update; // failure to allocate is an error
     }
+    else {
+      for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
+        shared_A[i] = i + ind.league_rank();
+        shared_B[i] = 2 * i + ind.league_rank();
+      }
 
-    ind.team_barrier();
+      ind.team_barrier();
 
-    if ( ind.team_rank() + 1 == ind.team_size() ) {
-      for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
-        if ( shared_A[i] != i + ind.league_rank() ) {
-          ++update ;
-        }
-        if ( shared_B[i] != 2 * i + ind.league_rank() ) {
-          ++update ;
+      if ( ind.team_rank() + 1 == ind.team_size() ) {
+        for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
+          if ( shared_A[i] != i + ind.league_rank() ) {
+            ++update ;
+          }
+          if ( shared_B[i] != 2 * i + ind.league_rank() ) {
+            ++update ;
+          }
         }
       }
     }
@@ -439,9 +447,11 @@ struct TestSharedTeam {
   void run()
   {
     typedef Test::SharedTeamFunctor<ExecSpace> Functor ;
-    typedef Kokkos::View< typename Functor::value_type , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
+    typedef Kokkos::View< typename Functor::value_type , Kokkos::HostSpace , Kokkos::MemoryUnmanaged >  result_type ;
 
-    Kokkos::TeamPolicy< ExecSpace > team_exec( 8192 / ExecSpace::team_max() , ExecSpace::team_max() );
+    const size_t team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( Functor() );
+
+    Kokkos::TeamPolicy< ExecSpace > team_exec( 8192 / team_size , team_size );
 
     typename Functor::value_type error_count = 0 ;
 

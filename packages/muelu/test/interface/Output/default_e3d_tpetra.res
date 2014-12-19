@@ -9,14 +9,19 @@ Level 0
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
+  Matrix filtering (MueLu::FilteredAFactory)
+   Build (MueLu::CoalesceDropFactory)
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+   
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+  
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 1
-    
    aggregation: mode = new   [unused]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
@@ -72,14 +77,19 @@ Level 1
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
+  Matrix filtering (MueLu::FilteredAFactory)
+   Build (MueLu::CoalesceDropFactory)
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+   
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+  
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 1
-    
    aggregation: mode = new   [unused]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
@@ -134,16 +144,16 @@ Level 2
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.44
+Operator complexity = 2.11
 
 matrix rows    nnz  nnz/row procs
 A 0    9999  29995     3.00  1
-A 1    3333   9997     3.00  1
-A 2    1111   3331     3.00  1
+A 1    3333  23319     7.00  1
+A 2    1113   9999     8.98  1
 
 Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94914, alpha: 20, lambdaMin: 0.0974568}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94974, alpha: 20, lambdaMin: 0.0974869}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 2.17965, alpha: 20, lambdaMin: 0.108983}, Global matrix dimensions: [3333, 3333], Global nnz: 23319}
 
 Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother

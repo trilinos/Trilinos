@@ -261,13 +261,13 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
                     )>::type * = 0
                   )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 
@@ -283,13 +283,13 @@ struct ViewAssignment< ViewDefault , Test::EmbedArray , void >
                 , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 
@@ -324,11 +324,13 @@ private:
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
 
+  typedef Impl::ViewDataManagement< traits > view_data_management ;
+
   // traits::value_type = Test::Array< T , N >
 
   typename traits::value_type::value_type * m_ptr_on_device ;
   offset_map_type                           m_offset_map ;
-  Impl::ViewTracking< traits >              m_tracking ;
+  view_data_management                      m_management ;
 
 public:
 
@@ -388,7 +390,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( m_ptr_on_device ); }
+  ~View() { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -462,7 +464,8 @@ public:
                                 sizeof(scalar_type) ,
                                 m_offset_map.capacity() );
 
-      Alloc::initialize( *this );
+      (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
+        ( m_ptr_on_device , m_offset_map.capacity() );
     }
 
   //------------------------------------

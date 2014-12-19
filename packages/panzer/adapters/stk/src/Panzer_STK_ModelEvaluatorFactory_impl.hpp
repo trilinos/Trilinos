@@ -187,6 +187,7 @@ namespace panzer_stk_classic {
 	p.set<bool>("Use DOFManager FEI",false);
 	p.set<bool>("Load Balance DOFs",false);
 	p.set<bool>("Use Tpetra",false);
+	p.set<bool>("Use Epetra ME",true);
 	p.set<bool>("Lump Explicit Mass",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
@@ -263,7 +264,7 @@ namespace panzer_stk_classic {
     Teuchos::RCP<Teuchos::ParameterList> physics_block_plist = Teuchos::sublist(this->getMyNonconstParamList(),"Physics Blocks");
 
     std::vector<panzer::BC> bcs;
-    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     // extract assembly information
     std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
@@ -272,6 +273,7 @@ namespace panzer_stk_classic {
     bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager
     bool use_load_balance = assembly_params.get<bool>("Load Balance DOFs");
     bool useTpetra = assembly_params.get<bool>("Use Tpetra");
+    bool useThyraME = !assembly_params.get<bool>("Use Epetra ME");
 
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
@@ -654,8 +656,11 @@ namespace panzer_stk_classic {
     if(is_transient)
       t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
 
+    if(blockedAssembly || useTpetra) // override the user request
+      useThyraME = true;
+
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
-        = buildPhysicsModelEvaluator(blockedAssembly || useTpetra, // this determines if a Thyra or Epetra ME is used
+        = buildPhysicsModelEvaluator(useThyraME, // blockedAssembly || useTpetra, // this determines if a Thyra or Epetra ME is used
                                      fmb,
                                      m_response_library,
                                      linObjFactory,
@@ -1099,7 +1104,8 @@ namespace panzer_stk_classic {
                             const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                             const panzer::BCStrategyFactory & bc_factory,
                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
-                            bool is_transient,bool is_explicit) const
+                            bool is_transient,bool is_explicit,
+                            const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list) const
   {
     typedef panzer::ModelEvaluator<ScalarT> PanzerME;
 
@@ -1144,7 +1150,12 @@ namespace panzer_stk_classic {
       std::string prefix = "Cloned_";
 
       std::vector<panzer::BC> bcs;
-      panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+      if(bc_list==Teuchos::null) {
+        panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), m_global_data);
+      }
+      else { 
+        panzer::buildBCs(bcs, *bc_list, m_global_data);
+      }
       
       fmb = buildFieldManagerBuilder(Teuchos::rcp_const_cast<panzer::WorksetContainer>(m_response_library->getWorksetContainer()),
                                      physicsBlocks,
@@ -1277,7 +1288,9 @@ namespace panzer_stk_classic {
     using Teuchos::ptrFromRef;
     using Teuchos::ptr_dynamic_cast;
     using panzer::DOFManager;
+#ifdef PANZER_HAVE_FEI
     using panzer::DOFManagerFEI;
+#endif
 
     // first standard dof manager
     {
@@ -1297,6 +1310,7 @@ namespace panzer_stk_classic {
       }
     }
 
+#ifdef PANZER_HAVE_FEI
     // now FEI dof manager
     {
       Ptr<const DOFManagerFEI<int,int> > dofManager = ptr_dynamic_cast<const DOFManagerFEI<int,int> >(ptrFromRef(globalIndexer));
@@ -1314,8 +1328,10 @@ namespace panzer_stk_classic {
         return;
       }
     }
+#endif
   }
 
+#ifdef PANZER_HAVE_FEI
   template<typename ScalarT>
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
@@ -1333,6 +1349,7 @@ namespace panzer_stk_classic {
               Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
      }
   }
+#endif
 
   template<typename ScalarT>
   template<typename GO>
@@ -1670,6 +1687,7 @@ namespace panzer_stk_classic {
     // loop over each field block
     const std::vector<RCP<panzer::UniqueGlobalIndexer<int,GO> > > & blk_dofMngrs = blkDofs.getFieldDOFManagers();
     for(std::size_t b=0;b<blk_dofMngrs.size();b++) {
+#ifdef PANZER_HAVE_FEI
       RCP<panzer::DOFManagerFEI<int,GO> > dofMngr = Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,GO> >(blk_dofMngrs[b],true);
 
       std::vector<std::string> eBlocks;
@@ -1683,9 +1701,13 @@ namespace panzer_stk_classic {
       // loop over each element block, write out topology
       for(std::size_t e=0;e<eBlocks.size();e++)
         writeTopology(*dofMngr,eBlocks[e],file);
+#else
+      TEUCHOS_ASSERT(false);
+#endif
     }
   }
 
+#ifdef PANZER_HAVE_FEI
   template<typename ScalarT>
   template <typename GO>
   void ModelEvaluatorFactory<ScalarT>::
@@ -1725,6 +1747,7 @@ namespace panzer_stk_classic {
       os << " ]" << std::endl;
     }
   }
+#endif
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::

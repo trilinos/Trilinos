@@ -45,20 +45,6 @@
 // version of this file will actually be compiled.
 #include <Tpetra_config.h>
 
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#  include <KokkosCore_config.h>
-#  ifdef KOKKOS_USE_CUDA_BUILD
-#    define DO_COMPILATION
-#  else
-#    ifndef KOKKOS_HAVE_CUDA
-#      define DO_COMPILATION
-#    endif // KOKKOS_HAVE_CUDA
-#  endif // KOKKOS_USE_CUDA_BUILD
-#else
-#  define DO_COMPILATION
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-
-#ifdef DO_COMPILATION
 
 // This test comes from zoltan2/test/temp/multivectorTest.cpp.
 // It mimics the recursive bisection algorithm in Zoltan2.
@@ -474,4 +460,3 @@ timeTpetra (const GO numGlobalCoords,
   }
 }
 
-#endif // DO_COMPILATION

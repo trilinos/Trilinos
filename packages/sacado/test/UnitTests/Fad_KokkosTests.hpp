@@ -28,13 +28,7 @@
 // @HEADER
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Kokkos_Core.hpp"
-#include "Sacado.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_CacheFad_SFad.hpp"
-#include "Sacado_CacheFad_SLFad.hpp"
-
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Kokkos.hpp"
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,
@@ -100,26 +94,71 @@ struct MultiplyKernel {
 
   const InputViewType  m_v1, m_v2;
   const OutputViewType m_v3;
+  const bool m_update;
 
   MultiplyKernel(const InputViewType  v1,
                  const InputViewType  v2,
-                 const OutputViewType v3) :
-    m_v1(v1), m_v2(v2), m_v3(v3) {};
+                 const OutputViewType v3,
+                 const bool update) :
+    m_v1(v1), m_v2(v2), m_v3(v3), m_update(update) {};
 
   // Multiply entries for row 'i' with a value
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const {
-    m_v3(i) = m_v1(i)*m_v2(i);
+    if (m_update)
+      m_v3(i) += m_v1(i)*m_v2(i);
+    else
+      m_v3(i) = m_v1(i)*m_v2(i);
   }
 
   // Kernel launch
   static void apply(const InputViewType  v1,
                     const InputViewType  v2,
-                    const OutputViewType v3) {
+                    const OutputViewType v3,
+                    const bool update = false) {
     const size_type nrow = v1.dimension_0();
-    Kokkos::parallel_for( nrow, MultiplyKernel(v1,v2,v3) );
+    Kokkos::parallel_for( nrow, MultiplyKernel(v1,v2,v3,update) );
   }
 };
+
+// Kernel to assign a constant to a view
+template <typename ViewType, typename ScalarType>
+struct ScalarAssignKernel {
+  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::size_type size_type;
+
+  const ViewType   m_v;
+  const ScalarType m_s;
+
+  ScalarAssignKernel(const ViewType& v, const ScalarType& s) :
+    m_v(v), m_s(s) {};
+
+  // Multiply entries for row 'i' with a value
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type i) const {
+    m_v(i) = m_s;
+  }
+
+  // Kernel launch
+  static void apply(const ViewType& v, const ScalarType& s) {
+    const size_type nrow = v.dimension_0();
+    Kokkos::parallel_for( nrow, ScalarAssignKernel(v,s) );
+  }
+};
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Size, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, fad_size+1);
+  TEUCHOS_TEST_EQUALITY(v.size(), num_rows, out, success);
+}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DeepCopy, FadType, Layout, Device )
@@ -306,6 +345,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, ScalarAssign, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename FadType::value_type value_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", num_rows, fad_size+1);
+  typename ViewType::array_type va = v;
+  Kokkos::deep_copy( va, 1.0 );
+
+  // Deep copy a constant scalar
+  value_type a = 2.3456;
+  ScalarAssignKernel<ViewType,value_type>::apply( v, a );
+
+  // Copy to host
+  host_view_type hv = Kokkos::create_mirror_view(v);
+  Kokkos::deep_copy(hv, v);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+    FadType f = FadType(fad_size, a);
+#else
+    FadType f = a;
+#endif
+    success = success && checkFads(f, hv(i), out);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Multiply, FadType, Layout, Device )
 {
   typedef typename ApplyView<FadType*,Layout,Device>::type ViewType;
@@ -344,6 +419,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     FadType f2 =
       generate_fad<FadType>(num_rows, size_type(2), fad_size, i, size_type(1));
     FadType f3 = f1*f2;
+    success = success && checkFads(f3, h_v3(i), out);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, MultiplyUpdate, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill views
+  ViewType v1("view1", num_rows, fad_size+1), v2("view2", num_rows, fad_size+1);
+  host_view_type h_v1 = Kokkos::create_mirror_view(v1);
+  host_view_type h_v2 = Kokkos::create_mirror_view(v2);
+  for (size_type i=0; i<num_rows; ++i) {
+    h_v1(i) = generate_fad<FadType>(
+      num_rows, size_type(2), fad_size, i, size_type(0));
+    h_v2(i) = generate_fad<FadType>(
+      num_rows, size_type(2), fad_size, i, size_type(1));
+  }
+  Kokkos::deep_copy(v1, h_v1);
+  Kokkos::deep_copy(v2, h_v2);
+
+  // Launch kernel
+  ViewType v3("view3", num_rows, fad_size+1);
+  Kokkos::deep_copy(v3, 1.0);
+  MultiplyKernel<ViewType>::apply(v1,v2,v3,true);
+
+  // Copy back
+  host_view_type h_v3 = Kokkos::create_mirror_view(v3);
+  Kokkos::deep_copy(h_v3, v3);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    FadType f1 =
+      generate_fad<FadType>(num_rows, size_type(2), fad_size, i, size_type(0));
+    FadType f2 =
+      generate_fad<FadType>(num_rows, size_type(2), fad_size, i, size_type(1));
+    FadType f3 = 1.0 + f1*f2;
     success = success && checkFads(f3, h_v3(i), out);
   }
 }
@@ -394,6 +513,76 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     FadType f3 = f1*f2;
     success = success && checkFads(f3, h_v3(i), out);
   }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, MultiplyMixed, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type num_rows = 2;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill views -- do everything on the host for this test
+  FadType f0 = generate_fad<FadType>(
+    num_rows, size_type(2), fad_size, size_type(0), size_type(0));
+  FadType f1 = generate_fad<FadType>(
+    num_rows, size_type(2), fad_size, size_type(1), size_type(0));
+  host_view_type h_v("view1", num_rows, fad_size+1);
+  h_v(0) = f0;
+  h_v(1) = f1;
+
+  FadType f2 = f0 * h_v(1);
+
+  // Check
+  FadType f3 = f0 * f1;
+  success = checkFads(f3, f2, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Rank8, FadType, Layout, Device )
+{
+  typedef typename ApplyView<FadType*******,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ViewType v("view", 100, 1, 2, 3, 4, 5, 6, fad_size+1);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  typename host_view_type::array_type h_a = h_v;
+  Kokkos::deep_copy(h_a, 1.0);
+
+  FadType f1 = FadType(fad_size, 2.0);
+  h_v(99,0,1,2,3,4,5) = f1;
+  FadType f2 = h_v(99,0,1,2,3,4,5);
+
+  // Check
+  success = checkFads(f1, f2, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, Roger, FadType, Layout, Device )
+{
+  const unsigned fad_size = global_fad_size;
+
+  typename ApplyView<FadType*,Layout,Device>::type a("a",4,fad_size+1);
+  typename ApplyView<FadType**,Layout,Device>::type b("b",4,4,fad_size+1);
+  typename ApplyView<FadType***,Layout,Device>::type c("c",4,4,4,fad_size+1);
+  typename ApplyView<FadType****,Layout,Device>::type d("d",4,4,4,4,fad_size+1);
+  typename ApplyView<FadType*****,Layout,Device>::type e("e",4,4,4,4,4,fad_size+1);
+  typename ApplyView<FadType******,Layout,Device>::type f("f",4,4,4,4,4,4,fad_size+1);
+  typename ApplyView<FadType*******,Layout,Device>::type g("g",4,4,4,4,4,4,4,fad_size+1);
+
+  a(0) = FadType(1.0);
+  f(0,0,0,0,0,0) = FadType(1.0);
+  g(0,0,0,0,0,0,0) = FadType(1.0);
+
+  // Check
+  success = true;
 }
 
 // Tests that require view spec
@@ -644,17 +833,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Size, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantScalar, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantZero, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantFad, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantFadFull, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ScalarAssign, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, UnmanagedConst, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, UnmanagedConst2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Multiply, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyUpdate, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyConst, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
@@ -682,18 +877,18 @@ typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
 
 // We can't use DFad unless we use the View specialization
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-#define VIEW_FAD_TESTS_D( D )                           \
-  VIEW_FAD_TESTS_FD( SFadType, D )                      \
-  VIEW_FAD_TESTS_FD( SLFadType, D )                     \
-  VIEW_FAD_TESTS_FD( DFadType, D )                      \
-  VIEW_FAD_TESTS_FD( ELRSFadType, D )                   \
-  VIEW_FAD_TESTS_FD( ELRSLFadType, D )                  \
-  VIEW_FAD_TESTS_FD( ELRDFadType, D )                   \
-  VIEW_FAD_TESTS_FD( CacheSFadType, D )                 \
-  VIEW_FAD_TESTS_FD( CacheSLFadType, D )                \
-  VIEW_FAD_TESTS_FD( CacheDFadType, D )                 \
-  VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )              \
-  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )             \
+#define VIEW_FAD_TESTS_D( D )                            \
+  VIEW_FAD_TESTS_FD( SFadType, D )                       \
+  VIEW_FAD_TESTS_FD( SLFadType, D )                      \
+  VIEW_FAD_TESTS_FD( DFadType, D )                       \
+  VIEW_FAD_TESTS_FD( ELRSFadType, D )                    \
+  VIEW_FAD_TESTS_FD( ELRSLFadType, D )                   \
+  VIEW_FAD_TESTS_FD( ELRDFadType, D )                    \
+  VIEW_FAD_TESTS_FD( CacheSFadType, D )                  \
+  VIEW_FAD_TESTS_FD( CacheSLFadType, D )                 \
+  VIEW_FAD_TESTS_FD( CacheDFadType, D )                  \
+  VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )               \
+  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )              \
   VIEW_FAD_TESTS_FD( ELRCacheDFadType, D )
 #else
 #define VIEW_FAD_TESTS_D( D )                        \

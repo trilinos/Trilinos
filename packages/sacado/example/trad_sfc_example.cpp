@@ -56,7 +56,7 @@ template <typename ScalarT>
 void func_deriv(const ScalarT& a, const ScalarT& b, const ScalarT& c, 
 		ScalarT& drda, ScalarT& drdb)
 {
-  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2))*std::cos(a);
+  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2.))*std::cos(a);
   drdb = c / ((b+1.)*std::sin(a));
 }
 

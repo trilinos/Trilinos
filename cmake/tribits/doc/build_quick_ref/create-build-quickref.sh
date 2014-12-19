@@ -3,10 +3,12 @@
 #  Build a generic version of <Project>BuildQuickRef for general
 #  documentation.
 
-ARGS=$@
+source ../utils/gen_doc_utils.sh
 
-./create-project-build-quickref.py \
---project-name="<Project>" \
---project-template-file=TribitsBuildQuickRefTemplate.rst \
---file-base=TribitsBuildQuickRef \
-$ARGS
+generate_git_version_file
+
+echo
+echo "Generating HTML and PDF files ..."
+echo
+
+make

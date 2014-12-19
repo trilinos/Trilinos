@@ -45,21 +45,23 @@
 
 #include <Kokkos_Core.hpp>
 
-#if defined( KOKKOS_HAVE_PTHREAD )
-
-typedef Kokkos::Threads TestHostDevice ;
-const char TestHostDeviceName[] = "Kokkos::Threads" ;
-
-#elif defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_HAVE_OPENMP )
 
 typedef Kokkos::OpenMP TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::OpenMP" ;
 
-#else
+#elif defined( KOKKOS_HAVE_PTHREAD )
+
+typedef Kokkos::Threads TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Threads" ;
+
+#elif defined( KOKKOS_HAVE_SERIAL )
 
 typedef Kokkos::Serial TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::Serial" ;
 
+#else
+#  error "You must enable at least one of the following execution spaces in order to build this test: Kokkos::Threads, Kokkos::OpenMP, or Kokkos::Serial."
 #endif
 
 #include <impl/Kokkos_Timer.hpp>

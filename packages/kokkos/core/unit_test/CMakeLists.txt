@@ -4,10 +4,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(SOURCES
   UnitTestMain.cpp 
-  TestSerial.cpp 
   TestDefaultDeviceType.cpp 
   TestHWLOC.cpp 
   )
+
+IF(Kokkos_ENABLE_Serial)
+  LIST( APPEND SOURCES TestSerial.cpp )
+ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   LIST( APPEND SOURCES TestThreads.cpp )
@@ -22,14 +25,7 @@ IF(Kokkos_ENABLE_QTHREAD)
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
-
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
-  CUDA_COMPILE(OBJECTS_CUDA TestCudaFunctions.cu TestDefaultDeviceType.cu)
-
-  LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )
-
+  LIST( APPEND SOURCES TestCuda.cpp )
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

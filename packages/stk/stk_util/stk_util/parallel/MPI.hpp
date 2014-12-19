@@ -436,8 +436,19 @@ template <>
 struct Datatype<Loc<size_t, int> >
 {
   static MPI_Datatype type() {
-    BOOST_STATIC_ASSERT(sizeof(double) == sizeof(size_t));
-    return MPI_DOUBLE_INT;
+    if (sizeof(int) == sizeof(size_t))
+      return MPI_2INT;
+    else if (sizeof(long) == sizeof(size_t))
+      return MPI_LONG_INT;
+    else if (sizeof(long long) == sizeof(size_t))
+      return MPI_LONG_LONG_INT;
+    else if (sizeof(double) == sizeof(size_t))
+      return MPI_DOUBLE_INT;
+    else if (sizeof(float) == sizeof(size_t))
+      return MPI_FLOAT_INT;
+    else {
+      return MPI_DOUBLE_INT; // Default if no match above...
+    }
   }
 };
 

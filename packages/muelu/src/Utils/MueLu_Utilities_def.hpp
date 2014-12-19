@@ -90,6 +90,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -353,11 +354,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(Scalar omega,
-                                                                        const Vector& Dinv,
-                                                                        const Matrix& A,
-                                                                        const Matrix& B,
-                                                                        RCP<Matrix> C_in,
-                                                                        Teuchos::FancyOStream &fos) {
+							   const Vector& Dinv,
+							   const Matrix& A,
+							   const Matrix& B,
+							   RCP<Matrix> C_in,
+							   Teuchos::FancyOStream &fos,
+							   const std::string & label) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -369,7 +371,7 @@ namespace MueLu {
     if (C == Teuchos::null)
       C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
 
-    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true);
+    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true,label);
     C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
     return C;
   } //Jacobi
@@ -382,7 +384,8 @@ namespace MueLu {
                                                                           RCP<Matrix> C_in,
                                                                           Teuchos::FancyOStream& fos,
                                                                           bool doFillComplete,
-                                                                          bool doOptimizeStorage) {
+							                  bool doOptimizeStorage,
+							                  const std::string & label) {
 
     TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
     TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
@@ -429,7 +432,7 @@ namespace MueLu {
           totalNnz = minNnz;
         nnzPerRow = totalNnz / A.getGlobalNumRows();
 
-        fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+        fos << "Matrix product nnz per row estimate = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
       }
 
       if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
@@ -440,7 +443,7 @@ namespace MueLu {
       fos << "Reuse C pattern" << std::endl;
     }
 
-    Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);
+    Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage,label);
 
     return C;
   }
@@ -584,6 +587,7 @@ namespace MueLu {
   RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                          BlockedCrsMatrix& B, bool transposeB,
+                         Teuchos::FancyOStream& fos,
                          bool doFillComplete,
                          bool doOptimizeStorage) {
     if (transposeA || transposeB)
@@ -600,8 +604,6 @@ namespace MueLu {
 
     RCP<BlockedCrsMatrix> C = rcp(new BlockedCrsMatrix(rgmapextractor, domapextractor, 33 /* TODO fix me */));
 
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
     for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
       for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
         RCP<Matrix> Cij;
@@ -617,8 +619,7 @@ namespace MueLu {
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp =
-            MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply (*crop1, false, *crop2, false, *out);
+          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos, fos);
 
           if (Cij.is_null ())
             Cij = temp;
@@ -789,7 +790,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const Matrix& Op, const MultiVector& X, const MultiVector& RHS) {
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
     TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
     const size_t numVecs = X.getNumVectors();
 
@@ -801,7 +802,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Residual(const Matrix& Op, const MultiVector& X, const MultiVector& RHS) {
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
     TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
     const size_t numVecs = X.getNumVectors();
 

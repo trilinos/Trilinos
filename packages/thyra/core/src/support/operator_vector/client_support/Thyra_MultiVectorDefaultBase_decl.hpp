@@ -94,6 +94,9 @@ protected:
   //@{
 
   /** \brief . */
+  void assignImpl(Scalar alpha);
+
+  /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
   contigSubViewImpl( const Range1D& colRng ) const;
 

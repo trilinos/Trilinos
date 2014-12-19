@@ -48,6 +48,9 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
 
@@ -84,6 +87,7 @@ namespace MueLu {
     public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
+    typedef std::pair<std::string, const FactoryBase*> keep_pair;
 
   public:
     //! @name Constructors/Destructors
@@ -138,11 +142,12 @@ namespace MueLu {
     void SetupHierarchy(Hierarchy& H) const;
 
   private:
-    //! Setup Matrix object
-    virtual void SetupMatrix(Matrix& A) const;
+    //! Setup Operator object
+    virtual void SetupOperator(Operator& A) const;
 
-    int       blockSize_; ///< block size of matrix (fixed block size)
-    CycleType Cycle_;     ///< multigrid cycle type (V-cycle or W-cycle)
+    int       blockSize_;     ///< block size of matrix (fixed block size)
+    CycleType Cycle_;         ///< multigrid cycle type (V-cycle or W-cycle)
+    GlobalOrdinal dofOffset_; ///< global offset variable describing offset of DOFs in operator
 
     //! Easy interpreter stuff
     //@{
@@ -153,7 +158,8 @@ namespace MueLu {
     void SetEasyParameterList(const Teuchos::ParameterList& paramList);
     void Validate(const Teuchos::ParameterList& paramList) const;
 
-    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager) const;
+    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                              int levelID, std::vector<keep_pair>& keeps) const;
 
     bool useCoordinates_;
     //@}

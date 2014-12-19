@@ -657,12 +657,17 @@ namespace MueLu {
       LO numRows = A->getRowMap()->getNodeNumElements();
       LO numNodes = nodeMap->getNodeNumElements();
       const ArrayRCP<bool> amalgBoundaryNodes(numNodes, false);
-
+      const ArrayRCP<int>  numberDirichletRowsPerNode(numNodes, 0); // helper array counting the number of Dirichlet nodes associated with node
+      bool bIsDiagonalEntry = false;       // boolean flag stating that grid==gcid
+      
       // 5) do amalgamation. generate graph of amalgamated matrix
-      for(LO row=0; row<numRows; row++) {
+      for(LO row=0; row<numRows; row++) {      
         // get global DOF id
         GO grid = rowMap->getGlobalElement(row);
 
+        // reinitialize boolean helper variable
+        bIsDiagonalEntry = false;
+        
         // translate grid to nodeid
         GO nodeId = AmalgamationFactory::DOFGid2NodeId(grid, blockdim, offset, indexBase);
 
@@ -670,7 +675,6 @@ namespace MueLu {
         Teuchos::ArrayView<const LO> indices;
         Teuchos::ArrayView<const SC> vals;
         A->getLocalRowView(row, indices, vals);
-        //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: number of nonzeros not equal to number of indices? Error.");
 
         RCP<std::vector<GO> > cnodeIds = Teuchos::rcp(new std::vector<GO>);  // global column block ids
         LO realnnz = 0;
@@ -678,11 +682,16 @@ namespace MueLu {
           //TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
           GO gcid = colMap->getGlobalElement(indices[col]); // global column id
 
+          if (grid == gcid) {
+            
+          }
+          
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
             GO cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
+            if (grid == gcid) bIsDiagonalEntry = true;
           }
         }
 
@@ -691,9 +700,11 @@ namespace MueLu {
         ////////////////// experimental
         //if(gBoundaryNodes->count(nodeId) == 0)
         //  (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
-        if(realnnz == 1) {
+        if(realnnz == 1 && bIsDiagonalEntry == true) {
           LO lNodeId = nodeMap->getLocalElement(nodeId);
-          amalgBoundaryNodes[lNodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+          numberDirichletRowsPerNode[lNodeId] += 1;      // increment Dirichlet row counter associated with lNodeId
+          if (numberDirichletRowsPerNode[lNodeId] == blockdim) // mark full Dirichlet nodes
+            amalgBoundaryNodes[lNodeId] = true;
         }
         //  (*gBoundaryNodes)[nodeId] = true;
         ///////////////////////////////

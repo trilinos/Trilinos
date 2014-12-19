@@ -1,7 +1,0 @@
-This directory contains some useful git-related utilities.
-
-egdist: A general utility for running git commits on a whole set of repos at
-once.
-
-egdist.py: A symbolic link to 'egdist' for unit testing purposes (loading a
-module must have a *.py extension).

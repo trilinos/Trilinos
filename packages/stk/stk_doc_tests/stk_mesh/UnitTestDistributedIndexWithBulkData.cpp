@@ -54,13 +54,13 @@ public:
 
 
 
-void updateDistributedIndexUsingStkMesh(stk::mesh::BulkData &stkMeshBulkData, const int myProc, stk::parallel::DistributedIndex& distributedIndex)
+void updateDistributedIndexUsingStkMesh(BulkDataTester &stkMeshBulkData, const int myProc, stk::parallel::DistributedIndex& distributedIndex)
 {
     stk::parallel::DistributedIndex::KeyTypeVector local_created_or_modified; // only store locally owned/shared entities
 
     size_t num_created_or_modified = 0;
 
-    stk::mesh::impl::EntityRepository &m_entity_repo = stkMeshBulkData.get_entity_repository();
+    stk::mesh::impl::EntityRepository &m_entity_repo = stkMeshBulkData.my_get_entity_repository();
 
     for(stk::mesh::impl::EntityRepository::const_iterator i = m_entity_repo.begin(); i != m_entity_repo.end(); ++i)
     {
@@ -103,7 +103,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::impl::convert_entity_keys_to_spans(stkMeshMetaData);
         DistributedIndexTester distributedIndex(communicator, spans);

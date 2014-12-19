@@ -77,60 +77,6 @@ typedef int int_t;
 
 #include "klu2_ext.hpp"	// for Dtype_t declaration
 
-  // Declare and specialize a std::binary_funtion class for
-  // multiplication of SuperLU types
-  //template <typename slu_scalar_t, typename slu_mag_t>
-  //struct slu_mult {};
-
-  // This specialization handles the generic case were the scalar and
-  // magnitude types are double or float.
-  //template <typename T>
-  //struct slu_mult<T,T> : std::multiplies<T> {};
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-  
-  // For namespace/macro reasons, we prefix our variables with amesos_*
-  //template <>
-  //struct slu_mult<C::complex,float>
-    //: std::binary_function<C::complex,float,C::complex> {
-    //C::complex operator()(C::complex amesos_c, float amesos_f) {
-      //C::complex amesos_cr;
-      //cs_mult(&amesos_cr, &amesos_c, amesos_f);	// cs_mult is a macro, so no namespacing
-      //return( amesos_cr );
-    //}
-  //};
-
-  //template <>
-  //struct slu_mult<C::complex,C::complex>
-    //: std::binary_function<C::complex,C::complex,C::complex> {
-    //C::complex operator()(C::complex amesos_c1, C::complex amesos_c2) {
-      //C::complex amesos_cr;
-      //cc_mult(&amesos_cr, &amesos_c1, &amesos_c2); // cc_mult is a macro, so no namespacing
-      //return( amesos_cr );
-    //}
-  //};
-    
-  //template <>
-  //struct slu_mult<Z::doublecomplex,double>
-    //: std::binary_function<Z::doublecomplex,double,Z::doublecomplex> {
-    //Z::doublecomplex operator()(Z::doublecomplex amesos_z, double amesos_d) {
-      //Z::doublecomplex amesos_zr;
-      //zd_mult(&amesos_zr, &amesos_z, amesos_d);	// zd_mult is a macro, so no namespacing
-      //return( amesos_zr );
-    //}
-  //};
-
-  //template <>
-  //struct slu_mult<Z::doublecomplex,Z::doublecomplex>
-    //: std::binary_function<Z::doublecomplex,Z::doublecomplex,Z::doublecomplex> {
-    //Z::doublecomplex operator()(Z::doublecomplex amesos_z1, Z::doublecomplex amesos_z2) {
-      //Z::doublecomplex amesos_zr;
-      //zz_mult(&amesos_zr, &amesos_z1, &amesos_z2);    // zz_mult is a macro, so no namespacing
-      //return( amesos_zr );
-    //}
-  //};
-
-#endif	// HAVE_TEUCHOS_COMPLEX
 } // end namespace KLU
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -147,117 +93,55 @@ namespace Teuchos {
  *
  * @{
  */
-/*template <typename TypeFrom>
-class ValueTypeConversionTraits<SLU::C::complex, TypeFrom>
+template <>
+class ValueTypeConversionTraits<std::complex<double>, std::complex<float> >
 {
 public:
-  static SLU::C::complex convert( const TypeFrom t )
+  static std::complex<double> convert( const std::complex<float>  t )
     {
-      SLU::C::complex ret;
-      ret.r = Teuchos::as<float>(t.real());
-      ret.i = Teuchos::as<float>(t.imag());
+      std::complex<double> ret(Teuchos::as<double>(t.real()),
+                                 Teuchos::as<double>(t.imag()));
       return( ret );
     }
 
-  static SLU::C::complex safeConvert( const TypeFrom t )
+  static std::complex<double> safeConvert( const std::complex<float>  t )
     {
-      SLU::C::complex ret;
-      ret.r = Teuchos::as<float>(t.real());
-      ret.i = Teuchos::as<float>(t.imag());
+      std::complex<double> ret(Teuchos::as<double>(t.real()),
+                                 Teuchos::as<double>(t.imag()));
       return( ret );
     }
 };
 
 
-template <typename TypeFrom>
-class ValueTypeConversionTraits<SLU::Z::doublecomplex, TypeFrom>
+// Also convert from KLU2 types
+template <>
+class ValueTypeConversionTraits<std::complex<float> , std::complex<double> >
 {
 public:
-  static SLU::Z::doublecomplex convert( const TypeFrom t )
+  static std::complex<float>  convert( const std::complex<double> t )
     {
-      SLU::Z::doublecomplex ret;
-      ret.r = Teuchos::as<double>(t.real());
-      ret.i = Teuchos::as<double>(t.imag());
-      return( ret );
-    }
-
-  static SLU::Z::doublecomplex safeConvert( const TypeFrom t )
-    {
-      SLU::Z::doublecomplex ret;
-      ret.r = Teuchos::as<double>(t.real());
-      ret.i = Teuchos::as<double>(t.imag());
-      return( ret );
-    }
-};
-
-
-// Also convert from SLU types
-template <typename TypeTo>
-class ValueTypeConversionTraits<TypeTo, SLU::C::complex>
-{
-public:
-  static TypeTo convert( const SLU::C::complex t )
-    {
-      typedef typename TypeTo::value_type value_type;
-      value_type ret_r = Teuchos::as<value_type>( t.r );
-      value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
+      float ret_r = Teuchos::as<float>( t.real() );
+      float ret_i = Teuchos::as<float>( t.imag() );
+      std::complex<float> ret (ret_r,  ret_i);
+      return (ret);
     }
 
   // No special checks for safe Convert
-  static TypeTo safeConvert( const SLU::C::complex t )
+  static std::complex<float>  safeConvert( const std::complex<double> t )
     {
-      typedef typename TypeTo::value_type value_type;
-      value_type ret_r = Teuchos::as<value_type>( t.r );
-      value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
+      float ret_r = Teuchos::as<float>( t.real() );
+      float ret_i = Teuchos::as<float>( t.imag() );
+      std::complex<float> ret (ret_r,  ret_i);
+      return (ret);
     }
 };
 
 
-template <typename TypeTo>
-class ValueTypeConversionTraits<TypeTo, SLU::Z::doublecomplex>
-{
-public:
-  static TypeTo convert( const SLU::Z::doublecomplex t )
-    {
-      typedef typename TypeTo::value_type value_type;
-      value_type ret_r = Teuchos::as<value_type>( t.r );
-      value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
-    }
-
-  // No special checks for safe Convert
-  static TypeTo safeConvert( const SLU::Z::doublecomplex t )
-    {
-      typedef typename TypeTo::value_type value_type;
-      value_type ret_r = Teuchos::as<value_type>( t.r );
-      value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
-    }
-};
-
-template <typename Ordinal>
-class SerializationTraits<Ordinal,SLU::C::complex>
-  : public DirectSerializationTraits<Ordinal,SLU::C::complex>
-{};
-
-template <typename Ordinal>
-class SerializationTraits<Ordinal,SLU::Z::doublecomplex>
-  : public DirectSerializationTraits<Ordinal,SLU::Z::doublecomplex>
-{};
 
 //@}  End Conversion group
-*/
+
 
 } // end namespace Teuchos
-
-// C++-style output functions for Superlu complex types
-/*namespace std {
-  ostream& operator<<(ostream& out, const SLU::Z::doublecomplex z);
-
-  ostream& operator<<(ostream& out, const SLU::C::complex c);
-}*/
 
 #endif	// HAVE_TEUCHOS_COMPLEX
 
@@ -294,9 +178,9 @@ struct TypeMap<KLU2,double>
 template <>
 struct TypeMap<KLU2,std::complex<float> >
 {
-  static std::complex<float> dtype;
-  typedef std::complex<float> type;
-  typedef float magnitude_type;
+  static std::complex<double> dtype;
+  typedef std::complex<double> type;
+  typedef double magnitude_type;
 };
 
 
@@ -307,24 +191,6 @@ struct TypeMap<KLU2,std::complex<double> >
   typedef std::complex<double> type;
   typedef double magnitude_type;
 };
-
-
-//template <>
-//struct TypeMap<KLU2,SLU::C::complex>
-//{
-  //static SLU::Dtype_t dtype;
-  //typedef SLU::C::complex type;
-  //typedef float magnitude_type;
-//};
-
-
-//template <>
-//struct TypeMap<KLU2,SLU::Z::doublecomplex>
-//{
-  //static SLU::Dtype_t dtype;
-  //typedef SLU::Z::doublecomplex type;
-  //typedef double magnitude_type;
-//};
 
 
 #endif  // HAVE_TEUCHOS_COMPLEX

@@ -50,8 +50,11 @@ namespace Sacado {
       //! Typename of values
       typedef typename GeneralFad<T,Storage>::value_type value_type;
 
+      //! Typename of scalar's (which may be different from value_type)
+      typedef typename GeneralFad<T,Storage>::scalar_type scalar_type;
+
       //! Typename of base-expressions
-      typedef GeneralFad<T,Storage> base_expr_type;
+      typedef typename BaseExpr< GeneralFad<T,Storage> >::type base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -68,8 +71,9 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array is empty
        */
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const T & x) :
+      Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         GeneralFad<T,Storage>(x) {}
 
       //! Constructor with size \c sz and value \c x
@@ -103,7 +107,7 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x) :
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
         GeneralFad<T,Storage>(x) {}
 
       //! Destructor
@@ -145,10 +149,7 @@ namespace Sacado {
 
       //! Get dx array
       KOKKOS_INLINE_FUNCTION
-      const T* getDx(int j) const { return this->dx(); }
-
-      KOKKOS_INLINE_FUNCTION
-      const base_expr_type& getArg(int j) const { return *this; }
+      const value_type* getDx(int j) const { return this->dx(); }
 
       KOKKOS_INLINE_FUNCTION
       int numActiveArgs() const {
@@ -163,18 +164,6 @@ namespace Sacado {
       }
 
     }; // class Expr<GeneralFad>
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, typename S>
-    struct ExprPromote< GeneralFad<T,S>, T > {
-      typedef GeneralFad<T,S> type;
-    };
-
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, typename S>
-    struct ExprPromote< T, GeneralFad<T,S> > {
-      typedef GeneralFad<T,S> type;
-    };
 
   } // namespace ELRFad
 

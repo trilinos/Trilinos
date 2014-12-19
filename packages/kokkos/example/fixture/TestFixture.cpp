@@ -41,12 +41,17 @@
 //@HEADER
 */
 
+#include <Kokkos_Core.hpp>
 #include <TestFixture.hpp>
 
 namespace Kokkos {
 namespace Example {
 
 template void test_fixture< Kokkos::HostSpace::execution_space >();
+
+#if defined( KOKKOS_HAVE_CUDA )
+template void test_fixture<Kokkos::Cuda>();
+#endif
 
 } /* namespace Example */
 } /* namespace Kokkos */

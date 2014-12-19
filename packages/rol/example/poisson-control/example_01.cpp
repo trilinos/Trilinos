@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   try {
     int dim = 256; // Set problem dimension.
     RealT alpha = 1.e-4;
-    ROL::Objective_PoissonControl<RealT> obj(alpha);
+    ROL::ZOO::Objective_PoissonControl<RealT> obj(alpha);
     std::vector<RealT> lo(dim);
     std::vector<RealT> up(dim);
     for ( unsigned i = 0; i < (unsigned)dim; i++ ) {

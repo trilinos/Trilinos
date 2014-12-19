@@ -324,6 +324,16 @@ void DefaultMultiVectorProductVector<Scalar>::setSubVectorImpl(
 }
 
 
+// Overridden protected functions from VectorBase
+
+
+template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::assignImpl(Scalar alpha)
+{
+  multiVec_.getNonconstObj()->assign(alpha);
+}
+
+
 // private
 
 

@@ -74,7 +74,7 @@ namespace Kokkos {
     KOKKOS_INLINE_FUNCTION
     static void copy(DstType& dst, size_t i_dst,
                      SrcType& src, size_t i_src ) {
-      for(int j = 0;j<dst.dimension_1(); j++)
+      for(int j = 0;j< (int) dst.dimension_1(); j++)
         dst(i_dst,j) = src(i_src,j);
     }
   };
@@ -112,6 +112,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const int& i)  const {
+      //printf("Sort: %i %i\n",i,sort_order(i));
       CopyOp::copy(sorted_values,i,values,sort_order(i));
     }
   };
@@ -168,7 +169,7 @@ public:
 
     bin_count_atomic = Kokkos::View<int*, ExecutionSpace >("Kokkos::SortImpl::BinSortFunctor::bin_count",bin_op.max_bins());
     bin_count_const =  bin_count_atomic;
-    bin_offsets =      offset_type("Kokkos::SortImpl::BinSortFunctor::bin_offsets",keys.dimension_0());
+    bin_offsets =      offset_type("Kokkos::SortImpl::BinSortFunctor::bin_offsets",bin_op.max_bins());
     sort_order =       offset_type("PermutationVector",keys.dimension_0());
     sort_within_bins = sort_within_bins_;
   }
@@ -177,8 +178,10 @@ public:
   void create_permute_vector() {
     Kokkos::parallel_for (Kokkos::RangePolicy<ExecutionSpace,bin_count_tag>    (0,keys.dimension_0()),*this);
     Kokkos::parallel_scan(Kokkos::RangePolicy<ExecutionSpace,bin_offset_tag>   (0,bin_op.max_bins()) ,*this);
+
     Kokkos::deep_copy(bin_count_atomic,0);
     Kokkos::parallel_for (Kokkos::RangePolicy<ExecutionSpace,bin_binning_tag>  (0,keys.dimension_0()),*this);
+
     if(sort_within_bins)
       Kokkos::parallel_for (Kokkos::RangePolicy<ExecutionSpace,bin_sort_bins_tag>(0,bin_op.max_bins()) ,*this);
   }
@@ -233,6 +236,7 @@ public:
   void operator() (const bin_binning_tag& tag, const int& i)  const {
     const int bin = bin_op.bin(keys,i);
     const int count = bin_count_atomic(bin)++;
+
     sort_order(bin_offsets(bin) + count) = i;
   }
 
@@ -246,7 +250,8 @@ public:
       int new_idx;
       for(int k=bin_offsets(i)+1; k<upper_bound; k++) {
         new_idx = sort_order(k);
-        if(bin_op(keys_rnd,old_idx,new_idx)) {
+
+        if(!bin_op(keys_rnd,old_idx,new_idx)) {
           sort_order(k-1) = new_idx;
           sort_order(k) = old_idx;
           sorted = false;
@@ -271,13 +276,13 @@ struct DefaultBinOp1D {
   //Construct BinOp with number of bins, minimum value and maxuimum value
   DefaultBinOp1D(int max_bins, typename KeyViewType::const_value_type min,
                                typename KeyViewType::const_value_type max )
-     :max_bins_(max_bins),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
+     :max_bins_(max_bins+1),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
 
   //Determine bin index from key value
   template<class ViewType>
   KOKKOS_INLINE_FUNCTION
   int bin(ViewType& keys, const int& i) const {
-    return int(mul_*(keys(i)-min));
+    return int(mul_*(keys(i)-min_));
   }
 
   //Return maximum bin index + 1
@@ -289,7 +294,7 @@ struct DefaultBinOp1D {
   //Compare to keys within a bin if true new_val will be put before old_val
   template<class ViewType, typename iType1, typename iType2>
   KOKKOS_INLINE_FUNCTION
-  bool operator()(ViewType& keys, iType1 i1, iType1 i2) const {
+  bool operator()(ViewType& keys, iType1& i1, iType2& i2) const {
     return keys(i1)<keys(i2);
   }
 };
@@ -304,9 +309,9 @@ struct DefaultBinOp3D {
   DefaultBinOp3D(int max_bins[], typename KeyViewType::const_value_type min[],
                                typename KeyViewType::const_value_type max[] )
   {
-    max_bins_[0] = max_bins[0];
-    max_bins_[1] = max_bins[1];
-    max_bins_[2] = max_bins[2];
+    max_bins_[0] = max_bins[0]+1;
+    max_bins_[1] = max_bins[1]+1;
+    max_bins_[2] = max_bins[2]+1;
     mul_[0] = 1.0*max_bins[0]/(max[0]-min[0]);
     mul_[1] = 1.0*max_bins[1]/(max[1]-min[1]);
     mul_[2] = 1.0*max_bins[2]/(max[2]-min[2]);
@@ -333,7 +338,7 @@ struct DefaultBinOp3D {
 
   template<class ViewType, typename iType1, typename iType2>
   KOKKOS_INLINE_FUNCTION
-  bool operator()(ViewType& keys, iType1 i1 , iType2& i2) const {
+  bool operator()(ViewType& keys, iType1& i1 , iType2& i2) const {
     if (keys(i1,0)>keys(i2,0)) return true;
     else if (keys(i1,0)==keys(i2,0)) {
       if (keys(i1,1)>keys(i2,1)) return true;
@@ -467,6 +472,7 @@ void sort(ViewType view, bool always_use_kokkos_sort = false) {
   SortImpl::min_max<typename ViewType::non_const_value_type> val;
   parallel_reduce(view.dimension_0(),SortImpl::min_max_functor<ViewType>(view),val);
   BinSort<ViewType, CompType> bin_sort(view,CompType(view.dimension_0()/2,val.min,val.max),true);
+  bin_sort.create_permute_vector();
   bin_sort.sort(view);
 }
 

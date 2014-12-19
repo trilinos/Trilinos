@@ -1,0 +1,12 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    NumericsTest
+    SOURCES NumericsTest.cpp
+    ARGS 120 
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+

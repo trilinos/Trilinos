@@ -45,24 +45,27 @@
 // @HEADER
 #include <iostream>
 
+// Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
 
+// Galeri
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_Factory.hpp>
 
-#include <MueLu_CoupledAggregationFactory.hpp>
-#include <MueLu_TentativePFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
-#include <MueLu_NoFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 
-// This example demonstrates how to reuse some parts of a multigrid setup between runs.
+// This example demonstrates how to reuse some parts of a classical SA multigrid setup between runs.
 //
 // In this example, we suppose that the pattern of the matrix does not change between runs so that:
 // - Aggregates can be reused
@@ -74,26 +77,30 @@
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
-
   using Teuchos::RCP;
+  using Teuchos::TimeMonitor;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
   bool success = false;
   bool verbose = true;
   try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    typedef Teuchos::ScalarTraits<SC> ST;
-    //
-    // Parameters
-    //
+    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::FancyOStream& out = *fancy;
 
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC one = STS::one();
+
+    // =========================================================================
+    // Parameters initialization
+    // =========================================================================
     Teuchos::CommandLineProcessor clp(false);
-    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);
-    Xpetra::Parameters xpetraParameters(clp);
 
-    bool optRecycling           = true;  clp.setOption("recycling",             "no-recycling",             &optRecycling,           "Enable recycling of the multigrid preconditioner");
-
+    GO nx = 100, ny = 100, nz = 100;
+    Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
+    Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -102,147 +109,187 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    //
-    // Construct the problems
-    //
+    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+    ParameterList galeriList = galeriParameters.GetParameterList();
 
-    RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-    Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    RCP<Matrix> A1 = Pr->BuildMatrix();
+    // =========================================================================
+    // Problem construction
+    // =========================================================================
+    // For comments, see Driver.cpp
+    out << "========================================================\n" << xpetraParameters << galeriParameters;
+    std::string matrixType = galeriParameters.GetMatrixType();
 
-    RCP<Matrix> A2 = Pr->BuildMatrix();
-    A2->resumeFill();
-    A2->scale(2.0);
-    A2->fillComplete();
+    RCP<const Map>   map;
+    RCP<MultiVector> coordinates;
+    if (matrixType == "Laplace1D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
 
-    RCP<Matrix> A3 = Pr->BuildMatrix();
-    A3->resumeFill();
-    A3->scale(3.0);
-    A3->fillComplete();
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
 
-    //
-    // First solve
-    //
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+    }
 
-    FactoryManager M;
+    // Expand map to do multiple DOF per node for block problems
+    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D")
+      map = Xpetra::MapFactory<LO,GO,Node>::Build(map, (matrixType == "Elasticity2D" ? 2 : 3));
 
-    Hierarchy H(A1);
+    out << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
+        << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
+        << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
+        << "========================================================" << std::endl;
 
-    if (optRecycling) {
-      // Configuring "Keep" options before running the first setup.
-      // PTENT:
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
+
+    RCP<Matrix> A = Pr->BuildMatrix();
+
+    RCP<MultiVector> nullspace;
+    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
+      nullspace = Pr->BuildNullspace();
+      A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
+    }
+
+    // =========================================================================
+    // Setups and solves
+    // =========================================================================
+    RCP<Vector> X = VectorFactory::Build(map);
+    RCP<Vector> B = VectorFactory::Build(map);
+    B->setSeed(846930886);
+    B->randomize();
+
+    const int nIts = 9;
+
+    std::string thickSeparator = "==========================================================================================================================";
+    std::string thinSeparator  = "--------------------------------------------------------------------------------------------------------------------------";
+
+    int verbosityLevel = MueLu::Medium;
+
+    RCP<TimeMonitor> tm;
+
+    // =========================================================================
+    // Solve #1 (no reuse)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    {
+      Hierarchy H(A);
+      H.SetDefaultVerbLevel(verbosityLevel);
+
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Solve #1: no reuse")));
+      H.Setup();
+      tm = Teuchos::null;
+
+      X->putScalar(Teuchos::as<Scalar>(0));
+      H.Iterate(*B, *X, nIts);
+      out << "||Residual|| = " << Utils::ResidualNorm(*A, *X, *B)[0] << std::endl;
+    }
+
+    // =========================================================================
+    // Solve #2 (reuse tentative P)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    {
+      Hierarchy H(A);
+      H.SetDefaultVerbLevel(verbosityLevel);
+
+      FactoryManager M;
       RCP<Factory> PtentFact = rcp(new TentativePFactory());
       M.SetFactory("Ptent", PtentFact);
-      H.Keep("P",           PtentFact.get());
+      H.Keep      ("P",     PtentFact.get());
+
+      // Original setup
+      A->SetMaxEigenvalueEstimate(-one);
+      H.Setup(M);
+
+      H.Clear();
+#ifdef HAVE_MUELU_DEBUG
+      M.ResetDebugData();
+#endif
+
+      out << thinSeparator << "\nPreconditioner status:" << std::endl;
+      H.print(out, MueLu::Extreme);
+
+      // Reuse setup
+      A->SetMaxEigenvalueEstimate(-one);
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Solve #2: reuse tentative P")));
+      // Need same number of levels, otherwise we get in trouble when requesting the data for numLevels+1, something like this
+      //  MueLu::Level(0)::GetFactory(Aggregates, 0): No FactoryManager
+      //    during request for data "     Aggregates" on level 0 by factory TentativePFactory
+      //    during request for data "      Nullspace" on level 1 by factory NullspaceFactory
+      //    during request for data "      Nullspace" on level 1 by factory TentativePFactory
+      //    during request for data "      Nullspace" on level 2 by factory NullspaceFactory
+      //    during request for data "      Nullspace" on level 2 by factory TentativePFactory
+      //    during request for data "              P" on level 3 by factory SaPFactory
+      //    during request for data "              P" on level 3 by factory NoFactory
+      H.Setup(M, 0, H.GetNumLevels());
+      tm = Teuchos::null;
+
+      X->putScalar(Teuchos::as<Scalar>(0));
+      H.Iterate(*B, *X, nIts);
+      out << "||Residual|| = " << Utils::ResidualNorm(*A, *X, *B)[0] << std::endl;
     }
 
-    RCP<Factory> AcFact = rcp(new RAPFactory());
-    M.SetFactory("A", AcFact);
+    // =========================================================================
+    // Solve #3 (reuse smoothed P and R)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    {
+      Hierarchy H(A);
+      H.SetDefaultVerbLevel(verbosityLevel);
 
-    //
+      FactoryManager M;
+      RCP<Factory> PFact = rcp(new SaPFactory());
+      M.SetFactory("P", PFact);
+      H.Keep      ("P", PFact.get());
+      RCP<Factory> RFact = rcp(new TransPFactory());
+      M.SetFactory("R", RFact);
+      H.Keep      ("R", RFact.get());
+      RCP<Factory> RAPFact = rcp(new RAPFactory());
+      if (lib == Xpetra::UseEpetra) {
+        ParameterList RAPparams;
+        RAPparams.set("Keep AP Pattern",  true);
+        RAPparams.set("Keep RAP Pattern", true);
+        RAPFact->SetParameterList(RAPparams);
+      }
+      M.SetFactory("A", RAPFact);
 
-    H.Setup(M,0,3);
+      // Original setup
+      A->SetMaxEigenvalueEstimate(-one);
+      H.Setup(M);
+
+      H.Clear();
+#ifdef HAVE_MUELU_DEBUG
+      M.ResetDebugData();
+#endif
+
+      out << thinSeparator << "\nPreconditioner status:" << std::endl;
+      H.print(out, MueLu::Extreme);
+
+      // Reuse setup
+      A->SetMaxEigenvalueEstimate(-one);
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Solve #3: reuse smoothed P and R")));
+      // Need same number of levels (see comments above)
+      H.Setup(M, 0, H.GetNumLevels());
+      tm = Teuchos::null;
+
+      X->putScalar(Teuchos::as<Scalar>(0));
+      H.Iterate(*B, *X, nIts);
+      out << "||Residual|| = " << Utils::ResidualNorm(*A, *X, *B)[0] << std::endl;
+    }
 
     {
-      RCP<Vector> X = VectorFactory::Build(map);
-      RCP<Vector> B = VectorFactory::Build(map);
-
-      X->putScalar((Scalar) 0.0);
-      B->setSeed(846930886); B->randomize();
-
-      int nIts = 9;
-      H.Iterate(*B, *X, nIts);
-
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A1, *X, *B)[0];
-      if (comm->getRank() == 0)
-        std::cout << "||Residual|| = " << residualNorms << std::endl;
+      const bool alwaysWriteLocal = false;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = "Solve #";
+      TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                             writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
     }
-
-    //
-    // Second solve
-    //
-
-    cout << "Status of the preconditioner between runs:" << std::endl;
-    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
-
-    // Change the problem
-    RCP<Level> finestLevel = H.GetLevel(0);
-    finestLevel->Set("A", A2);
-
-    if (optRecycling) {
-      // Optional: this makes sure that the aggregates are never requested (and built) during the second run.
-      // If someone request the aggregates, an exception will be thrown.
-      M.SetFactory("Aggregates", MueLu::NoFactory::getRCP());
-    }
-
-    // Redo the setup
-    H.Setup(M,0,3);
-
-    {
-      RCP<Vector> X = VectorFactory::Build(map);
-      RCP<Vector> B = VectorFactory::Build(map);
-
-      X->putScalar((Scalar) 0.0);
-      B->setSeed(846930886); B->randomize();
-
-      int nIts = 9;
-      H.Iterate(*B, *X, nIts);
-
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
-      if (comm->getRank() == 0)
-        std::cout << "||Residual|| = " << residualNorms << std::endl;
-    }
-
-    //
-    // Third solve
-    //
-
-    cout << "Status of the preconditioner between runs:" << std::endl;
-    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
-
-    // Change the problem
-    finestLevel = H.GetLevel(0);
-    finestLevel->Set("A", A3);
-
-    if (optRecycling) {
-      // Optional: this makes sure that the aggregates are never requested (and built) during the second run.
-      // If someone request the aggregates, an exception will be thrown.
-      M.SetFactory("Aggregates", MueLu::NoFactory::getRCP());
-    }
-
-    // Redo the setup
-    H.Setup(M,0,3);
-
-    {
-      RCP<Vector> X = VectorFactory::Build(map);
-      RCP<Vector> B = VectorFactory::Build(map);
-
-      X->putScalar((Scalar) 0.0);
-      B->setSeed(846930886); B->randomize();
-
-      int nIts = 9;
-      H.Iterate(*B, *X, nIts);
-
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
-      if (comm->getRank() == 0)
-        std::cout << "||Residual|| = " << residualNorms << std::endl;
-    }
-
-
-    //
-    // Clean-up
-    //
-
-    // Remove kept data from the preconditioner. This will force recomputation on future runs. "Keep" flags are also removed.
-
-    if (optRecycling) {
-      //if aggregates explicitly kept: H.Delete("Aggregates", M.GetFactory("Aggregates").get());
-      H.Delete("P",           M.GetFactory("Ptent").get());
-    }
-
-    cout << "Status of the preconditioner at the end:" << std::endl;
-    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
 
     success = true;
   }

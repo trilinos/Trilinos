@@ -57,6 +57,7 @@
 
 // My includes
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 namespace TrilinosCouplings {
@@ -243,7 +244,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /******************************* GENERATE MESH ************************************/
   /**********************************************************************************/
 
-  *out << "Generating mesh" << endl;
+  *out << "Generating mesh (tpetra)" << endl;
 
   int error = 0; // Number of errors in generating the mesh
 
@@ -255,7 +256,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh (meshInput.c_str (), dim, myRank, numProcs, maxInt);
+  long long cr_result = Create_Pamgen_Mesh (meshInput.c_str (), dim, myRank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(*out,cr_result);
 
   std::string msg ("Poisson: ");
 

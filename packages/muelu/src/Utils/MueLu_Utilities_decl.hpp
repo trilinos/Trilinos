@@ -47,6 +47,7 @@
 #define MUELU_UTILITIES_DECL_HPP
 
 #include <unistd.h> //necessary for "sleep" function in debugging methods
+#include <string>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -63,6 +64,7 @@
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_ExportFactory.hpp>
@@ -187,8 +189,9 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true){
-      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string()){
+      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
@@ -196,7 +199,8 @@ namespace MueLu {
                               const Matrix& A,
                               const Matrix& B,
                               RCP<Matrix> C_in,
-                              Teuchos::FancyOStream &fos);
+                              Teuchos::FancyOStream &fos,
+			      const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -223,8 +227,8 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true
-                                );
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string());                                
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -245,6 +249,7 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                                                         BlockedCrsMatrix& B, bool transposeB,
+                                                        Teuchos::FancyOStream& fos,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true);
 
@@ -299,9 +304,9 @@ namespace MueLu {
     // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
     // or
     // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
-    static Teuchos::Array<Magnitude> ResidualNorm(const Matrix& Op, const MultiVector& X, const MultiVector& RHS);
+    static Teuchos::Array<Magnitude> ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS);
 
-    static RCP<MultiVector> Residual(const Matrix& Op, const MultiVector& X, const MultiVector& RHS);
+    static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS);
 
     // NOTE:
     // A better place for the Read/Write function is probably Xpetra

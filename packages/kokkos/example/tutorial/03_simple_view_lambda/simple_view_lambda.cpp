@@ -110,7 +110,7 @@ int main (int argc, char* argv[]) {
   Kokkos::parallel_reduce (10, [=] (const int i, double& lsum) {
     lsum += a(i,0)*a(i,1)/(a(i,2)+0.1);
   }, sum);
-  printf ("Result: %lf\n", sum);
+  printf ("Result: %f\n", sum);
   Kokkos::finalize ();
 }
 

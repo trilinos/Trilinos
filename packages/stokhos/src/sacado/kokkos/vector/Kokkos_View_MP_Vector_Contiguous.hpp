@@ -286,7 +286,7 @@ private:
   unsigned                                m_stride ;
   typename traits::device_type::size_type m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                        m_sacado_size ; // Size of sacado dimension
-  Impl::ViewTracking< traits >            m_tracking ;
+  Impl::ViewDataManagement< traits >      m_management ;
 
   // Note:  if the view is partitioned, m_sacado_size != m_storage_size.
   // We always have m_storage_size >= m_sacado_size
@@ -432,7 +432,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( m_ptr_on_device ); }
+  ~View() { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0), m_storage_size(0), m_sacado_size(0)
@@ -514,7 +514,7 @@ public:
                                m_offset_map,
                                m_sacado_size.value );
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
@@ -550,7 +550,7 @@ public:
                                m_offset_map,
                                m_sacado_size.value );
 
-      if ( Alloc::initialize() ) {
+      if ( Alloc::Initialize ) {
         deep_copy( *this , intrinsic_scalar_type() );
       }
     }
@@ -582,7 +582,7 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_allocation.assign(ptr);
-      m_tracking = false;
+      m_management.set_unmanaged();
     }
 
   //------------------------------------
@@ -1175,7 +1175,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     )>::type * = 0
                   )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
     dst.m_stride        = src.m_stride ;
@@ -1183,9 +1183,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_allocation    = src.m_allocation ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management    = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1240,7 +1240,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
 #endif
     }
 
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     const int length = part.end - part.begin ;
 
@@ -1260,9 +1260,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       src.m_allocation.m_scalar_ptr_on_device +
       (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1285,7 +1285,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                           ( View<DT,DL,DD,DM,specialize>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_ptr_on_device = 0 ;
@@ -1301,9 +1301,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_stride       = src.m_stride ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
-      dst.m_tracking     = src.m_tracking ;
+      dst.m_management     = src.m_management ;
 
-      dst.m_tracking.increment( dst.m_ptr_on_device );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1327,7 +1327,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map.N0 , 0,0,0,0,0,0,0);
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
@@ -1336,9 +1336,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1362,7 +1362,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
@@ -1372,7 +1372,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       assert_shape_bounds( src.m_offset_map , 2 , range.first , i1 );
       assert_shape_bounds( src.m_offset_map , 2 , range.second - 1 , i1 );
 
-      dst.m_tracking      = src.m_tracking ;
+      dst.m_management      = src.m_management ;
       dst.m_offset_map.N0 = range.second - range.first ;
       dst.m_ptr_on_device =
         src.m_ptr_on_device + src.m_offset_map(range.first,i1);
@@ -1382,7 +1382,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
 
-      dst.m_tracking.increment( dst.m_ptr_on_device );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1406,7 +1406,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map.N0, 1, 0,0,0,0,0,0);
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
@@ -1415,9 +1415,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1441,7 +1441,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
@@ -1451,7 +1451,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       assert_shape_bounds( src.m_offset_map , 2 , range.first , i1 );
       assert_shape_bounds( src.m_offset_map , 2 , range.second - 1 , i1 );
 
-      dst.m_tracking      = src.m_tracking ;
+      dst.m_management      = src.m_management ;
       dst.m_offset_map.N0 = range.second - range.first ;
       dst.m_offset_map.N1 = 1 ;
       dst.m_offset_map.S0 = range.second - range.first ;
@@ -1463,7 +1463,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
 
-      dst.m_tracking.increment( dst.m_ptr_on_device );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1487,7 +1487,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
@@ -1508,11 +1508,11 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
         src.m_allocation.m_scalar_ptr_on_device + dst.m_offset_map.N0 * range1.first * src.m_storage_size ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
-      dst.m_tracking     = src.m_tracking ;
+      dst.m_management     = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride
 
-      dst.m_tracking.increment( dst.m_ptr_on_device );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1536,7 +1536,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
@@ -1557,11 +1557,11 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
         src.m_allocation.m_scalar_ptr_on_device + range0.first * src.m_storage_size;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
-      dst.m_tracking     = src.m_tracking ;
+      dst.m_management     = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride
 
-      dst.m_tracking.increment( dst.m_ptr_on_device );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1585,7 +1585,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
@@ -1606,9 +1606,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
 
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
-      dst.m_tracking     = src.m_tracking ;
+      dst.m_management     = src.m_management ;
 
-      dst.m_tracking.increment( dst.m_ptr_on_device );
+      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 };
@@ -1635,7 +1635,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 #endif
     }
 
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     unsigned dims[8];
     dims[0] = src.m_offset_map.N0;
@@ -1662,9 +1662,9 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1721,7 +1721,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 #endif
     }
 
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     // Create flattened shape
     unsigned dims[8];
@@ -1748,9 +1748,9 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 

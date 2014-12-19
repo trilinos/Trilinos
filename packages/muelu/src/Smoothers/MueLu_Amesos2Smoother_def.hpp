@@ -86,10 +86,12 @@ namespace MueLu {
       type_ = "Klu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
       type_ = "Superludist";
+#elif defined(HAVE_AMESOS2_BASKER)
+      type_ = "Basker";
 #else
-      throw Exceptions::RuntimeError("Amesos2 have been compiled without SuperLU_DIST, SuperLU or Klu. By default, MueLu tries"
-                                     "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
-                                     "a valid Amesos2 solver have to be specified explicitly.");
+      throw Exceptions::RuntimeError("Amesos2 has been compiled without SuperLU_DIST, SuperLU, Klu, or Basker. By default, MueLu tries"
+                                     "to use one of these libraries. Amesos2 must be compiled with one of these solvers, "
+                                     "or a valid Amesos2 solver has to be specified explicitly.");
 #endif
       if (oldtype != "")
         this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
@@ -99,7 +101,7 @@ namespace MueLu {
 
     // Check the validity of the solver type parameter
     TEUCHOS_TEST_FOR_EXCEPTION(Amesos2::query(type_) == false, Exceptions::RuntimeError, "The Amesos2 library reported that the solver '" << type_ << "' is not available. "
-                               "Amesos2 have been compiled without the support of this solver or the solver name is misspelled.");
+                               "Amesos2 has been compiled without the support of this solver, or the solver name is misspelled.");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -99,7 +99,6 @@ namespace LOCA {
 
       //! Enumerated type for status of the iterator
       enum IteratorStatus {
-        BeforeFirstIteration = 3, //!< The iteration has not started
         LastIteration = 2,        //!< This is the last iteration
         Finished = 1,             //!< The iterator is finished
         Failed = 0,               //!< The iterator has failed
@@ -139,52 +138,6 @@ namespace LOCA {
 
       //! Run the iterator
       virtual IteratorStatus run();
-
-      /// \brief Initialize iterating one by one.
-      ///
-      /// \param iteratorStatus [out] On exit, the value to be passed to \c
-      /// iterateOnce().
-      ///
-      /// Instead of running all iterations at once using \c run(), iterate one
-      /// by one. First initialize the iterator using this method.
-      virtual void initializeIterateOnce(IteratorStatus& iteratorStatus);
-
-      /// \brief Iterate once.
-      ///
-      /// \param iteratorStatus [in, out] On entry, either the value from
-      /// initializeIterateOnce() or from the previous call of iterateOnce(), if
-      /// it returned true. On exit, the status of the iterator. If
-      /// iterateOnce() returns true, also the input for the next call.
-      ///
-      /// \param stepStatus [in, out] Same behavior as iteratorStatus, but for
-      /// StepStatus.
-      ///
-      /// Returns \c true if one should keep iterating, false if done.
-      ///
-      /// Typical usage is as follows:
-      /// \code
-      /// Iterator::IteratorStatus istat;
-      /// Iterator::StepStatus sstat;
-      /// it->initializeIterateOnce(istat);
-      /// while (it->iterate(istat, sstat)) {
-      ///   // Do something with the data now that we are at the end of
-      ///   // this continuation step.
-      /// }
-      /// // Do something different with the data at the last continuation step.
-      /// \endcode
-      /// Alternatively, if you do not want to distinguish between intermediate
-      /// and the final continuation steps, you can structure the loop this way:
-      /// \code
-      /// it->initializeIterateOnce(istat);
-      /// for (;;) {
-      ///   const bool keep_iterating = it->iterate(istat, sstat);
-      ///   // Do something with the data now that we are at the end of
-      ///   // this continuation step.
-      ///   if (!keep_iterating) break;
-      /// }
-      /// \endcode
-      virtual bool iterateOnce(
-        IteratorStatus& iteratorStatus, StepStatus& stepStatus);
 
     protected:
 

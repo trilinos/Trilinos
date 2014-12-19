@@ -55,14 +55,13 @@ struct RandomProperties {
   }
 
   KOKKOS_INLINE_FUNCTION
-  volatile RandomProperties& operator+=(const volatile RandomProperties& add) volatile {
+  void operator+=(const volatile RandomProperties& add) volatile {
     count      += add.count;
     mean       += add.mean;
     variance   += add.variance;
     covariance += add.covariance;
     min         = add.min<min?add.min:min;
     max         = add.max>max?add.max:max;
-    return *this;
   }
 };
 
@@ -75,19 +74,31 @@ struct test_random_functor {
 
   GeneratorPool rand_pool;
   const double mean;
-  typedef Kokkos::View<int[HIST_DIM1D],typename GeneratorPool::device_type> type_1d;
+
+  // NOTE (mfh 03 Nov 2014): Kokkos::rand::max() is supposed to define
+  // an exclusive upper bound on the range of random numbers that
+  // draw() can generate.  However, for the float specialization, some
+  // implementations might violate this upper bound, due to rounding
+  // error.  Just in case, we leave an extra space at the end of each
+  // dimension, in the View types below.
+  typedef Kokkos::View<int[HIST_DIM1D+1],typename GeneratorPool::device_type> type_1d;
   type_1d density_1d;
-  typedef Kokkos::View<int[HIST_DIM3D][HIST_DIM3D][HIST_DIM3D],typename GeneratorPool::device_type> type_3d;
+  typedef Kokkos::View<int[HIST_DIM3D+1][HIST_DIM3D+1][HIST_DIM3D+1],typename GeneratorPool::device_type> type_3d;
   type_3d density_3d;
 
-  test_random_functor(GeneratorPool rand_pool_,type_1d d1d, type_3d d3d):
-      rand_pool(rand_pool_),mean(0.5*Kokkos::rand<rnd_type,Scalar>::max()),
-      density_1d(d1d),density_3d(d3d) {}
+  test_random_functor (GeneratorPool rand_pool_, type_1d d1d, type_3d d3d) :
+    rand_pool (rand_pool_),
+    mean (0.5*Kokkos::rand<rnd_type,Scalar>::max ()),
+    density_1d (d1d),
+    density_3d (d3d)
+  {}
 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i, RandomProperties& prop) const {
+    using Kokkos::atomic_fetch_add;
+
     rnd_type rand_gen = rand_pool.get_state();
-    for(int k = 0;k<1024;k++) {
+    for (int k = 0; k < 1024; ++k) {
       const Scalar tmp = Kokkos::rand<rnd_type,Scalar>::draw(rand_gen);
       prop.count++;
       prop.mean += tmp;
@@ -103,12 +114,33 @@ struct test_random_functor {
       prop.variance += (tmp3-mean)*(tmp3-mean);
       prop.covariance += (tmp2-mean)*(tmp3-mean);
 
-      Kokkos::atomic_fetch_add(&density_1d(uint64_t(1.0*HIST_DIM1D*tmp/Kokkos::rand<rnd_type,Scalar>::max())),1);
-      Kokkos::atomic_fetch_add(&density_1d(uint64_t(1.0*HIST_DIM1D*tmp2/Kokkos::rand<rnd_type,Scalar>::max())),1);
-      Kokkos::atomic_fetch_add(&density_1d(uint64_t(1.0*HIST_DIM1D*tmp3/Kokkos::rand<rnd_type,Scalar>::max())),1);
-      Kokkos::atomic_fetch_add(&density_3d(uint64_t(1.0*HIST_DIM3D*tmp/Kokkos::rand<rnd_type,Scalar>::max()),
-          uint64_t(1.0*HIST_DIM3D*tmp2/Kokkos::rand<rnd_type,Scalar>::max()),
-          uint64_t(1.0*HIST_DIM3D*tmp3/Kokkos::rand<rnd_type,Scalar>::max())),1);
+      // NOTE (mfh 03 Nov 2014): Kokkos::rand::max() is supposed to
+      // define an exclusive upper bound on the range of random
+      // numbers that draw() can generate.  However, for the float
+      // specialization, some implementations might violate this upper
+      // bound, due to rounding error.  Just in case, we have left an
+      // extra space at the end of each dimension of density_1d and
+      // density_3d.
+      //
+      // Please note that those extra entries might not get counted in
+      // the histograms.  However, if Kokkos::rand is broken and only
+      // returns values of max(), the histograms will still catch this
+      // indirectly, since none of the other values will be filled in.
+
+      const Scalar theMax = Kokkos::rand<rnd_type, Scalar>::max ();
+
+      const uint64_t ind1_1d = static_cast<uint64_t> (1.0 * HIST_DIM1D * tmp / theMax);
+      const uint64_t ind2_1d = static_cast<uint64_t> (1.0 * HIST_DIM1D * tmp2 / theMax);
+      const uint64_t ind3_1d = static_cast<uint64_t> (1.0 * HIST_DIM1D * tmp3 / theMax);
+
+      const uint64_t ind1_3d = static_cast<uint64_t> (1.0 * HIST_DIM3D * tmp / theMax);
+      const uint64_t ind2_3d = static_cast<uint64_t> (1.0 * HIST_DIM3D * tmp2 / theMax);
+      const uint64_t ind3_3d = static_cast<uint64_t> (1.0 * HIST_DIM3D * tmp3 / theMax);
+
+      atomic_fetch_add (&density_1d(ind1_1d), 1);
+      atomic_fetch_add (&density_1d(ind2_1d), 1);
+      atomic_fetch_add (&density_1d(ind3_1d), 1);
+      atomic_fetch_add (&density_3d(ind1_3d, ind2_3d, ind3_3d), 1);
     }
     rand_pool.free_state(rand_gen);
   }
@@ -117,60 +149,86 @@ struct test_random_functor {
 template<class DeviceType>
 struct test_histogram1d_functor {
   typedef RandomProperties value_type;
-  typedef DeviceType device_type;
+  typedef typename DeviceType::execution_space execution_space;
+  typedef typename DeviceType::memory_space memory_space;
 
-  typedef Kokkos::View<int[HIST_DIM1D],device_type> type_1d;
+  // NOTE (mfh 03 Nov 2014): Kokkos::rand::max() is supposed to define
+  // an exclusive upper bound on the range of random numbers that
+  // draw() can generate.  However, for the float specialization, some
+  // implementations might violate this upper bound, due to rounding
+  // error.  Just in case, we leave an extra space at the end of each
+  // dimension, in the View type below.
+  typedef Kokkos::View<int[HIST_DIM1D+1], memory_space> type_1d;
   type_1d density_1d;
-
   double mean;
 
-  test_histogram1d_functor(type_1d d1d, int num_draws):
-      density_1d(d1d),  mean(1.0*num_draws/HIST_DIM1D*3) {printf("Mean: %e\n",mean);}
+  test_histogram1d_functor (type_1d d1d, int num_draws) :
+    density_1d (d1d),
+    mean (1.0*num_draws/HIST_DIM1D*3)
+  {
+    printf ("Mean: %e\n", mean);
+  }
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (int i, RandomProperties& prop) const {
-      double count = density_1d(i);
-      prop.mean += count;
-      prop.variance += 1.0*(count-mean) * (count-mean);
-      //prop.covariance += 1.0*count*count;
-      prop.min = count<prop.min?count:prop.min;
-      prop.max = count>prop.max?count:prop.max;
-      if(i<HIST_DIM1D-1)
-        prop.covariance += (count-mean) * (density_1d(i+1)-mean);
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const typename memory_space::size_type i,
+              RandomProperties& prop) const
+  {
+    typedef typename memory_space::size_type size_type;
+    const double count = density_1d(i);
+    prop.mean += count;
+    prop.variance += 1.0 * (count - mean) * (count - mean);
+    //prop.covariance += 1.0*count*count;
+    prop.min = count < prop.min ? count : prop.min;
+    prop.max = count > prop.max ? count : prop.max;
+    if (i < static_cast<size_type> (HIST_DIM1D-1)) {
+      prop.covariance += (count - mean) * (density_1d(i+1) - mean);
+    }
   }
 };
 
 template<class DeviceType>
 struct test_histogram3d_functor {
   typedef RandomProperties value_type;
-  typedef DeviceType device_type;
+  typedef typename DeviceType::execution_space execution_space;
+  typedef typename DeviceType::memory_space memory_space;
 
-  typedef Kokkos::View<int[HIST_DIM3D][HIST_DIM3D][HIST_DIM3D],device_type> type_3d;
+  // NOTE (mfh 03 Nov 2014): Kokkos::rand::max() is supposed to define
+  // an exclusive upper bound on the range of random numbers that
+  // draw() can generate.  However, for the float specialization, some
+  // implementations might violate this upper bound, due to rounding
+  // error.  Just in case, we leave an extra space at the end of each
+  // dimension, in the View type below.
+  typedef Kokkos::View<int[HIST_DIM3D+1][HIST_DIM3D+1][HIST_DIM3D+1], memory_space> type_3d;
   type_3d density_3d;
-
   double mean;
 
-  test_histogram3d_functor(type_3d d3d, int num_draws):
-      density_3d(d3d), mean(1.0*num_draws/HIST_DIM1D) {}
+  test_histogram3d_functor (type_3d d3d, int num_draws) :
+    density_3d (d3d),
+    mean (1.0*num_draws/HIST_DIM1D)
+  {}
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (int i, RandomProperties& prop) const {
-      double count = density_3d( i/(HIST_DIM3D*HIST_DIM3D),
-                                (i%(HIST_DIM3D*HIST_DIM3D))/HIST_DIM3D,
-                                 i%HIST_DIM3D);
-      prop.mean += count;
-      prop.variance += (count-mean) * (count-mean);
-      if(i<HIST_DIM1D-1) {
-        double count_next = density_3d( (i+1)/(HIST_DIM3D*HIST_DIM3D),
-                                  ((i+1)%(HIST_DIM3D*HIST_DIM3D))/HIST_DIM3D,
-                                  (i+1)%HIST_DIM3D);
-        prop.covariance += (count-mean) * (count_next-mean);
-      }
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const typename memory_space::size_type i,
+              RandomProperties& prop) const
+  {
+    typedef typename memory_space::size_type size_type;
+    const double count = density_3d(i/(HIST_DIM3D*HIST_DIM3D),
+                                    (i % (HIST_DIM3D*HIST_DIM3D))/HIST_DIM3D,
+                                    i % HIST_DIM3D);
+    prop.mean += count;
+    prop.variance += (count - mean) * (count - mean);
+    if (i < static_cast<size_type> (HIST_DIM1D-1)) {
+      const double count_next = density_3d((i+1)/(HIST_DIM3D*HIST_DIM3D),
+                                           ((i+1)%(HIST_DIM3D*HIST_DIM3D))/HIST_DIM3D,
+                                           (i+1)%HIST_DIM3D);
+      prop.covariance += (count - mean) * (count_next - mean);
+    }
   }
 };
 
-
-
+//
+// Templated test that uses the above functors.
+//
 template <class RandomGenerator,class Scalar>
 struct test_random_scalar {
   typedef typename RandomGenerator::generator_type rnd_type;
@@ -178,14 +236,22 @@ struct test_random_scalar {
   int pass_mean,pass_var,pass_covar;
   int pass_hist1d_mean,pass_hist1d_var,pass_hist1d_covar;
   int pass_hist3d_mean,pass_hist3d_var,pass_hist3d_covar;
-  test_random_scalar(
-      typename test_random_functor<RandomGenerator,int>::type_1d& density_1d,
-      typename test_random_functor<RandomGenerator,int>::type_3d& density_3d,
-      RandomGenerator& pool, unsigned int num_draws) {
-    {
-      RandomProperties result;
 
-      Kokkos::parallel_reduce(num_draws/1024,test_random_functor<RandomGenerator,Scalar>(pool,density_1d,density_3d),result);
+  test_random_scalar (typename test_random_functor<RandomGenerator,int>::type_1d& density_1d,
+                      typename test_random_functor<RandomGenerator,int>::type_3d& density_3d,
+                      RandomGenerator& pool,
+                      unsigned int num_draws)
+  {
+    using std::cerr;
+    using std::endl;
+    using Kokkos::parallel_reduce;
+
+    {
+      cerr << " -- Testing randomness properties" << endl;
+
+      RandomProperties result;
+      typedef test_random_functor<RandomGenerator, Scalar> functor_type;
+      parallel_reduce (num_draws/1024, functor_type (pool, density_1d, density_3d), result);
 
       //printf("Result: %lf %lf %lf\n",result.mean/num_draws/3,result.variance/num_draws/3,result.covariance/num_draws/2);
       double tolerance = 2.0*sqrt(1.0/num_draws);
@@ -200,14 +266,20 @@ struct test_random_scalar {
                     ( tolerance > variance_eps)) ? 1:0;
       pass_covar = ((-1.4*tolerance < covariance_eps) &&
                     ( 1.4*tolerance > covariance_eps)) ? 1:0;
-      printf("Pass: %i %i %e %e %e || %e\n",pass_mean,pass_var,mean_eps,variance_eps,covariance_eps,tolerance);
+      cerr << "Pass: " << pass_mean
+           << " " << pass_var
+           << " " << mean_eps
+           << " " << variance_eps
+           << " " << covariance_eps
+           << " || " << tolerance << endl;
     }
     {
+      cerr << " -- Testing 1-D histogram" << endl;
+
       RandomProperties result;
+      typedef test_histogram1d_functor<typename RandomGenerator::device_type> functor_type;
+      parallel_reduce (HIST_DIM1D, functor_type (density_1d, num_draws), result);
 
-      Kokkos::parallel_reduce(HIST_DIM1D,test_histogram1d_functor<typename RandomGenerator::device_type>(density_1d,num_draws),result);
-
-      //printf("Result: %lf %lf %lf\n",result.mean/num_draws/3,result.variance/num_draws/3,result.covariance/num_draws/2);
       double tolerance = 6*sqrt(1.0/HIST_DIM1D);
       double mean_expect = 1.0*num_draws*3/HIST_DIM1D;
       double variance_expect = 1.0*num_draws*3/HIST_DIM1D*(1.0-1.0/HIST_DIM1D);
@@ -221,19 +293,26 @@ struct test_random_scalar {
                            ( tolerance > variance_eps)) ? 1:0;
       pass_hist1d_covar = ((-tolerance < covariance_eps) &&
                            ( tolerance > covariance_eps)) ? 1:0;
-      printf("Density 1D: %e %e %e || %e %e %e || %e %e || %e %e\n",mean_eps,variance_eps,result.covariance/HIST_DIM1D/HIST_DIM1D,tolerance,
-          result.min,result.max,
-          result.variance/HIST_DIM1D,1.0*num_draws*3/HIST_DIM1D*(1.0-1.0/HIST_DIM1D),
-          result.covariance/HIST_DIM1D,-1.0*num_draws*3/HIST_DIM1D/HIST_DIM1D
-          );
 
+      cerr << "Density 1D: " << mean_eps
+           << " " << variance_eps
+           << " " << (result.covariance/HIST_DIM1D/HIST_DIM1D)
+           << " || " << tolerance
+           << " " << result.min
+           << " " << result.max
+           << " || " << result.variance/HIST_DIM1D
+           << " " << 1.0*num_draws*3/HIST_DIM1D*(1.0-1.0/HIST_DIM1D)
+           << " || " << result.covariance/HIST_DIM1D
+           << " " << -1.0*num_draws*3/HIST_DIM1D/HIST_DIM1D
+           << endl;
     }
     {
+      cerr << " -- Testing 3-D histogram" << endl;
+
       RandomProperties result;
+      typedef test_histogram3d_functor<typename RandomGenerator::device_type> functor_type;
+      parallel_reduce (HIST_DIM1D, functor_type (density_3d, num_draws), result);
 
-      Kokkos::parallel_reduce(HIST_DIM1D,test_histogram3d_functor<typename RandomGenerator::device_type>(density_3d,num_draws),result);
-
-      //printf("Result: %lf %lf %lf\n",result.mean/num_draws/3,result.variance/num_draws/3,result.covariance/num_draws/2);
       double tolerance = 6*sqrt(1.0/HIST_DIM1D);
       double mean_expect = 1.0*num_draws/HIST_DIM1D;
       double variance_expect = 1.0*num_draws/HIST_DIM1D*(1.0-1.0/HIST_DIM1D);
@@ -247,20 +326,27 @@ struct test_random_scalar {
                            ( tolerance > variance_eps)) ? 1:0;
       pass_hist3d_covar = ((-tolerance < covariance_eps) &&
                            ( tolerance > covariance_eps)) ? 1:0;
-      printf("Density 3D: %e %e %e || %e %e %e\n",mean_eps,variance_eps,result.covariance/HIST_DIM1D/HIST_DIM1D,tolerance,result.min,result.max);
 
+      cerr << "Density 3D: " << mean_eps
+           << " " << variance_eps
+           << " " << result.covariance/HIST_DIM1D/HIST_DIM1D
+           << " || " << tolerance
+           << " " << result.min
+           << " " << result.max << endl;
     }
-
   }
 };
 
 template <class RandomGenerator>
 void test_random(unsigned int num_draws)
 {
+  using std::cerr;
+  using std::endl;
   typedef typename RandomGenerator::generator_type rnd_type;
   typename test_random_functor<RandomGenerator,int>::type_1d density_1d("D1d");
   typename test_random_functor<RandomGenerator,int>::type_3d density_3d("D3d");
 
+  cerr << "Test Scalar=int" << endl;
   RandomGenerator pool(31891);
   test_random_scalar<RandomGenerator,int> test_int(density_1d,density_3d,pool,num_draws);
   ASSERT_EQ( test_int.pass_mean,1);
@@ -274,6 +360,8 @@ void test_random(unsigned int num_draws)
   ASSERT_EQ( test_int.pass_hist3d_covar,1);
   deep_copy(density_1d,0);
   deep_copy(density_3d,0);
+
+  cerr << "Test Scalar=unsigned int" << endl;
   test_random_scalar<RandomGenerator,unsigned int> test_uint(density_1d,density_3d,pool,num_draws);
   ASSERT_EQ( test_uint.pass_mean,1);
   ASSERT_EQ( test_uint.pass_var,1);
@@ -286,6 +374,8 @@ void test_random(unsigned int num_draws)
   ASSERT_EQ( test_uint.pass_hist3d_covar,1);
   deep_copy(density_1d,0);
   deep_copy(density_3d,0);
+
+  cerr << "Test Scalar=int64_t" << endl;
   test_random_scalar<RandomGenerator,int64_t> test_int64(density_1d,density_3d,pool,num_draws);
   ASSERT_EQ( test_int64.pass_mean,1);
   ASSERT_EQ( test_int64.pass_var,1);
@@ -298,6 +388,8 @@ void test_random(unsigned int num_draws)
   ASSERT_EQ( test_int64.pass_hist3d_covar,1);
   deep_copy(density_1d,0);
   deep_copy(density_3d,0);
+
+  cerr << "Test Scalar=uint64_t" << endl;
   test_random_scalar<RandomGenerator,uint64_t> test_uint64(density_1d,density_3d,pool,num_draws);
   ASSERT_EQ( test_uint64.pass_mean,1);
   ASSERT_EQ( test_uint64.pass_var,1);
@@ -310,6 +402,8 @@ void test_random(unsigned int num_draws)
   ASSERT_EQ( test_uint64.pass_hist3d_covar,1);
   deep_copy(density_1d,0);
   deep_copy(density_3d,0);
+
+  cerr << "Test Scalar=float" << endl;
   test_random_scalar<RandomGenerator,float> test_float(density_1d,density_3d,pool,num_draws);
   ASSERT_EQ( test_float.pass_mean,1);
   ASSERT_EQ( test_float.pass_var,1);
@@ -322,6 +416,8 @@ void test_random(unsigned int num_draws)
   ASSERT_EQ( test_float.pass_hist3d_covar,1);
   deep_copy(density_1d,0);
   deep_copy(density_3d,0);
+
+  cerr << "Test Scalar=double" << endl;
   test_random_scalar<RandomGenerator,double> test_double(density_1d,density_3d,pool,num_draws);
   ASSERT_EQ( test_double.pass_mean,1);
   ASSERT_EQ( test_double.pass_var,1);

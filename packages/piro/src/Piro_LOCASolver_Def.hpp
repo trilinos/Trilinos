@@ -113,6 +113,7 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   noxStatusTests_ = NOX::StatusTest::buildStatusTests(*noxStatusParams, *(globalData_->locaUtils));
 
   stepper_ = Teuchos::rcp(new LOCA::Stepper(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_));
+  first_ = true;
 }
 
 template<typename Scalar>
@@ -145,77 +146,46 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
     group_->setParams(paramVector_);
   }
 
-  stepper_->reset(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_);
+  if (first_) {
+    // No need to call reset. The call can result in long stdout output, so it's
+    // nice to avoid it since we can.
+    first_ = false;
+  } else
+    stepper_->reset(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_);
+  const LOCA::Abstract::Iterator::IteratorStatus status = stepper_->run();
 
-  LOCA::Abstract::Iterator::IteratorStatus istat;
-  LOCA::Abstract::Iterator::StepStatus sstat;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>
-    modelInArgs = this->getModel().createInArgs();
-  stepper_->initializeIterateOnce(istat);
-  for (;;) {
-    std::cout.precision(18);
-    const double cpb = stepper_->getContinuationParameter();
-    const bool keep_iterating = stepper_->iterateOnce(istat, sstat);
-    const double cpa = stepper_->getContinuationParameter();
-    // Call evalConvergedModel()?
-    bool
-      // Call evalConvergedModel() if the step was successful ...
-      call_ecm = sstat == LOCA::Abstract::Iterator::Successful
-      // and if work was done. LOCA::Stepper::finish() may or may not do an
-      // extra step. (finish() was called if !keep_iterating.) Distinguish
-      // between these two cases by comparing the continuation parameter before
-      // and after. If they are not the same, then finish() did an extra step,
-      // and we call evalConvergedModel() on the result; if they are the same,
-      // it was already evaluated.
-      && (keep_iterating || cpa != cpb);
+  if (status == LOCA::Abstract::Iterator::Finished) {
+    std::cerr << "Continuation Stepper Finished.\n";
+  } else if (status == LOCA::Abstract::Iterator::NotFinished) {
+    std::cerr << "Continuation Stepper did not reach final value.\n";
+  } else {
+    std::cerr << "Nonlinear solver failed to converge.\n";
+    outArgs.setFailed();
+  }
 
-    if (!keep_iterating) {
-      // Just after the call to finish().
-      if (istat == LOCA::Abstract::Iterator::Finished) {
-        std::cout << "Continuation Stepper Finished.\n";
-      } else if (istat == LOCA::Abstract::Iterator::NotFinished) {
-        std::cout << "Continuation Stepper did not reach final value.\n";
-      } else {
-        std::cout << "Nonlinear solver failed to converge.\n";
-        outArgs.setFailed();
-        // The behavior of the previous implementation of evalModelImpl was to
-        // call evalConvergedModel regardless of the iterator status. Do that in
-        // the new implementation, too. This has the effect of calling
-        // evalConvergedModel() twice on the same point. But a subtlety is that
-        // outArgs.setFailed() sets get_g(num_g) to null. Only the call to
-        // get_g_space in the following code restores it. If it is not restored,
-        // then exit tests based on response functions will show nan or
-        // equivalent. In any case, the redundant call occurs only in the case
-        // of failure.
-        call_ecm = true;
-      }
-    }
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_outargs = outArgs.get_g(this->num_g());
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_final =
+    Teuchos::nonnull(x_outargs) ? x_outargs : Thyra::createMember(this->get_g_space(this->num_g()));
 
-    if (call_ecm) {
-      // Compute responses at the end of this continuation step.
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >
-        x_outargs = outArgs.get_g(this->num_g());
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >
-        x_current = (Teuchos::nonnull(x_outargs) ?
-                     x_outargs :
-                     Thyra::createMember(this->get_g_space(this->num_g())));
+  {
+    // Deep copy final solution from LOCA group
+    NOX::Thyra::Vector finalSolution(x_final);
+    finalSolution = group_->getX();
+  }
 
-      { // Deep copy solution for this continuation step from LOCA
-        // group. Vector::operator= does a deep copy into the memory that
-        // x_current points to. v_current itself does not need to be kept; it's
-        // used just for its operator=.
-        NOX::Thyra::Vector v_current(x_current);
-        v_current = group_->getX(); }
-
-      modelInArgs.set_x(x_current);
+  // Compute responses for the final solution
+  {
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs =
+      this->getModel().createInArgs();
+    {
+      modelInArgs.set_x(x_final);
       modelInArgs.set_p(l, p_inargs);
-
-      this->evalConvergedModel(modelInArgs, outArgs);
     }
 
-    if (!keep_iterating) break;
+    this->evalConvergedModel(modelInArgs, outArgs);
   }
 }
+
 
 template <typename Scalar>
 Teuchos::RCP<Piro::LOCASolver<Scalar> >
