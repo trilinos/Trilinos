@@ -1175,7 +1175,6 @@ namespace Tpetra {
     typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
     typedef Kokkos::Details::ArithTraits<mag_type> ATM;
     typedef Kokkos::View<scalar_type*, DeviceType> view_type;
-    typedef typename Teuchos::ArrayView<mag_type>::size_type size_type;
     const char tfecfFuncName[] = "normWeighted";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -1540,7 +1539,6 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
-    typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
