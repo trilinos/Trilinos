@@ -11,6 +11,5 @@ TRIBITS_ADD_EXECUTABLE(
   sort_array
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
 
