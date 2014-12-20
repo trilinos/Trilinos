@@ -327,7 +327,7 @@ namespace MueLu {
 
     int incorrectGlobalRank = -1;
     maxAll(comm, incorrectRank, incorrectGlobalRank);
-    TEUCHOS_TEST_FOR_EXCEPTION(incorrectGlobalRank >- 1, Exceptions::RuntimeError, "pid " + toString(incorrectGlobalRank) + " encountered a partition number is that out-of-range");
+    TEUCHOS_TEST_FOR_EXCEPTION(incorrectGlobalRank >- 1, Exceptions::RuntimeError, "pid " + Teuchos::toString(incorrectGlobalRank) + " encountered a partition number is that out-of-range");
 #endif
 
     Array<GO> myGIDs;
