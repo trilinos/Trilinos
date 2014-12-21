@@ -965,12 +965,6 @@ namespace panzer {
 
        // match top & bottom sides
        for(std::size_t i=0;i<globallyMatchedIds_edge->size();i++) {
-          std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds_edge)[i];
-          out << pair.first << " " << pair.second << std::endl;
-       }
-
-       // match top & bottom sides
-       for(std::size_t i=0;i<globallyMatchedIds_edge->size();i++) {
 
           std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds_edge)[i];
 
@@ -1142,7 +1136,7 @@ namespace panzer {
             Tuple<double,3> coord_left;
             Tuple<double,3> coord_right;
             int flag_lr = 0;
-            for(std::size_t j=0;j<sideIds_left.size();j++){
+            for(std::size_t j=0;j<sideIds_edge_left.size();j++){
               if(pair.first == sideIds_edge_left[j]){
                 coord_left = sideCoords_edge_left[j];
                 flag_lr++;
