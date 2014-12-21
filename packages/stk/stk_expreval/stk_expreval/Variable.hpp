@@ -429,9 +429,10 @@ public:
    * @return			a <b>Variable</b> pointer to the new variable.
    */
   Variable *operator[](const std::string &s) {
-    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, NULL));
-    if (i.second)
+    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable*)NULL));
+    if (i.second) {
       (*i.first).second = new Variable();
+    }
     return (*i.first).second;
   }
 
