@@ -46,7 +46,6 @@
 #ifndef MUELU_HIERARCHYUTILS_DEF_HPP
 #define MUELU_HIERARCHYUTILS_DEF_HPP
 #include <MueLu_HierarchyManager.hpp>
-#include <MueLu_HierarchyManager.hpp>
 #include <MueLu_FactoryManager.hpp>
 #include <MueLu_Hierarchy.hpp>
 
