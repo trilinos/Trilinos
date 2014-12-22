@@ -1352,14 +1352,16 @@ namespace Tpetra {
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
     // View of all the norm results.
-    typedef Kokkos::View<mag_type*, device_type> norms_view_type;
+    typedef Kokkos::View<mag_type*,
+      typename device_type::execution_space> norms_view_type;
     // View of a single norm result (one entry).
-    typedef Kokkos::View<mag_type, device_type> norm_view_type;
+    typedef Kokkos::View<mag_type,
+      typename device_type::execution_space> norm_view_type;
     // View of a MultiVector's local data (all columns).
     typedef typename dual_view_type::t_dev mv_view_type;
     // View of a single column of a MultiVector's local data.
     typedef Kokkos::View<scalar_type*, typename mv_view_type::array_layout,
-      typename mv_view_type::memory_space> vec_view_type;
+      typename mv_view_type::execution_space> vec_view_type;
 
     const size_t numVecs = this->getNumVectors ();
     const size_t lclNumRows = this->getLocalLength ();
@@ -1628,8 +1630,8 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::Impl::ViewFill;
     using Kokkos::subview;
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_host::memory_space HMS;
+    typedef typename dual_view_type::t_dev::execution_space DMS;
+    typedef typename dual_view_type::t_host::execution_space HMS;
 
     const scalar_type theAlpha = static_cast<scalar_type> (alpha);
     const size_t lclNumRows = getLocalLength ();

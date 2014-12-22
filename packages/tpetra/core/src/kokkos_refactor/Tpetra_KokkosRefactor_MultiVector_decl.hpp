@@ -554,11 +554,33 @@ namespace Tpetra {
     /// type from the Stokhos package.
     typedef typename Kokkos::Details::ArithTraits<scalar_type>::mag_type mag_type;
 
-    //! Type of the (new) Kokkos Device which implements parallel operations.
+    /// \brief Type of the (new) Kokkos execution space.
+    ///
+    /// The execution space implements parallel operations, like
+    /// parallel_for, parallel_reduce, and parallel_scan.  It also has
+    /// a default memory space, in which the Tpetra object's data
+    /// live.
     typedef DeviceType device_type;
 
-    //! Kokkos::DualView specialization used by this class.
-    typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft, device_type> dual_view_type;
+    /// \brief Kokkos::DualView specialization used by this class.
+    ///
+    /// We take particular care to template the DualView on an
+    /// execution space, rather than a memory space.  This ensures
+    /// that Tpetra will use exactly the specified execution space(s)
+    /// and no others.  This matters because View (and DualView)
+    /// initialization is a parallel Kokkos kernel.  If the View is
+    /// templated on an execution space, Kokkos uses that execution
+    /// space (and only that execution space) to initialize the View.
+    /// This is what we want.  If the View is templated on a
+    /// <i>memory</i> space, Kokkos uses the memory space's default
+    /// <i>execution</i> space to initialize.  This is not necessarily
+    /// what we want.  For example, if building with OpenMP enabled,
+    /// the default execution space for host memory is Kokkos::OpenMP,
+    /// even if the user-specified DeviceType is Kokkos::Serial.  That
+    /// is why we go through the trouble of asking for the
+    /// device_type's execution space.
+    typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft,
+      typename device_type::execution_space> dual_view_type;
 
     //@}
     //! @name Constructors and destructor
@@ -2158,10 +2180,6 @@ namespace Tpetra {
   template <class ST, class LO, class GO, class DT>
   MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DT> >
   createCopy (const MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DT> >& src);
-
-  namespace { // (anonymous)
-
-  } // namespace (anonymous)
 
 
   // NOTE (mfh 11 Sep 2014) Even though this partial specialization
