@@ -401,35 +401,6 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
     }
 }
 
-//----------------------------------------------------------------------
-
-void internal_get_processor_dependencies_shared_or_ghosted(
-  const BulkData &mesh,
-  const EntityProc                  shared_or_ghosted_entity ,
-  stk::mesh::EntityToDependentProcessorsMap & node_to_dependent_processors_map)
-{
-    Entity moving_entity = shared_or_ghosted_entity.first;
-    int new_owning_proc = shared_or_ghosted_entity.second;
-
-    if (mesh.entity_rank(moving_entity) != stk::topology::ELEMENT_RANK) {
-        node_to_dependent_processors_map[mesh.entity_key(moving_entity)].insert(new_owning_proc);
-    }
-
-    const Bucket &ebucket = mesh.bucket(moving_entity);
-    const Ordinal ebordinal = mesh.bucket_ordinal(moving_entity);
-    const EntityRank node_rank = stk::topology::NODE_RANK;
-
-    for ( EntityRank rank = node_rank ; rank < mesh.entity_rank(moving_entity) ; ++rank) {
-        Entity const *rels_itr = ebucket.begin(ebordinal, rank);
-        Entity const *rels_end= ebucket.end(ebordinal, rank);
-        for (; rels_itr != rels_end; ++rels_itr)
-        {
-            Entity entity = *rels_itr;
-            node_to_dependent_processors_map[mesh.entity_key(entity)].insert(new_owning_proc);
-        }
-    }
-}
-
 // these are for debugging, they're used to mark where we are in the packing/unpacking process
 #define USE_PACK_TAGS !defined(NDEBUG)
 enum PackTags {
@@ -472,7 +443,6 @@ void insert( std::vector<int> & vec , int val )
     vec.insert( j , val );
   }
 }
-
 
 void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
                                                 const BulkData &       mesh,
@@ -856,7 +826,6 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   return result ;
 }
 
-
 void pack_owned_verify( CommAll & all , const BulkData & mesh )
 {
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();
@@ -1167,7 +1136,6 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
   return result ;
 }
 
-//----------------------------------------------------------------------
 bool comm_mesh_verify_parallel_consistency(
   BulkData & M , std::ostream & error_log )
 {
