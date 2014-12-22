@@ -95,8 +95,6 @@ class Epetra_Vector;
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
 
-#include "MueLu_Hierarchy.hpp"
-
 
 namespace MueLu {
 // MPI helpers
@@ -113,8 +111,6 @@ namespace MueLu {
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
   Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class HierarchyManager;
 
   /*!
     @class Utils
@@ -408,11 +404,6 @@ namespace MueLu {
     static void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
                                       std::vector<LO>& dirichletCols);
     static void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14);
-
-    /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
-      calling AddNewLevel as appropriate.
-     */
-    static void AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & nonSerialList);
 
   }; // class Utils
 

@@ -12,6 +12,7 @@
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MueLu_HierarchyUtils.hpp>
 
 //! @file MueLu_CreateTpetraPreconditioner.hpp
 
@@ -139,7 +140,7 @@ namespace MueLu {
     H->GetLevel(0)->Set("Nullspace", nullspace);
     
     if (hasParamList) {
-      MueLu::Utils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H,nonSerialList);
+      MueLu::HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H,nonSerialList);
       mueLuFactory->SetupHierarchy(*H);
     }
     else
