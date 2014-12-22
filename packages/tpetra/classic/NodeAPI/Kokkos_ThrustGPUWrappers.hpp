@@ -42,7 +42,7 @@
 #ifndef KOKKOS_THRUSTGPU_WRAPPERS_HPP_
 #define KOKKOS_THRUSTGPU_WRAPPERS_HPP_
 
-#include "KokkosClassic_config.h"
+#include "Kokkos_ConfigDefs.hpp"
 
 namespace KokkosClassic {
   namespace ThrustGPUNodeDetails {
