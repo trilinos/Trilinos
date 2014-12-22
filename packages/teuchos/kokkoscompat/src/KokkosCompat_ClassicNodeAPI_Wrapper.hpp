@@ -44,13 +44,21 @@ public:
     const bool verbose = getVerboseParameter (params);
 
     if (verbose) {
-      std::cout << "DeviceWrapperNode initializing with \"Num Threads\" = "
-                << curNumThreads << ", \"Num NUMA\" = " << curNumNUMA
-                << ", \"num CoresPerNUMA\" = " << curNumCoresPerNUMA
-                << " \"Device\" = " << curDevice << std::endl;
+      std::ostream& out = std::cout;
+      out << "DeviceWrapperNode with DeviceType = "
+          << typeid (DeviceType).name () << " initializing with "
+          << "\"Num Threads\" = " << curNumThreads
+          << ", \"Num NUMA\" = " << curNumNUMA
+          << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
+          << " \"Device\" = " << curDevice << std::endl;
     }
     if (count == 0) {
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! DeviceType::is_initialized (), std::logic_error,
+        "Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType = "
+        << typeid (DeviceType).name () << "> constructor: Kokkos execution "
+        << "space initialization failed.");
     }
     count++;
   }
@@ -64,13 +72,21 @@ public:
     const bool verbose = getVerboseParameter (params);
 
     if (verbose) {
-      std::cout << "DeviceWrapperNode initializing with \"Num Threads\" = "
-                << curNumThreads << ", \"Num NUMA\" = " << curNumNUMA
-                << ", \"num CoresPerNUMA\" = " << curNumCoresPerNUMA
-                << " \"Device\" = " << curDevice << std::endl;
+      std::ostream& out = std::cout;
+      out << "DeviceWrapperNode with DeviceType = "
+          << typeid (DeviceType).name () << " initializing with "
+          << "\"Num Threads\" = " << curNumThreads
+          << ", \"Num NUMA\" = " << curNumNUMA
+          << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
+          << " \"Device\" = " << curDevice << std::endl;
     }
     if (count == 0) {
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! DeviceType::is_initialized (), std::logic_error,
+        "Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType = "
+        << typeid (DeviceType).name () << "> constructor: Kokkos execution "
+        << "space initialization failed.");
     }
     count++;
   }
@@ -135,9 +151,9 @@ public:
   };
 
   template <class WDP>
-  static void parallel_for(int beg, int end, WDP wd) {
-    const FunctorParallelFor<WDP> f(beg,wd);
-    int n = end-beg;
+  static void parallel_for (const int beg, const int end, WDP wd) {
+    const FunctorParallelFor<WDP> f (beg, wd);
+    const int n = end - beg;
     Kokkos::parallel_for(n,f);
   }
 
@@ -172,12 +188,12 @@ public:
 
   template <class WDP>
   static typename WDP::ReductionType
-  parallel_reduce(int beg, int end, WDP wd) {
+  parallel_reduce (const int beg, const int end, WDP wd) {
     typedef typename WDP::ReductionType ReductionType;
     ReductionType globalResult = wd.identity();
-    const FunctorParallelReduce<WDP> f(beg,wd);
-    int n = end-beg;
-    Kokkos::parallel_reduce(n,f,globalResult);
+    const FunctorParallelReduce<WDP> f (beg, wd);
+    const int n = end - beg;
+    Kokkos::parallel_reduce (n, f, globalResult);
     return globalResult;
   }
 
