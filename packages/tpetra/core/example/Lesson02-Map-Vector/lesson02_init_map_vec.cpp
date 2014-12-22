@@ -289,29 +289,30 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // Create a Vector with the contiguous Map.  This version of the
   // constructor will fill in the vector with zeros.
-  RCP<vector_type> x = rcp (new vector_type (contigMap));
+  vector_type x (contigMap);
 
-  // The copy constructor performs a deep copy.
-  // x and y have the same Map.
-  RCP<vector_type> y = rcp (new vector_type (*x));
+  // The two-argument copy constructor with second argument
+  // Teuchos::Copy performs a deep copy.  x and y have the same Map.
+  // The one-argument copy constructor does a _shallow_ copy.
+  vector_type y (x, Teuchos::Copy);
 
   // Create a Vector with the 1-D cyclic Map.  Calling the constructor
   // with false for the second argument leaves the data uninitialized,
   // so that you can fill it later without paying the cost of
   // initially filling it with zeros.
-  RCP<vector_type> z = rcp (new vector_type (contigMap, false));
+  vector_type z (contigMap, false);
 
   // Set the entries of z to (pseudo)random numbers.  Please don't
   // consider this a good parallel pseudorandom number generator.
-  z->randomize ();
+  z.randomize ();
 
   // Set the entries of x to all ones.
   //
   // The code below works because scalar_type=double.  In general, you
   // may use the commented-out line of code, if the conversion from
   // float to scalar_type is not defined for your scalar type.
-  x->putScalar (1.0);
-  //x->putScalar (Teuchos::ScalarTraits<scalar_type>::one());
+  x.putScalar (1.0);
+  //x.putScalar (Teuchos::ScalarTraits<scalar_type>::one());
 
   // See comment above about type conversions to scalar_type.
   const scalar_type alpha = 3.14159;
@@ -323,12 +324,12 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // This is a legal operation!  Even though the Maps of x and z are
   // not the same, their Maps are compatible.  Whether it makes sense
   // or not depends on your application.
-  x->update (alpha, *z, beta);
+  x.update (alpha, z, beta);
 
   // See comment above about type conversions from float to scalar_type.
-  y->putScalar (42.0);
+  y.putScalar (42.0);
   // y = gamma*y + alpha*x + beta*z
-  y->update (alpha, *x, beta, *z, gamma);
+  y.update (alpha, x, beta, z, gamma);
 
   // Compute the 2-norm of y.
   //
@@ -341,7 +342,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // work.  Try the commented-out line instead in that case.
   typedef Tpetra::Vector<>::mag_type mag_type;
   //typedef Teuchos::ScalarTraits<scalar_type>::magnitudeType mag_type;
-  const mag_type theNorm = y->norm2 ();
+  const mag_type theNorm = y.norm2 ();
 
   // Print the norm of y on Proc 0.
   out << "Norm of y: " << theNorm << endl;

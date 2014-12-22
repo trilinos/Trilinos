@@ -121,24 +121,24 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // Create a Vector with the Map we created above.
   // This version of the constructor will fill in the vector with zeros.
-  RCP<vector_type> x = rcp (new vector_type (contigMap));
+  vector_type x (contigMap);
 
   //////////////////////////////////////////////////////////////////////
   // Fill the Vector with a single number, or with random numbers
   //////////////////////////////////////////////////////////////////////
 
   // Set all entries of x to 42.0.
-  x->putScalar (42.0);
+  x.putScalar (42.0);
 
   // Print the norm of x.
-  out << "Norm of x (all entries are 42.0): " << x->norm2 () << endl;
+  out << "Norm of x (all entries are 42.0): " << x.norm2 () << endl;
 
   // Set the entries of x to (pseudo)random numbers.  Please don't
   // consider this a good parallel pseudorandom number generator.
-  x->randomize ();
+  x.randomize ();
 
   // Print the norm of x.
-  out << "Norm of x (random numbers): " << x->norm2 () << endl;
+  out << "Norm of x (random numbers): " << x.norm2 () << endl;
 
   //////////////////////////////////////////////////////////////////////
   // Read the entries of the Vector
@@ -160,12 +160,12 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // extra pair of {}) so that the ArrayRCP will fall out of scope
     // (and therefore be deallocated) before the next example, which
     // modifies the entries of the Vector.
-    ArrayRCP<const scalar_type> x_data = x->get1dView ();
+    ArrayRCP<const scalar_type> x_data = x.get1dView ();
 
     // x_data.size () may be longer than the number of local rows in
     // the Vector, so be sure to ask the Vector for its dimensions,
     // rather than the ArrayRCP.
-    const size_t localLength = x->getLocalLength ();
+    const size_t localLength = x.getLocalLength ();
 
     // Count the local number of entries less than 0.5.
     // Use local indices to access the entries of x_data.
@@ -203,12 +203,12 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // If you create two nonconst persisting views of the same Vector,
     // and modify the entries of one view during the lifetime of the other view,
     // the entries of the other view are undefined.
-    ArrayRCP<scalar_type> x_data = x->get1dViewNonConst ();
+    ArrayRCP<scalar_type> x_data = x.get1dViewNonConst ();
 
     // Use local indices to access the entries of x_data.
     // x_data.size () may be longer than the number of local rows in the Vector,
     // so be sure to ask the Vector for its dimensions, rather than the ArrayRCP.
-    const size_t localLength = x->getLocalLength ();
+    const size_t localLength = x.getLocalLength ();
     for (size_t k = 0; k < localLength; ++k) {
       // Add k (the local index) to every entry of x.  Treat
       // scalar_type as a function to convert k to scalar_type.
@@ -216,7 +216,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     }
 
     // Print the norm of x.
-    out << "Norm of x (modified random numbers): " << x->norm2 () << endl;
+    out << "Norm of x (modified random numbers): " << x.norm2 () << endl;
   }
 }
 
