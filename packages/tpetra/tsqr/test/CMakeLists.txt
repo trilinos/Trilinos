@@ -56,6 +56,9 @@ IF (KokkosTSQR_ENABLE_TBB)
     )
 ENDIF()
 
+# mfh 22 Dec 2014: Disable this test, since KokkosNodeTsqr no longer
+# works with the new Kokkos Node types.
+#
 # Performance and accuracy test suite for TSQR::KokkosNodeTsqr
 # ("generic" intranode parallel TSQR).  We pick an odd number of
 # partitions to ensure correct results in that case, not just for
@@ -64,14 +67,14 @@ ENDIF()
 # but it's up to the Kokkos Node implementation to decide what
 # hardware resources to use (e.g., how many CPU cores, how many
 # threads, ...).
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  KokkosNodeTsqr
-  SOURCES Tsqr_TestKokkosNodeTsqr.cpp
-  COMM serial mpi
-  ARGS "--verify --numRows=100000 --numCols=10 --numPartitions=7 --cacheSizeHint=50000 --contiguousCacheBlocks"
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  KokkosNodeTsqr
+#  SOURCES Tsqr_TestKokkosNodeTsqr.cpp
+#  COMM serial mpi
+#  ARGS "--verify --numRows=100000 --numCols=10 --numPartitions=7 --cacheSizeHint=50000 --contiguousCacheBlocks"
+#  STANDARD_PASS_OUTPUT
+#  NUM_MPI_PROCS 1
+#  )
 
 #
 # Tests for the distributed-memory (MPI) part of TSQR.
