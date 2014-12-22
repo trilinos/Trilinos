@@ -295,8 +295,8 @@ namespace Tpetra {
       // origView_ just to view that one column, not all of the
       // original columns.  This ensures that the use of origView_ in
       // offsetView works correctly.
-      view_ = subview<dual_view_type> (view_, ALL (), whichVectors[0]);
-      origView_ = subview<dual_view_type> (origView_, ALL (), whichVectors[0]);
+      view_ = subview<dual_view_type> (view_, ALL (), std::pair<size_t, size_t> (whichVectors[0], whichVectors[0] + 1));
+      origView_ = subview<dual_view_type> (origView_, ALL (), std::pair<size_t, size_t> (whichVectors[0], whichVectors[0] + 1));
       numVecs = 1;
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
@@ -343,8 +343,8 @@ namespace Tpetra {
       // origView_ just to view that one column, not all of the
       // original columns.  This ensures that the use of origView_ in
       // offsetView works correctly.
-      view_ = subview<dual_view_type> (view_, ALL (), whichVectors[0]);
-      origView_ = subview<dual_view_type> (origView_, ALL (), whichVectors[0]);
+      view_ = subview<dual_view_type> (view_, ALL (), std::pair<size_t, size_t> (whichVectors[0], whichVectors[0] + 1));
+      origView_ = subview<dual_view_type> (origView_, ALL (), std::pair<size_t, size_t> (whichVectors[0], whichVectors[0] + 1));
       numVecs = 1;
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
@@ -505,6 +505,9 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::subview;
+    typedef Kokkos::DualView<scalar_type*,
+      typename dual_view_type::array_layout,
+      device_type> col_dual_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
     //typedef typename ArrayView<const LocalOrdinal>::size_type size_type; // unused
     const char tfecfFuncName[] = "copyAndPermute";
@@ -546,9 +549,10 @@ namespace Tpetra {
         const size_t dstCol = isConstantStride () ? j : whichVectors_[j];
         const size_t srcCol =
           sourceMV.isConstantStride () ? j : sourceMV.whichVectors_[j];
-        dual_view_type dst_j = subview<dual_view_type> (view_, rows, dstCol);
-        dual_view_type src_j =
-          subview<dual_view_type> (sourceMV.view_, rows, srcCol);
+        col_dual_view_type dst_j =
+          subview<col_dual_view_type> (view_, rows, dstCol);
+        col_dual_view_type src_j =
+          subview<col_dual_view_type> (sourceMV.view_, rows, srcCol);
         Kokkos::deep_copy (dst_j, src_j); // Copy src_j into dst_j
       }
     }
@@ -2659,7 +2663,7 @@ namespace Tpetra {
     // FIXME (mfh 10 May 2014) The same issue shows up here that shows
     // up for offsetView.
     return rcp (new V (this->getMap (),
-                       subview<dual_view_type> (view_, ALL (), jj),
+                       subview<dual_view_type> (view_, ALL (), std::pair<size_t, size_t> (jj, jj+1)),
                        origView_));
   }
 
@@ -2864,12 +2868,15 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get2dViewNonConst ()
   {
+    typedef Kokkos::DualView<scalar_type*,
+      typename dual_view_type::array_layout, device_type> col_dual_view_type;
+
     const size_t numCols = getNumVectors ();
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
       const size_t col = isConstantStride () ? j : whichVectors_[j];
-      dual_view_type X_col =
-        Kokkos::subview<dual_view_type> (view_, Kokkos::ALL (), col);
+      col_dual_view_type X_col =
+        Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
       views[j] = Kokkos::Compat::persistingView (X_col.d_view);
     }
     return views;
@@ -2883,12 +2890,15 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get2dView () const
   {
+    typedef Kokkos::DualView<const scalar_type*,
+      typename dual_view_type::array_layout, device_type> col_dual_view_type;
+
     const size_t numCols = getNumVectors ();
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
       const size_t col = isConstantStride () ? j : whichVectors_[j];
-      dual_view_type X_col =
-        Kokkos::subview<dual_view_type> (view_, Kokkos::ALL (), col);
+      col_dual_view_type X_col =
+        Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
       views[j] = Kokkos::Compat::persistingView (X_col.d_view);
     }
     return views;
@@ -3322,9 +3332,13 @@ namespace Tpetra {
   getSubArrayRCP (Teuchos::ArrayRCP<T> arr,
                   size_t j) const
   {
+    typedef Kokkos::DualView<scalar_type*,
+      typename dual_view_type::array_layout,
+      device_type> col_dual_view_type;
     const size_t col = isConstantStride () ? j : whichVectors_[j];
-    dual_view_type X_col = Kokkos::subview<dual_view_type> (view_, Kokkos::ALL (), col);
-    return Kokkos::Compat::persistingView (X_col.d_view); // ????? host or device???
+    col_dual_view_type X_col =
+      Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
+    return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
   // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
