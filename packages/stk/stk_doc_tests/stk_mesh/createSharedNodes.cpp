@@ -92,7 +92,7 @@ TEST(stkMeshHowTo, createSharedNodes)
 }
 //END
 
-//BEGIN_INDEP
+//BEGININDEP
 TEST(stkMeshHowTo, createIndependentSharedNodes)
 {
     const unsigned spatialDimension = 2;
@@ -134,7 +134,7 @@ TEST(stkMeshHowTo, createIndependentSharedNodes)
     const size_t expectedTotalNumNodes = 4;
     EXPECT_EQ(expectedTotalNumNodes, entity_counts[stk::topology::NODE_RANK]);
 }
-//END_INDEP
+//ENDINDEP
 
 //BEGIN_INDEP_DEP
 TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
