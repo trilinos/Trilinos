@@ -172,7 +172,7 @@ public:
                                                          std::ostream & outStream = std::cout,
                                                          const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
 
-    return checkGradient(x, x, d, printToStream, outStream, numSteps);
+    return checkGradient(x, x.dual(), d, printToStream, outStream, numSteps);
 
   }
 
