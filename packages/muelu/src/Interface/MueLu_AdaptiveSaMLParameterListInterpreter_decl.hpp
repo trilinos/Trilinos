@@ -157,7 +157,7 @@ namespace MueLu {
 
     //! Used in SetupInitHierarchy() to access levelManagers_
     //! Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
-    Teuchos::Ptr<FactoryManagerBase> InitLvlMngr(int levelID, int lastLevelID) const {
+    Teuchos::RCP<FactoryManagerBase> InitLvlMngr(int levelID, int lastLevelID) const {
 
       // Please not that the order of the 'if' statements is important.
 
@@ -167,11 +167,11 @@ namespace MueLu {
       if (0       == init_levelManagers_.size()) {                     // default factory manager.
         // the default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager.
         static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
-        return defaultMngr();
+        return defaultMngr;
       }
-      if (levelID >= init_levelManagers_.size()) return init_levelManagers_[init_levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
+      if (levelID >= init_levelManagers_.size()) return init_levelManagers_[init_levelManagers_.size()-1]; // last levelManager is used for all the remaining levels.
 
-      return init_levelManagers_[levelID](); // throw exception if out of bound.
+      return init_levelManagers_[levelID]; // throw exception if out of bound.
     }
 
     //! nullspace can be embedded in the ML parameter list

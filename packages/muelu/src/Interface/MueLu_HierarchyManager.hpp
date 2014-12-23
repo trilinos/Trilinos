@@ -100,9 +100,9 @@ namespace MueLu {
     }
 
     //!
-    Teuchos::Ptr<FactoryManagerBase> GetFactoryManager(int levelID) const {
+    RCP<FactoryManagerBase> GetFactoryManager(int levelID) const {
       // NOTE: last levelManager is used for all the remaining levels
-      return (levelID >= levelManagers_.size() ? levelManagers_[levelManagers_.size()-1]() : levelManagers_[levelID]());
+      return (levelID >= levelManagers_.size() ? levelManagers_[levelManagers_.size()-1] : levelManagers_[levelID]);
     }
 
     //! returns number of factory managers stored in levelManagers_ vector.
@@ -237,7 +237,7 @@ namespace MueLu {
     // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
-    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
+    Teuchos::RCP<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
       // NOTE: the order of 'if' statements is important
       if (levelID == -1)                    // levelID = -1 corresponds to the finest level
         return Teuchos::null;
@@ -248,7 +248,7 @@ namespace MueLu {
       if (levelManagers_.size() == 0) {     // default factory manager.
         // The default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager
         static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
-        return defaultMngr();
+        return defaultMngr;
       }
 
       return GetFactoryManager(levelID);

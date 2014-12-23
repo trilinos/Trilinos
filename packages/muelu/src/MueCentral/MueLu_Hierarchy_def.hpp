@@ -176,9 +176,9 @@ namespace MueLu {
   // We construct the data for the coarse level, and do requests for the next coarse
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(int coarseLevelID,
-                                                                   const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager,
-                                                                   const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
-                                                                   const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager) {
+                                                                   const RCP<const FactoryManagerBase> fineLevelManager,
+                                                                   const RCP<const FactoryManagerBase> coarseLevelManager,
+                                                                   const RCP<const FactoryManagerBase> nextLevelManager) {
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     // Print is done after the requests for next coarse level
     TimeMonitor m1(*this, this->ShortClassName() + ": " + "Setup (total)");
@@ -191,18 +191,14 @@ namespace MueLu {
     typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TopRAPFactory;
     typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopSmootherFactory;
 
-    RCP<const FactoryManagerBase> rcpfineLevelManager   = rcpFromPtr(fineLevelManager);
-    RCP<const FactoryManagerBase> rcpcoarseLevelManager = rcpFromPtr(coarseLevelManager);
-    RCP<const FactoryManagerBase> rcpnextLevelManager   = rcpFromPtr(nextLevelManager);
-
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError,
                                "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) "
                                "must be built before calling this function.");
 
     Level& level = *Levels_[coarseLevelID];
 
-    bool isFinestLevel = (fineLevelManager == Teuchos::null);
-    bool isLastLevel   = (nextLevelManager == Teuchos::null);
+    bool isFinestLevel = (fineLevelManager.is_null());
+    bool isLastLevel   = (nextLevelManager.is_null());
 
     int oldRank = -1;
     if (isFinestLevel) {
@@ -235,19 +231,19 @@ namespace MueLu {
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;
     if (!isFinestLevel)
-      SFMFine = rcp(new SetFactoryManager(Levels_[coarseLevelID-1], rcpfineLevelManager));
+      SFMFine = rcp(new SetFactoryManager(Levels_[coarseLevelID-1], fineLevelManager));
 
     if (isFinestLevel && Levels_[coarseLevelID]->IsAvailable("Coordinates"))
       ReplaceCoordinateMap(*Levels_[coarseLevelID]);
 
     // Attach FactoryManager to the coarse level
-    SetFactoryManager SFMCoarse(Levels_[coarseLevelID], rcpcoarseLevelManager);
+    SetFactoryManager SFMCoarse(Levels_[coarseLevelID], coarseLevelManager);
 
     if (isDumpingEnabled_ && dumpLevel_ == 0 && coarseLevelID == 1)
       DumpCurrentGraph();
 
-    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
-    RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "Smoother"));
+    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+    RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(coarseLevelManager, "Smoother"));
 
     int nextLevelID = coarseLevelID + 1;
 
@@ -259,8 +255,8 @@ namespace MueLu {
       CheckLevel(*Levels_[nextLevelID], nextLevelID);
 
       // Attach FactoryManager to the next level (level after coarse)
-      SFMNext = rcp(new SetFactoryManager(Levels_[nextLevelID], rcpnextLevelManager));
-      Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+      SFMNext = rcp(new SetFactoryManager(Levels_[nextLevelID], nextLevelManager));
+      Levels_[nextLevelID]->Request(TopRAPFactory(coarseLevelManager, nextLevelManager));
 
       // Do smoother requests here. We don't know whether this is going to be
       // the coarsest level or not, but we need to DeclareInput before we call
@@ -295,7 +291,7 @@ namespace MueLu {
     PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
-    TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
+    TopRAPFactory coarseRAPFactory(fineLevelManager, coarseLevelManager);
     if (!isFinestLevel) {
       // We only build here, the release is done later
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
@@ -383,7 +379,7 @@ namespace MueLu {
       if (isOrigLastLevel == false) {
         // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
         // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
-        Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+        Levels_[nextLevelID]->Release(TopRAPFactory(coarseLevelManager, nextLevelManager));
       }
       Levels_.resize(nextLevelID);
     }
@@ -427,7 +423,7 @@ namespace MueLu {
     RCP<Operator> A = Levels_[startLevel]->template Get<RCP<Operator> >("A");
     lib_ = A->getDomainMap()->lib();
 
-    Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
+    RCP<const FactoryManagerBase> rcpmanager = rcpFromRef(manager);
 
     const int lastLevel = startLevel + numDesiredLevels - 1;
     GetOStream(Runtime0) << "Setup loop: startLevel = " << startLevel << ", lastLevel = " << lastLevel
@@ -437,18 +433,18 @@ namespace MueLu {
     int iLevel = 0;
     if (numDesiredLevels == 1) {
       iLevel = 0;
-      Setup(startLevel, Teuchos::null, ptrmanager, Teuchos::null);                     // setup finest==coarsest level (first and last managers are Teuchos::null)
+      Setup(startLevel, Teuchos::null, rcpmanager, Teuchos::null);                     // setup finest==coarsest level (first and last managers are Teuchos::null)
 
     } else {
-      bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
+      bool bIsLastLevel = Setup(startLevel, Teuchos::null, rcpmanager, rcpmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
       if (bIsLastLevel == false) {
         for (iLevel = startLevel + 1; iLevel < lastLevel; iLevel++) {
-          bIsLastLevel = Setup(iLevel, ptrmanager, ptrmanager, ptrmanager);            // setup intermediate levels
+          bIsLastLevel = Setup(iLevel, rcpmanager, rcpmanager, rcpmanager);            // setup intermediate levels
           if (bIsLastLevel == true)
             break;
         }
         if (bIsLastLevel == false)
-          Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null);                     // setup coarsest level (last manager is Teuchos::null)
+          Setup(lastLevel, rcpmanager, rcpmanager, Teuchos::null);                     // setup coarsest level (last manager is Teuchos::null)
       }
     }
 

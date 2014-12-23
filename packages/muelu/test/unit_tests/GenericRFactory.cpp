@@ -289,9 +289,9 @@ namespace MueLuTests {
       M2.SetFactory("CoarseSolver", SmooFact);
 
       bool bIsLastLevel = false;
-      if(!bIsLastLevel) bIsLastLevel = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1));
-      if(!bIsLastLevel) bIsLastLevel = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));
-      if(!bIsLastLevel) bIsLastLevel = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null );
+      if(!bIsLastLevel) bIsLastLevel = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1));
+      if(!bIsLastLevel) bIsLastLevel = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));
+      if(!bIsLastLevel) bIsLastLevel = H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null );
 
       RCP<Level> l0 = H.GetLevel(0);
       RCP<Level> l1;
