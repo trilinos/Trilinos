@@ -137,7 +137,6 @@ namespace MueLu {
 	    class GlobalOrdinal = LocalOrdinal,
 	    class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class HierarchyUtils {
-#undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
   public:
     /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
