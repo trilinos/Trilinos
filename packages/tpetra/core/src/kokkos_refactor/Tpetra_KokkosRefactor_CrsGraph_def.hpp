@@ -1220,8 +1220,6 @@ namespace Tpetra {
     if (numRows > 0) {
       k_numRowEntries_ =
         t_numRowEntries_ ("Tpetra::CrsGraph::numRowEntries", numRows);
-      // Legacy Kokkos classic array views the above DualView's host data.
-      numRowEntries_ = Kokkos::Compat::persistingView (k_numRowEntries_.h_view);
 
       // Fill with zeros on the host.  k_numRowEntries_ is a DualView.
       //
@@ -3856,7 +3854,6 @@ namespace Tpetra {
       // unpacked 1-D storage.
       lclInds2D_ = null;
       k_numRowEntries_ = row_entries_type ();
-      numRowEntries_ = null; // legacy KokkosClassic view of above
 
       // Keep the new 1-D packed allocations.
       k_rowPtrs_   = k_ptrs_const;

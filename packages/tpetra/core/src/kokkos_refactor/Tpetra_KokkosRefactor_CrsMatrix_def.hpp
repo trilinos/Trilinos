@@ -1074,7 +1074,6 @@ namespace Tpetra {
       // unpacked 1-D storage.
       myGraph_->lclInds2D_ = null; // legacy KokkosClassic 2-D storage
       myGraph_->k_numRowEntries_ = row_entries_type ();
-      myGraph_->numRowEntries_ = null; // legacy KokkosClassic view of above
 
       // Free the matrix's 2-D storage.
       this->values2D_ = null;
@@ -1163,7 +1162,6 @@ namespace Tpetra {
 
     // get data from staticGraph_
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
-    ArrayRCP<size_t> numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
     row_map_type k_rowPtrs_ = staticGraph_->k_lclGraph_.row_map;

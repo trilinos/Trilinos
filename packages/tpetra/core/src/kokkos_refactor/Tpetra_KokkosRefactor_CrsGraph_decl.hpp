@@ -1813,16 +1813,6 @@ namespace Tpetra {
     /// This may also exist with 1-D storage, if storage is unpacked.
     t_numRowEntries_ k_numRowEntries_;
 
-    /// \brief Legacy Kokkos classic version of k_numRowEntries_.
-    ///
-    /// This is just a view of k_numRowEntries_.  We create views
-    /// using Kokkos::Compat::persistingView, so the Kokkos::DualView
-    /// won't get deallocated until the ArrayRCP's reference count
-    /// goes to zero.
-    ///
-    /// This may also exist with 1-D storage, if storage is unpacked.
-    Teuchos::ArrayRCP<size_t> numRowEntries_;
-
     //@}
 
     /// \brief Status of the graph's storage, when not in a
