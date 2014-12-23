@@ -50,6 +50,8 @@
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
 template class MueLu::TopRAPFactory<double, int, int>;
 template class MueLu::TopSmootherFactory<double, int, int>;
+template class MueLu::HierarchyUtils<double, int, int>;
+
 #else
 #error
 #endif
@@ -58,6 +60,7 @@ template class MueLu::TopSmootherFactory<double, int, int>;
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template class MueLu::TopRAPFactory<double, int, long long int>;
 template class MueLu::TopSmootherFactory<double, int, long long int>;
+template class MueLu::HierarchyUtils<double, int, long long int>;
 #else
 # warning To compile MueLu with 'long long int' support, please turn on HAVE_TEUCHOS_LONG_LONG_INT
 # endif
@@ -68,6 +71,7 @@ template class MueLu::TopSmootherFactory<double, int, long long int>;
 #include <complex>
 template class MueLu::TopRAPFactory<std::complex<double>, int, int>;
 template class MueLu::TopSmootherFactory<std::complex<double>, int, int>;
+template class MueLu::HierarchyUtils<std::complex<double>, int, int>;
 # else
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif

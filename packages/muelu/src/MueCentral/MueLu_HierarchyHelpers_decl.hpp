@@ -130,6 +130,27 @@ namespace MueLu {
     RCP<const FactoryBase> postSmootherFact_;
   };
 
+
+namespace MueLu {
+
+  template <class Scalar,
+	    class LocalOrdinal  = int,
+	    class GlobalOrdinal = LocalOrdinal,
+	    class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+  class HierarchyUtils {
+#undef MUELU_UTILITIES_SHORT
+#include "MueLu_UseShortNames.hpp"
+  public:
+    /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+      calling AddNewLevel as appropriate.
+    */
+
+    static void AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & nonSerialList);
+  };
+
+
+
+
 } // namespace MueLu
 
 #define MUELU_HIERARCHYHELPERS_SHORT
