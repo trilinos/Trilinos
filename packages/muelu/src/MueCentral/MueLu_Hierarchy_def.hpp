@@ -197,6 +197,10 @@ namespace MueLu {
 
     Level& level = *Levels_[coarseLevelID];
 
+    if (levelManagers_.size() < coarseLevelID+1)
+      levelManagers_.resize(coarseLevelID+1);
+    levelManagers_[coarseLevelID] = coarseLevelManager;
+
     bool isFinestLevel = (fineLevelManager.is_null());
     bool isLastLevel   = (nextLevelManager.is_null());
 
@@ -399,6 +403,36 @@ namespace MueLu {
       SetProcRankVerbose(oldRank);
 
     return isLastLevel;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupRe() {
+    int numLevels = Levels_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION(levelManagers_.size() != numLevels, Exceptions::RuntimeError,
+                               "Hierarchy::SetupRe: " << Levels_.size() << " levels, but  " << levelManagers_.size() << " level factory managers");
+
+#ifdef HAVE_MUELU_DEBUG
+      // Reset factories' data used for debugging
+      for (int i = 0; i < numLevels; i++)
+        levelManagers_[i]->ResetDebugData();
+
+#endif
+
+    int levelID;
+    for (levelID = 0; levelID < numLevels;) {
+      bool r = Setup(levelID,
+                     (levelID != 0 ? levelManagers_[levelID-1] : Teuchos::null),
+                     levelManagers_[levelID],
+                     (levelID+1 != numLevels ? levelManagers_[levelID+1] : Teuchos::null));
+      levelID++;
+      if (r) break;
+    }
+    // We may construct fewer levels for some reason, make sure we continue
+    // doing that in the future
+    Levels_       .resize(levelID);
+    levelManagers_.resize(levelID);
+
+    describe(GetOStream(Statistics0), GetVerbLevel());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

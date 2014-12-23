@@ -205,6 +205,8 @@ namespace MueLu {
     //!
     void Setup(const FactoryManagerBase& manager = FactoryManager(), int startLevel = 0, int numDesiredLevels = GetDefaultMaxLevels());
 
+    void SetupRe();
+
     //! Clear impermanent data from previous setup
     void Clear(int startLevel = 0);
     void ExpertClear();
@@ -334,6 +336,9 @@ namespace MueLu {
     bool isDumpingEnabled_;
     int  dumpLevel_;
     std::string dumpFile_;
+
+    // Level managers used during the Setup
+    Array<RCP<const FactoryManagerBase> > levelManagers_;
 
   }; //class Hierarchy
 
