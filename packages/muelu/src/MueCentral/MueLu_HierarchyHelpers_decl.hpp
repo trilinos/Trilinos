@@ -131,8 +131,6 @@ namespace MueLu {
   };
 
 
-namespace MueLu {
-
   template <class Scalar,
 	    class LocalOrdinal  = int,
 	    class GlobalOrdinal = LocalOrdinal,
