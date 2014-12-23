@@ -41,6 +41,17 @@ namespace stk {
     class Selector;
     
     /** Create faces for all elements in "element_selector" and attach them to
+         * existing elements.
+         *
+         * If connect_faces_to_edges is true, connect pre-existing edges to faces
+         *
+         * This is a parallel collective function (it should be called on all
+         * processors at the same time
+         *
+         */
+    void create_faces(  BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges );
+
+    /** Create faces for all elements in "element_selector" and attach them to
      * existing elements.
      *
      * This is a parallel collective function (it should be called on all
@@ -48,6 +59,17 @@ namespace stk {
      *
      */
     void create_faces(  BulkData & mesh, const Selector & element_selector );
+
+    /** Create faces for all elements in the mesh and attach them to
+         * existing elements.
+         *
+         * If connect_faces_to_edges is true, connect pre-existing edges to faces
+         *
+         * This is a parallel collective function (it should be called on all
+         * processors at the same time
+         *
+         */
+    void create_faces( BulkData & mesh, bool connect_faces_to_edges );
 
     /** Create faces for all elements in the mesh and attach them to
      * existing elements.

@@ -60,6 +60,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
+#include <stk_mesh/base/CreateEdges.hpp>
 
 namespace stk {
 namespace mesh {
@@ -230,7 +231,17 @@ void create_faces( BulkData & mesh )
   create_faces(mesh, mesh.mesh_meta_data().universal_part());
 }
 
-void create_faces( BulkData & mesh, const Selector & element_selector )
+void create_faces( BulkData & mesh, const Selector & element_selector)
+{
+    create_faces(mesh, element_selector, false);
+}
+
+void create_faces( BulkData & mesh, bool connect_faces_to_edges)
+{
+  create_faces(mesh, mesh.mesh_meta_data().universal_part(), connect_faces_to_edges);
+}
+
+void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges)
 {
   std::vector<stk::mesh::EntityId> ids_requested;
 
@@ -240,6 +251,31 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
   unsigned numRequested = localEntityCounts[stk::topology::ELEMENT_RANK] * guessMultiplier;
   mesh.generate_new_ids(stk::topology::FACE_RANK, numRequested, ids_requested);
   size_t count_faces = 0;
+
+  impl::edge_map_type edge_map;
+  if (connect_faces_to_edges) {
+      //populate the edge_map with existing edges
+
+      BucketVector const & edge_buckets = mesh.buckets(stk::topology::EDGE_RANK);
+
+      for (size_t i=0, ie=edge_buckets.size(); i<ie; ++i) {
+          Bucket &b = *edge_buckets[i];
+
+          const unsigned num_nodes = b.topology().num_nodes();
+          EntityVector edge_nodes(num_nodes);
+
+          for (size_t j=0, je=b.size(); j<je; ++j) {
+              Entity edge = b[j];
+              Entity const *nodes_rel = b.begin_nodes(j);
+
+              for (unsigned n=0; n<num_nodes; ++n) {
+                  edge_nodes[n] = nodes_rel[n];
+              }
+
+              edge_map[edge_nodes] = edge;
+          }
+      }
+  }
 
   bool i_started = mesh.modification_begin();
 
@@ -278,6 +314,11 @@ void create_faces( BulkData & mesh, const Selector & element_selector )
     create_face_impl functor( count_faces, ids_requested, face_map, shared_face_map, b);
     stk::topology::apply_functor< create_face_impl > apply(functor);
     apply( b.topology() );
+  }
+
+  if (connect_faces_to_edges) {
+      // connect pre-existing edges to new faces
+      impl::connect_faces_to_edges(mesh, element_selector, edge_map);
   }
 
   if (i_started) {

@@ -34,6 +34,9 @@
 #ifndef stk_mesh_CreateEdges_hpp
 #define stk_mesh_CreateEdges_hpp
 
+#include "boost/unordered/unordered_map.hpp"
+#include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
+
 namespace stk {
   namespace mesh {
     class BulkData;
@@ -50,6 +53,13 @@ namespace stk {
     void create_edges(  BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges = 0 );
 
     void create_edges( BulkData & mesh );
+
+    namespace impl {
+      typedef boost::unordered_map<EntityVector,Entity> edge_map_type;
+      void connect_faces_to_edges(BulkData & mesh,
+                                  const Selector & element_selector,
+                                  edge_map_type edge_map);
+    }
   }
 }
 #endif
