@@ -53,7 +53,8 @@ namespace panzer {
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary()
-   : nextBC_id(0), closureModelByEBlock_(false), disableGather_(false), responseEvaluatorsBuilt_(false) 
+   : nextBC_id(0), closureModelByEBlock_(false), disableGather_(false)
+    , disableScatter_(true), responseEvaluatorsBuilt_(false) 
 {
 }
 
@@ -61,14 +62,16 @@ template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
-   : wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), closureModelByEBlock_(false), disableGather_(false), responseEvaluatorsBuilt_(false)
+   : wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), closureModelByEBlock_(false)
+   , disableGather_(false), disableScatter_(true), responseEvaluatorsBuilt_(false)
 {
 }
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    : wkstContainer_(rl.wkstContainer_)
-   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0), closureModelByEBlock_(false), disableGather_(false), responseEvaluatorsBuilt_(false)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0)
+   , closureModelByEBlock_(false), disableGather_(false), disableScatter_(true), responseEvaluatorsBuilt_(false)
 {
 }
 
@@ -398,7 +401,7 @@ buildResponseEvaluators(
    response_bc_adapters::BCFactoryResponse bc_factory(respBCFactories_);
 
    // don't build scatter evaluators
-   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true,disableGather_)); 
+   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(disableScatter_,disableGather_)); 
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,requiredWorksetDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef2,closureModelByEBlock_);

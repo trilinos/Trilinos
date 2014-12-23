@@ -229,6 +229,9 @@ public:
    void disableGather(bool value)
    { disableGather_ = value; }
 
+   void disableScatter(bool value)
+   { disableScatter_ = value; }
+
 protected:
 
    /** Setup up field managers for all responses. Once this method is called
@@ -268,6 +271,7 @@ private:
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
    bool closureModelByEBlock_;
    bool disableGather_;
+   bool disableScatter_;
 
    bool responseEvaluatorsBuilt_;
 
