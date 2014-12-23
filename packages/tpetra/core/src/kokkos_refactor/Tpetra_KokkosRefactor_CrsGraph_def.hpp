@@ -196,7 +196,6 @@ namespace Tpetra {
     Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
     k_numAllocPerRow.template sync<device_type> ();
     k_numAllocPerRow_ = k_numAllocPerRow;
-    numAllocPerRow_ = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
 
     resumeFill (params);
     checkInternalState ();
@@ -217,7 +216,6 @@ namespace Tpetra {
     , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow)
-    , numAllocPerRow_ (Kokkos::Compat::persistingView (numEntPerRow.h_view))
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
                       Details::STORAGE_1D_UNPACKED :
@@ -274,7 +272,6 @@ namespace Tpetra {
     , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow)
-    , numAllocPerRow_ (Kokkos::Compat::persistingView (numEntPerRow.h_view))
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
                       Details::STORAGE_1D_UNPACKED :
@@ -383,7 +380,6 @@ namespace Tpetra {
     Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
     k_numAllocPerRow.template sync<device_type> ();
     k_numAllocPerRow_ = k_numAllocPerRow;
-    numAllocPerRow_ = Kokkos::Compat::persistingView (k_numAllocPerRow_.h_view);
 
     resumeFill (params);
     checkInternalState ();
@@ -1239,7 +1235,6 @@ namespace Tpetra {
     // done with these
     numAllocForAllRows_ = 0;
     k_numAllocPerRow_ = Kokkos::DualView<const size_t*, device_type> ();
-    numAllocPerRow_ = Teuchos::null;
     indicesAreAllocated_ = true;
     checkInternalState ();
   }
@@ -2860,7 +2855,6 @@ namespace Tpetra {
     // this method, the graph is allocated on the calling process.
     numAllocForAllRows_ = 0;
     k_numAllocPerRow_ = Kokkos::DualView<const size_t*, device_type> ();
-    numAllocPerRow_ = Teuchos::null;
 
     checkInternalState ();
   }
@@ -3517,7 +3511,6 @@ namespace Tpetra {
     // numAllocForAllRows_ and k_numAllocPerRow_ obsolete.
     numAllocForAllRows_  = 0;
     k_numAllocPerRow_    = Kokkos::DualView<const size_t*, device_type> ();
-    numAllocPerRow_      = Teuchos::null;
     indicesAreAllocated_ = true;
 
     // Constants from makeIndicesLocal
