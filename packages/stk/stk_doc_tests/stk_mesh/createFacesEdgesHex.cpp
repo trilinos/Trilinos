@@ -42,6 +42,7 @@
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include <stddef.h>
 
 #include <generated/Iogn_DashSurfaceMesh.h>
 #include <generated/Iogn_GeneratedMesh.h>
@@ -86,6 +87,18 @@ namespace
     EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
     EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
     EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
+    // MAKE SURE FACES ARE HOOKED TO EDGES
+    // this should happen if create_faces is called before create_edges
+    stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
+    for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
+      stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
+      const unsigned num_expected_edges = bucket.topology().num_edges();
+      EXPECT_EQ(4u, num_expected_edges);
+      for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
+        stk::mesh::Entity face = bucket[face_count];
+        EXPECT_EQ(num_expected_edges, stkIo.bulk_data().num_edges(face));
+      }
+    }
   }
 //End Example1 (for documentation)
 

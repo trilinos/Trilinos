@@ -232,10 +232,6 @@ void create_faces( BulkData & mesh )
 
 void create_faces( BulkData & mesh, const Selector & element_selector )
 {
-  // static size_t next_face = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
-  // NOTE: This is a workaround to eliminate some bad behavior with the equation above when
-  //       the #proc is a power of two.  The 256 below is the bin size of the Distributed Index.
-
   std::vector<stk::mesh::EntityId> ids_requested;
 
   std::vector<unsigned> localEntityCounts;
