@@ -733,6 +733,38 @@ createMpiComm(
   );
 
 
+/** \brief Helper function that extracts a raw <tt>MPI_Comm</tt> object out of
+ * a <tt>Teuchos::MpiComm</tt> wrapper object.
+ *
+ * <b>Preconditions:</b></ul>
+ * <li><tt>dynamic_cast<const MpiComm<Ordinal>*>(&comm) != 0</tt>
+ * </ul>
+ *
+ * If the underlying type is not an <tt>MpiComm<Ordinal></tt> object, then the
+ * function with throw an exception which contains the type information as for
+ * why it failed.
+ *
+ * <b>WARNING:</b> The lifetime of the returned <tt>MPI_Comm</tt> object is
+ * controlled by the owning <tt>RCP<OpaqueWrapper<MPI_Comm> ></tt> object and
+ * is not guaranteed to live the entire life of the program.  Therefore, only
+ * use this function to grab and use the underlying <tt>MPI_Comm</tt> object
+ * in a vary narrow scope and then forget it.  If you need it again, get it
+ * off of the <tt>comm</tt> object each time.
+ *
+ * If you want a memory safe <tt><tt>RCP<OpaqueWrapper<MPI_Comm> ></tt> to the
+ * raw <tt>MPI_Comm</tt> object, then call:
+ *
+ * \verbatim
+ * dyn_cast<const MpiComm<Ordinal> >(comm).getRawMpiComm()
+ * \endverbatim
+ *
+ * \relates MpiComm
+ */
+template<typename Ordinal>
+MPI_Comm
+getRawMpiComm(const Comm<Ordinal> &comm);
+
+
 // ////////////////////////
 // Implementations
 
@@ -1836,6 +1868,17 @@ Teuchos::createMpiComm(
     return rcp(new MpiComm<Ordinal>(rawMpiComm));
   return Teuchos::null;
 }
+
+
+template<typename Ordinal>
+MPI_Comm
+Teuchos::getRawMpiComm(const Comm<Ordinal> &comm)
+{
+  return *(
+    dyn_cast<const MpiComm<Ordinal> >(comm).getRawMpiComm()
+    );
+}
+
 
 #endif // HAVE_TEUCHOS_MPI
 #endif // TEUCHOS_MPI_COMM_HPP
