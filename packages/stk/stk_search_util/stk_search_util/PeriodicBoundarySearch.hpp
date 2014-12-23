@@ -688,7 +688,7 @@ template <class CoordFieldType, typename Scalar = double>
 struct GetCoordinates
 {
   typedef void result_type;
-  GetCoordinates(stk::mesh::BulkData & bulk_data, CoordFieldType & coords_field)
+  GetCoordinates(stk::mesh::BulkData & bulk_data, const CoordFieldType & coords_field)
     : m_bulk_data(bulk_data),
       m_coords_field(coords_field)
   {}
@@ -696,14 +696,14 @@ struct GetCoordinates
   void operator()(stk::mesh::Entity e, Scalar * coords) const
   {
     const unsigned nDim = m_bulk_data.mesh_meta_data().spatial_dimension();
-    const double * const temp_coords = stk::mesh::field_data(m_coords_field, e);
+    const double * const temp_coords = reinterpret_cast<Scalar *>(stk::mesh::field_data(m_coords_field, e));
     for (unsigned i = 0; i < nDim; ++i) {
       coords[i] = temp_coords[i];
     }
   }
 
   stk::mesh::BulkData & m_bulk_data;
-  CoordFieldType & m_coords_field;
+  const CoordFieldType & m_coords_field;
 };
 
 template <class ModelCoordFieldType, class DispCoordFieldType, typename Scalar = double>
