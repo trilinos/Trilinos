@@ -50,7 +50,7 @@
 #include <Xpetra_Operator.hpp>
 
 #include "MueLu_HierarchyHelpers_decl.hpp"
-
+#include "MueLu_HierarchyManager.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
