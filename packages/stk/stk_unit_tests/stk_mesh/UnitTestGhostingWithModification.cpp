@@ -169,3 +169,85 @@ TEST(UnitTestGhosting, WithChangeParts)
 }
 }
 
+TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
+{
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if(numProcs == 3)
+    {
+        const int spatialDim = 3;
+        stk::mesh::MetaData stkMeshMetaData;
+        std::vector<std::string> rank_names(5);
+        rank_names[0] = "node";
+        rank_names[1] = "edge";
+        rank_names[2] = "face";
+        rank_names[3] = "elem";
+        rank_names[4] = "constraint";
+        stkMeshMetaData.initialize(spatialDim, rank_names);
+        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+        const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
+        fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
+
+        stk::mesh::EntityVector elementsOnProc;
+        stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),
+                                         stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK),
+                                         elementsOnProc);
+        ASSERT_EQ(1u, elementsOnProc.size());
+
+        stk::mesh::EntityProcVec elementsToGhost;
+        if(stkMeshBulkData.parallel_rank() == 0)
+        {
+            const int ghostToProc2 = 2;
+            elementsToGhost.push_back(std::make_pair(elementsOnProc[0], ghostToProc2));
+        }
+
+        stkMeshBulkData.modification_begin();
+        stk::mesh::Ghosting &ghostElemFrom0To2 = stkMeshBulkData.create_ghosting("ghostElemFrom0to2");
+        stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
+        stkMeshBulkData.modification_end();
+
+        std::vector<unsigned> entityCounts;
+        stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
+        if(stkMeshBulkData.parallel_rank() == 0)
+        {
+            EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
+            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
+            EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
+            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
+        }
+        else if(stkMeshBulkData.parallel_rank() == 1)
+        {
+            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
+            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+        }
+        else
+        {
+            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
+            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+        }
+
+        stkMeshBulkData.modification_begin();
+        if(stkMeshBulkData.parallel_rank() == 2)
+        {
+            stk::mesh::EntityId constraintId = 1;
+            stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            EXPECT_TRUE(stkMeshBulkData.bucket(node1).member(stkMeshBulkData.ghosting_part(ghostElemFrom0To2)));
+            stkMeshBulkData.declare_relation(constraint, node1, 0);
+        }
+
+        //problem: the above declaration of a (locally-owned) constraint on proc 2, with
+        //relation to recv-ghost-node 1, puts node 1 into owned-closure on proc 2, triggering
+        //an exception-throw in a consistency check in the modification_end we're about to call.
+        //This replicates (at least partially) a scenario being debugged in SM contact tests.
+        //The test is adagio contact tied_Frictionless np3dash.
+        EXPECT_THROW(stkMeshBulkData.modification_end(), std::runtime_error);
+
+        //TO-DO: add expect_eq tests like above, to count entities on each proc.
+    }
+}
+
