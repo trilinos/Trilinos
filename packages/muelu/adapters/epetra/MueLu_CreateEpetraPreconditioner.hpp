@@ -180,15 +180,26 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   Teuchos::RCP<MueLu::EpetraOperator>
-  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & inA,
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
                              const std::string& xmlFileName,
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
     Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *Xpetra::toXpetra(inA->Comm()));
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *Xpetra::toXpetra(A->Comm()));
 
-    return CreateEpetraPreconditioner(inA, paramList, inCoords, inNullspace);
+    return CreateEpetraPreconditioner(A, paramList, inCoords, inNullspace);
+  }
+
+  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& A, MueLu::EpetraOperator& Op) {
+    typedef double                                                              SC;
+    typedef int                                                                 LO;
+    typedef int                                                                 GO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
+
+    RCP<Hierarchy<SC,LO,GO,NO> > H = Op.GetHierarchy();
+    H->GetLevel(0)->Set("A", EpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(A));
+    H->SetupRe();
   }
 
 } //namespace

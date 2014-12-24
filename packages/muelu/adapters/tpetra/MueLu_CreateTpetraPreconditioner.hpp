@@ -194,6 +194,15 @@ namespace MueLu {
     return CreateTpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inA, paramList, inCoords, inNullspace);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                                 MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op) {
+    RCP<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H = Op.GetHierarchy();
+    H->GetLevel(0)->Set("A", TpetraCrs_To_XpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    H->SetupRe();
+  }
+
+
 } //namespace
 
 #endif //ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
