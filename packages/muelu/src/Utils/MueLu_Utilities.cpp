@@ -411,7 +411,6 @@ namespace MueLu {
         }
 
       } else {
-        std::cout << levelName << std::endl;
         serialList.setEntry(it->first, it->second);
       }
     }
