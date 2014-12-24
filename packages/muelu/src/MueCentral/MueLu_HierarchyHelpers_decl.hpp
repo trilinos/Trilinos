@@ -140,10 +140,10 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
   public:
     /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
-      calling AddNewLevel as appropriate.
-    */
+     *  calling AddNewLevel as appropriate.
+     */
 
-    static void AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & nonSerialList);
+    static void AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& nonSerialList);
   };
 
 

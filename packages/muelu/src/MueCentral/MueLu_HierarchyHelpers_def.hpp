@@ -205,45 +205,47 @@ namespace MueLu {
   }
 
 
- /* Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
-     calling AddNewLevel as appropriate.
-  */
+  // Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+  // calling AddNewLevel as appropriate.
   template<class SC, class LO, class GO, class NO>
-  void HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(MueLu::HierarchyManager<SC,LO,GO,NO> & HM, Hierarchy & H, const Teuchos::ParameterList & List) {
-    using Teuchos::ParameterList;
-    ParameterList dummy;
+  void HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
+    for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
+      const std::string& levelName = it->first;
 
-    for(ParameterList::ConstIterator it = List.begin(); it!=List.end(); it++) {
-      // Check for mach of the form "levelX" where X is a positive integer
-      if(List.isSublist(it->first) && it->first.find("level ")==0) {
-	std::string levelstr = it->first.substr(6,std::string::npos);
-	int id = (int) strtol(levelstr.c_str(),0,0);
-	if(id > 0)  {
-	  // Do enough level adding so we can be sure to add the data to the right place
-	  for(int i=H.GetNumLevels(); i<=id; i++)
-	      H.AddNewLevel();
-	  RCP<FactoryManager> Mfact = rcp(new FactoryManager());
+      // Check for mach of the form "level X" where X is a positive integer
+      if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
+        int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
+        if (levelID > 0)  {
+          // Do enough level adding so we can be sure to add the data to the right place
+          for (int i = H.GetNumLevels(); i <= levelID; i++)
+            H.AddNewLevel();
 
-	  // Grab the level sublist & loop over parameters
-	  const ParameterList & sublist = List.sublist(it->first);
-	  for(ParameterList::ConstIterator it2 = sublist.begin(); it2!=sublist.end(); it2++) {	   
-	    if(!it2->first.compare("A") || !it2->first.compare("R") || !it2->first.compare("P")) {
-	      H.GetLevel(id)->Set(it2->first,Teuchos::getValue<RCP<Matrix > >(it2->second));
-	      Mfact->SetFactory(it2->first,MueLu::NoFactory::getRCP());
-	    }	    
-	    else if (!it2->first.compare("Nullspace") || !it2->first.compare("Coordinates")) {
-	      H.GetLevel(id)->Set(it2->first,Teuchos::getValue<RCP<MultiVector > >(it2->second));
-	      Mfact->SetFactory(it2->first,MueLu::NoFactory::getRCP());
-	    }
-	    else
-	      throw std::runtime_error("MueLu::Utils::AddNonSerializableDataToHierarchy: List contains unknown data type");
-	  }
-	  HM.AddFactoryManager(id,1,Mfact);
-	}    
+          RCP<Level> level = H.GetLevel(levelID);
+
+          RCP<FactoryManager> M = rcp(new FactoryManager());
+
+          // Grab the level sublist & loop over parameters
+          const ParameterList& levelList = paramList.sublist(levelName);
+          for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
+            const std::string& name = it2->first;
+            TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
+                                       name != "Nullspace" && name != "Coordinates",
+                                       Exceptions::InvalidArgument,
+                                       "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
+
+            if (name == "A" || name == "P" || name == "R")
+              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second));
+            else if (name == "Nullspace" || name == "Coordinates")
+              level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second));
+
+            M->SetFactory(name, NoFactory::getRCP());
+          }
+
+          HM.AddFactoryManager(levelID, 1, M);
+        }
       }
     }
   }
-
 
 } // namespace MueLu
 
