@@ -73,7 +73,6 @@
 #endif
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -103,161 +102,164 @@ const std::string thinSeparator  = "--------------------------------------------
 
 const std::string prefSeparator = "=====================================";
 
-// --------------------------------------------------------------------------------------
-void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-#ifdef HAVE_MUELU_TPETRA
-  typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
-  typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
-  typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
-  typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
-  if(lib==Xpetra::UseTpetra) {
-    RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
-    RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO>(H));
-    RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
-    RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
-    typedef Tpetra_MultiVector MV;
-    typedef Tpetra_Operator OP;
-    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-    belosProblem->setRightPrec(Mt);
-    belosProblem->setProblem(Xt,Bt);
+namespace MueLuExamples {
+#include <MueLu_UseShortNames.hpp>
 
-    Belos::SolverFactory<SC, MV, OP> BelosFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-    BelosSolver->setProblem(belosProblem);
-    Belos::ReturnType result = BelosSolver->solve();
-    if(result==Belos::Unconverged)
-      throw std::runtime_error("Belos failed to converge");
-  }
+  void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+#ifdef HAVE_MUELU_TPETRA
+    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
+    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
+    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
+    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
+    if(lib==Xpetra::UseTpetra) {
+      RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+      RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO>(H));
+      RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
+      RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
+      typedef Tpetra_MultiVector MV;
+      typedef Tpetra_Operator OP;
+      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
+      belosProblem->setRightPrec(Mt);
+      belosProblem->setProblem(Xt,Bt);
+
+      Belos::SolverFactory<SC, MV, OP> BelosFactory;
+      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+      BelosSolver->setProblem(belosProblem);
+      Belos::ReturnType result = BelosSolver->solve();
+      if(result==Belos::Unconverged)
+        throw std::runtime_error("Belos failed to converge");
+    }
 #endif
 #ifdef HAVE_MUELU_EPETRA
-  if(lib==Xpetra::UseEpetra) {
-    RCP<Epetra_CrsMatrix>      Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
-    RCP<MueLu::EpetraOperator> Me = rcp(new MueLu::EpetraOperator(H));
-    RCP<Epetra_MultiVector>    Xe = rcp(&Xpetra::toEpetra(*X),false);
-    RCP<Epetra_MultiVector>    Be = rcp(&Xpetra::toEpetra(*B),false);
-    typedef Epetra_MultiVector MV;
-    typedef Epetra_Operator OP;
-    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
-    Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
-    belosProblem->setRightPrec(PrecWrap);
-    belosProblem->setProblem(Xe,Be);
+    if(lib==Xpetra::UseEpetra) {
+      RCP<Epetra_CrsMatrix>      Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
+      RCP<MueLu::EpetraOperator> Me = rcp(new MueLu::EpetraOperator(H));
+      RCP<Epetra_MultiVector>    Xe = rcp(&Xpetra::toEpetra(*X),false);
+      RCP<Epetra_MultiVector>    Be = rcp(&Xpetra::toEpetra(*B),false);
+      typedef Epetra_MultiVector MV;
+      typedef Epetra_Operator OP;
+      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
+      Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
+      belosProblem->setRightPrec(PrecWrap);
+      belosProblem->setProblem(Xe,Be);
 
-    Belos::SolverFactory<SC, MV, OP> BelosFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-    BelosSolver->setProblem(belosProblem);
-    Belos::ReturnType result = BelosSolver->solve();
-    if(result==Belos::Unconverged)
-      throw std::runtime_error("Belos failed to converge");
-  }
+      Belos::SolverFactory<SC, MV, OP> BelosFactory;
+      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+      BelosSolver->setProblem(belosProblem);
+      Belos::ReturnType result = BelosSolver->solve();
+      if(result==Belos::Unconverged)
+        throw std::runtime_error("Belos failed to converge");
+    }
 #endif
-}
-
-
-// --------------------------------------------------------------------------------------
-void solve_system_list(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, RCP<Teuchos::ParameterList> & SList) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-#ifdef HAVE_MUELU_TPETRA
-  typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
-  typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
-  typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
-  typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
-  if(lib==Xpetra::UseTpetra) {
-    RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
-    RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
-    RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
-    RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
-    typedef Tpetra_MultiVector MV;
-    typedef Tpetra_Operator OP;
-    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-    belosProblem->setRightPrec(Mt);
-    belosProblem->setProblem(Xt,Bt);
-
-    Belos::SolverFactory<SC, MV, OP> BelosFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-    BelosSolver->setProblem(belosProblem);
-    Belos::ReturnType result = BelosSolver->solve();
-    if(result==Belos::Unconverged)
-      throw std::runtime_error("Belos failed to converge");
   }
+
+
+  // --------------------------------------------------------------------------------------
+  void solve_system_list(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, RCP<Teuchos::ParameterList> & SList) {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+#ifdef HAVE_MUELU_TPETRA
+    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
+    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
+    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
+    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
+    if(lib==Xpetra::UseTpetra) {
+      RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+      RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
+      RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
+      RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
+      typedef Tpetra_MultiVector MV;
+      typedef Tpetra_Operator OP;
+      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
+      belosProblem->setRightPrec(Mt);
+      belosProblem->setProblem(Xt,Bt);
+
+      Belos::SolverFactory<SC, MV, OP> BelosFactory;
+      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+      BelosSolver->setProblem(belosProblem);
+      Belos::ReturnType result = BelosSolver->solve();
+      if(result==Belos::Unconverged)
+        throw std::runtime_error("Belos failed to converge");
+    }
 #endif
 #ifdef HAVE_MUELU_EPETRA
-  if(lib==Xpetra::UseEpetra) {
-    RCP<Epetra_CrsMatrix>   Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
-    RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae,MueLuList);
-    RCP<Epetra_MultiVector> Xe = rcp(&Xpetra::toEpetra(*X),false);
-    RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
-    typedef Epetra_MultiVector MV;
-    typedef Epetra_Operator OP;
-    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
-    Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
-    belosProblem->setRightPrec(PrecWrap);
-    belosProblem->setProblem(Xe,Be);
+    if(lib==Xpetra::UseEpetra) {
+      RCP<Epetra_CrsMatrix>   Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
+      RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae,MueLuList);
+      RCP<Epetra_MultiVector> Xe = rcp(&Xpetra::toEpetra(*X),false);
+      RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
+      typedef Epetra_MultiVector MV;
+      typedef Epetra_Operator OP;
+      RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));
+      Teuchos::RCP<Belos::EpetraPrecOp> PrecWrap = Teuchos::rcp(new Belos::EpetraPrecOp(Me));
+      belosProblem->setRightPrec(PrecWrap);
+      belosProblem->setProblem(Xe,Be);
 
-    Belos::SolverFactory<SC, MV, OP> BelosFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-    BelosSolver->setProblem(belosProblem);
-    Belos::ReturnType result = BelosSolver->solve();
-    if(result==Belos::Unconverged)
-      throw std::runtime_error("Belos failed to converge");
-  }
+      Belos::SolverFactory<SC, MV, OP> BelosFactory;
+      Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+      BelosSolver->setProblem(belosProblem);
+      Belos::ReturnType result = BelosSolver->solve();
+      if(result==Belos::Unconverged)
+        throw std::runtime_error("Belos failed to converge");
+    }
 #endif
 
-}
-
-
-
-// --------------------------------------------------------------------------------------
-// This routine generate's the user's original A matrix and nullspace
-void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib,Teuchos::ParameterList &galeriList,  RCP<const Teuchos::Comm<int> > &comm, RCP<Matrix> & A, RCP<MultiVector> & nullspace){
-
-  using Teuchos::RCP;
-
-  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  Teuchos::FancyOStream& out = *fancy;
-
-  RCP<const Map>   map;
-  RCP<MultiVector> coordinates;
-  if (matrixType == "Laplace1D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
-
-  } else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
-
-  } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
   }
 
-  // Expand map to do multiple DOF per node for block problems
-  if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D")
-    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, (matrixType == "Elasticity2D" ? 2 : 3));
 
-  out << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
-      << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
-      << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
-      << "========================================================" << std::endl;
 
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+  // --------------------------------------------------------------------------------------
+  // This routine generate's the user's original A matrix and nullspace
+  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib,Teuchos::ParameterList &galeriList,  RCP<const Teuchos::Comm<int> > &comm, RCP<Matrix> & A, RCP<MultiVector> & nullspace){
+    using Teuchos::RCP;
 
-  A = Pr->BuildMatrix();
+    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::FancyOStream& out = *fancy;
 
-  if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
-    nullspace = Pr->BuildNullspace();
-    A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
+    RCP<const Map>   map;
+    RCP<MultiVector> coordinates;
+    if (matrixType == "Laplace1D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+    }
+
+    // Expand map to do multiple DOF per node for block problems
+    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D")
+      map = Xpetra::MapFactory<LO,GO,Node>::Build(map, (matrixType == "Elasticity2D" ? 2 : 3));
+
+    out << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
+        << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
+        << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
+        << "========================================================" << std::endl;
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
+
+    A = Pr->BuildMatrix();
+
+    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
+      nullspace = Pr->BuildNullspace();
+      A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
+    }
+
   }
 
 }
-
 
 
 // --------------------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
@@ -301,7 +303,7 @@ int main(int argc, char *argv[]) {
     RCP<Matrix> A,P,R, Ac;
     RCP<MultiVector> nullspace;
     std::string matrixType = galeriParameters.GetMatrixType();
-    generate_user_matrix_and_nullspace(matrixType,lib,galeriList,comm,A,nullspace);
+    MueLuExamples::generate_user_matrix_and_nullspace(matrixType,lib,galeriList,comm,A,nullspace);
     map=A->getRowMap();
 
     // =========================================================================
@@ -345,7 +347,7 @@ int main(int argc, char *argv[]) {
       mueLuFactory.SetupHierarchy(*H);
 
       // Solve
-      solve_system_hierarchy(lib,A,X,B,H,SList);
+      MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
 
       // Extract R,P & Ac for LevelWrap Usage
       H->GetLevel(1)->Get("R",R);
@@ -386,7 +388,7 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Set("Nullspace", nullspace);
       mueLuFactory.SetupHierarchy(*H);
 
-      solve_system_hierarchy(lib,A,X,B,H,SList);
+      MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
 
     }
     out << thickSeparator << std::endl;
@@ -420,7 +422,7 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Set("Nullspace", nullspace);
       mueLuFactory.SetupHierarchy(*H);
 
-      solve_system_hierarchy(lib,A,X,B,H,SList);
+      MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
 
     }
     out << thickSeparator << std::endl;
@@ -440,7 +442,7 @@ int main(int argc, char *argv[]) {
       MueLuList.set("verbosity","high");
       MueLuList.set("coarse: max size",100);
 
-      solve_system_list(lib,A,X,B,MueLuList,SList);
+      MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
     }
 
     // =========================================================================
@@ -457,7 +459,7 @@ int main(int argc, char *argv[]) {
       MueLuList.set("verbosity","high");
       MueLuList.set("coarse: max size",100);
 
-      solve_system_list(lib,A,X,B,MueLuList,SList);
+      MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
     }
 
 
@@ -475,7 +477,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
-      solve_system_list(lib,A,X,B,MLList,SList);
+      MueLuExamples::solve_system_list(lib,A,X,B,MLList,SList);
     }
 
     success = true;
