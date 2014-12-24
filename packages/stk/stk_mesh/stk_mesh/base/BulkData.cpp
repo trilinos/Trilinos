@@ -4227,6 +4227,7 @@ bool BulkData::modification_end( modification_optimization opt)
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
+  //  NKC, false here for aura off
   bool return_value = internal_modification_end( true, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
@@ -4242,6 +4243,7 @@ bool BulkData::modification_end_for_entity_creation( EntityRank entity_rank, mod
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
+  //  NKC, false here for aura off
   bool return_value = internal_modification_end_for_entity_creation( entity_rank, true, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
