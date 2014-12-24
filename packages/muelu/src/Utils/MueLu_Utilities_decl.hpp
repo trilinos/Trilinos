@@ -228,7 +228,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string());                                
+				const std::string & label     = std::string());
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -408,11 +408,11 @@ namespace MueLu {
   }; // class Utils
 
   /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
-    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level 
-    for which non-serializable data was provided. 
-  */ 
-  long ExtractNonSerializableData(const Teuchos::ParameterList & inList, Teuchos::ParameterList & serialList, Teuchos::ParameterList & nonSerialList);
-  
+    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level
+    for which non-serializable data was provided.
+  */
+  long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
+
 
 
 #ifdef HAVE_MUELU_EPETRA
