@@ -261,4 +261,68 @@ namespace MueLuTests {
 #endif // defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
   }
 
+  TEUCHOS_UNIT_TEST(PetraOperator, ReusePreconditioner)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+
+    // Matrix
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    GO nx = 1000;
+    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize());
+    RCP<const Map > map = Op->getRowMap();
+
+    Teuchos::RCP<TpetraOperator> tH;
+    Teuchos::RCP<EpetraOperator> eH;
+
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    std::string xmlFileName = "testReuse.xml";
+    if (lib == Xpetra::UseTpetra) {
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
+    } else {
+      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
+    }
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    if (!tH.is_null())
+      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    else if (!eH.is_null())
+      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
+
+    out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+
+    // Reuse preconditioner
+    if (!tH.is_null()) {
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+      ReuseTpetraPreconditioner(tpA, *tH);
+    } else {
+      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      ReuseEpetraPreconditioner(epA, *eH);
+    }
+
+    // Zero initial guess (again)
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+    if (!tH.is_null())
+      tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    else if (!eH.is_null())
+      eH->Apply(*(Utils::MV2EpetraMV(RHS1)), *(Utils::MV2NonConstEpetraMV(X1)));
+
+    out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+
+  } //CreatePreconditioner
+
 }//namespace MueLuTests

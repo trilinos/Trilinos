@@ -1,5 +1,3 @@
-
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -103,6 +101,11 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
+IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
+    (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
+  APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   TRIBITS_ADD_EXECUTABLE(
     UnitTests
@@ -135,11 +138,9 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
-    APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
-
     TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
       SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
-      SOURCE_FILES test.xml testWithRebalance.xml testPDE.xml testPDE1.xml
+      SOURCE_FILES test.xml testReuse.xml testWithRebalance.xml testPDE.xml testPDE1.xml
       )
 
     TRIBITS_ADD_TEST(
