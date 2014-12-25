@@ -51,9 +51,14 @@
 template class MueLu::TopRAPFactory<double, int, int>;
 template class MueLu::TopSmootherFactory<double, int, int>;
 template class MueLu::HierarchyUtils<double, int, int>;
-
 #else
 #error
+#endif
+
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGINT
+template class MueLu::TopRAPFactory<double, int, long>;
+template class MueLu::TopSmootherFactory<double, int, long>;
+template class MueLu::HierarchyUtils<double, int, long>;
 #endif
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
