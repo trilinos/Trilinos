@@ -244,13 +244,13 @@ public:
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
-             to the vector \f$v\f$.
+             to the vector \f$v\f$.  This is the primary interface.
 
-             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b (u,z); a dual simulation-space vector
-             @param[in]       v   is a dual constraint-space vector
-             @param[in]       u   is the constraint argument; a simulation-space vector
-             @param[in]       z   is the constraint argument; an optimization-space vector
-             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
+             @param[out]      ajv    is the result of applying the adjoint of the constraint Jacobian to @b v at @b (u,z); a dual simulation-space vector
+             @param[in]       v      is a dual constraint-space vector
+             @param[in]       u      is the constraint argument; a simulation-space vector
+             @param[in]       z      is the constraint argument; an optimization-space vector
+             @param[in,out]   tol    is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{ajv} = c_u(u,z)^*v\f$, where
              \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{U}^*\f$.
@@ -262,13 +262,40 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
+    applyAdjointJacobian_1(ajv, v, u, z, v.dual(), tol);
+  }
+
+
+  /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
+             to the vector \f$v\f$.  This is the secondary interface, for use
+             with dual spaces where the user does not define the dual() operation.
+
+             @param[out]      ajv    is the result of applying the adjoint of the constraint Jacobian to @b v at @b (u,z); a dual simulation-space vector
+             @param[in]       v      is a dual constraint-space vector
+             @param[in]       u      is the constraint argument; a simulation-space vector
+             @param[in]       z      is the constraint argument; an optimization-space vector
+             @param[in]       dualv  is a vector used for temporary variables; a constraint-space vector
+             @param[in,out]   tol    is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ajv} = c_u(u,z)^*v\f$, where
+             \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{U}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointJacobian_1(Vector<Real> &ajv,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      const Vector<Real> &dualv,
+                                      Real &tol) {
     Real ctol = std::sqrt(ROL_EPSILON);
     Real h = tol;
     if (v.norm() > std::sqrt(ROL_EPSILON)) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
-    Teuchos::RCP<Vector<Real> > cold = (v.dual()).clone();
-    Teuchos::RCP<Vector<Real> > cnew = (v.dual()).clone();
+    Teuchos::RCP<Vector<Real> > cold = dualv.clone();
+    Teuchos::RCP<Vector<Real> > cnew = dualv.clone();
     update(u,z);
     value(*cold,u,z,ctol);
     Teuchos::RCP<Vector<Real> > unew = u.clone();
@@ -285,15 +312,16 @@ public:
     update(u,z);
   }
 
+
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_z(u,z)^* \in L(\mathcal{C}^*, \mathcal{Z}^*)\f$,
-             to vector \f$v\f$.
+             to vector \f$v\f$.  This is the primary interface.
 
-             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b \f$(u,z)\f$; a dual optimization-space vector
-             @param[in]       v   is a dual constraint-space vector
-             @param[in]       u   is the constraint argument; a simulation-space vector
-             @param[in]       z   is the constraint argument; an optimization-space vector
-             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
+             @param[out]      ajv    is the result of applying the adjoint of the constraint Jacobian to @b v at @b \f$(u,z)\f$; a dual optimization-space vector
+             @param[in]       v      is a dual constraint-space vector
+             @param[in]       u      is the constraint argument; a simulation-space vector
+             @param[in]       z      is the constraint argument; an optimization-space vector
+             @param[in,out]   tol    is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{ajv} = c_z(u,z)^*v\f$, where
              \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{Z}^*\f$.
@@ -305,13 +333,40 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
+    applyAdjointJacobian_2(ajv, v, u, z, v.dual(), tol);
+  }
+
+
+  /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
+             \f$c_z(u,z)^* \in L(\mathcal{C}^*, \mathcal{Z}^*)\f$,
+             to vector \f$v\f$.  This is the secondary interface, for use
+             with dual spaces where the user does not define the dual() operation.
+
+             @param[out]      ajv    is the result of applying the adjoint of the constraint Jacobian to @b v at @b \f$(u,z)\f$; a dual optimization-space vector
+             @param[in]       v      is a dual constraint-space vector
+             @param[in]       u      is the constraint argument; a simulation-space vector
+             @param[in]       z      is the constraint argument; an optimization-space vector
+             @param[in]       dualv  is a vector used for temporary variables; a constraint-space vector
+             @param[in,out]   tol    is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ajv} = c_z(u,z)^*v\f$, where
+             \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{Z}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointJacobian_2(Vector<Real> &ajv,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      const Vector<Real> &dualv,
+                                      Real &tol) {
     Real ctol = std::sqrt(ROL_EPSILON);
     Real h = tol;
     if (v.norm() > std::sqrt(ROL_EPSILON)) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
-    Teuchos::RCP<Vector<Real> > cold = (v.dual()).clone();
-    Teuchos::RCP<Vector<Real> > cnew = (v.dual()).clone();
+    Teuchos::RCP<Vector<Real> > cold = dualv.clone();
+    Teuchos::RCP<Vector<Real> > cnew = dualv.clone();
     update(u,z);
     value(*cold,u,z,ctol);
     Teuchos::RCP<Vector<Real> > znew = z.clone();
@@ -688,6 +743,8 @@ public:
     ahwvs.set_2(*C22); 
   }
 
+
+
   virtual Real checkSolve(const ROL::Vector<Real> &u, 
                           const ROL::Vector<Real> &z, 
                           const ROL::Vector<Real> &c,
@@ -711,17 +768,57 @@ public:
     return cnorm;
   }
 
-  virtual Real checkJacobian_1(const Vector<Real> &w, 
-                               const Vector<Real> &v, 
-                               const Vector<Real> &u,
-                               const Vector<Real> &z,
-                               const bool printToStream = true,
-                               std::ostream & outStream = std::cout) {
+
+  /** \brief Check the consistency of the Jacobian and its adjoint.
+             This is the primary interface.
+
+             @param[out]      w              is a dual constraint-space vector
+             @param[in]       v              is a simulation-space vector
+             @param[in]       u              is the constraint argument; a simulation-space vector
+             @param[in]       z              is the constraint argument; an optimization-space vector
+             @param[in]       printToStream  is is a flag that turns on/off output
+             @param[in]       outStream      is the output stream
+
+             ---
+  */
+  virtual Real checkAdjointConsistencyJacobian_1(const Vector<Real> &w, 
+                                                 const Vector<Real> &v, 
+                                                 const Vector<Real> &u,
+                                                 const Vector<Real> &z,
+                                                 const bool printToStream = true,
+                                                 std::ostream & outStream = std::cout) {
+    return checkAdjointConsistencyJacobian_1(w, v, u, z, w.dual(), v.dual(), printToStream, outStream);
+  }
+
+
+  /** \brief Check the consistency of the Jacobian and its adjoint.
+             This is the secondary interface, for use with dual spaces where
+             the user does not define the dual() operation.
+
+             @param[out]      w              is a dual constraint-space vector
+             @param[in]       v              is a simulation-space vector
+             @param[in]       u              is the constraint argument; a simulation-space vector
+             @param[in]       z              is the constraint argument; an optimization-space vector
+             @param[in]       dualw          is a constraint-space vector 
+             @param[in]       dualv          is a dual simulation-space vector
+             @param[in]       printToStream  is is a flag that turns on/off output
+             @param[in]       outStream      is the output stream
+
+             ---
+  */
+  virtual Real checkAdjointConsistencyJacobian_1(const Vector<Real> &w, 
+                                                 const Vector<Real> &v, 
+                                                 const Vector<Real> &u,
+                                                 const Vector<Real> &z,
+                                                 const Vector<Real> &dualw,
+                                                 const Vector<Real> &dualv,
+                                                 const bool printToStream = true,
+                                                 std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = (w.dual()).clone();
+    Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
     applyJacobian_1(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
-    Teuchos::RCP<Vector<Real> > Jw = (v.dual()).clone();
+    Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
@@ -737,17 +834,56 @@ public:
     return diff;
   }
 
-  virtual Real checkJacobian_2(const Vector<Real> &w, 
-                               const Vector<Real> &v, 
-                               const Vector<Real> &u,
-                               const Vector<Real> &z,
-                               const bool printToStream = true,
-                               std::ostream & outStream = std::cout) {
+
+  /** \brief Check the consistency of the Jacobian and its adjoint.
+             This is the primary interface.
+
+             @param[out]      w              is a dual constraint-space vector
+             @param[in]       v              is an optimization-space vector
+             @param[in]       u              is the constraint argument; a simulation-space vector
+             @param[in]       z              is the constraint argument; an optimization-space vector
+             @param[in]       printToStream  is is a flag that turns on/off output
+             @param[in]       outStream      is the output stream
+
+             ---
+  */
+  virtual Real checkAdjointConsistencyJacobian_2(const Vector<Real> &w, 
+                                                 const Vector<Real> &v, 
+                                                 const Vector<Real> &u,
+                                                 const Vector<Real> &z,
+                                                 const bool printToStream = true,
+                                                 std::ostream & outStream = std::cout) {
+    return checkAdjointConsistencyJacobian_2(w, v, u, z, w.dual(), v.dual(), printToStream, outStream);
+  }
+
+  /** \brief Check the consistency of the Jacobian and its adjoint.
+             This is the secondary interface, for use with dual spaces where
+             the user does not define the dual() operation.
+
+             @param[out]      w              is a dual constraint-space vector
+             @param[in]       v              is an optimization-space vector
+             @param[in]       u              is the constraint argument; a simulation-space vector
+             @param[in]       z              is the constraint argument; an optimization-space vector
+             @param[in]       dualw          is a constraint-space vector 
+             @param[in]       dualv          is a dual optimization-space vector
+             @param[in]       printToStream  is is a flag that turns on/off output
+             @param[in]       outStream      is the output stream
+
+             ---
+  */
+  virtual Real checkAdjointConsistencyJacobian_2(const Vector<Real> &w, 
+                                                 const Vector<Real> &v, 
+                                                 const Vector<Real> &u,
+                                                 const Vector<Real> &z,
+                                                 const Vector<Real> &dualw,
+                                                 const Vector<Real> &dualv,
+                                                 const bool printToStream = true,
+                                                 std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = (w.dual()).clone();
+    Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
     applyJacobian_2(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
-    Teuchos::RCP<Vector<Real> > Jw = (v.dual()).clone();
+    Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);

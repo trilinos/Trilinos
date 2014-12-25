@@ -146,7 +146,7 @@ namespace MueLu {
 
       // Setup Hierarchy
       H.SetMaxCoarseSize(maxCoarseSize_);
-      H.SetDefaultVerbLevel(verbosity_);
+      VerboseObject::SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
 

@@ -62,7 +62,7 @@
 /// for smaller thread counts to have an optimized sequential kernel.
 /// We have <i>not</i> done this here.
 
-#include <KokkosLinAlg_config.h>
+#include <TpetraKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 
 namespace Kokkos {

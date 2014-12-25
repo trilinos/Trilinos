@@ -53,6 +53,10 @@
 template class MueLu::EmergencyAggregationAlgorithm<int, int>;
 #endif
 
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGINT
+template class MueLu::EmergencyAggregationAlgorithm<int, long>;
+#endif
+
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template class MueLu::EmergencyAggregationAlgorithm<int, long long int>;

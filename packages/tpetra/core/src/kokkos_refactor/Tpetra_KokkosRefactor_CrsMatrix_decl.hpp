@@ -2454,18 +2454,17 @@ namespace Tpetra {
 
     /// \name Sparse matrix values.
     ///
-    /// values1D_ represents the values assuming "1-D" compressed
+    /// k_values1D_ represents the values assuming "1-D" compressed
     /// sparse row storage.  values2D_ represents the values as an
     /// array of arrays, one (inner) array per row of the sparse
     /// matrix.
     ///
     /// Before allocation, both arrays are null.  After allocation,
     /// one is null.  If static allocation, then values2D_ is null.
-    /// If dynamic allocation, then values1D_ is null.  The allocation
-    /// always matches that of graph_, as the graph does the
-    /// allocation for the matrix.
+    /// If dynamic allocation, then k_values1D_ is null.  The
+    /// allocation always matches that of graph_, as the graph does
+    /// the allocation for the matrix.
     //@{
-    ArrayRCP<Scalar> values1D_;
     t_ValuesType k_values1D_;
     ArrayRCP<Array<Scalar> > values2D_;
     //@}

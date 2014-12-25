@@ -1002,8 +1002,8 @@ int main(int argc, char *argv[]) {
     con.checkApplyAdjointJacobian(x,yu,c,x,true,*outStream);
     con.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
     // Check consistency of Jacobians and adjoint Jacobians.
-    con.checkJacobian_1(c,yu,u,z,true,*outStream);
-    con.checkJacobian_2(c,yz,u,z,true,*outStream);
+    con.checkAdjointConsistencyJacobian_1(c,yu,u,z,true,*outStream);
+    con.checkAdjointConsistencyJacobian_2(c,yz,u,z,true,*outStream);
     // Check consistency of solves.
     con.checkSolve(u,z,c,true,*outStream);
     con.checkInverseJacobian_1(c,yu,u,z,true,*outStream);

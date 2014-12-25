@@ -99,11 +99,21 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Enable the use of explicit template instantiation with <double, int, int>."
     ON
     )
+
   IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
     IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
       MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the option MueLu_INST_DOUBLE_INT_INT or disable examples and tests.")
     ENDIF()
   ENDIF()
+
+  # <double, int, long>
+  SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT_DEFAULT OFF)
+  TRIBITS_ADD_OPTION_AND_DEFINE(
+    ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT
+    HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT
+    "Enable the use of explicit template instantiation with <double, int, long>."
+    ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT_DEFAULT}
+    )
 
   # <double, int, long long int>
   IF(Teuchos_ENABLE_LONG_LONG_INT)
@@ -111,6 +121,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ELSE()
     SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT OFF)
   ENDIF()
+
   TRIBITS_ADD_OPTION_AND_DEFINE(
     ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
     HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT
@@ -133,6 +144,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     )
   MESSAGE(STATUS "${PACKAGE_NAME} ETI support enabled")
   MESSAGE(STATUS "<double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
+  MESSAGE(STATUS "<double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
   MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
   MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 

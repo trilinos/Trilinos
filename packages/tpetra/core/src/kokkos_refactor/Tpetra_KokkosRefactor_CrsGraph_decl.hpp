@@ -1679,8 +1679,7 @@ namespace Tpetra {
     /// This is an argument to some of the graph's constructors.
     /// Either this or numAllocForAllRows_ is used, but not both.
     /// allocateIndices, setAllIndices, and expertStaticFillComplete
-    /// all deallocate this array (and the legacy view
-    /// numAllocPerRow_) once they are done with it.
+    /// all deallocate this array once they are done with it.
     ///
     /// This array <i>only</i> exists on a process before the graph's
     /// indices are allocated on that process.  After that point, it
@@ -1689,29 +1688,19 @@ namespace Tpetra {
     ///
     /// FIXME (mfh 07 Aug 2014) We want graph's constructors to
     /// allocate, rather than doing lazy allocation at first insert.
-    /// This will make both numAllocPerRow_ and numAllocForAllRows_
-    /// obsolete, so we don't have to make a Kokkos refactor version
-    /// of numAllocPerRow_.
+    /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
+    /// obsolete.
     Kokkos::DualView<const size_t*, Kokkos::LayoutLeft, device_type> k_numAllocPerRow_;
-
-    /// \brief Legacy Kokkos classic version of k_numAllocPerRow_.
-    ///
-    /// This is just a view of k_numAllocPerRow_.  We create views
-    /// using Kokkos::Compat::persistingView, so the Kokkos::View
-    /// won't get deallocated until the ArrayRCP's reference count
-    /// goes to zero.
-    Teuchos::ArrayRCP<const size_t> numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
     ///
     /// This is an argument to some of the graph's constructors.
-    /// Either this or numAllocPerRow_ is used, but not both.
+    /// Either this or k_numAllocPerRow_ is used, but not both.
     ///
     /// FIXME (mfh 07 Aug 2014) We want graph's constructors to
     /// allocate, rather than doing lazy allocation at first insert.
-    /// This will make both numAllocPerRow_ and numAllocForAllRows_
-    /// obsolete, so we don't have to make a Kokkos refactor version
-    /// of numAllocPerRow_.
+    /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
+    /// obsolete.
     size_t numAllocForAllRows_;
 
     //! \name 1-D storage (StaticProfile) data structures
@@ -1823,16 +1812,6 @@ namespace Tpetra {
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
     t_numRowEntries_ k_numRowEntries_;
-
-    /// \brief Legacy Kokkos classic version of k_numRowEntries_.
-    ///
-    /// This is just a view of k_numRowEntries_.  We create views
-    /// using Kokkos::Compat::persistingView, so the Kokkos::DualView
-    /// won't get deallocated until the ArrayRCP's reference count
-    /// goes to zero.
-    ///
-    /// This may also exist with 1-D storage, if storage is unpacked.
-    Teuchos::ArrayRCP<size_t> numRowEntries_;
 
     //@}
 

@@ -65,6 +65,9 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int)
 #endif
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long)
+#endif
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
   AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long long)
 #endif

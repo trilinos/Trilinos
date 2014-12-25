@@ -235,7 +235,6 @@ namespace Tpetra {
     }
     staticGraph_ = myGraph_;
     k_values1D_  = values;
-    values1D_    = Kokkos::Compat::persistingView (k_values1D_);
     resumeFill (params);
     checkInternalState ();
   }
@@ -268,7 +267,6 @@ namespace Tpetra {
     // ArrayRCP to relinquish its allocation, but that might require
     // passing the ArrayRCP in by nonconst reference.
     k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (values ());
-    values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     resumeFill (params);
     checkInternalState ();
   }
@@ -304,14 +302,6 @@ namespace Tpetra {
     computeGlobalConstants();
 
     k_values1D_ = k_lclMatrix_.values;
-
-    {
-      // For backwards compatibility, set the Kokkos classic pointer
-      // to the values, values1D_.
-      ArrayRCP<scalar_type> classicValues =
-        Kokkos::Compat::persistingView (k_lclMatrix_.values);
-      values1D_ = classicValues;
-    }
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
@@ -623,7 +613,6 @@ namespace Tpetra {
 
       // Allocate array of (packed???) matrix values.
       k_values1D_ = t_ValuesType ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
-      values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     }
     else {
       // "Dynamic profile" means the number of matrix entries in each
@@ -1074,7 +1063,6 @@ namespace Tpetra {
       // unpacked 1-D storage.
       myGraph_->lclInds2D_ = null; // legacy KokkosClassic 2-D storage
       myGraph_->k_numRowEntries_ = row_entries_type ();
-      myGraph_->numRowEntries_ = null; // legacy KokkosClassic view of above
 
       // Free the matrix's 2-D storage.
       this->values2D_ = null;
@@ -1083,9 +1071,6 @@ namespace Tpetra {
       myGraph_->k_rowPtrs_ = k_ptrs_const;
       myGraph_->k_lclInds1D_ = k_inds;
       this->k_values1D_ = k_vals;
-
-      // Set Kokkos classic pointer for backwards compatibility.
-      this->values1D_ = Kokkos::Compat::persistingView (k_vals);
 
       // Storage is packed now, so the number of allocated entries is
       // the same as the actual number of entries.
@@ -1163,7 +1148,6 @@ namespace Tpetra {
 
     // get data from staticGraph_
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
-    ArrayRCP<size_t> numRowEntries = staticGraph_->numRowEntries_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
     row_map_type k_rowPtrs_ = staticGraph_->k_lclGraph_.row_map;
@@ -1365,12 +1349,6 @@ namespace Tpetra {
                                         getDomainMap ()->getNodeNumElements (),
                                         k_vals,
                                         staticGraph_->getLocalGraph_Kokkos ());
-
-    // Set the legacy values1D_ array.
-    ArrayRCP<scalar_type> classicValues =
-      Kokkos::Compat::persistingView (k_lclMatrix_.values);
-    values1D_ = classicValues;
-
     // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
   }
 
@@ -2278,16 +2256,19 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getView (RowInfo rowinfo) const
   {
-    if (values1D_ != null && rowinfo.allocSize > 0) {
+    if (k_values1D_.dimension_0 () != 0 && rowinfo.allocSize > 0) {
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
-        rowinfo.offset1D + rowinfo.allocSize > values1D_.size (),
+        rowinfo.offset1D + rowinfo.allocSize > k_values1D_.dimension_0 (),
         std::range_error, "Tpetra::CrsMatrix::getView: Invalid access "
         "to 1-D storage of values." << std::endl << "rowinfo.offset1D (" <<
         rowinfo.offset1D << ") + rowinfo.allocSize (" << rowinfo.allocSize <<
-        ") > values1D_.size() (" << values1D_.size () << ").");
+        ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
 #endif // HAVE_TPETRA_DEBUG
-      return values1D_ (rowinfo.offset1D, rowinfo.allocSize);
+      std::pair<size_t, size_t> range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
+      typedef Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> subview_type;
+      subview_type sv = Kokkos::subview<subview_type> (k_values1D_, range);
+      return Teuchos::ArrayView<const Scalar> (sv.ptr_on_device (), rowinfo.allocSize);
     }
     else if (values2D_ != null) {
       return values2D_[rowinfo.localRow] ();
@@ -2310,23 +2291,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getViewNonConst (RowInfo rowinfo)
   {
-    if (values1D_ != null && rowinfo.allocSize > 0) {
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        rowinfo.offset1D + rowinfo.allocSize > values1D_.size (),
-        std::range_error, "Tpetra::CrsMatrix::getViewNonConst: Invalid access "
-        "to 1-D storage of values." << std::endl << "rowinfo.offset1D (" <<
-        rowinfo.offset1D << ") + rowinfo.allocSize (" << rowinfo.allocSize <<
-        ") > values1D_.size() (" << values1D_.size () << ").");
-#endif // HAVE_TPETRA_DEBUG
-      return values1D_ (rowinfo.offset1D, rowinfo.allocSize);
-    }
-    else if (values2D_ != null) {
-      return values2D_[rowinfo.localRow] ();
-    }
-    else {
-      return Teuchos::ArrayView<Scalar> ();
-    }
+    return Teuchos::av_const_cast<Scalar> (this->getView (rowinfo));
   }
 
 
@@ -2596,14 +2561,23 @@ namespace Tpetra {
     const size_t     nlrs = staticGraph_->getNodeNumRows(),
                  numAlloc = staticGraph_->getNodeAllocationSize(),
                numEntries = staticGraph_->getNodeNumEntries();
-    if (staticGraph_->indicesAreAllocated() == false || numAlloc == 0 || numEntries == 0) {
+    if (! staticGraph_->indicesAreAllocated () || numAlloc == 0 || numEntries == 0) {
       // do nothing
     }
     else {
-      if (staticGraph_->getProfileType() == StaticProfile) {
-        std::fill( values1D_.begin(), values1D_.end(), alpha );
+      if (staticGraph_->getProfileType () == StaticProfile) {
+        // FIXME (mfh 24 Dec 2014) This assumes CUDA UVM.  We should
+        // use a DualView for the values instead of a device View.
+        // Fill should happen where the data were most recently
+        // modified, in order to avoid memory transfers.
+        //
+        // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
+        // semantics, this would be the place to mark memory as
+        // modified.
+        const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+        Kokkos::Impl::ViewFill<t_ValuesType> (k_values1D_, theAlpha);
       }
-      else if (staticGraph_->getProfileType() == DynamicProfile) {
+      else if (staticGraph_->getProfileType () == DynamicProfile) {
         for (size_t row=0; row < nlrs; ++row) {
           std::fill( values2D_[row].begin(), values2D_[row].end(), alpha );
         }
@@ -2638,7 +2612,6 @@ namespace Tpetra {
         "setAllIndices(): " << e.what ());
     }
     k_values1D_ = values;
-    values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     checkInternalState();
   }
 
@@ -2668,7 +2641,6 @@ namespace Tpetra {
         "setAllIndices(): " << e.what ());
     }
     k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (values ());
-    values1D_ = Kokkos::Compat::persistingView (k_values1D_);
     checkInternalState();
   }
 
@@ -5100,7 +5072,6 @@ namespace Tpetra {
                           this->k_lclMatrix_.numCols (), newVals1D,
                           this->k_lclMatrix_.graph);
       newmat->k_values1D_ = newVals1D;
-      newmat->values1D_ = Kokkos::Compat::persistingView (newVals1D);
       // Since newmat has a static (const) graph, the graph already
       // has a column Map, and Import and Export objects already exist
       // (if applicable).  Thus, calling fillComplete is cheap.

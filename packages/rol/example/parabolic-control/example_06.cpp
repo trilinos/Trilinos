@@ -979,8 +979,8 @@ int main(int argc, char *argv[]) {
     //con.checkApplyAdjointJacobian(x,yu,c,x,true);
     con.checkApplyAdjointHessian(x,yu,y,x,true);
     // Check Jacobians and adjoint Jacobians.
-    con.checkJacobian_1(c,yu,xu,xz,true);
-    con.checkJacobian_2(c,yz,xu,xz,true);
+    con.checkAdjointConsistencyJacobian_1(c,yu,xu,xz,true);
+    con.checkAdjointConsistencyJacobian_2(c,yz,xu,xz,true);
     // Check solves.
     con.checkSolve(xu,xz,c,true);
     con.checkInverseJacobian_1(c,yu,xu,xz,true);
