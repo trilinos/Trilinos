@@ -37,7 +37,6 @@
 #include <iostream>
 #include <vector>
 
-#include <boost/static_assert.hpp> 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>

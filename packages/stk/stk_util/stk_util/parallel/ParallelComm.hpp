@@ -37,7 +37,7 @@
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <vector>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <boost/static_assert.hpp>
+#include <stk_util/environment/ReportHandler.hpp> // for ThrowAssertMsg
 
 namespace stk { template <unsigned int N> struct CommBufferAlign; }
 
@@ -94,11 +94,14 @@ public:
   /** Pack a value to be sent:  buf.pack<type>( value ) */
   template<typename T> CommBuffer &pack( const T & value );
 
+private:
   /** Do not try to pack a pointer for global communication */
   template<typename T> CommBuffer &pack( const T* value ) {
-    BOOST_STATIC_ASSERT_MSG(sizeof(T)<0, "Cannot pack a pointer for global communication");
+    ThrowAssertMsg(false,"CommBuffer::pack(const T* value) not allowed. Don't pack a pointer for communication!");
     return *this;
   }
+
+public:
 
   /** Pack an array of values to be sent:  buf.pack<type>( ptr , num ) */
   template<typename T> CommBuffer &pack( const T * value , size_t number );

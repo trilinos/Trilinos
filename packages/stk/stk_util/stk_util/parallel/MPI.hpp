@@ -34,7 +34,6 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
-#include <boost/static_assert.hpp>
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
 

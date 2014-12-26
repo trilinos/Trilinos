@@ -38,7 +38,6 @@
 #include <vector>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer etc
-#include <boost/static_assert.hpp>
 
 //------------------------------------------------------------------------
 

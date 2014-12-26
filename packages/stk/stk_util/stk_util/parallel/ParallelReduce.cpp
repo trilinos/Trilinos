@@ -33,7 +33,6 @@
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
 #include <sstream>                      // for basic_ostream::operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <vector>                       // for vector
