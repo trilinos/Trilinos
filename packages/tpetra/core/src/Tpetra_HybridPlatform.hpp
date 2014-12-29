@@ -158,11 +158,9 @@ private:
     , THRUSTGPUNODE
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-    // FIXME (mfh 02 Oct 2014) There is currently no macro
-    // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial
-    // Kokkos device is enabled.  If that changes, we'll need to
-    // protect this line accordingly.
+#ifdef KOKKOS_HAVE_SERIAL
     , SERIAL_WRAPPER_NODE
+#endif // KOKKOS_HAVE_SERIAL
 #ifdef KOKKOS_HAVE_OPENMP
     , OPENMP_WRAPPER_NODE
 #endif // KOKKOS_HAVE_OPENMP
@@ -194,11 +192,9 @@ private:
   Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-    // FIXME (mfh 19 Oct 2014) There is currently no macro
-    // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial
-    // Kokkos device is enabled.  If that changes, we'll need to
-    // protect this line accordingly.
+#ifdef KOKKOS_HAVE_SERIAL
   Teuchos::RCP<Kokkos::Compat::KokkosSerialWrapperNode> serialWrapperNode_;
+#endif // KOKKOS_HAVE_SERIAL
 #ifdef KOKKOS_HAVE_OPENMP
   Teuchos::RCP<Kokkos::Compat::KokkosOpenMPWrapperNode> ompWrapperNode_;
 #endif // KOKKOS_HAVE_OPENMP
@@ -254,14 +250,12 @@ HybridPlatform::runUserCode (UserCode& codeobj)
     break;
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-  // FIXME (mfh 02 Oct 2014) There is currently no macro
-  // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos
-  // device is enabled.  If that changes, we'll need to protect these
-  // lines accordingly.
+#ifdef KOKKOS_HAVE_SERIAL
   case SERIAL_WRAPPER_NODE:
     codeobj.template run<Kokkos::Compat::KokkosSerialWrapperNode> (instList_, comm_,
                                                                    serialWrapperNode_);
     break;
+#endif // KOKKOS_HAVE_SERIAL
 #ifdef KOKKOS_HAVE_OPENMP
   case OPENMP_WRAPPER_NODE:
     codeobj.template run<Kokkos::Compat::KokkosOpenMPWrapperNode> (instList_, comm_,
@@ -323,14 +317,12 @@ HybridPlatform::runUserCode ()
     break;
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-  // FIXME (mfh 02 Oct 2014) There is currently no macro
-  // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos
-  // device is enabled.  If that changes, we'll need to protect these
-  // lines accordingly.
+#ifdef KOKKOS_HAVE_SERIAL
   case SERIAL_WRAPPER_NODE:
     UserCode<Kokkos::Compat::KokkosSerialWrapperNode>::run (instList_, comm_,
                                                             serialWrapperNode_);
     break;
+#endif // KOKKOS_HAVE_SERIAL
 #ifdef KOKKOS_HAVE_OPENMP
   case OPENMP_WRAPPER_NODE:
     UserCode<Kokkos::Compat::KokkosOpenMPWrapperNode>::run (instList_, comm_,
@@ -378,11 +370,9 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
 #endif
 
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-// FIXME (mfh 19 Oct 2014) There is currently no macro
-// "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos device
-// is enabled.  If that changes, we'll need to protect this line
-// accordingly.
+#ifdef KOKKOS_HAVE_SERIAL
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosSerialWrapperNode)
+#endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosOpenMPWrapperNode)
@@ -398,14 +388,12 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosCudaWrapperNod
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 
 // Make sure that the default Node type is always supported.  We can
-// only do this if it's not any of the Node types listed above.
+// only do this if it's not any of the Node types listed above,
+// because the default Node type is just a typedef, and we don't want
+// to instantiate support for it twice.
 #if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
 #  ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-// FIXME (mfh 19 Oct 2014) There is currently no macro
-// "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos device
-// is enabled.  If that changes, we'll need to protect this line
-// accordingly.
-#    if ! defined(KOKKOS_HAVE_OPENMP) && ! defined(KOKKOS_HAVE_PTHREAD) && ! defined(KOKKOS_HAVE_CUDA)
+#    if ! defined (KOKKOS_HAVE_SERIAL) && ! defined(KOKKOS_HAVE_OPENMP) && ! defined(KOKKOS_HAVE_PTHREAD) && ! defined(KOKKOS_HAVE_CUDA)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultNodeType)
 #    endif
 #  else

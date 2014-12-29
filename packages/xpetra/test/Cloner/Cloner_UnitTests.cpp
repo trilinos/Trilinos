@@ -281,10 +281,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -307,10 +304,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -333,10 +327,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -359,10 +350,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -385,10 +373,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 // #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
 //   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -411,10 +396,7 @@ namespace {
 //   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -437,10 +419,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -463,10 +442,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-// #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-//   // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-//   // macro to test if the Kokkos::Serial execution space and its
-//   // corresponding Node type is defined.
+// #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 //   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.
@@ -489,10 +465,7 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 15 Oct 2014) There is currently no KOKKOS_HAVE_SERIAL
-  // macro to test if the Kokkos::Serial execution space and its
-  // corresponding Node type is defined.
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
 #  else
   // There's only one Node type defined, so we have no choice but to use it.

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   using Teuchos::Comm;
   using Teuchos::ParameterList;
 
-  // 
+  //
   // Get the communicator
   //
   Teuchos::oblackholestream blackhole;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
   //
   // Get example parameters from command-line processor
-  //  
+  //
   bool verbose = (myImageID==0);
   std::string matfile;
   std::string xmlfile;
@@ -92,28 +92,28 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // 
+  //
   // read machine file and initialize platform
-  // 
+  //
   RCP<Teuchos::ParameterList> machinePL = Teuchos::parameterList();
   std::string defaultMachine(
     " <ParameterList>                                                               "
     "   <ParameterList name='%1=0'>                                                 "
-    "     <Parameter name='NodeType'     type='string' value='KokkosClassic::SerialNode'/> "
+    "     <Parameter name='NodeType'     type='string' value='default'/> "
     "   </ParameterList>                                                            "
     " </ParameterList>                                                              "
   );
   Teuchos::updateParametersFromXmlString(defaultMachine,machinePL.ptr());
   if (machineFile != "") Teuchos::updateParametersFromXmlFile(machineFile,machinePL.ptr());
 
-  // 
+  //
   // create the platform object
-  // 
+  //
   Tpetra::HybridPlatform platform(comm,*machinePL);
 
-  // 
+  //
   // Define the scalar type
-  // 
+  //
   typedef double Scalar;
 
   //
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
   //
   // get the solver parameters
-  // 
+  //
   RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
   // default solver stack parameters
   std::string xmlString(
@@ -145,9 +145,9 @@ int main(int argc, char *argv[])
   // hand solver parameters to driver
   driver.params = params;
 
-  // 
+  //
   // run the driver
-  // 
+  //
   platform.runUserCode(driver);
 
   //
@@ -159,6 +159,6 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-/** \example IRTR_double.cpp 
+/** \example IRTR_double.cpp
     Demonstrate using Tpetra::RTI and a standard-precision IRTR eigensolve.
   */

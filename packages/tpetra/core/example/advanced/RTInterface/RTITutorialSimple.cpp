@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
   std::string machine_list(
     "<ParameterList>                                                               "
     "  <ParameterList name='%1=0'>                                                 "
-    "    <Parameter name='NodeType' type='string' value='KokkosClassic::SerialNode'/>     "
+    "    <Parameter name='NodeType' type='string' value='default'/>                "
     "  </ParameterList>                                                            "
     "  <ParameterList name='=-1'>                                                  "
     "    <Parameter name='NodeType' type='string' value='KokkosClassic::OpenMPNode'/>     "
