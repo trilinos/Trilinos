@@ -2639,16 +2639,14 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getVector (size_t j) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::rcp;
-    // using Teuchos::rcp_const_cast;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal,
-      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > V;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> V;
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2657,21 +2655,17 @@ namespace Tpetra {
       "range for this multivector.");
 #endif // HAVE_TPETRA_DEBUG
 
-    // FIXME (mfh 10 May 2014) Why can't Kokkos take size_t instead of
-    // unsigned int?
-    const unsigned int jj = isConstantStride () ?
-      static_cast<unsigned int> (j) :
-      static_cast<unsigned int> (whichVectors_[j]);
-    // FIXME (mfh 10 May 2014) The same issue shows up here that shows
-    // up for offsetView.
+    const size_t jj = isConstantStride () ? static_cast<size_t> (j) :
+      static_cast<size_t> (whichVectors_[j]);
+    const std::pair<size_t, size_t> rng (jj, jj+1);
     return rcp (new V (this->getMap (),
-                       subview<dual_view_type> (view_, ALL (), std::pair<size_t, size_t> (jj, jj+1)),
+                       subview<dual_view_type> (view_, ALL (), rng),
                        origView_));
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getVectorNonConst (size_t j)
   {
@@ -3062,7 +3056,7 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   elementWiseMultiply (Scalar scalarAB,
-                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal, node_type>& A,
+                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal, node_type, false>& A,
                        const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, node_type>& B,
                        Scalar scalarThis)
   {

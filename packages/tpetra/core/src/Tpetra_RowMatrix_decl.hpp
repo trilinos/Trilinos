@@ -46,6 +46,7 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Vector_decl.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Packable.hpp"
@@ -60,9 +61,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class Map;
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Vector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class RowMatrix
@@ -362,7 +360,7 @@ namespace Tpetra {
     /// same diagonal element.  You may combine these overlapping
     /// diagonal elements by doing an Export from the row Map Vector
     /// to a range Map Vector.
-    virtual void getLocalDiagCopy (Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;
+    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic> &diag) const = 0;
 
     //@}
     //! \name Mathematical methods
@@ -373,14 +371,14 @@ namespace Tpetra {
      *
      * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
      */
-    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
+    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
 
     /**
      * \brief Scale the RowMatrix on the right with the given Vector x.
      *
      * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
      */
-    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
+    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
 
     /// \brief The Frobenius norm of the matrix.
     ///

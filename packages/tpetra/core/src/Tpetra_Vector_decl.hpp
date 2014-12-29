@@ -68,14 +68,30 @@ namespace Tpetra {
 template<class Scalar = MultiVector<>::scalar_type,
          class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
          class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+         class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+         const bool classic = Node::classic>
+class Vector {
+  // See partial specializations for documentation of methods.
+};
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
+// Partial specialization for the "classic" Node types.  This is the
+// original "classic" implementation of Vector.  It will be deprecated
+// in the 11.14 release of Trilinos, and removed entirely in the 12.0
+// release.
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
+class Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> :
+    public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
-  typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> base_type;
+  typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
   // need this so that MultiVector::operator() can call Vector's
   // private view constructor
-  friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
@@ -168,8 +184,21 @@ public:
   ///
   /// \param node2 [in] The returned Vector's Kokkos Node instance.
   template <class Node2>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  clone (const Teuchos::RCP<Node2>& node2);
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
+  clone (const Teuchos::RCP<Node2>& node2)
+  {
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
+
+    Teuchos::ArrayRCP<const Scalar> V_view = this->getData ();
+    Teuchos::RCP<const Map2> clonedMap =
+      this->getMap ()->template clone<Node2> (node2);
+    Teuchos::RCP<V2> clonedV = Teuchos::rcp (new V2 (clonedMap));
+    Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst ();
+    clonedV_view.deepCopy (V_view ());
+    clonedV_view = Teuchos::null;
+    return clonedV;
+  }
 
   //@}
   //! @name Post-construction modification routines
@@ -221,27 +250,28 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
   //! Computes dot product of this Vector against input Vector x.
-  Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+  Scalar dot (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>& a) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
   //! Return 1-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
+  mag_type norm1 () const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
   //! Compute 2-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
+  mag_type norm2 () const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
   //! Compute Inf-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
+  mag_type normInf () const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
   //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+  mag_type
+  normWeighted (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>& weights) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.
-  Scalar meanValue() const;
+  Scalar meanValue () const;
 
   //@}
   /// \name Methods to get a row subset view of a Vector (as a Vector).
@@ -369,20 +399,14 @@ public:
 protected:
 
   template <class S,class LO,class GO,class N>
-  friend RCP< Vector<S,LO,GO,N> >
-  createVectorFromView(const RCP<const Map<LO,GO,N> > &,const ArrayRCP<S> &);
+  friend Teuchos::RCP<Vector<S, LO, GO, N, true> >
+  createVectorFromView (const Teuchos::RCP<const Map<LO, GO, N> >&, const Teuchos::ArrayRCP<S>&);
 
   // view constructor, sitting on user allocated data, only for CPU nodes
   // and his non-member constructor friend
   Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
           const ArrayRCP<Scalar> &view,
           EPrivateHostViewConstructor /* dummy tag */);
-
-  /* Commenting out since constructor not defined in source.
-  //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
-  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-          const ArrayRCP<Scalar> & data);
-  */
 
   //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
   Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
@@ -393,46 +417,40 @@ protected:
   typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
 
-//! \brief Non-member function to create a Vector with view semantics using user-allocated data.
-/*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
-    \relatesalso Vector
- */
+/// \brief Nonmember function to create a Vector with view semantics
+///   using user-allocated data, with the Teuchos memory management
+///   class Teuchos::ArrayRCP.
+/// \relatesalso Vector
+///
+/// \warning This function is DEPRECATED.
+///
+/// \warning This use case is not supported for all Node
+///   types. Specifically, it is not supported for GPU-based nodes
+///   like KokkosClassic::ThrustGPUNode.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                      const ArrayRCP<Scalar> &view)
+Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> >
+createVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
+                      const Teuchos::ArrayRCP<Scalar>& view)
 {
-  return rcp(
-    // this is a protected constructor, but we are friends
-    new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-      map,
-      // this will fail to compile for unsupported node types
-      Tpetra::details::ViewAccepter<Node>::template acceptView<Scalar>(view),
-      HOST_VIEW_CONSTRUCTOR)
+  using Teuchos::rcp;
+  typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> vec_type;
+  typedef Tpetra::details::ViewAccepter<Node> accepter_type;
+
+  // "this is a protected constructor, but we are friends"
+  //
+  // The ViewAccepter expression will fail to compile for unsupported
+  // Node types.
+  return rcp (new vec_type (map, accepter_type::template acceptView<Scalar> (view), HOST_VIEW_CONSTRUCTOR)
   );
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class Node2>
-Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-clone (const Teuchos::RCP<Node2>& node2)
-{
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-  typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
 
-  Teuchos::ArrayRCP<const Scalar> V_view = this->getData ();
-  Teuchos::RCP<const Map2> clonedMap =
-    this->getMap ()->template clone<Node2> (node2);
-  Teuchos::RCP<V2> clonedV = Teuchos::rcp (new V2 (clonedMap));
-  Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst ();
-  clonedV_view.deepCopy (V_view ());
-  clonedV_view = Teuchos::null;
-  return clonedV;
-}
-
-/// \brief Nonmember "constructor" to create a Vector from a given Map.
+/// \brief Nonmember Vector "constructor": Create a Vector from a given Map.
 /// \relatesalso Vector
+///
+/// \param map [in] Map describing the distribution of rows of the
+///   resulting Vector.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 createVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map)

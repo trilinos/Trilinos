@@ -2482,7 +2482,7 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
   getVector (size_t j) const
   {
@@ -2490,7 +2490,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
-    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> V;
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true> V;
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
@@ -2508,13 +2508,13 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
   getVectorNonConst (size_t j)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::rcp;
-    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> V;
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true> V;
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
@@ -2869,7 +2869,7 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
   elementWiseMultiply (Scalar scalarAB,
-                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>& A,
                        const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
                        Scalar scalarThis)
   {
@@ -3262,7 +3262,7 @@ namespace Tpetra {
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }
-#endif TPETRA_USE_KOKKOS_DISTOBJECT
+#endif // TPETRA_USE_KOKKOS_DISTOBJECT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

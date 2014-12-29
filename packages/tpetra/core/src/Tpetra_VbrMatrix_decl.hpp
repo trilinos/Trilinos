@@ -53,6 +53,7 @@
 
 #include <Tpetra_DistObject_decl.hpp>
 #include <Tpetra_Operator.hpp>
+#include <Tpetra_Vector_decl.hpp>
 #include <Tpetra_VbrUtils.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
@@ -68,9 +69,6 @@ namespace Tpetra {
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class BlockCrsGraph;
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Vector;
 } // namespace Tpetra
 
 namespace KokkosClassic {

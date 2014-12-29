@@ -68,9 +68,14 @@ template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class DeviceType>
-class Vector<Scalar, LocalOrdinal, GlobalOrdinal,
-             Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
-   public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
+class Vector<Scalar,
+             LocalOrdinal,
+             GlobalOrdinal,
+             Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+             false> :
+   public MultiVector<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
                       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
 {
 private:

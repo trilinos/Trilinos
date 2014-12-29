@@ -282,9 +282,6 @@ namespace { // anonymous
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of Vector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N> class Vector;
-
   // forward declaration of Map
   template<class LO, class GO, class N> class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -1137,11 +1134,11 @@ namespace Tpetra {
                         size_t offset);
 
     //! Return a Vector which is a const view of column j.
-    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> >
     getVector (size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> >
     getVectorNonConst (size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
@@ -1800,7 +1797,7 @@ namespace Tpetra {
     /// applying a diagonal scaling.
     void
     elementWiseMultiply (Scalar scalarAB,
-                         const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>& A,
                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
                          Scalar scalarThis);
     //@}

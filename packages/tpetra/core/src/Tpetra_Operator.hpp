@@ -48,19 +48,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  // class Map;
-
-  // template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  // class MultiVector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
   /// \class Operator
   /// \brief Abstract interface for operators (e.g., matrices and
   ///   preconditioners).

@@ -67,9 +67,8 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N> class Vector;
+  template<class S, class LO, class GO, class N, const bool classic> class Vector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
@@ -893,11 +892,11 @@ namespace Tpetra {
                         size_t offset);
 
     //! Return a Vector which is a const view of column j.
-    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> >
     getVector (size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> >
     getVectorNonConst (size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
@@ -1109,7 +1108,7 @@ namespace Tpetra {
     /// applying a diagonal scaling.
     void
     elementWiseMultiply (Scalar scalarAB,
-                         const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true>& A,
                          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
                          Scalar scalarThis);
     //@}
@@ -1544,7 +1543,8 @@ namespace Tpetra {
     dst.assign (src);
   }
 
-  /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
+  /// \brief Nonmember MultiVector "constructor": Create a MultiVector
+  ///   from a given Map.
   /// \relatesalso MultiVector
   /// \relatesalso Vector
   ///
