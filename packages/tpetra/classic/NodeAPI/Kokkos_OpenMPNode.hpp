@@ -64,6 +64,12 @@ namespace KokkosClassic {
   /// \brief Kokkos Node using OpenMP for parallelization.
   class OpenMPNode : public StandardNodeMemoryModel {
   public:
+    /// \brief This is a "classic" Node type.
+    ///
+    /// That means we plan to deprecate it with the 11.14 release of
+    /// Trilinos, and remove it entirely with the 12.0 release.
+    static const bool classic = true;
+
     /// \brief Constructor.
     ///
     /// We accept the following (optional) parameters:

@@ -59,6 +59,12 @@ namespace KokkosClassic {
    */
   class SerialNode : public StandardNodeMemoryModel {
   public:
+    /// \brief This is a "classic" Node type.
+    ///
+    /// That means we plan to deprecate it with the 11.14 release of
+    /// Trilinos, and remove it entirely with the 12.0 release.
+    static const bool classic = true;
+
     //! Constructor; sets default parameters.
     SerialNode ();
 

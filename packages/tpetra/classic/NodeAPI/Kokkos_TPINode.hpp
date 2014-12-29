@@ -134,22 +134,25 @@ namespace KokkosClassic {
    */
   class TPINode : public StandardNodeMemoryModel {
   public:
+    /// \brief This is a "classic" Node type.
+    ///
+    /// That means we plan to deprecate it with the 11.14 release of
+    /// Trilinos, and remove it entirely with the 12.0 release.
+    static const bool classic = true;
+
     //! Constructor that sets default parameters.
     TPINode ();
 
-
-
-
-    /*! \brief Constructor that takes a list of parameters.
-
-      This constructor accepts the following parameters:
-      - "Num Threads" [int] Specifies the number of threads, calls
-      TPINode::init(). Throws std::runtime_error if less than
-      zero. Default: 0.
-      - "Verbose" [int] Non-zero parameter specifies that the
-      constructor is verbose, printing information about the
-      number of threads. Default: 0.
-    */
+    /// \brief Constructor that takes a list of parameters.
+    ///
+    /// This constructor accepts the following parameters:
+    ///
+    ///   - "Num Threads" [int] Specifies the number of threads, calls
+    ///     init(). Throws std::runtime_error if less than
+    ///     zero. Default: 0.
+    ///   - "Verbose" [int] Non-zero parameter specifies that the
+    ///     constructor is verbose, printing information about the
+    ///     number of threads. Default: 0.
     TPINode (ParameterList &plist);
 
     /*! \brief Get default parameters for this node */

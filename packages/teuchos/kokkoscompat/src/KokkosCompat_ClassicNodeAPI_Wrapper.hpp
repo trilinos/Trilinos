@@ -29,6 +29,13 @@ public:
   //! Indicates that parallel buffers allocated by this node are available for use on the host thread.
   typedef DeviceType device_type;
 
+  /// \brief This is NOT a "classic" Node type.
+  ///
+  /// We plan to deprecate the "classic" Node types with the 11.14
+  /// release of Trilinos, and remove them entirely with the 12.0
+  /// release.
+  static const bool classic = false;
+
   static const bool isHostNode = true;
   static const bool isCUDANode = false;
 
