@@ -89,7 +89,7 @@ struct ViewOffset< ShapeType
     }
 
   KOKKOS_INLINE_FUNCTION
-  void assign( size_t n0 , size_t n1 
+  void assign( size_t n0 , size_t n1
              , int = 0 , int = 0
              , int = 0 , int = 0
              , int = 0 , int = 0
@@ -101,14 +101,14 @@ struct ViewOffset< ShapeType
       tile_N0 = ( n0 + MASK_0 ) >> SHIFT_0 ; // number of tiles in first dimension
     }
 
-  
+
   KOKKOS_INLINE_FUNCTION
   void set_padding() {}
 
 
   template< typename I0 , typename I1 >
   KOKKOS_INLINE_FUNCTION
-  size_type operator()( I0 const & i0 , I1 const & i1 
+  size_type operator()( I0 const & i0 , I1 const & i1
                       , int = 0 , int = 0
                       , int = 0 , int = 0
                       , int = 0 , int = 0
@@ -139,7 +139,7 @@ struct ViewOffset< ShapeType
 template<>
 struct ViewAssignment< ViewTile , void , void >
 {
-  template< class T , unsigned N0 , unsigned N1 , class A2 , class A3 >
+  template< class T , unsigned long N0 , unsigned long N1 , class A2 , class A3 >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment( View< T[N0][N1], LayoutLeft, A2, A3, Impl::ViewDefault > & dst
                 , View< T** , LayoutTileLeft<N0,N1,true>, A2, A3, Impl::ViewDefault > const & src
