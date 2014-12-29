@@ -1585,6 +1585,7 @@ namespace Tpetra {
   ///   add a specialization of Tpetra::details::ViewAccepter for your
   ///   new Node type.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                              const Teuchos::ArrayRCP<Scalar>& view,
