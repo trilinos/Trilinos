@@ -393,17 +393,6 @@ protected:
   typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
 
-/** \brief Non-member function to create a Vector from a specified Map.
-    \relatesalso Vector
-*/
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-createVector (const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
-{
-  const bool DO_INIT_TO_ZERO = true;
-  return rcp (new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map, DO_INIT_TO_ZERO));
-}
-
 //! \brief Non-member function to create a Vector with view semantics using user-allocated data.
 /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
     \relatesalso Vector
@@ -425,22 +414,38 @@ createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &ma
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class Node2>
-RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2){
-        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-        typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
-        Teuchos::ArrayRCP<const Scalar> V_view = this->getData();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
-        Teuchos::RCP<V2> clonedV = Teuchos::rcp(new V2(clonedMap));
-        Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst();
-        clonedV_view.deepCopy(V_view());
-        clonedV_view = Teuchos::null;
-        return clonedV;
-  }
+Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+clone (const Teuchos::RCP<Node2>& node2)
+{
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+  typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
 
+  Teuchos::ArrayRCP<const Scalar> V_view = this->getData ();
+  Teuchos::RCP<const Map2> clonedMap =
+    this->getMap ()->template clone<Node2> (node2);
+  Teuchos::RCP<V2> clonedV = Teuchos::rcp (new V2 (clonedMap));
+  Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst ();
+  clonedV_view.deepCopy (V_view ());
+  clonedV_view = Teuchos::null;
+  return clonedV;
+}
+
+/// \brief Nonmember "constructor" to create a Vector from a given Map.
+/// \relatesalso Vector
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
-  createCopy( const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
+Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+createVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map)
+{
+  return rcp (new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map));
+}
+
+/// \brief Return a deep copy of the given Vector.
+/// \relatesalso Vector
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
+
 } // namespace Tpetra
 
 // Include KokkosRefactor partial specialisation if enabled

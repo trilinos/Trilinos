@@ -123,29 +123,45 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const {
+  Scalar
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  dot (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& a) const
+  {
     using Teuchos::outArg;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getGlobalLength () != a.getGlobalLength (), std::runtime_error,
+      "Tpetra::Vector::dots: Vectors do not have the same global length.  "
+      "this->getGlobalLength() = " << this->getGlobalLength () << " != "
+      "a.getGlobalLength() = " << a.getGlobalLength () << ".");
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
-        "Tpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << *this->getMap()
-        << "a.getMap(): " << std::endl << *a.getMap() << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! this->getMap ()->isCompatible (*a.getMap ()), std::runtime_error,
+      "Tpetra::Vector::dots: Vectors do not have compatible Maps:" << std::endl
+      << "this->getMap(): " << std::endl << * (this->getMap ())
+      << "a.getMap(): " << std::endl << * (a.getMap ()) << std::endl);
 #else
-    TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
-        "Tpetra::Vector::dots(): Vectors do not have the same local length.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getLocalLength () != a.getLocalLength (), std::runtime_error,
+      "Tpetra::Vector::dots: Vectors do not have the same local length.");
 #endif
     Scalar gbldot;
-    gbldot = MVT::Dot(this->lclMV_,a.lclMV_);
-    if (this->isDistributed()) {
+    gbldot = MVT::Dot (this->lclMV_, a.lclMV_);
+    if (this->isDistributed ()) {
       Scalar lcldot = gbldot;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcldot,outArg(gbldot));
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
+                 lcldot, outArg (gbldot));
     }
     return gbldot;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue () const
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  meanValue () const
   {
     Scalar mean;
     this->meanValue (Teuchos::arrayView (&mean, 1));
@@ -164,7 +180,8 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2 () const
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  norm2 () const
   {
     mag_type norm;
     this->norm2 (Teuchos::arrayView (&norm, 1));
@@ -173,7 +190,8 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf () const
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  normInf () const
   {
     mag_type norm;
     this->normInf (Teuchos::arrayView (&norm, 1));
@@ -251,7 +269,8 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  description () const
   {
     using Teuchos::TypeNameTraits;
 
@@ -272,7 +291,8 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  void
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   describe (Teuchos::FancyOStream& out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {

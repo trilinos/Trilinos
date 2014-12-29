@@ -306,7 +306,6 @@ namespace Tpetra {
     return dst;
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<const Vector<
     Scalar,
@@ -344,7 +343,6 @@ namespace Tpetra {
                        subview<dual_view_type> (this->view_, offsetPair, ALL ()),
                        this->origView_));
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<Vector<
