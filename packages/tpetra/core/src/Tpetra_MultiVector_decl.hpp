@@ -72,6 +72,41 @@ namespace Tpetra {
 
 
   namespace Details {
+    /// \brief Implementation of ::Tpetra::MultiVector::clone().
+    ///
+    /// \tparam DstMultiVecType Specialization of
+    ///   ::Tpetra::MultiVector, which is the result of (is returned
+    ///   by) the clone() operation.
+    ///
+    /// \tparam SrcMultiVecType Specialization of
+    ///   ::Tpetra::MultiVector, which is the source (input) of the
+    ///   clone() operation.
+    ///
+    /// We provide partial specializations for the following cases:
+    /// <ol>
+    /// <li> Source and destination MultiVector types have the same
+    ///      Scalar type, but all their other template parameters
+    ///      might be different. </li>
+    /// <li> Source and destination MultiVector types are the
+    ///      same. </li>
+    /// <li> Source and destination MultiVector types are both Kokkos
+    ///      refactor types (we look at their Node types to determine
+    ///      this), and have the same Scalar types, but all their
+    ///      other template parameters might be different. </li>
+    /// <li> Source and destination MultiVector types are both Kokkos
+    ///      refactor types (we look at their Node types to determine
+    ///      this), and both the same. </li>
+    /// </ol>
+    template<class DstMultiVecType, class SrcMultiVecType>
+    struct MultiVectorCloner {
+      typedef DstMultiVecType dst_mv_type;
+      typedef SrcMultiVecType src_mv_type;
+
+      static Teuchos::RCP<dst_mv_type>
+      clone (const src_mv_type& X,
+             const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
+    };
+
     /// \brief Implementation of createMultiVectorFromView
     /// \tparam MultiVectorType A specialization of Tpetra::MultiVector.
     ///
@@ -329,8 +364,64 @@ namespace Tpetra {
   template<class Scalar = double,
            class LocalOrdinal = Map<>::local_ordinal_type,
            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-           class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
-  class MultiVector :
+           class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type,
+           const bool classic = Node::classic>
+  class MultiVector {
+    // See partial specializations for documentation of methods.
+  };
+
+  /// \brief Copy the contents of the MultiVector \c src into \c dst.
+  /// \relatesalso MultiVector
+  ///
+  /// \pre The two inputs must have the same communicator.
+  /// \pre The Map of \c src must be compatible with the Map of \c dst.
+  /// \pre The two inputs must have the same number of columns.
+  ///
+  /// Copy the contents of the MultiVector \c src into the MultiVector
+  /// \c dst.  ("Copy the contents" means the same thing as "deep
+  /// copy.")  The two MultiVectors need not necessarily have the same
+  /// template parameters, but the assignment of their entries must
+  /// make sense.  Furthermore, their Maps must be compatible, that
+  /// is, the MultiVectors' local dimensions must be the same on all
+  /// processes.
+  ///
+  /// This method must always be called as a collective operation on
+  /// all processes over which the multivector is distributed.  This
+  /// is because the method reserves the right to check for
+  /// compatibility of the two Maps, at least in debug mode, and throw
+  /// if they are not compatible.
+  template <class DS, class DL, class DG, class DN,
+            class SS, class SL, class SG, class SN>
+  void
+  deep_copy (MultiVector<DS,DL,DG,DN>& dst,
+             const MultiVector<SS,SL,SG,SN>& src);
+
+  /// \brief Return a deep copy of the given MultiVector.
+  /// \relatesalso MultiVector
+  ///
+  /// Regarding Copy or View semantics: The returned MultiVector is
+  /// always a deep copy of the input, and <i>always</i> has view
+  /// semantics.  This is because createCopy returns by value, and
+  /// therefore it assumes that you want to pass MultiVector objects
+  /// around by value, not by Teuchos::RCP.
+  ///
+  /// In the Kokkos refactor version of Tpetra, MultiVector always has
+  /// View semantics.  However, the above remarks still apply.
+  template <class ST, class LO, class GO, class NT>
+  MultiVector<ST, LO, GO, NT>
+  createCopy (const MultiVector<ST, LO, GO, NT>& src);
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
+  // Partial specialization for the "classic" Node types.  This is the
+  // original "classic" implementation of MultiVector.  It will be
+  // deprecated in the 11.14 release of Trilinos, and removed entirely
+  // in the 12.0 release.
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
+  class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> :
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 #else
@@ -474,13 +565,20 @@ namespace Tpetra {
                  const size_t LDA,
                  const size_t numVectors);
 
-    //! Create a cloned MultiVector for a different node type
+    /// \brief Return a deep copy of this MultiVector, with a
+    ///   different Node type.
     template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-    clone(const Teuchos::RCP<Node2> &node2) const;
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
+    clone (const Teuchos::RCP<Node2>& node2) const
+    {
+      typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> dst_mv_type;
+      typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> src_mv_type;
+      typedef Details::MultiVectorCloner<dst_mv_type, src_mv_type> cloner_type;
+      return cloner_type::clone (*this, node2);
+    }
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector();
+    virtual ~MultiVector ();
 
     //@}
     //! @name Post-construction modification routines
@@ -1319,117 +1417,25 @@ namespace Tpetra {
     //@}
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
-
     Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged>
-    getKokkosView() const {
+    getKokkosView () const {
       Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
-      Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
-        buff.getRawPtr(), buff.size());
-      return v;
-    }
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged>
-    getKokkosViewNonConst() {
-      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
-      Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
-        buff.getRawPtr(), buff.size());
+      typedef Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> the_view_type;
+      the_view_type v (buff.getRawPtr (), buff.size ());
       return v;
     }
 
-#endif
+    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    getKokkosViewNonConst () {
+      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
+      typedef Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> the_view_type;
+      the_view_type v (buff.getRawPtr (), buff.size ());
+      return v;
+    }
+#endif // TPETRA_USE_KOKKOS_DISTOBJECT
   };
 
-  /// \brief Copy the contents of the MultiVector \c src into \c dst.
-  /// \relatesalso MultiVector
-  ///
-  /// \pre The two inputs must have the same communicator.
-  /// \pre The Map of \c src must be compatible with the Map of \c dst.
-  /// \pre The two inputs must have the same number of columns.
-  ///
-  /// Copy the contents of the MultiVector \c src into the MultiVector
-  /// \c dst.  ("Copy the contents" means the same thing as "deep
-  /// copy.")  The two MultiVectors need not necessarily have the same
-  /// template parameters, but the assignment of their entries must
-  /// make sense.  Furthermore, their Maps must be compatible, that
-  /// is, the MultiVectors' local dimensions must be the same on all
-  /// processes.
-  ///
-  /// This method must always be called as a collective operation on
-  /// all processes over which the multivector is distributed.  This
-  /// is because the method reserves the right to check for
-  /// compatibility of the two Maps, at least in debug mode, and throw
-  /// if they are not compatible.
-  template <class DS, class DL, class DG, class DN,
-            class SS, class SL, class SG, class SN>
-  void
-  deep_copy (MultiVector<DS,DL,DG,DN>& dst,
-             const MultiVector<SS,SL,SG,SN>& src);
-  // {
-  //   TEUCHOS_TEST_FOR_EXCEPTION(
-  //     true, std::logic_error, "The fully generic version of Tpetra::deep_copy "
-  //     "is not implemented.");
-  // }
-
-  template <class SS, class SL, class SG, class SN>
-  void
-  deep_copy (MultiVector<SS,SL,SG,SN>& dst, const MultiVector<SS,SL,SG,SN>& src)
-  {
-    // NOTE (mfh 11 Sep 2014) We can't implement deep_copy with
-    // shallow-copy operator=, because that would invalidate existing
-    // views of dst!
-    dst.assign (src);
-  }
-
-  /// \brief Return a deep copy of the MultiVector \c src.
-  /// \relatesalso MultiVector
-  ///
-  /// Regarding Copy or View semantics: The returned MultiVector is
-  /// always a deep copy of \c src, and <i>always</i> has view
-  /// semantics.  This is because createCopy returns by value, and
-  /// therefore it assumes that you want to pass MultiVector objects
-  /// around by value, not by Teuchos::RCP.
-  ///
-  /// In the Kokkos refactor version of Tpetra, MultiVector always has
-  /// View semantics.  However, the above remarks still apply.
-  template <class ST, class LO, class GO, class NT>
-  MultiVector<ST, LO, GO, NT>
-  createCopy (const MultiVector<ST, LO, GO, NT>& src);
-
   namespace Details {
-    /// \brief Implementation of ::Tpetra::MultiVector::clone().
-    ///
-    /// \tparam DstMultiVecType Specialization of
-    ///   ::Tpetra::MultiVector, which is the result of (is returned
-    ///   by) the clone() operation.
-    ///
-    /// \tparam SrcMultiVecType Specialization of
-    ///   ::Tpetra::MultiVector, which is the source (input) of the
-    ///   clone() operation.
-    ///
-    /// We provide partial specializations for the following cases:
-    /// <ol>
-    /// <li> Source and destination MultiVector types have the same
-    ///      Scalar type, but all their other template parameters
-    ///      might be different. </li>
-    /// <li> Source and destination MultiVector types are the
-    ///      same. </li>
-    /// <li> Source and destination MultiVector types are both Kokkos
-    ///      refactor types (we look at their Node types to determine
-    ///      this), and have the same Scalar types, but all their
-    ///      other template parameters might be different. </li>
-    /// <li> Source and destination MultiVector types are both Kokkos
-    ///      refactor types (we look at their Node types to determine
-    ///      this), and both the same. </li>
-    /// </ol>
-    template<class DstMultiVecType, class SrcMultiVecType>
-    struct MultiVectorCloner {
-      typedef DstMultiVecType dst_mv_type;
-      typedef SrcMultiVecType src_mv_type;
-
-      static Teuchos::RCP<dst_mv_type>
-      clone (const src_mv_type& X,
-             const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
-    };
-
     // Partial specialization of MultiVectorCloner for when the source
     // and destination MultiVector types have the same Scalar type,
     // but all their other template parameters might be different.
@@ -1516,17 +1522,26 @@ namespace Tpetra {
     }
   } // namespace Details
 
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class Node2>
-  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clone (const Teuchos::RCP<Node2>& node2) const
+} // namespace Tpetra
+
+// Include Kokkos refactor partial specialization if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
+#endif
+
+namespace Tpetra {
+
+  // Implementation (declaration is above).
+  template <class SS, class SL, class SG, class SN>
+  void
+  deep_copy (MultiVector<SS,SL,SG,SN>& dst, const MultiVector<SS,SL,SG,SN>& src)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> dst_mv_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> src_mv_type;
-    typedef Details::MultiVectorCloner<dst_mv_type, src_mv_type> cloner_type;
-    return cloner_type::clone (*this, node2);
+    // NOTE (mfh 11 Sep 2014) We can't implement deep_copy with
+    // shallow-copy operator=, because that would invalidate existing
+    // views of dst!
+    dst.assign (src);
   }
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
@@ -1548,20 +1563,22 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-// Include KokkosRefactor partial specialization if enabled
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
-#endif
-
-// Define createMultiVectorFromView after the above include, so that
-// the function can pick up the partial specialization of
-// CreateMultiVectorFromView.
-
 namespace Tpetra {
 
-  /// \brief Nonmember MultiVector constructor with view semantics using user-allocated data.
+  // NOTE to Tpetra developers: Define createMultiVectorFromView after
+  // including the declarations header for the Kokkos refactor version
+  // of MultiVector, so that createMultiVectorFromView's
+  // implementation can pick up the partial specialization of
+  // CreateMultiVectorFromView.
+
+  /// \brief Nonmember MultiVector constructor with view semantics
+  ///   using user-allocated data.
   /// \relatesalso MultiVector
   /// \relatesalso Vector
+  ///
+  /// \warning This function is DEPRECATED.  Please use the Kokkos
+  ///   refactor version of Tpetra, with constructors that accept
+  ///   Kokkos::DualView.
   ///
   /// \warning This function is not supported for all Kokkos Node
   ///   types.  Specifically, it is not typically supported for

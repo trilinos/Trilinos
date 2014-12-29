@@ -519,13 +519,16 @@ namespace Tpetra {
            class LocalOrdinal,
            class GlobalOrdinal,
            class DeviceType>
-  class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
-    public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+  class MultiVector<Scalar,
+                    LocalOrdinal,
+                    GlobalOrdinal,
+                    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+                    false> :
+    public DistObject<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   {
-  private:
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
-
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
@@ -539,6 +542,11 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
+  private:
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
+    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, node_type> base_type;
+
+  public:
     /// \brief Type of an inner ("dot") product result.
     ///
     /// This is usually the same as <tt>scalar_type</tt>, but may
@@ -740,13 +748,14 @@ namespace Tpetra {
                  const dual_view_type& origView,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
 
-    //! Return a deep copy of <tt>*this</tt>, for a different Kokkos Node type.
+    /// \brief Return a deep copy of this MultiVector, with a
+    ///   different Node type.
     template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
     clone (const Teuchos::RCP<Node2> &node2) const;
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector();
+    virtual ~MultiVector ();
 
     //@}
     //! @name Post-construction modification routines
@@ -1001,8 +1010,8 @@ namespace Tpetra {
     ///   distributed.  This is because the method reserves the right
     ///   to check for compatibility of the two Maps, at least in
     ///   debug mode.
-    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source);
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false>&
+    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false>& source);
 
     //@}
 
