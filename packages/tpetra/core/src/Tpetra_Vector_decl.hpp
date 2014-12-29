@@ -428,6 +428,7 @@ protected:
 ///   types. Specifically, it is not supported for GPU-based nodes
 ///   like KokkosClassic::ThrustGPUNode.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TPETRA_DEPRECATED
 Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> >
 createVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
                       const Teuchos::ArrayRCP<Scalar>& view)
