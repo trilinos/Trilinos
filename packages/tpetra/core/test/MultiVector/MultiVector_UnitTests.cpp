@@ -171,40 +171,52 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NonMemberConstructors, LO, GO, Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+
+    // Create a MultiVector, and make sure that it has the right
+    // number of vectors (columns).
     RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
-    RCP<V>   vec = Tpetra::createVector<Scalar>(map);
     TEST_EQUALITY(mvec->getNumVectors(), numVecs);
+
+    // Create a Vector, and make sure that it has exactly one vector
+    // (column).
+    RCP<V> vec = Tpetra::createVector<Scalar>(map);
     TEST_EQUALITY_CONST(vec->getNumVectors(), 1);
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int numImages = comm->getSize ();
+
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    MV mvec(map,numVecs,true);
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    MV mvec (map, numVecs, true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
     TEST_EQUALITY( mvec.getLocalLength(), numLocal );
     TEST_EQUALITY( mvec.getGlobalLength(), numImages*numLocal );
+
     // we zeroed it out in the constructor; all norms should be zero
     Array<Magnitude> norms(numVecs), zeros(numVecs);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
@@ -222,14 +234,16 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadConstNumVecs, LO, GO, Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+
     // create a Map
     const size_t numLocal = 13;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+
     TEST_THROW(MV mvec(map,0),  std::invalid_argument);
     if (std::numeric_limits<size_t>::is_signed) {
       TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
@@ -1313,11 +1327,12 @@ namespace {
 
     // Get a communicator and Kokkos node instance.
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
 
     // Create a Map with a nonzero number of entries on each process.
     const size_t numLocalEntries = 10;
-    RCP<const map_type> map = createContigMapWithNode<LO,GO> (INVALID, numLocalEntries, comm, node);
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocalEntries, indexBase, comm));
 
     // Create a MultiVector X using that Map.  Give it some number of
     // columns (vectors) other than 1, just to exercise the most
@@ -1330,7 +1345,8 @@ namespace {
     TEST_EQUALITY( X->getNumVectors (), numVecs );
 
     // Create a Map with zero entries on every process.
-    RCP<const map_type> mapZero = createContigMapWithNode<LO,GO> (INVALID, 0, comm, node);
+    RCP<const map_type> mapZero =
+      rcp (new map_type (INVALID, 0, indexBase, comm));
 
     // Case 1: X1 has the same local number of rows as X, and X2 has
     // zero local rows.  Thus, X2 will be a zero-length view of X,
@@ -2117,6 +2133,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SingleVecNormalize, LO , GO , Scalar , Node )
   {
+    typedef Map<LO, GO, Node> map_type;
+
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(),
@@ -2131,7 +2149,9 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVectors = 6;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
     // create random MV
     MV mv(map,numVectors);
     mv.randomize();
