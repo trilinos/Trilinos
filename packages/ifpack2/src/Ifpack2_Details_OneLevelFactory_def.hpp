@@ -145,6 +145,7 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_ONELEVELFACTORY_INSTANT(S,LO,GO,N)              \
-  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Details::OneLevelFactory< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_ONELEVELFACTORY_DEF_HPP
