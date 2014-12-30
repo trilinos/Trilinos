@@ -169,6 +169,9 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
+  /// \tparam classic This is an implementation detail of Tpetra.
+  ///   Users must NOT specify this explicitly.  The default value is
+  ///   ALWAYS correct.
   ///
   /// \section Kokkos_MV_prereq Prerequisites
   ///

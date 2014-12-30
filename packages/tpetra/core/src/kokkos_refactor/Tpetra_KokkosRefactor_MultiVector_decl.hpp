@@ -314,14 +314,17 @@ namespace Tpetra {
   /// mentioned above.
   ///
   /// \tparam Scalar The type of each entry of the multivector.  (You
-  ///  can use real-valued or complex-valued types here, unlike in
-  ///  Epetra, where the scalar type is always \c double.)
+  ///   can use real-valued or complex-valued types here, unlike in
+  ///   Epetra, where the scalar type is always \c double.)
   /// \tparam LocalOrdinal The type of local indices.  See the
   ///   documentation of Map for requirements.
   /// \tparam GlobalOrdinal The type of global indices.  See the
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
+  /// \tparam classic This is an implementation detail of Tpetra.
+  ///   Users must NOT specify this explicitly.  The default value is
+  ///   ALWAYS correct.
   ///
   /// \section Kokkos_KR_MV_prereq Prerequisites
   ///
