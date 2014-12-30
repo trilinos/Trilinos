@@ -174,8 +174,8 @@ namespace { // anonymous
 
   template<class DstViewType,
            class SrcViewType = DstViewType,
-           class DstWhichVecsType = Kokkos::View<const typename DstViewType::size_type*, typename DstViewType::memory_space>,
-           class SrcWhichVecsType = Kokkos::View<const typename SrcViewType::size_type*, typename SrcViewType::memory_space> >
+           class DstWhichVecsType = Kokkos::View<const typename DstViewType::size_type*, typename DstViewType::execution_space>,
+           class SrcWhichVecsType = Kokkos::View<const typename SrcViewType::size_type*, typename SrcViewType::execution_space> >
   struct LocalDeepCopy {
     typedef typename DstViewType::size_type index_type;
 
@@ -266,7 +266,8 @@ namespace { // anonymous
   {
     typedef LocalDeepCopy<DstViewType, SrcViewType,
       DstWhichVecsType, SrcWhichVecsType> impl_type;
-    impl_type::run (dst, src, dstConstStride, srcConstStride, dstWhichVecs, srcWhichVecs);
+    impl_type::run (dst, src, dstConstStride, srcConstStride,
+                    dstWhichVecs, srcWhichVecs);
   }
 
   template<class DstViewType, class SrcViewType>
@@ -2284,7 +2285,8 @@ namespace Tpetra {
           //
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and use it there.
-          typedef Kokkos::View<SL*, host_mirror_space> the_whichvecs_type;
+          typedef Kokkos::View<SL*, typename host_mirror_space::execution_space>
+            the_whichvecs_type;
           the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
           for (SL i = 0; i < numWhichVecs; ++i) {
             whichVecs(i) = static_cast<SL> (src.whichVectors_[i]);

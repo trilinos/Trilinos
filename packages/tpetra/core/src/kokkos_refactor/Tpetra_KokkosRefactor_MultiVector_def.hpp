@@ -403,7 +403,7 @@ namespace Tpetra {
         view_.h_view(i,j) = ArrayOfPtrs[j][i];
       }
     }
-    view_.template modify<typename dual_view_type::t_host::device_type> ();
+    view_.template modify<typename dual_view_type::t_host::memory_space> ();
 
     origView_ = view_;
   }
@@ -1797,17 +1797,21 @@ namespace Tpetra {
     this->map_ = newMap;
   }
 
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  scale (const Scalar &alpha)
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  scale (const Scalar& alpha)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_host::memory_space HMS;
+    typedef typename dual_view_type::t_dev::execution_space DMS;
+    typedef typename dual_view_type::t_host::execution_space HMS;
 
     const scalar_type theAlpha = static_cast<scalar_type> (alpha);
     const size_t lclNumRows = getLocalLength ();
@@ -3564,12 +3568,12 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& src)
   {
     using Kokkos::parallel_for;
     typedef LocalOrdinal LO;
-    typedef typename DeviceType::memory_space DT;
-    typedef typename dual_view_type::host_mirror_space HMDT;
+    typedef typename DeviceType::execution_space DT;
+    typedef typename dual_view_type::host_mirror_space::execution_space HMDT;
     const bool debug = false;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
