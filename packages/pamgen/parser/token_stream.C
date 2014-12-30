@@ -57,7 +57,7 @@ namespace PAMGEN_NEVADA{
     error_count(0),
     recovery_flag(false)
   {
-    assert(in != 0);
+    assert (in);
 
     input = &in;
     if(ib)blockstack.push(ib);
