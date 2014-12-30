@@ -305,14 +305,14 @@ namespace MueLu {
 
     RCP<const CrsMatrix> crsMat = crsOp->getCrsMatrix();
     const RCP<const TpetraCrsMatrix> tmp_Crs = rcp_dynamic_cast<const TpetraCrsMatrix>(crsMat);
-    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;    
+    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;
     if(!tmp_Crs.is_null()) {
       return tmp_Crs->getTpetra_CrsMatrixNonConst();
     }
-    else { 
+    else {
       tmp_BlockCrs= rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsMat);
       if (tmp_BlockCrs.is_null())
-	throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+        throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
       return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
     }
   }
@@ -325,14 +325,14 @@ namespace MueLu {
 
     RCP<const CrsMatrix> crsMat = crsOp->getCrsMatrix();
     const RCP<const TpetraCrsMatrix> tmp_Crs = rcp_dynamic_cast<const TpetraCrsMatrix>(crsMat);
-    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;    
+    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;
     if(!tmp_Crs.is_null()) {
       return tmp_Crs->getTpetra_CrsMatrixNonConst();
     }
-    else { 
+    else {
       tmp_BlockCrs= rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsMat);
       if (tmp_BlockCrs.is_null())
-	throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+        throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
       return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
     }
   }
@@ -355,12 +355,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(Scalar omega,
-							   const Vector& Dinv,
-							   const Matrix& A,
-							   const Matrix& B,
-							   RCP<Matrix> C_in,
-							   Teuchos::FancyOStream &fos,
-							   const std::string & label) {
+                                                           const Vector& Dinv,
+                                                           const Matrix& A,
+                                                           const Matrix& B,
+                                                           RCP<Matrix> C_in,
+                                                           Teuchos::FancyOStream &fos,
+                                                           const std::string & label) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -385,8 +385,8 @@ namespace MueLu {
                                                                           RCP<Matrix> C_in,
                                                                           Teuchos::FancyOStream& fos,
                                                                           bool doFillComplete,
-							                  bool doOptimizeStorage,
-							                  const std::string & label) {
+                                                                          bool doOptimizeStorage,
+                                                                          const std::string & label) {
 
     TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
     TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
@@ -620,7 +620,8 @@ namespace MueLu {
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos, fos);
+          //RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos, fos);
+          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
 
           if (Cij.is_null ())
             Cij = temp;
