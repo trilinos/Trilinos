@@ -42,28 +42,14 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_DISTOBJECT_DECL_HPP
 #define TPETRA_KOKKOS_REFACTOR_DISTOBJECT_DECL_HPP
 
-/* These are provided in base DistObject template
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_Import.hpp"
-#include "Tpetra_Export.hpp"
-#include "Tpetra_SrcDistObject.hpp"
-*/
+// This file is included by Tpetra_DistObject_decl.hpp, after all of
+// that file's includes, so we don't have to include headers of
+// general use for DistObject here.
 
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
-
-/* These are provided in base DistObject template
-// #ifndef HAVE_TPETRA_TRANSFER_TIMERS
-// #  define HAVE_TPETRA_TRANSFER_TIMERS 1
-// #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-#  undef HAVE_TPETRA_TRANSFER_TIMERS
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-*/
 
 namespace Tpetra {
   /// \class DistObject
@@ -72,9 +58,12 @@ namespace Tpetra {
   template <class Packet,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Device>
-  class DistObject<Packet, LocalOrdinal, GlobalOrdinal,
-                   Kokkos::Compat::KokkosDeviceWrapperNode<Device> > :
+            class DeviceType>
+  class DistObject<Packet,
+                   LocalOrdinal,
+                   GlobalOrdinal,
+                   Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+                   false> :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {
   public:
@@ -91,14 +80,14 @@ namespace Tpetra {
     //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Device type.
-    typedef Device device_type;
+    typedef DeviceType device_type;
     //! The Kokkos Node type.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<device_type> node_type;
 
   private:
     typedef typename Kokkos::View<packet_type*, device_type>::size_type view_size_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
-    typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,node_type> this_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
+    typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, node_type> this_type;
 
   public:
     //! The type of the Map specialization to use with this class.

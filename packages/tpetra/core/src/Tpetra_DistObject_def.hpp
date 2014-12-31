@@ -51,8 +51,11 @@
 
 
 namespace Tpetra {
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map)
     : map_ (map)
   {
@@ -104,18 +107,18 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& rhs)
     : map_ (rhs.map_)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::~DistObject()
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::~DistObject()
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::description () const
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::description () const
   {
     using Teuchos::TypeNameTraits;
 
@@ -131,7 +134,7 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -153,43 +156,16 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
   }
 
-  template<class DistObjectType>
-  void
-  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
-                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
-                                                            typename DistObjectType::global_ordinal_type,
-                                                            typename DistObjectType::node_type> >& newMap)
-  {
-    input->removeEmptyProcessesInPlace (newMap);
-    if (newMap.is_null ()) { // my process is excluded
-      input = Teuchos::null;
-    }
-  }
-
-  template<class DistObjectType>
-  void
-  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input)
-  {
-    using Teuchos::RCP;
-    typedef typename DistObjectType::local_ordinal_type LO;
-    typedef typename DistObjectType::global_ordinal_type GO;
-    typedef typename DistObjectType::node_type NT;
-    typedef Map<LO, GO, NT> map_type;
-
-    RCP<const map_type> newMap = input->getMap ()->removeEmptyProcesses ();
-    removeEmptyProcessesInPlace<DistObjectType> (input, newMap);
-  }
-
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   doImport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
             CombineMode CM)
@@ -199,7 +175,7 @@ namespace Tpetra {
       "identical to the Import's target Map.");
 #ifdef HAVE_TPETRA_DEBUG
     {
-      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> this_type;
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
         srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getSourceMap(),
@@ -221,7 +197,7 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   doExport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
             CombineMode CM)
@@ -253,7 +229,7 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   doImport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
             CombineMode CM)
@@ -264,7 +240,7 @@ namespace Tpetra {
       "to the Export's source Map.");
 #ifdef HAVE_TPETRA_DEBUG
     {
-      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> this_type;
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
         srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getTargetMap(),
@@ -286,9 +262,9 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   doExport (const SrcDistObject& source,
-            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
+            const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
             CombineMode CM)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -319,20 +295,21 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
+  isDistributed () const {
     return map_->isDistributed ();
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   constantNumberOfPackets () const {
     return 0; // default implementation; subclasses may override
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   doTransfer (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
@@ -542,7 +519,8 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::print (std::ostream &os) const
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
+  print (std::ostream& os) const
   {
     using Teuchos::FancyOStream;
     using Teuchos::getFancyOStream;
@@ -556,26 +534,58 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::createViews () const
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
+  createViews () const
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true>::
   releaseViews () const
   {}
 
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
+  template<class DistObjectType>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
+                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
+                                                            typename DistObjectType::global_ordinal_type,
+                                                            typename DistObjectType::node_type> >& newMap)
+  {
+    input->removeEmptyProcessesInPlace (newMap);
+    if (newMap.is_null ()) { // my process is excluded
+      input = Teuchos::null;
+    }
+  }
+
+  template<class DistObjectType>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input)
+  {
+    using Teuchos::RCP;
+    typedef typename DistObjectType::local_ordinal_type LO;
+    typedef typename DistObjectType::global_ordinal_type GO;
+    typedef typename DistObjectType::node_type NT;
+    typedef Map<LO, GO, NT> map_type;
+
+    RCP<const map_type> newMap = input->getMap ()->removeEmptyProcesses ();
+    removeEmptyProcessesInPlace<DistObjectType> (input, newMap);
+  }
+
+// Explicit instantiation macro for general DistObject.
 #define TPETRA_DISTOBJECT_INSTANT(SCALAR, LO, GO, NODE) \
   \
   template class DistObject< SCALAR , LO , GO , NODE >;
 
- // The "SLGN" stuff above doesn't work for Packet=char.
+// Explicit instantiation macro for DistObject<char, ...>.
+// The "SLGN" stuff above doesn't work for Packet=char.
 #define TPETRA_DISTOBJECT_INSTANT_CHAR(LO, GO, NODE) \
   \
   template class DistObject< char , LO , GO , NODE >;

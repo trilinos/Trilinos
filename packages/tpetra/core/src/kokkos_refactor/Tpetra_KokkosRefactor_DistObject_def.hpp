@@ -53,8 +53,8 @@
 #endif // DOXYGEN_USE_ONLY
 
 namespace Tpetra {
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   DistObject (const Teuchos::RCP<const map_type>& map) : map_ (map)
   {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -104,20 +104,20 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,node_type>& rhs)
     : map_ (rhs.map_)
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   ~DistObject ()
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   std::string
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   description () const
   {
     using Teuchos::TypeNameTraits;
@@ -127,7 +127,7 @@ namespace Tpetra {
        << "Packet: " << TypeNameTraits<packet_type>::name ()
        << ", LocalOrdinal: " << TypeNameTraits<local_ordinal_type>::name ()
        << ", GlobalOrdinal: " << TypeNameTraits<global_ordinal_type>::name ()
-       << ", Node: " << TypeNameTraits<node_type>::name ();
+       << ", DeviceType: " << TypeNameTraits<device_type>::name ();
     if (this->getObjectLabel () != "") {
       os << "Label: \"" << this->getObjectLabel () << "\"";
     }
@@ -135,9 +135,9 @@ namespace Tpetra {
     return os.str ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -200,9 +200,9 @@ namespace Tpetra {
     } // if vl != VERB_NONE
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -238,9 +238,9 @@ namespace Tpetra {
   }
   */
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doImport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,node_type>& importer,
             CombineMode CM)
@@ -269,9 +269,9 @@ namespace Tpetra {
                       DoForward);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doExport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,node_type>& exporter,
             CombineMode CM)
@@ -300,9 +300,9 @@ namespace Tpetra {
                 exportLIDs, exporter.getDistributor (), DoForward);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doImport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,node_type> & exporter,
             CombineMode CM)
@@ -332,9 +332,9 @@ namespace Tpetra {
                 exportLIDs, exporter.getDistributor (), DoReverse);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doExport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,node_type> & importer,
             CombineMode CM)
@@ -364,23 +364,23 @@ namespace Tpetra {
                 exportLIDs, importer.getDistributor (), DoReverse);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   isDistributed () const {
     return map_->isDistributed ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   constantNumberOfPackets () const {
     return 0; // default implementation; subclasses may override
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doTransfer (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
@@ -399,9 +399,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doTransferOld (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
@@ -607,9 +607,9 @@ namespace Tpetra {
     this->releaseViews ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   doTransferNew (const SrcDistObject& src,
                  CombineMode CM,
                  size_t numSameIDs,
@@ -910,9 +910,9 @@ namespace Tpetra {
     this->releaseViews ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   print (std::ostream &os) const
   {
     using Teuchos::FancyOStream;
@@ -925,21 +925,21 @@ namespace Tpetra {
     this->describe (*out, Teuchos::VERB_DEFAULT);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   createViews () const
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   releaseViews () const
   {}
 

@@ -169,8 +169,17 @@ namespace Tpetra {
   template <class Packet,
             class LocalOrdinal = Map<>::local_ordinal_type,
             class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
-  class DistObject :
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type,
+            const bool classic = Node::classic>
+  class DistObject {};
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
+  template <class Packet,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  class DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true> :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {
   public:
@@ -652,6 +661,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
   }; // class DistObject
 
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
 
   /// \brief Remove processes which contain no elements in this object's Map.
   ///
