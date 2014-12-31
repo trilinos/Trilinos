@@ -108,31 +108,27 @@ namespace Tpetra {
     };
   } // namespace Details
 
-  /// \brief Partial specialization of CrsGraph for the new Kokkos Node types.
-  ///
-  /// This implements the "Kokkos refactor" version of CrsGraph.
-  /// For full documentation, see the "classic" version of CrsGraph.
+  /// \brief Partial specialization of the "Kokkos refactor" (new)
+  ///   version of CrsGraph.
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class DeviceType>
-  class CrsGraph<
-    LocalOrdinal, // the type of local indices
-    GlobalOrdinal, // the type of global indices
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > // the Kokkos Node type
-      : public RowGraph<
-        LocalOrdinal,
-        GlobalOrdinal,
-        Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
-        public DistObject<
-        GlobalOrdinal,
-        LocalOrdinal,
-        GlobalOrdinal,
-        Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
-        public Teuchos::ParameterListAcceptorDefaultBase
+  class CrsGraph<LocalOrdinal, // the type of local indices
+                 GlobalOrdinal, // the type of global indices
+                 Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, // the Kokkos Node type
+                 false> : // the Kokkos refactor version of CrsGraph, NOT the "classic" version
+    public RowGraph<LocalOrdinal,
+                    GlobalOrdinal,
+                    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+    public DistObject<GlobalOrdinal,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+    public Teuchos::ParameterListAcceptorDefaultBase
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
-    template <class LO2, class GO2, class N2>
+    template <class LO2, class GO2, class N2, const bool isClassic>
     friend class CrsGraph;
     template <class S, class LO, class GO, class N>
     friend class ::Tpetra::Experimental::BlockCrsMatrix;

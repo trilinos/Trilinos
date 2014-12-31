@@ -70,7 +70,7 @@ namespace Tpetra {
   // over them and go down to the CrsMatrix class declaration.  Thank
   // you.
   //
-  template <class LO, class GO, class N>
+  template <class LO, class GO, class N, const bool isClassic>
   class CrsGraph;
 
   template <class S, class LO, class GO, class N>
@@ -175,8 +175,19 @@ namespace Tpetra {
   /// latter calls the former).
   template <class LocalOrdinal = RowGraph<>::local_ordinal_type,
             class GlobalOrdinal = typename RowGraph<LocalOrdinal>::global_ordinal_type,
-            class Node = typename RowGraph<LocalOrdinal, GlobalOrdinal>::node_type>
-  class CrsGraph :
+            class Node = typename RowGraph<LocalOrdinal, GlobalOrdinal>::node_type,
+            const bool classic = Node::classic>
+  class CrsGraph {
+    // See partial specializations for documentation of methods.
+  };
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
+  //! Partial specialization for the "classic" version of Tpetra.
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  class CrsGraph<LocalOrdinal, GlobalOrdinal, Node, true> :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
     public Teuchos::ParameterListAcceptorDefaultBase
@@ -185,7 +196,7 @@ namespace Tpetra {
     friend class CrsMatrix;
     template <class S, class LO, class GO, class N>
     friend class Experimental::BlockCrsMatrix;
-    template <class LO2, class GO2, class N2>
+    template <class LO2, class GO2, class N2, const bool isClassic>
     friend class CrsGraph;
     template<class OutputCrsGraphType, class InputCrsGraphType>
     friend class Details::CrsGraphCopier;
@@ -1804,15 +1815,17 @@ namespace Tpetra {
 
   }; // class CrsGraph
 
-  /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
 
-      \return A dynamically allocated (DynamicProfile) graph with specified number of nonzeros per row (defaults to zero).
-
-      \relatesalso CrsGraph
-   */
+  /// \brief Nonmember function to create an empty CrsGraph given a
+  ///   row Map and the max number of entries allowed locally per row.
+  ///
+  /// \return A dynamically allocated (DynamicProfile) graph with
+  ///   specified number of nonzeros per row (defaults to zero).
+  /// \relatesalso CrsGraph
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+  Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
                    size_t maxNumEntriesPerRow = 0,
                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
@@ -1820,8 +1833,6 @@ namespace Tpetra {
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
     return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
   }
-
-
 
 namespace Details {
 
