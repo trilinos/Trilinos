@@ -73,7 +73,7 @@ namespace Tpetra {
   template <class LO, class GO, class N, const bool isClassic>
   class CrsGraph;
 
-  template <class S, class LO, class GO, class N>
+  template <class S, class LO, class GO, class N, const bool isClassic>
   class CrsMatrix;
 
   namespace Experimental {
@@ -192,7 +192,7 @@ namespace Tpetra {
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
-    template <class S, class LO, class GO, class N>
+    template <class S, class LO, class GO, class N, const bool isClassic>
     friend class CrsMatrix;
     template <class S, class LO, class GO, class N>
     friend class Experimental::BlockCrsMatrix;

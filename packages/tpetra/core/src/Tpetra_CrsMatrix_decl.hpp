@@ -169,8 +169,20 @@ namespace Tpetra {
   template <class Scalar = RowMatrix<>::scalar_type,
             class LocalOrdinal = typename RowMatrix<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class CrsMatrix :
+            class Node = typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            const bool classic = Node::classic>
+  class CrsMatrix {
+    // See partial specializations for documentation of methods.
+  };
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
+  //! Partial specialization for the "classic" version of Tpetra.
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  class CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> :
     public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
@@ -360,7 +372,7 @@ namespace Tpetra {
                const RCP<ParameterList>& params = null);
 
     // This friend declaration makes the clone() method work.
-    template <class S2, class LO2, class GO2, class N2>
+    template <class S2, class LO2, class GO2, class N2, const bool isClassic>
     friend class CrsMatrix;
 
     /// \brief Create a deep copy of this CrsMatrix, where the copy
@@ -1667,7 +1679,7 @@ namespace Tpetra {
 
     //! Returns another CrsMatrix with the same entries, but represented as a different scalar type.
     template <class T>
-    RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,node_type> > convert() const;
+    RCP<CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type> > convert() const;
 
     //@}
     //! @name Methods implementing Operator
@@ -1944,8 +1956,8 @@ namespace Tpetra {
     add (const Scalar& alpha,
          const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& A,
          const Scalar& beta,
-         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& domainMap,
-         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& rangeMap,
+         const Teuchos::RCP<const map_type>& domainMap,
+         const Teuchos::RCP<const map_type>& rangeMap,
          const Teuchos::RCP<Teuchos::ParameterList>& params) const;
 
     //@}
@@ -2123,7 +2135,7 @@ namespace Tpetra {
 
     // We forbid copy construction by declaring this method private
     // and not implementing it.
-    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &rhs);
+    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& rhs);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
@@ -2159,8 +2171,8 @@ namespace Tpetra {
     /// has a static graph.
     void
     combineGlobalValues (const GlobalOrdinal globalRowIndex,
-                         const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
-                         const Teuchos::ArrayView<const Scalar> values,
+                         const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
+                         const Teuchos::ArrayView<const Scalar>& values,
                          const Tpetra::CombineMode combineMode);
 
     /// \brief Transform CrsMatrix entries, using global indices.
@@ -2559,6 +2571,8 @@ namespace Tpetra {
     mutable Magnitude frobNorm_;
   }; // class CrsMatrix
 
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+
   /** \brief Non-member function to create an empty CrsMatrix given a row map and a non-zero profile.
 
       \return A dynamically allocated (DynamicProfile) matrix with specified number of nonzeros per row (defaults to zero).
@@ -2567,13 +2581,13 @@ namespace Tpetra {
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                    size_t maxNumEntriesPerRow = 0,
                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    using Teuchos::rcp;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-    return rcp (new matrix_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+    return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow,
+                                          DynamicProfile, params));
   }
 
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
