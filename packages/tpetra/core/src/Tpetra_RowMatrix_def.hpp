@@ -63,7 +63,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -183,7 +182,7 @@ namespace Tpetra {
     // sum of the two entry counts in each row.  If we choose this as
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
-      const LO localNumRows = as<LO> (A_rowMap->getNodeNumElements ());
+      const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
       ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
@@ -236,11 +235,11 @@ namespace Tpetra {
     Array<Scalar> val;
 
     if (alpha != STS::zero ()) {
-      const LO A_localNumRows = as<LO> (A_rowMap->getNodeNumElements ());
+      const LO A_localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
       for (LO localRow = 0; localRow < A_localNumRows; ++localRow) {
         size_t A_numEntries = A.getNumEntriesInLocalRow (localRow);
         const GO globalRow = A_rowMap->getGlobalElement (localRow);
-        if (A_numEntries > as<size_t> (ind.size ())) {
+        if (A_numEntries > static_cast<size_t> (ind.size ())) {
           ind.resize (A_numEntries);
           val.resize (A_numEntries);
         }
@@ -258,11 +257,11 @@ namespace Tpetra {
     }
 
     if (beta != STS::zero ()) {
-      const LO B_localNumRows = as<LO> (B_rowMap->getNodeNumElements ());
+      const LO B_localNumRows = static_cast<LO> (B_rowMap->getNodeNumElements ());
       for (LO localRow = 0; localRow < B_localNumRows; ++localRow) {
         size_t B_numEntries = B.getNumEntriesInLocalRow (localRow);
         const GO globalRow = B_rowMap->getGlobalElement (localRow);
-        if (B_numEntries > as<size_t> (ind.size ())) {
+        if (B_numEntries > static_cast<size_t> (ind.size ())) {
           ind.resize (B_numEntries);
           val.resize (B_numEntries);
         }
@@ -295,10 +294,10 @@ namespace Tpetra {
   void
   RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	Teuchos::Array<char>& exports,
-	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	size_t& constantNumPackets,
-	Distributor &distor) const
+        Teuchos::Array<char>& exports,
+        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+        size_t& constantNumPackets,
+        Distributor &distor) const
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -393,31 +392,31 @@ namespace Tpetra {
       // parallel kernel, by using the CSR data layout to calculate
       // positions in the output buffer.
       for (size_type i = 0; i < exportGIDs.size(); ++i) {
-	// Get a copy of the current row's data.
-	size_t curNumEntries = 0;
-	this->getGlobalRowCopy (exportGIDs[i], inds (), vals (), curNumEntries);
-	// inds and vals arrays might have more entries than the row.
-	// curNumEntries is the number of valid entries of these arrays.
-	ArrayView<const GO> curInds = inds (0, as<size_type> (curNumEntries));
-	ArrayView<const Scalar> curVals = vals (0, as<size_type> (curNumEntries));
+        // Get a copy of the current row's data.
+        size_t curNumEntries = 0;
+        this->getGlobalRowCopy (exportGIDs[i], inds (), vals (), curNumEntries);
+        // inds and vals arrays might have more entries than the row.
+        // curNumEntries is the number of valid entries of these arrays.
+        ArrayView<const GO> curInds = inds (0, as<size_type> (curNumEntries));
+        ArrayView<const Scalar> curVals = vals (0, as<size_type> (curNumEntries));
 
-	// Get views of the spots in the exports array in which to
-	// put the indices resp. values.  See notes and FIXME above.
-	ArrayView<char> outIndsChar = 
-	  exports (curOffsetInBytes, curNumEntries * sizeof (GO));
-	ArrayView<char> outValsChar = 
-	  exports (curOffsetInBytes + curNumEntries * sizeof (GO),
-		   curNumEntries * sizeof (Scalar));
+        // Get views of the spots in the exports array in which to
+        // put the indices resp. values.  See notes and FIXME above.
+        ArrayView<char> outIndsChar =
+          exports (curOffsetInBytes, curNumEntries * sizeof (GO));
+        ArrayView<char> outValsChar =
+          exports (curOffsetInBytes + curNumEntries * sizeof (GO),
+                   curNumEntries * sizeof (Scalar));
 
-	// Cast the above views of char as views of GO resp. Scalar.
-	ArrayView<GO> outInds = av_reinterpret_cast<GO> (outIndsChar);
-	ArrayView<Scalar> outVals = av_reinterpret_cast<Scalar> (outValsChar);
+        // Cast the above views of char as views of GO resp. Scalar.
+        ArrayView<GO> outInds = av_reinterpret_cast<GO> (outIndsChar);
+        ArrayView<Scalar> outVals = av_reinterpret_cast<Scalar> (outValsChar);
 
-	// Copy the source matrix's row data into the views of the
-	// exports array for indices resp. values.
-	std::copy (curInds.begin(), curInds.end(), outInds.begin());
-	std::copy (curVals.begin(), curVals.end(), outVals.begin());
-	curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
+        // Copy the source matrix's row data into the views of the
+        // exports array for indices resp. values.
+        std::copy (curInds.begin(), curInds.end(), outInds.begin());
+        std::copy (curVals.begin(), curVals.end(), outVals.begin());
+        curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
       }
 
 #ifdef HAVE_TPETRA_DEBUG
