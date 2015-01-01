@@ -186,6 +186,20 @@ IF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_Epetra)
 
 #
+# PyTrilinos + Tpetra headers and sources
+IF(PyTrilinos_ENABLE_Tpetra)
+
+  LIST(APPEND HEADERS
+    PyTrilinos_Tpetra_Util.hpp
+    )
+
+  LIST(APPEND SOURCES
+    PyTrilinos_Tpetra_Util.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_Tpetra)
+
+#
 # PyTrilinos + EpetraExt headers and sources
 IF(PyTrilinos_ENABLE_EpetraExt)
 

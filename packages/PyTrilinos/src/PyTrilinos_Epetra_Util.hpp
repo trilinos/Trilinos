@@ -112,7 +112,8 @@ PyObject *
 convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo);
 #else
 PyObject *
-convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags=0);
+convertEpetraOperatorToPython(const Epetra_Operator * eo,
+                              int                     cnvt_flags=0);
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -130,44 +131,67 @@ getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
 // the attribute does not exist or the attribute is not an
 // Epetra_Vector, throw a PythonException.
 Teuchos::RCP<Epetra_Vector>
-getEpetraVectorObjectAttr(PyObject * object, CONST char * name);
+getEpetraVectorObjectAttr(PyObject   * object,
+                          CONST char * name);
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the const Epetra_Vector value of the attribute.
 // If the attribute does not exist or the attribute is not an
 // Epetra_Vector, throw a PythonException.
 Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name);
+getConstEpetraVectorObjectAttr(PyObject   * object,
+                               CONST char * name);
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the const Epetra_Vector value of the i-th item
 // of the attribute.  If the attribute does not exist or the attribute
 // is not a sequence of Epetra_Vectors, throw a PythonException.
 Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * name, int i);
+getConstEpetraVectorItemObjectAttr(PyObject   * object,
+                                   CONST char * name,
+                                   int          i);
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the Epetra_MultiVector value of the attribute.
 // If the attribute does not exist or the attribute is not an
 // Epetra_MultiVector, throw a PythonException.
 Teuchos::RCP<Epetra_MultiVector>
-getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name);
+getEpetraMultiVectorObjectAttr(PyObject   * object,
+                               CONST char * name);
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the const Epetra_MultiVector value of the
 // attribute.  If the attribute does not exist or the attribute is not
 // an Epetra_MultiVector, throw a PythonException.
 Teuchos::RCP<const Epetra_MultiVector>
-getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name);
+getConstEpetraMultiVectorObjectAttr(PyObject   * object,
+                                    CONST char * name);
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the Epetra_Operator value of the attribute.  If
 // the attribute does not exist or the attribute is not an
 // Epetra_Operator, throw a PythonException.
 Teuchos::RCP<Epetra_Operator>
-getEpetraOperatorObjectAttr(PyObject * object, CONST char * name);
+getEpetraOperatorObjectAttr(PyObject   * object,
+                            CONST char * name);
 
 #endif  // HAVE_TEUCHOS
+
+// Given an Epetra_BlockMap, return a Python dimension data object,
+// which is a tuple of Python dimension data dictionaries that
+// describe the Epetra_BlockMap, consistent with the DistArray
+// Protocol.  The extraDim argument is to allow for the multiple
+// vectors of an Epetra_MultiVector.  If an error occurs, return NULL.
+// Note that an Epetra_BlockMap with variable element sizes is
+// currently not supported and results in an error.
+PyObject *
+convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
+                               int   extraDim=1);
+
+// Given an Epetra_MultiVector, return a Python dictionary consistent
+// with the DistArray Protocol.  If an error occurs, return NULL.
+PyObject *
+convertEpetraMultiVectorToDAP(const Epetra_MultiVector & emv);
 
 ////////////////////////////////////////////////////////////////////////
 
