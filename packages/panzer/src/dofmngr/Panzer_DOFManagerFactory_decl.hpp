@@ -73,7 +73,23 @@ public:
                             const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)
-   { useDOFManagerFEI_ = flag; }
+   { 
+     #ifdef PANZER_HAVE_FEI
+     useDOFManagerFEI_ = flag; 
+     #else
+     useDOFManagerFEI_ = flag; 
+
+     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+     out.setShowProcRank(false);
+     out.setOutputToRootOnly(0);
+     out << "*********************************************************************" << std::endl;
+     out << "*                                                                   *" << std::endl;
+     out << "*  PANZER WARNING: Panzer was not configured with FEI enabled,      *" << std::endl;
+     out << "*                  therefore the internal DOFManager will be used.  *" << std::endl;
+     out << "*                                                                   *" << std::endl;
+     out << "*********************************************************************" << std::endl;
+     #endif
+   }
 
    bool getUseDOFManagerFEI() const
    { 

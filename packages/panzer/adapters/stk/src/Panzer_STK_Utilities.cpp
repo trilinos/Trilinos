@@ -40,7 +40,11 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Panzer_ConfigDefs.hpp"
+
 #include "Panzer_STK_Utilities.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
+
 #include "Intrepid_FieldContainer.hpp"
 
 #include "Panzer_DOFManagerFEI.hpp"
@@ -49,7 +53,8 @@
 
 namespace panzer_stk_classic {
 
-static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,int> & dofMngr,
+template <typename GlobalOrdinal>
+static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                             std::map<std::string,Intrepid::FieldContainer<double> > & fc);
 
@@ -86,12 +91,21 @@ void write_cell_data(panzer_stk_classic::STK_Interface & mesh,const std::vector<
    }
 }
 
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
+template <typename GlobalOrdinal>
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
 {
    write_solution_data(dofMngr,mesh,*x(0),prefix,postfix);
 }
 
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
+template 
+void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
+#ifdef PANZER_HAVE_LONG_LONG_INT
+template
+void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
+#endif
+
+template <typename GlobalOrdinal>
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
 {
    typedef Intrepid::FieldContainer<double> FieldContainer;
 
@@ -116,6 +130,13 @@ void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,pa
          mesh.setSolutionFieldData(prefix+dataItr->first+postfix,blockId,localCellIds,dataItr->second);
    }
 }
+
+template
+void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
+#ifdef PANZER_HAVE_LONG_LONG_INT
+template
+void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
+#endif
 
 #ifdef PANZER_HAVE_FEI
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_MultiVector & x)
@@ -153,7 +174,8 @@ void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const pan
 }
 #endif
 
-void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,int> & dofMngr,
+template <typename GlobalOrdinal>
+void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
                      const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
                      std::map<std::string,Intrepid::FieldContainer<double> > & fc)
 {
@@ -169,7 +191,8 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-         std::vector<int> GIDs, LIDs;
+         std::vector<GlobalOrdinal> GIDs;
+         std::vector<int> LIDs;
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
       
          dofMngr.getElementGIDs(cellLocalId,GIDs);

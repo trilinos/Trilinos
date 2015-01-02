@@ -221,8 +221,8 @@ namespace panzer_stk_classic {
         TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
 
         panzer::Workset & current = (*worksets)[0];
-        for(int i=0;i<current.num_cells;i++) {
-          std::cout << "Cell ID =  " << current.cell_local_ids[i] << std::endl;
+        for(std::size_t i=0;i<current.num_cells;i++) {
+          out << "Cell ID =  " << current.cell_local_ids[i] << std::endl;
         }
      
         TEST_EQUALITY((*worksets)[1].num_cells,2);
