@@ -2107,7 +2107,7 @@ namespace Tpetra {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
       //
-      // FIXME (mfh 02 Jan 2014) replaceGlobalValues returns invalid
+      // FIXME (mfh 02 Jan 2015) replaceGlobalValues returns invalid
       // in this case.
       return static_cast<LO> (0);
     }
@@ -2210,7 +2210,7 @@ namespace Tpetra {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
       //
-      // FIXME (mfh 02 Jan 2014) replaceLocalValues returns 0 in this case.
+      // FIXME (mfh 02 Jan 2015) replaceLocalValues returns 0 in this case.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
 
@@ -2795,7 +2795,7 @@ namespace Tpetra {
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           row_view_type row_i = k_lclMatrix_.row (lclRow);
           for (LO k = 0; k < row_i.length; ++k) {
-            // FIXME (mfh 02 Jan 2014) This assumes CUDA UVM.
+            // FIXME (mfh 02 Jan 2015) This assumes CUDA UVM.
             row_i.value (k) *= theAlpha;
           }
         }
@@ -3080,7 +3080,7 @@ namespace Tpetra {
         if (rowinfo.numEntries > 0) {
           const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
           if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-            // NOTE (mfh 02 Jan 2014) This technically does not assume
+            // NOTE (mfh 02 Jan 2015) This technically does not assume
             // UVM, since getView and getViewNonConst are supposed to
             // return views of host data.
             ArrayView<const scalar_type> view = this->getView (rowinfo);
@@ -3146,7 +3146,7 @@ namespace Tpetra {
       if (offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
         ArrayView<const LocalOrdinal> ind;
         ArrayView<const Scalar> val;
-        // NOTE (mfh 02 Jan 2014) This technically does not assume
+        // NOTE (mfh 02 Jan 2015) This technically does not assume
         // UVM, since the get{Global,Local}RowView methods are
         // supposed to return views of host data.
         this->getLocalRowView (i, ind, val);
@@ -5053,34 +5053,37 @@ namespace Tpetra {
                  RangeScalar beta) const
   {
     using Teuchos::NO_TRANS;
+    typedef Teuchos::ScalarTraits<RangeScalar> RST;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "localMultiply: ";
 #endif // HAVE_TPETRA_DEBUG
-    typedef Teuchos::ScalarTraits<RangeScalar> RST;
-#ifdef HAVE_TPETRA_DEBUG
 
+    const bool conjugate = (mode == Teuchos::CONJ_TRANS);
+    const bool transpose = (mode != Teuchos::NO_TRANS);
+
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
       "X.getNumVectors() = " << X.getNumVectors () << " != Y.getNumVectors() = "
       << Y.getNumVectors () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode == NO_TRANS && X.getLocalLength () != getColMap ()->getNodeNumElements (),
+      ! transpose && X.getLocalLength () != getColMap ()->getNodeNumElements (),
       std::runtime_error, "NO_TRANS case: X has the wrong number of local rows.  "
       "X.getLocalLength() = " << X.getLocalLength () << " != getColMap()->"
       "getNodeNumElements() = " << getColMap ()->getNodeNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode == NO_TRANS && Y.getLocalLength () != getRowMap ()->getNodeNumElements (),
+      ! transpose && Y.getLocalLength () != getRowMap ()->getNodeNumElements (),
       std::runtime_error, "NO_TRANS case: Y has the wrong number of local rows.  "
       "Y.getLocalLength() = " << Y.getLocalLength () << " != getRowMap()->"
       "getNodeNumElements() = " << getRowMap ()->getNodeNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode != NO_TRANS && X.getLocalLength () != getRowMap ()->getNodeNumElements (),
+      transpose && X.getLocalLength () != getRowMap ()->getNodeNumElements (),
       std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
       "local rows.  X.getLocalLength() = " << X.getLocalLength () << " != "
       "getRowMap()->getNodeNumElements() = "
       << getRowMap ()->getNodeNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      mode != NO_TRANS && Y.getLocalLength () != getColMap ()->getNodeNumElements (),
+      transpose && Y.getLocalLength () != getColMap ()->getNodeNumElements (),
       std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
       "local rows.  Y.getLocalLength() = " << Y.getLocalLength () << " != "
       "getColMap()->getNodeNumElements() = "
@@ -5098,25 +5101,20 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       X.getDualView ().d_view.ptr_on_device () == Y.getDualView ().d_view.ptr_on_device () &&
       X.getDualView ().d_view.ptr_on_device () != NULL,
-      std::runtime_error, ": X and Y may not alias one another.");
-#endif
-
-    //
-    // FIXME (mfh 02 Jan 2014) Implement conjugate transpose in Kokkos
-    //
+      std::runtime_error, "X and Y may not alias one another.");
+#endif // HAVE_TPETRA_DEBUG
 
     if (beta == RST::zero ()) {
       // Y = alpha*op(M)*X with overwrite semantics
-      //
-      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
-      if (mode != NO_TRANS) {
+      if (transpose) {
         Kokkos::MV_MultiplyTranspose (RST::zero (),
                                       Y.template getLocalView<DeviceType> (),
                                       alpha,
                                       k_lclMatrix_,
-                                      X.template getLocalView<DeviceType> ());
+                                      X.template getLocalView<DeviceType> (),
+                                      conjugate);
       }
-      else { // mode == NO_TRANS
+      else {
         Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
                              alpha,
                              k_lclMatrix_,
@@ -5125,14 +5123,13 @@ namespace Tpetra {
     }
     else {
       // Y = alpha*op(M) + beta*Y
-
-      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
-      if (mode != NO_TRANS) {
+      if (transpose) {
         Kokkos::MV_MultiplyTranspose (beta,
                                       Y.template getLocalView<DeviceType> (),
                                       alpha,
                                       k_lclMatrix_,
-                                      X.template getLocalView<DeviceType> ());
+                                      X.template getLocalView<DeviceType> (),
+                                      conjugate);
       }
       else {
         Kokkos::MV_Multiply (beta,
@@ -5354,7 +5351,7 @@ namespace Tpetra {
     typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
     typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
     //
-    // FIXME (mfh 02 Jan 2014) Does this correctly handle conjugate transpose?
+    // FIXME (mfh 02 Jan 2015) Does this correctly handle conjugate transpose?
     //
     triSolveKokkos (X_lcl, A_lcl, Y_lcl, uplo, diag, mode);
   }
