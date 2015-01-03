@@ -776,7 +776,7 @@ namespace Tpetra {
       // values in "2-D storage," meaning an array of arrays.  The
       // outer array has as many inner arrays as there are rows in the
       // matrix, and each inner array stores the values in that row.
-      values2D_ = staticGraph_->template allocateValues2D<Scalar>();
+      values2D_ = staticGraph_->template allocateValues2D<scalar_type> ();
     }
   }
 
@@ -3202,18 +3202,17 @@ namespace Tpetra {
         "input scaling vector x's Map must be the same as either the row Map or "
         "the range Map of the CrsMatrix.");
     }
-    ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-    ArrayView<Scalar> rowValues = null;
+    ArrayRCP<const scalar_type> vectorVals = xp->getData (0);
+    ArrayView<scalar_type> rowValues = null;
 
     const size_t lclNumRows = this->getNodeNumRows ();
     for (size_t i = 0; i < lclNumRows; ++i) {
       const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
       rowValues = this->getViewNonConst (rowinfo);
-      const Scalar scaleValue = vectorVals[i];
+      const scalar_type scaleValue = vectorVals[i];
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
         rowValues[j] *= scaleValue;
       }
-      rowValues = null;
     }
   }
 
@@ -3234,12 +3233,12 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
-    const char tfecfFuncName[] = "rightScale";
+    const char tfecfFuncName[] = "rightScale: ";
 
     // FIXME (mfh 06 Aug 2014) This doesn't make sense.  The matrix
     // should only be modified when it is not fill complete.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillComplete (), std::runtime_error, ": matrix must be fill complete.");
+      ! isFillComplete (), std::runtime_error, "Matrix must be fill complete.");
     RCP<const vec_type> xp;
     if (getDomainMap ()->isSameAs (* (x.getMap ()))) {
       // Take from Epetra: If we have a non-trivial exporter, we must
@@ -3256,15 +3255,14 @@ namespace Tpetra {
     }
     else if (getRowMap ()->isSameAs (* (x.getMap ()))) {
       xp = rcpFromRef (x);
-    }
-    else {
+    } else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error, ": The vector x must be the same as either "
-        "the row map or the range map");
+        true, std::runtime_error, "The vector x must have the same Map as "
+        "either the row Map or the range Map.");
     }
 
-    ArrayRCP<const Scalar> vectorVals = xp->getData(0);
-    ArrayView<Scalar> rowValues = null;
+    ArrayRCP<const scalar_type> vectorVals = xp->getData (0);
+    ArrayView<scalar_type> rowValues = null;
 
     const size_t lclNumRows = this->getNodeNumRows ();
     for (size_t i = 0; i < lclNumRows; ++i) {
@@ -3434,15 +3432,15 @@ namespace Tpetra {
     const size_type numToInsert = indices.size ();
     // Add the new data to the list of nonlocals.
     // This creates the arrays if they don't exist yet.
-    std::pair<Array<GO>, Array<scalar_type> >& curRow = nonlocals_[globalRow];
+    std::pair<Array<GO>, Array<Scalar> >& curRow = nonlocals_[globalRow];
     Array<GO>& curRowInds = curRow.first;
-    Array<scalar_type>& curRowVals = curRow.second;
+    Array<Scalar>& curRowVals = curRow.second;
     const size_type newCapacity = curRowInds.size () + numToInsert;
     curRowInds.reserve (newCapacity);
     curRowVals.reserve (newCapacity);
     for (size_type k = 0; k < numToInsert; ++k) {
       curRowInds.push_back (indices[k]);
-      curRowVals.push_back (static_cast<scalar_type> (values[k]));
+      curRowVals.push_back (values[k]);
     }
   }
 
@@ -4108,15 +4106,17 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
     using Teuchos::rcpFromRef;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
 
     // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
     // fix an Ifpack2 test (RILUKSingleProcessUnitTests), which was
     // failing only for the Kokkos refactor version of Tpetra.  It's a
     // good idea regardless to have the bypass.
-    if (alpha == STS::zero ()) {
-      if (beta == STS::zero ()) {
-        Y_in.putScalar (STS::zero ());
-      } else if (beta != STS::one ()) {
+    if (alpha == ZERO) {
+      if (beta == ZERO) {
+        Y_in.putScalar (ZERO);
+      } else if (beta != ONE) {
         Y_in.scale (beta);
       }
       return;
@@ -4137,7 +4137,7 @@ namespace Tpetra {
     // its entries should be read.  (Sparse BLAS semantics say that we
     // must ignore any Inf or NaN entries in Y_in, if beta is zero.)
     // This matters if we need to do an Export operation; see below.
-    const bool Y_is_overwritten = (beta == STS::zero());
+    const bool Y_is_overwritten = (beta == ZERO);
 
     // We treat the case of a replicated MV output specially.
     const bool Y_is_replicated = ! Y_in.isDistributed ();
@@ -4149,7 +4149,7 @@ namespace Tpetra {
     // assumes that the replicated data is correctly replicated, so
     // that the data are the same on all processes.)
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
-      beta = STS::zero ();
+      beta = ZERO;
     }
 
     // Temporary MV for Import operation.  After the block of code
@@ -4198,13 +4198,13 @@ namespace Tpetra {
     if (! exporter.is_null ()) {
       this->template localMultiply<Scalar, Scalar> (*X_colMap, *Y_rowMap,
                                                     Teuchos::NO_TRANS,
-                                                    alpha, STS::zero ());
+                                                    alpha, ZERO);
       // If we're overwriting the output MV Y_in completely (beta ==
       // 0), then make sure that it is filled with zeros before we do
       // the Export.  Otherwise, the ADD combine mode will use data in
       // Y_in, which is supposed to be zero.
       if (Y_is_overwritten) {
-        Y_in.putScalar (STS::zero ());
+        Y_in.putScalar (ZERO);
       }
       else {
         // Scale the output MV by beta, so that the Export sums in the
@@ -4232,7 +4232,7 @@ namespace Tpetra {
 
         // If beta == 0, we don't need to copy Y_in into Y_rowMap,
         // since we're overwriting it anyway.
-        if (beta != STS::zero ()) {
+        if (beta != ZERO) {
           Tpetra::deep_copy (*Y_rowMap, Y_in);
         }
         this->template localMultiply<Scalar, Scalar> (*X_colMap,
@@ -4275,15 +4275,16 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
     using Teuchos::rcpFromRef;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
     // Take shortcuts for alpha == 0.
-    if (alpha == STS::zero ()) {
+    if (alpha == ZERO) {
       // Follow the Sparse BLAS convention by ignoring both the matrix
       // and X_in, in this case.
-      if (beta == STS::zero ()) {
+      if (beta == ZERO) {
         // Follow the Sparse BLAS convention by overwriting any Inf or
         // NaN values in Y_in, in this case.
-        Y_in.putScalar (STS::zero ());
+        Y_in.putScalar (ZERO);
       }
       else {
         Y_in.scale (beta);
@@ -4307,9 +4308,9 @@ namespace Tpetra {
 
     // some parameters for below
     const bool Y_is_replicated = ! Y_in.isDistributed ();
-    const bool Y_is_overwritten = (beta == STS::zero ());
+    const bool Y_is_overwritten = (beta == ZERO);
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
-      beta = STS::zero ();
+      beta = ZERO;
     }
 
     // The kernels do not allow input or output with nonconstant stride.
@@ -4349,13 +4350,14 @@ namespace Tpetra {
     // solution into the to-be-exported MV; get a view.
     if (importer != null) {
       // Do the local computation.
-      this->template localMultiply<Scalar, Scalar> (*X, *importMV_, mode, alpha, STS::zero ());
+      this->template localMultiply<Scalar, Scalar> (*X, *importMV_, mode,
+                                                    alpha, ZERO);
       if (Y_is_overwritten) {
-        Y_in.putScalar (STS::zero ());
+        Y_in.putScalar (ZERO);
       } else {
         Y_in.scale (beta);
       }
-      Y_in.doExport(*importMV_,*importer,ADD);
+      Y_in.doExport (*importMV_, *importer, ADD);
     }
     // otherwise, multiply into Y
     else {
@@ -4741,6 +4743,7 @@ namespace Tpetra {
     using Teuchos::rcp_const_cast;
     typedef Scalar ST;
     const char prefix[] = "Tpetra::CrsMatrix::(reordered)gaussSeidelCopy: ";
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! isFillComplete (), std::runtime_error,
@@ -4840,7 +4843,7 @@ namespace Tpetra {
         // entries to zero, even though we are not doing an Import in
         // this case.
         if (zeroInitialGuess) {
-          X_colMap->putScalar (STS::zero ());
+          X_colMap->putScalar (ZERO);
         }
         // No need to copy back to X at end.
       }
@@ -4931,7 +4934,7 @@ namespace Tpetra {
 
       if (zeroInitialGuess) {
         // No need for an Import, since we're filling with zeros.
-        X_colMap->putScalar (STS::zero ());
+        X_colMap->putScalar (ZERO);
       } else {
         // We could just copy X into X_domainMap.  However, that
         // wastes a copy, because the Import also does a copy (plus
@@ -5054,10 +5057,17 @@ namespace Tpetra {
   {
     using Teuchos::NO_TRANS;
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
+    // Just like Scalar and scalar_type may differ in CrsMatrix,
+    // RangeScalar and its corresponding scalar_type may differ in
+    // MultiVector.
+    typedef typename MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal,
+                                 node_type>::scalar_type range_scalar_type;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "localMultiply: ";
 #endif // HAVE_TPETRA_DEBUG
 
+    const range_scalar_type theAlpha = static_cast<range_scalar_type> (alpha);
+    const range_scalar_type theBeta = static_cast<range_scalar_type> (beta);
     const bool conjugate = (mode == Teuchos::CONJ_TRANS);
     const bool transpose = (mode != Teuchos::NO_TRANS);
 
@@ -5109,14 +5119,14 @@ namespace Tpetra {
       if (transpose) {
         Kokkos::MV_MultiplyTranspose (RST::zero (),
                                       Y.template getLocalView<DeviceType> (),
-                                      alpha,
+                                      theAlpha,
                                       k_lclMatrix_,
                                       X.template getLocalView<DeviceType> (),
                                       conjugate);
       }
       else {
         Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
-                             alpha,
+                             theAlpha,
                              k_lclMatrix_,
                              X.template getLocalView<DeviceType> ());
       }
@@ -5124,17 +5134,17 @@ namespace Tpetra {
     else {
       // Y = alpha*op(M) + beta*Y
       if (transpose) {
-        Kokkos::MV_MultiplyTranspose (beta,
+        Kokkos::MV_MultiplyTranspose (theBeta,
                                       Y.template getLocalView<DeviceType> (),
-                                      alpha,
+                                      theAlpha,
                                       k_lclMatrix_,
                                       X.template getLocalView<DeviceType> (),
                                       conjugate);
       }
       else {
-        Kokkos::MV_Multiply (beta,
+        Kokkos::MV_Multiply (theBeta,
                              Y.template getLocalView<DeviceType> (),
-                             alpha,
+                             theAlpha,
                              k_lclMatrix_,
                              X.template getLocalView<DeviceType> ());
       }
@@ -5196,14 +5206,15 @@ namespace Tpetra {
     typename k_local_matrix_type::values_type val = lclMatrix.values;
     const offset_type* const ptrRaw = ptr.ptr_on_device ();
     const LO* const indRaw = ind.ptr_on_device ();
-    const Scalar* const valRaw = val.ptr_on_device ();
+    const scalar_type* const valRaw = val.ptr_on_device ();
 
     Kokkos::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
                                      static_cast<LO> (numVecs),
                                      ptrRaw, indRaw, valRaw,
                                      B_lcl.ptr_on_device (), B_stride[1],
                                      X_lcl.ptr_on_device (), X_stride[1],
-                                     D_lcl.ptr_on_device (), dampingFactor,
+                                     D_lcl.ptr_on_device (),
+                                     static_cast<scalar_type> (dampingFactor),
                                      direction);
   }
 
@@ -5225,7 +5236,6 @@ namespace Tpetra {
                              const RangeScalar& dampingFactor,
                              const KokkosClassic::ESweepDirection direction) const
   {
-    using Kokkos::Sequential::reorderedGaussSeidel;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
@@ -5271,15 +5281,20 @@ namespace Tpetra {
     typename k_local_matrix_type::values_type val = lclMatrix.values;
     const offset_type* const ptrRaw = ptr.ptr_on_device ();
     const LO* const indRaw = ind.ptr_on_device ();
-    const Scalar* const valRaw = val.ptr_on_device ();
+    const scalar_type* const valRaw = val.ptr_on_device ();
 
-    reorderedGaussSeidel (static_cast<LO> (lclNumRows),
-                          static_cast<LO> (numVecs), ptrRaw, indRaw, valRaw,
-                          B_lcl.ptr_on_device (), B_stride[1],
-                          X_lcl.ptr_on_device (), X_stride[1],
-                          D_lcl.ptr_on_device (), rowIndices.getRawPtr (),
-                          static_cast<LO> (lclNumRows),
-                          dampingFactor, direction);
+    Kokkos::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
+                                              static_cast<LO> (numVecs),
+                                              ptrRaw, indRaw, valRaw,
+                                              B_lcl.ptr_on_device (),
+                                              B_stride[1],
+                                              X_lcl.ptr_on_device (),
+                                              X_stride[1],
+                                              D_lcl.ptr_on_device (),
+                                              rowIndices.getRawPtr (),
+                                              static_cast<LO> (lclNumRows),
+                                              static_cast<scalar_type> (dampingFactor),
+                                              direction);
   }
 
 
@@ -5350,9 +5365,6 @@ namespace Tpetra {
     k_local_matrix_type A_lcl = this->getLocalMatrix ();
     typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
     typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
-    //
-    // FIXME (mfh 02 Jan 2015) Does this correctly handle conjugate transpose?
-    //
     triSolveKokkos (X_lcl, A_lcl, Y_lcl, uplo, diag, mode);
   }
 
@@ -6494,7 +6506,7 @@ namespace Tpetra {
         // because the Import uses INSERT combine mode, which overwrites
         // existing entries.
         //
-        //X_colMap->putScalar (STS::zero ());
+        //X_colMap->putScalar (ZERO);
       }
     }
     return X_colMap;
@@ -6609,6 +6621,8 @@ namespace Tpetra {
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type> crs_matrix_type;
 
     const crs_matrix_type& B = *this; // a convenient abbreviation
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
 
     // If the user didn't supply a domain or range Map, then try to
     // get one from B first (if it has them), then from A (if it has
@@ -6719,14 +6733,14 @@ namespace Tpetra {
       ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
-      if (alpha != STS::zero ()) {
+      if (alpha != ZERO) {
         for (LO localRow = 0; localRow < localNumRows; ++localRow) {
           const size_t A_numEntries = A.getNumEntriesInLocalRow (localRow);
           C_maxNumEntriesPerRow[localRow] += A_numEntries;
         }
       }
       // Get the number of entries in each row of B.
-      if (beta != STS::zero ()) {
+      if (beta != ZERO) {
         for (LO localRow = 0; localRow < localNumRows; ++localRow) {
           const size_t B_numEntries = B.getNumEntriesInLocalRow (localRow);
           C_maxNumEntriesPerRow[localRow] += B_numEntries;
@@ -6767,7 +6781,7 @@ namespace Tpetra {
     Array<GO> ind;
     Array<Scalar> val;
 
-    if (alpha != STS::zero ()) {
+    if (alpha != ZERO) {
       const LO A_localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
       for (LO localRow = 0; localRow < A_localNumRows; ++localRow) {
         size_t A_numEntries = A.getNumEntriesInLocalRow (localRow);
@@ -6780,7 +6794,7 @@ namespace Tpetra {
         ArrayView<Scalar> valView = val (0, A_numEntries);
         A.getGlobalRowCopy (globalRow, indView, valView, A_numEntries);
 
-        if (alpha != STS::one ()) {
+        if (alpha != ONE) {
           for (size_t k = 0; k < A_numEntries; ++k) {
             valView[k] *= alpha;
           }
@@ -6789,7 +6803,7 @@ namespace Tpetra {
       }
     }
 
-    if (beta != STS::zero ()) {
+    if (beta != ZERO) {
       const LO B_localNumRows = static_cast<LO> (B_rowMap->getNodeNumElements ());
       for (LO localRow = 0; localRow < B_localNumRows; ++localRow) {
         size_t B_numEntries = B.getNumEntriesInLocalRow (localRow);
@@ -6802,7 +6816,7 @@ namespace Tpetra {
         ArrayView<Scalar> valView = val (0, B_numEntries);
         B.getGlobalRowCopy (globalRow, indView, valView, B_numEntries);
 
-        if (beta != STS::one ()) {
+        if (beta != ONE) {
           for (size_t k = 0; k < B_numEntries; ++k) {
             valView[k] *= beta;
           }

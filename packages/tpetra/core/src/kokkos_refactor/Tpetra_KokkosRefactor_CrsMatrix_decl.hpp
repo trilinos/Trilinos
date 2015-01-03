@@ -2258,6 +2258,7 @@ namespace Tpetra {
       using Teuchos::ArrayView;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
+      typedef scalar_type ST;
       typedef typename ArrayView<const GO>::size_type size_type;
 
       if (! isFillActive ()) {
@@ -2284,7 +2285,9 @@ namespace Tpetra {
         return static_cast<LO> (0);
       }
       else {
-        ArrayView<Scalar> curVals = this->getViewNonConst (rowInfo);
+        ArrayView<const ST> valsIn =
+          Teuchos::av_reinterpret_cast<const ST> (values);
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
         if (isLocallyIndexed ()) {
           // Convert the given global indices to local indices.
           //
@@ -2301,16 +2304,16 @@ namespace Tpetra {
             // will filter out (but not count in its return value).
             lclInds[k] = colMap.getLocalElement (indices[k]);
           }
-          return graph.template transformLocalValues<Scalar, BinaryFunction> (rowInfo,
-                                                                              curVals,
-                                                                              lclInds (),
-                                                                              values, f);
+          return graph.template transformLocalValues<ST, BinaryFunction> (rowInfo,
+                                                                          curVals,
+                                                                          lclInds (),
+                                                                          valsIn, f);
         }
         else if (isGloballyIndexed ()) {
-          return graph.template transformGlobalValues<Scalar, BinaryFunction> (rowInfo,
-                                                                               curVals,
-                                                                               indices,
-                                                                               values, f);
+          return graph.template transformGlobalValues<ST, BinaryFunction> (rowInfo,
+                                                                           curVals,
+                                                                           indices,
+                                                                           valsIn, f);
         }
         else {
           // If the graph is neither locally nor globally indexed on
@@ -2607,7 +2610,7 @@ namespace Tpetra {
     ///   process.  The globalAssemble() method redistributes these
     ///   to their owning processes.
     std::map<GlobalOrdinal, std::pair<Teuchos::Array<GlobalOrdinal>,
-                                      Teuchos::Array<scalar_type> > > nonlocals_;
+                                      Teuchos::Array<Scalar> > > nonlocals_;
 
     /// \brief Cached Frobenius norm of the (global) matrix.
     ///
