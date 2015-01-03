@@ -1228,7 +1228,11 @@ namespace Tpetra {
     ///
     /// \brief This method is for expert users only.
     ///   It may change or be removed at any time.
-    KokkosClassic::MultiVector<scalar_type, node_type> getLocalMV () const;
+    ///
+    /// \note To Tpetra developers: This object's value type is Scalar
+    ///   and not scalar_type, precisely because it supports a
+    ///   backwards compatibility use case.
+    KokkosClassic::MultiVector<Scalar, node_type> getLocalMV () const;
 
     /// \brief A nonconst reference to a view of the underlying
     ///   KokkosClassic::MultiVector object.
@@ -1240,7 +1244,7 @@ namespace Tpetra {
     ///   time.  Please call getLocalMV() instead.  There was never
     ///   actually a need for a getLocalMVNonConst() method, as far as
     ///   I can tell.
-    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<scalar_type, node_type>
+    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, node_type>
     getLocalMVNonConst ();
 
     /// \brief Get the Kokkos::DualView which implements local storage.
@@ -1946,15 +1950,6 @@ namespace Tpetra {
     friend void
     deep_copy (MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
                const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
-
-    typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-    typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
-
-    /// \brief The KokkosClassic::MultiVector containing the MultiVector's data.
-    ///
-    /// This is actually just a view of the Kokkos::DualView \c view_.
-    /// The latter owns the MultiVector's data.
-    //KMV lclMV_;
 
     /// \brief The Kokkos::DualView containing the MultiVector's data.
     ///
