@@ -89,14 +89,14 @@ public:
   //! \name Typedefs to facilitate template metaprogramming
   //@{
 
-  //! The type of each entry in the Vector.
-  typedef Scalar scalar_type;
   //! The type of local indices.
   typedef LocalOrdinal local_ordinal_type;
   //! The type of global indices.
   typedef GlobalOrdinal global_ordinal_type;
   //! The Kokkos Node type.
   typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+  //! The type of each entry in the Vector.
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::scalar_type scalar_type;
 
   /// \brief Type of an inner ("dot") product result.
   ///
@@ -248,11 +248,11 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst; // overloading, not hiding
   //! View of the local values of this vector.
-  Teuchos::ArrayRCP<Scalar> getDataNonConst()     { return getDataNonConst(0); }
+  Teuchos::ArrayRCP<scalar_type> getDataNonConst()     { return getDataNonConst(0); }
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getData; // overloading, not hiding
   //! Const view of the local values of this vector.
-  Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
+  Teuchos::ArrayRCP<const scalar_type> getData() const { return getData(0); }
 
   Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
