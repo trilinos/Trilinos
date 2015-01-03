@@ -198,6 +198,22 @@ public:
     ::Kokkos::atomic_add (&im_, x.imag ());
   }
 
+  KOKKOS_INLINE_FUNCTION void atomic_assign (const complex<RealType>& x) volatile {
+    // We can do atomic assignment componentwise, because atomics only
+    // promise that a sequence of atomic operations, once complete,
+    // will eventually reach the value it would have reached after
+    // executing them sequentially.  Thus, intermediate results might
+    // be out of order, but the final result is the same as if the
+    // operations had been executed sequentially.
+    //
+    // The one problem is if we mix atomic_add and atomic_assign.
+    // Those operations do not commute with each other, so we cannot
+    // mix them and expect to get the same answer if the order of
+    // operations changes.
+    ::Kokkos::atomic_assign (&re_, x.real ());
+    ::Kokkos::atomic_assign (&im_, x.imag ());
+  }
+
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator -= (const complex<RealType>& src) {
     re_ -= src.re_;
@@ -442,6 +458,13 @@ atomic_add (volatile ::Kokkos::complex<double>* const dest,
             const ::Kokkos::complex<double> src)
 {
   dest->atomic_add (src);
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_assign (volatile ::Kokkos::complex<double>* const dest,
+               const ::Kokkos::complex<double> src)
+{
+  dest->atomic_assign (src);
 }
 
 } // namespace Kokkos
