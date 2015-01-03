@@ -585,7 +585,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalDiagCopy(
   TEUCHOS_TEST_FOR_EXCEPTION(diag.getMap()->isSameAs(*(rowmap->getPointMap())) != true,
     std::runtime_error, "Tpetra::VbrMatrix::getLocalDiagCopy ERROR, vector must be distributed the same as this matrix' row-map.");
 
-  Teuchos::ArrayRCP<Scalar> diag_view = diag.get1dViewNonConst();
+  Teuchos::ArrayRCP<Scalar> diag_view =
+    Teuchos::arcp_reinterpret_cast<Scalar> (diag.get1dViewNonConst ());
   Teuchos::ArrayView<const GlobalOrdinal> blockIDs = rowmap->getNodeBlockIDs();
   size_t offset = 0;
   typedef typename Teuchos::ArrayView<const GlobalOrdinal>::size_type Tsize_t;
