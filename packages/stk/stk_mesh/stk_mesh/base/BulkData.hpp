@@ -201,7 +201,11 @@ public:
    *  \exception  If modification resolution errors occur then
    *              a parallel-consistent exception will be thrown.
    */
-  bool modification_end( modification_optimization opt = MOD_END_SORT );
+
+  enum ModificationEndAuraOption{MODIFICATION_END_ADD_AURA, MODIFICATION_END_NO_AURA};
+
+  bool modification_end( modification_optimization opt = MOD_END_SORT, bool delete_ghosts=true, 
+                         ModificationEndAuraOption aura_option=MODIFICATION_END_ADD_AURA );
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
   /** \brief  Give away ownership of entities to other parallel processes.
@@ -791,7 +795,7 @@ protected: //functions
                                      NewOwnerMap & new_owner_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
-  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end( bool regenerate_aura, modification_optimization opt, bool delete_ghosts );
 
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
   void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);

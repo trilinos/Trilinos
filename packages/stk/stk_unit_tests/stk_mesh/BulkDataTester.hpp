@@ -56,7 +56,7 @@ public:
 
     bool my_internal_modification_end(bool regenerate_aura = true, modification_optimization opt = MOD_END_COMPRESS_AND_SORT)
     {
-        return this->internal_modification_end(regenerate_aura, opt);
+      return this->internal_modification_end(regenerate_aura, opt, true);
     }
     void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, modification_optimization mod_optimization = MOD_END_SORT )
     {

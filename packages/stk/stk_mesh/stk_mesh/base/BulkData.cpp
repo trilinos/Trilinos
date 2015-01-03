@@ -4223,13 +4223,17 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 }
 
 
-bool BulkData::modification_end( modification_optimization opt)
+bool BulkData::modification_end( modification_optimization opt, bool delete_ghosts, 
+                                 ModificationEndAuraOption aura_option)
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
-  //  NKC, false here for aura off
-  bool return_value = internal_modification_end( true, opt );
-
+  bool return_value;
+  if(aura_option == MODIFICATION_END_ADD_AURA) {
+    return_value = internal_modification_end( true, opt, delete_ghosts );
+  } else {
+    return_value = internal_modification_end( false, opt, delete_ghosts );
+  }
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
 #endif
@@ -4353,7 +4357,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
   return true ;
 }
 
-bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt )
+bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt, bool delete_ghosts )
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
 
@@ -4367,12 +4371,14 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities
     // which can cause deletion of ghost entities.
-    internal_resolve_shared_modify_delete();
-
+    if(delete_ghosts) {
+      internal_resolve_shared_modify_delete();
+    }
     // Resolve modification or deletion of ghost entities
     // by destroying ghost entities that have been touched.
-    internal_resolve_ghosted_modify_delete();
-
+    if(delete_ghosts) {
+      internal_resolve_ghosted_modify_delete();
+    }
     update_comm_list_based_on_changes_in_comm_map();
 
     // Resolve creation of entities: discover sharing and set unique ownership.
