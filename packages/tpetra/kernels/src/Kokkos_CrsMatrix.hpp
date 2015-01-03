@@ -2484,7 +2484,8 @@ template <class RangeVector,
     aVector a;
     const int numVecs = x.dimension_1();
 
-    if ((s_a < 1) && (s_a != 0)) {
+    //if ((s_a < 1) && (s_a != 0)) {
+    if (s_a == -1.0) {
       return MV_Multiply (a, y, a, A, x, 0, -1);
     } else if (s_a == 1) {
       return MV_Multiply (a, y, a, A, x, 0, 1);
