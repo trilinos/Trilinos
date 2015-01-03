@@ -44,6 +44,75 @@
 
 #include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
 
+namespace { // anonymous
+
+  /// \brief Get a raw pointer to the (host) data in a
+  ///   Tpetra::MultiVector.
+  /// \tparam MultiVectorType A specialization of Tpetra::MultiVector.
+  ///
+  /// \warning This is an implementation detail of Tpetra.  It is not
+  ///   part of the public interface and may change or go away at any
+  ///   time.
+  ///
+  /// \note To Tpetra developers: This struct implements the function
+  ///   getRawPtrFromMultiVector(); see below.  Call that function
+  ///   instead.
+  template<class MultiVectorType>
+  struct RawPtrFromMultiVector {
+    typedef typename MultiVectorType::scalar_type scalar_type;
+    static scalar_type* getRawPtr (MultiVectorType& X) {
+      Teuchos::ArrayRCP<scalar_type> X_view = X.get1dViewNonConst ();
+      scalar_type* X_raw = X_view.getRawPtr ();
+      return X_raw;
+    }
+  };
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  template<class S, class LO, class GO, class D>
+  struct RawPtrFromMultiVector<
+    Tpetra::MultiVector<
+      S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >
+  {
+    typedef Tpetra::MultiVector<
+      S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > MultiVectorType;
+    typedef typename MultiVectorType::scalar_type scalar_type;
+    static scalar_type* getRawPtr (MultiVectorType& X) {
+      typedef typename MultiVectorType::dual_view_type dual_view_type;
+      typedef typename dual_view_type::t_host::memory_space host_memory_space;
+
+      // We're getting a nonconst View, so mark the MultiVector as
+      // modified on the host.  This will throw an exception if the
+      // MultiVector is already modified on the host.
+      X.template modify<host_memory_space> ();
+
+      dual_view_type X_view = X.getDualView ();
+      scalar_type* X_raw = X_view.h_view.ptr_on_device ();
+      return X_raw;
+    }
+  };
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+  /// \brief Get a raw pointer to the (host) data in a
+  ///   Tpetra::MultiVector.
+  ///
+  /// \warning This is an implementation detail of Tpetra.  It is not
+  ///   part of the public interface and may change or go away at any
+  ///   time.
+  ///
+  /// \note To Tpetra developers: This function exists to smooth over
+  ///   differences between the "classic" and Kokkos refactor versions
+  ///   of Tpetra::MultiVector.  It also makes the
+  ///   Tpetra::Experimental::BlockMultiVector implementation below a
+  ///   bit easier to read.
+  template<class S, class LO, class GO, class N>
+  typename Tpetra::MultiVector<S, LO, GO, N>::scalar_type*
+  getRawPtrFromMultiVector (Tpetra::MultiVector<S, LO, GO, N>& X) {
+    typedef Tpetra::MultiVector<S, LO, GO, N> MV;
+    return RawPtrFromMultiVector<MV>::getRawPtr (X);
+  }
+
+} // namespace (anonymous)
+
 namespace Tpetra {
 namespace Experimental {
 
@@ -82,7 +151,7 @@ BlockMultiVector (const map_type& meshMap,
   meshMap_ (meshMap),
   pointMap_ (makePointMap (meshMap, blockSize)),
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
-  mvData_ (mv_.get1dViewNonConst ().getRawPtr ()),
+  mvData_ (getRawPtrFromMultiVector (mv_)),
   blockSize_ (blockSize)
 {
   // Make sure that mv_ has view semantics.
@@ -99,7 +168,7 @@ BlockMultiVector (const map_type& meshMap,
   meshMap_ (meshMap),
   pointMap_ (pointMap),
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
-  mvData_ (mv_.get1dViewNonConst ().getRawPtr ()),
+  mvData_ (getRawPtrFromMultiVector (mv_)),
   blockSize_ (blockSize)
 {
   // Make sure that mv_ has view semantics.
@@ -162,7 +231,7 @@ BlockMultiVector (const mv_type& X_mv,
   if (! pointMap.is_null ()) {
     pointMap_ = *pointMap; // Map::operator= also does a shallow copy
   }
-  mvData_ = mv_.get1dViewNonConst ().getRawPtr ();
+  mvData_ = getRawPtrFromMultiVector (mv_);
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -207,14 +276,14 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
     for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
       const GO meshGid = lclMeshGblInds[g];
-      const GO pointGidStart = indexBase + (meshGid - indexBase) * static_cast<GO> (blockSize);
+      const GO pointGidStart = indexBase +
+        (meshGid - indexBase) * static_cast<GO> (blockSize);
       const size_type offset = g * static_cast<size_type> (blockSize);
       for (LO k = 0; k < blockSize; ++k) {
         const GO pointGid = pointGidStart + static_cast<GO> (k);
         lclPointGblInds[offset + static_cast<size_type> (k)] = pointGid;
       }
     }
-
     return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
                      meshMap.getComm (), meshMap.getNode ());
   }
@@ -230,7 +299,8 @@ replaceLocalValuesImpl (const LO localRowIndex,
 {
   little_vec_type X_dst = getLocalBlock (localRowIndex, colIndex);
   const LO strideX = 1;
-  const_little_vec_type X_src (vals, getBlockSize (), strideX);
+  const_little_vec_type X_src (reinterpret_cast<const scalar_type*> (vals),
+                               getBlockSize (), strideX);
   X_dst.assign (X_src);
 }
 
@@ -275,8 +345,8 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
 {
   little_vec_type X_dst = getLocalBlock (localRowIndex, colIndex);
   const LO strideX = 1;
-  const_little_vec_type X_src (vals, getBlockSize (), strideX);
-
+  const_little_vec_type X_src (reinterpret_cast<const scalar_type*> (vals),
+                               getBlockSize (), strideX);
   X_dst.update (STS::one (), X_src);
 }
 
@@ -298,7 +368,10 @@ sumIntoLocalValues (const LO localRowIndex,
 template<class Scalar, class LO, class GO, class Node>
 bool
 BlockMultiVector<Scalar, LO, GO, Node>::
-sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]) const {
+sumIntoGlobalValues (const GO globalRowIndex,
+                     const LO colIndex,
+                     const Scalar vals[]) const
+{
   const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
     return false;
@@ -317,7 +390,7 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
     return false;
   } else {
     little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = X_ij.getRawPtr ();
+    vals = reinterpret_cast<Scalar*> (X_ij.getRawPtr ());
     return true;
   }
 }
@@ -332,7 +405,7 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
     return false;
   } else {
     little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = X_ij.getRawPtr ();
+    vals = reinterpret_cast<Scalar*> (X_ij.getRawPtr ());
     return true;
   }
 }
@@ -350,7 +423,8 @@ getLocalBlock (const LO localRowIndex,
     const size_t blockSize = getBlockSize ();
     const size_t offset = colIndex * this->getStrideY () +
       localRowIndex * blockSize * strideX;
-    return little_vec_type (this->getRawPtr () + offset, blockSize, strideX);
+    scalar_type* blockRaw = this->getRawPtr () + offset;
+    return little_vec_type (blockRaw, blockSize, strideX);
   }
 }
 
@@ -397,10 +471,10 @@ copyAndPermute (const Tpetra::SrcDistObject& src,
                 const Teuchos::ArrayView<const LO>& permuteToLIDs,
                 const Teuchos::ArrayView<const LO>& permuteFromLIDs)
 {
-  const char tfecfFuncName[] = "copyAndPermute";
+  const char tfecfFuncName[] = "copyAndPermute: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-    ": permuteToLIDs and permuteFromLIDs must have the same size."
+    "permuteToLIDs and permuteFromLIDs must have the same size."
     << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size ()
     << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
 
@@ -408,7 +482,7 @@ copyAndPermute (const Tpetra::SrcDistObject& src,
   Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": The source of an Import or Export to a BlockMultiVector "
+    "The source of an Import or Export to a BlockMultiVector "
     "must also be a BlockMultiVector.");
   const BMV& srcAsBmv = *srcAsBmvPtr;
 
@@ -438,19 +512,19 @@ template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 packAndPrepare (const Tpetra::SrcDistObject& src,
                 const Teuchos::ArrayView<const LO>& exportLIDs,
-                Teuchos::Array<packet_type>& exports,
+                Teuchos::Array<scalar_type>& exports,
                 const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
                 size_t& constantNumPackets,
                 Tpetra::Distributor& /* distor */)
 {
   typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  const char tfecfFuncName[] = "packAndPrepare";
+  const char tfecfFuncName[] = "packAndPrepare: ";
 
   Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": The source of an Import or Export to a BlockMultiVector "
+    "The source of an Import or Export to a BlockMultiVector "
     "must also be a BlockMultiVector.");
   const BMV& srcAsBmv = *srcAsBmvPtr;
 
@@ -473,7 +547,7 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
     for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
       for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
         const LO meshLid = exportLIDs[meshLidIndex];
-        Scalar* const curExportPtr = &exports[curExportPos];
+        scalar_type* const curExportPtr = &exports[curExportPos];
         little_vec_type X_dst (curExportPtr, blockSize, 1);
         little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
 
@@ -482,7 +556,7 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
     }
   } catch (std::exception& e) {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      true, std::logic_error, ": Oh no!  packAndPrepare on Process "
+      true, std::logic_error, "Oh no!  packAndPrepare on Process "
       << meshMap_.getComm ()->getRank () << " raised the following exception: "
       << e.what ());
   }
@@ -491,18 +565,18 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
-                  const Teuchos::ArrayView<const packet_type>& imports,
+                  const Teuchos::ArrayView<const scalar_type>& imports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t constantNumPackets,
                   Tpetra::Distributor& distor,
                   Tpetra::CombineMode CM)
 {
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  const char tfecfFuncName[] = "unpackAndCombine";
+  const char tfecfFuncName[] = "unpackAndCombine: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX && CM != ZERO,
-    std::invalid_argument, ": Invalid CombineMode: " << CM << ".  Valid "
+    std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
     "CombineMode values are ADD, REPLACE, INSERT, ABSMAX, and ZERO.");
 
   if (CM == ZERO) {
@@ -526,7 +600,7 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
   for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
     for (LO j = 0; j < numVecs; ++j, curImportPos += blockSize) {
       const LO meshLid = importLIDs[meshLidIndex];
-      const Scalar* const curImportPtr = &imports[curImportPos];
+      const scalar_type* const curImportPtr = &imports[curImportPos];
 
       const_little_vec_type X_src (curImportPtr, blockSize, 1);
       little_vec_type X_dst = getLocalBlock (meshLid, j);

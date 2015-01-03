@@ -139,8 +139,15 @@ public:
   //! \name Public typedefs
   //@{
 
-  //! The type of entries in the matrix.
-  typedef Scalar scalar_type;
+  /// \brief The type of entries in the matrix.
+  ///
+  /// The odd expression for this type addresses a work-around that
+  /// the new ("Kokkos refactor," as opposed to "classic") version of
+  /// Tpetra uses, to deal with missing device macros and volatile
+  /// overloads in types like std::complex<T>.  There, Scalar and this
+  /// scalar_type typedef might differ.  For Scalar = double, float,
+  /// int, etc., Scalar == scalar_type.
+  typedef typename BlockMultiVector<Scalar, LO, GO, Node>::scalar_type scalar_type;
   //! The type of local indices.
   typedef LO local_ordinal_type;
   //! The type of global indices.
@@ -149,13 +156,13 @@ public:
   typedef Node node_type;
 
   typedef ::Tpetra::Map<LO, GO, node_type> map_type;
-  typedef Tpetra::MultiVector<scalar_type, LO, GO, node_type> mv_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
   typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
 
-  typedef LittleBlock<Scalar, LO> little_block_type;
-  typedef LittleBlock<const Scalar, LO> const_little_block_type;
-  typedef LittleVector<Scalar, LO> little_vec_type;
-  typedef LittleVector<const Scalar, LO> const_little_vec_type;
+  typedef LittleBlock<scalar_type, LO> little_block_type;
+  typedef LittleBlock<const scalar_type, LO> const_little_block_type;
+  typedef LittleVector<scalar_type, LO> little_vec_type;
+  typedef LittleVector<const scalar_type, LO> const_little_vec_type;
 
   //@}
   //! \name Constructors and destructor
@@ -227,8 +234,8 @@ public:
   apply (const mv_type& X,
          mv_type& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
 
   /// \brief Whether it is valid to apply the transpose or conjugate
   ///   transpose of this matrix.
@@ -239,7 +246,7 @@ public:
   }
 
   //! Set all matrix entries equal to \c alpha.
-  void setAllToScalar (const Scalar &alpha);
+  void setAllToScalar (const Scalar& alpha);
 
   //@}
   //! \name Implementation of Teuchos::Describable
@@ -404,19 +411,20 @@ public:
 
   void
   getLocalRowView (LO LocalRow,
-                   ArrayView<const LO> &indices,
-                   ArrayView<const Scalar> &values) const;
+                   Teuchos::ArrayView<const LO> &indices,
+                   Teuchos::ArrayView<const Scalar> &values) const;
 
   void
   getLocalRowCopy (LO LocalRow,
-                   const ArrayView<LO> &Indices,
-                   const ArrayView<Scalar> &Values,
+                   const Teuchos::ArrayView<LO> &Indices,
+                   const Teuchos::ArrayView<Scalar> &Values,
                    size_t &NumEntries) const;
 
+  little_block_type
+  getLocalBlock (const LO localRowInd, const LO localColInd) const;
 
-  little_block_type getLocalBlock (const LO localRowInd, const LO localColInd) const;
-
-  /// \brief Get relative offsets corresponding to the given row indices.
+  /// \brief Get relative offsets corresponding to the given rows,
+  ///   given by local row index.
   ///
   /// The point of this method is to precompute the results of
   /// searching for the offsets corresponding to the given column
@@ -567,7 +575,6 @@ public:
 
   Teuchos::RCP<crs_graph_type> getDiagonalGraph () const;
 
-
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
   LO
@@ -654,12 +661,12 @@ private:
   /// This is stored as a Teuchos::ArrayRCP, so that BlockCrsMatrix
   /// has view (shallow copy) semantics.  In the future, we will want
   /// to replace this with Kokkos::View.
-  Teuchos::ArrayRCP<Scalar> valView_;
+  Teuchos::ArrayRCP<scalar_type> valView_;
   /// \brief Raw pointer version of valView_.
   ///
   /// It must always be true, outside of the constructors, that
   /// <tt>valView_.getRawPtr() == val_</tt>.
-  Scalar* val_;
+  scalar_type* val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
@@ -767,7 +774,6 @@ private:
   Teuchos::RCP<crs_graph_type> diagonalGraph_;
   bool computedDiagonalGraph_;
 
-
   /// \brief Get the relative block offset of the given block.
   ///
   /// \param localRowIndex [in] Local index of the entry's row.
@@ -810,10 +816,10 @@ private:
   LO offsetPerBlock () const;
 
   const_little_block_type
-  getConstLocalBlockFromInput (const Scalar* val, const size_t pointOffset) const;
+  getConstLocalBlockFromInput (const scalar_type* val, const size_t pointOffset) const;
 
   little_block_type
-  getNonConstLocalBlockFromInput (Scalar* val, const size_t pointOffset) const;
+  getNonConstLocalBlockFromInput (scalar_type* val, const size_t pointOffset) const;
 
   const_little_block_type
   getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
@@ -926,7 +932,7 @@ public:
   getGlobalRowCopy (GO GlobalRow,
                     const Teuchos::ArrayView<GO> &Indices,
                     const Teuchos::ArrayView<Scalar> &Values,
-                    size_t &NumEntries) const;
+                    size_t& NumEntries) const;
 
   /// \brief Get a constant, nonpersisting, globally indexed view of
   ///   the given row of the matrix.
@@ -954,8 +960,8 @@ public:
   /// is set to \c null.
   virtual void
   getGlobalRowView (GO GlobalRow,
-                    ArrayView<const GO> &indices,
-                    ArrayView<const Scalar> &values) const;
+                    Teuchos::ArrayView<const GO>& indices,
+                    Teuchos::ArrayView<const Scalar>& values) const;
 
   /// \brief Get a copy of the diagonal entries, distributed by the row Map.
   ///
@@ -968,7 +974,7 @@ public:
   /// same diagonal element.  You may combine these overlapping
   /// diagonal elements by doing an Export from the row Map Vector
   /// to a range Map Vector.
-  virtual void getLocalDiagCopy (Vector<Scalar,LO,GO,Node> &diag) const;
+  virtual void getLocalDiagCopy (Vector<Scalar,LO,GO,Node>& diag) const;
 
   //@}
   //! \name Mathematical methods
@@ -996,8 +1002,8 @@ public:
   /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
-  virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
-
+  virtual typename Tpetra::MultiVector<Scalar, LO, GO, Node>::mag_type
+  getFrobeniusNorm () const;
 };
 
 } // namespace Experimental

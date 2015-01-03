@@ -87,23 +87,20 @@ public:
   //@{
 
   //! The type of entries in the vector.
-  typedef Scalar scalar_type;
+  typedef typename base_type::scalar_type scalar_type;
   //! The type of local indices.
-  typedef LO local_ordinal_type;
+  typedef typename base_type::local_ordinal_type local_ordinal_type;
   //! The type of global indices.
-  typedef GO global_ordinal_type;
+  typedef typename base_type::global_ordinal_type global_ordinal_type;
   //! The Kokkos Node type.
-  typedef Node node_type;
+  typedef typename base_type::node_type node_type;
 
   //! The specialization of Tpetra::Map that this class uses.
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type,
-                      node_type> map_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
   //! The specialization of Tpetra::MultiVector that this class uses.
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> mv_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
   //! The specialization of Tpetra::Vector that this class uses.
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vec_type;
+  typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
 
   /// \brief "Block view" of all degrees of freedom at a mesh point.
   ///
@@ -119,13 +116,13 @@ public:
   /// little_vec_type or const_little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  typedef LittleVector<Scalar, LO> little_vec_type;
+  typedef LittleVector<scalar_type, LO> little_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point.
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef LittleVector<const Scalar, LO> const_little_vec_type;
+  typedef LittleVector<const scalar_type, LO> const_little_vec_type;
 
   //@}
   //! \name Constructors

@@ -158,8 +158,16 @@ public:
   //! \name Typedefs to facilitate template metaprogramming.
   //@{
 
-  //! The type of entries in the vector.
-  typedef Scalar scalar_type;
+  /// \brief The type of entries in the vector.
+  ///
+  /// The odd expression for this type addresses a work-around that
+  /// the new ("Kokkos refactor," as opposed to "classic") version of
+  /// Tpetra uses, to deal with missing device macros and volatile
+  /// overloads in types like std::complex<T>.  There, Scalar and this
+  /// scalar_type typedef might differ.  For Scalar = double, float,
+  /// int, etc., Scalar == scalar_type.
+  typedef typename Tpetra::MultiVector<Scalar, LO, GO,
+                                       Node>::scalar_type scalar_type;
   //! The type of local indices.
   typedef LO local_ordinal_type;
   //! The type of global indices.
@@ -168,11 +176,9 @@ public:
   typedef Node node_type;
 
   //! The specialization of Tpetra::Map that this class uses.
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type,
-                      node_type> map_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
   //! The specialization of Tpetra::MultiVector that this class uses.
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> mv_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
 
   /// \brief "Block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.
@@ -189,14 +195,14 @@ public:
   /// little_vec_type or const_little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  typedef LittleVector<Scalar, LO> little_vec_type;
+  typedef LittleVector<scalar_type, LO> little_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef LittleVector<const Scalar, LO> const_little_vec_type;
+  typedef LittleVector<const scalar_type, LO> const_little_vec_type;
 
   //@}
   //! \name Constructors
@@ -433,14 +439,14 @@ protected:
   virtual void
   packAndPrepare (const Tpetra::SrcDistObject& source,
                   const Teuchos::ArrayView<const LO>& exportLIDs,
-                  Teuchos::Array<packet_type>& exports,
+                  Teuchos::Array<scalar_type>& exports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t& constantNumPackets,
                   Tpetra::Distributor& distor);
 
   virtual void
   unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-                    const Teuchos::ArrayView<const packet_type> &imports,
+                    const Teuchos::ArrayView<const scalar_type> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                     size_t constantNumPackets,
                     Tpetra::Distributor& distor,
@@ -449,7 +455,7 @@ protected:
 
 protected:
   //! Raw pointer to the MultiVector's data.
-  Scalar* getRawPtr () const {
+  scalar_type* getRawPtr () const {
     return mvData_;
   }
 
@@ -498,7 +504,7 @@ private:
   /// this will become a Kokkos::View.  It's safe to keep this,
   /// because the data belong to the Vector, which we keep for the
   /// lifetime of the BlockMultiVector.
-  Scalar* mvData_;
+  scalar_type* mvData_; // typename Tpetra::MultiVector<Scalar, LO, GO, Node>::scalar_type* mvData_;
 
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;

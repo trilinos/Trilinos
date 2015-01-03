@@ -45,9 +45,41 @@
 /// \file Tpetra_Experimental_BlockView.hpp
 /// \brief Declaration and definition of LittleBlock and LittleVector
 
+#include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_LAPACK.hpp>
 
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+#  include <Kokkos_ArithTraits.hpp>
+#  include <Kokkos_complex.hpp>
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+namespace { // anonymous
+
+  /// \brief Return the Teuchos::LAPACK specialization corresponding
+  ///   to the given Scalar type.
+  ///
+  /// The reason this exists is the same reason why the scalar_type
+  /// typedef in Tpetra::MultiVector may differ from its Scalar
+  /// template parameter.  For example, Scalar = std::complex<T>
+  /// corresponds to scalar_type = Kokkos::complex<T>.  The latter has
+  /// no Teuchos::LAPACK specialization, so we have to map it back to
+  /// std::complex<T>.
+  template<class Scalar>
+  struct GetLapackType {
+    typedef Scalar lapack_scalar_type;
+    typedef Teuchos::LAPACK<int, Scalar> lapack_type;
+  };
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  template<class T>
+  struct GetLapackType<Kokkos::complex<T> > {
+    typedef std::complex<T> lapack_scalar_type;
+    typedef Teuchos::LAPACK<int, std::complex<T> > lapack_type;
+  };
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+} // namespace (anonymous)
 
 //#include "Teuchos_LAPACK_wrappers.hpp"
 //extern "C" {int DGETRF_F77(const int *, const int *, double *, const int*, int *, int*);}
@@ -84,7 +116,11 @@ namespace Experimental {
 template<class Scalar, class LO>
 class LittleBlock {
 private:
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+#else
   typedef Teuchos::ScalarTraits<Scalar> STS;
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 public:
   /// \brief Constructor
@@ -168,21 +204,36 @@ public:
     }
   }
 
-
-
   void factorize (int* ipiv, int & info)
   {
-    Teuchos::LAPACK<int, Scalar> lapack;
-    lapack.GETRF(blockSize_, blockSize_, A_, blockSize_, ipiv, &info);
+    typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
+    typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+
+    LST* const A_raw = reinterpret_cast<LST*> (A_);
+    lapack_type lapack;
+    // NOTE (mfh 03 Jan 2015) This method doesn't check the 'info'
+    // output argument, but it returns info, so the user is
+    // responsible for checking.
+    lapack.GETRF(blockSize_, blockSize_, A_raw, blockSize_, ipiv, &info);
   }
 
   template<class LittleVectorType>
   void solve (LittleVectorType & X, const int* ipiv) const
   {
-    int info;
-    Teuchos::LAPACK<int, Scalar> lapack;
+    typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
+    typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+
+    // FIXME (mfh 03 Jan 2015) Check using enable_if that
+    // LittleVectorType::scalar_type can be safely converted to LST.
+
+    lapack_type lapack;
+    LST* const A_raw = reinterpret_cast<LST*> (A_);
+    LST* const X_raw = reinterpret_cast<LST*> (X.getRawPtr ());
+    int info = 0;
     char trans = 'T';
-    lapack.GETRS(trans, blockSize_, 1, A_, blockSize_, ipiv, X.getRawPtr(), blockSize_, &info);
+    // FIXME (mfh 03 Jan 2015) Either check the 'info' output
+    // argument, or return it.
+    lapack.GETRS(trans, blockSize_, 1, A_raw, blockSize_, ipiv, X_raw, blockSize_, &info);
   }
 
 private:
@@ -213,7 +264,11 @@ private:
 template<class Scalar, class LO>
 class LittleVector {
 private:
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+#else
   typedef Teuchos::ScalarTraits<Scalar> STS;
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 public:
   /// \brief Constructor
