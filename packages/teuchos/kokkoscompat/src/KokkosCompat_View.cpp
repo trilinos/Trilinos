@@ -43,6 +43,8 @@
 //@HEADER
 */
 
+#if 0
+
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 
@@ -89,3 +91,5 @@ namespace Kokkos {
 
   } // namespace Compat
 } // namespace Kokkos
+
+#endif // 0

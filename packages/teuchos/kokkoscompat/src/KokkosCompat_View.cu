@@ -9,7 +9,7 @@
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -42,6 +42,8 @@
 // ************************************************************************
 //@HEADER
 */
+
+#if 0
 
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
@@ -77,3 +79,5 @@ namespace Kokkos {
 
   } // namespace Compat
 } // namespace Kokkos
+
+#endif // 0
