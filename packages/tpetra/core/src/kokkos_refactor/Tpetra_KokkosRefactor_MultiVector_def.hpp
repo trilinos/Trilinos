@@ -2256,11 +2256,11 @@ namespace Tpetra {
     }
   }
 
-  // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
-  // because scalar_type may differ from Scalar.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::ArrayRCP<const typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  Teuchos::ArrayRCP<const Scalar>
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getData (size_t j) const
   {
     using Kokkos::ALL;
@@ -2285,7 +2285,7 @@ namespace Tpetra {
     }
 
     // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
-    Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+    Teuchos::ArrayRCP<const scalar_type> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2295,22 +2295,16 @@ namespace Tpetra {
       << hostView_j.dimension_0 () << " < dataAsArcp.size() = "
       << dataAsArcp.size () << ".  "
       "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getLocalLength () != 0 && getNumVectors () != 0 &&
-      hostView_j(0,0) != dataAsArcp[0], std::logic_error, "Tpetra::MultiVector"
-      "::getData: hostView_j(0,0) = " << hostView_j(0,0) << " != dataAsArcp[0]"
-      " = " << dataAsArcp[0] << ".  Please report this bug to the Tpetra "
-      "developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-    return Teuchos::arcp_const_cast<const scalar_type> (dataAsArcp);
+    return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
   }
 
-  // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
-  // because scalar_type may differ from Scalar.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::ArrayRCP<typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  Teuchos::ArrayRCP<Scalar>
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,Kokkos
+    ::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getDataNonConst (size_t j)
   {
     using Kokkos::ALL;
@@ -2350,15 +2344,9 @@ namespace Tpetra {
       << hostView_j.dimension_0 () << " < dataAsArcp.size() = "
       << dataAsArcp.size () << ".  "
       "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getLocalLength () != 0 && getNumVectors () != 0 &&
-      hostView_j(0,0) != dataAsArcp[0], std::logic_error, "Tpetra::MultiVector"
-      "::getDataNonConst: hostView_j(0,0) = " << hostView_j(0,0) << " != "
-      "dataAsArcp[0] = " << dataAsArcp[0] << ".  Please report this bug to the "
-      "Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-    return dataAsArcp;
+    return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -2691,7 +2679,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  get1dCopy (const Teuchos::ArrayView<scalar_type>& A, const size_t LDA) const
+  get1dCopy (const Teuchos::ArrayView<Scalar>& A, const size_t LDA) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -2710,7 +2698,7 @@ namespace Tpetra {
       typename dev_view_type::array_layout,
       typename dev_view_type::device_type,
       Kokkos::MemoryUnmanaged> dev_col_type;
-    const char tfecfFuncName[] = "get1dCopy";
+    const char tfecfFuncName[] = "get1dCopy: ";
 
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
@@ -2719,13 +2707,13 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < numRows, std::runtime_error,
-      ": LDA = " << LDA << " < numRows = " << numRows << ".");
+      "LDA = " << LDA << " < numRows = " << numRows << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       numRows > static_cast<size_t> (0) &&
       numCols > static_cast<size_t> (0) &&
       static_cast<size_t> (A.size ()) < LDA * (numCols - 1) + numRows,
       std::runtime_error,
-      ": A.size() = " << A.size () << ", but its size must be at least "
+      "A.size() = " << A.size () << ", but its size must be at least "
       << (LDA * (numCols - 1) + numRows) << " to hold all the entries.");
 
     // FIXME (mfh 22 Jul 2014, 10 Dec 2014) Currently, it doesn't work
@@ -2739,7 +2727,8 @@ namespace Tpetra {
     for (size_t j = 0; j < numCols; ++j) {
       const size_t srcCol = this->isConstantStride () ? j : this->whichVectors_[j];
       const size_t dstCol = j;
-      scalar_type* const dstColRaw = A.getRawPtr () + LDA * dstCol;
+      scalar_type* const dstColRaw =
+        reinterpret_cast<scalar_type*> (A.getRawPtr () + LDA * dstCol);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         static_cast<size_t> (A.size ()) < LDA * dstCol + numRows,
@@ -2775,17 +2764,19 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > ArrayOfPtrs) const
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  get2dCopy (const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> >& ArrayOfPtrs) const
   {
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> V;
-    const char tfecfFuncName[] = "get2dCopy";
+    const char tfecfFuncName[] = "get2dCopy: ";
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (ArrayOfPtrs.size ()) != numCols,
-      std::runtime_error, ": Input array of pointers must contain as many "
+      std::runtime_error, "Input array of pointers must contain as many "
       "entries (arrays) as the MultiVector has columns.  ArrayOfPtrs.size() = "
       << ArrayOfPtrs.size () << " != getNumVectors() = " << numCols << ".");
 
@@ -2794,7 +2785,7 @@ namespace Tpetra {
       for (size_t j = 0; j < numCols; ++j) {
         const size_t dstLen = static_cast<size_t> (ArrayOfPtrs[j].size ());
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstLen < numRows, std::invalid_argument, ": Array j = " << j << " of "
+          dstLen < numRows, std::invalid_argument, "Array j = " << j << " of "
           "the input array of arrays is not long enough to fit all entries in "
           "that column of the MultiVector.  ArrayOfPtrs[j].size() = " << dstLen
           << " < getLocalLength() = " << numRows << ".");

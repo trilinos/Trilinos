@@ -248,11 +248,11 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst; // overloading, not hiding
   //! View of the local values of this vector.
-  Teuchos::ArrayRCP<scalar_type> getDataNonConst()     { return getDataNonConst(0); }
+  Teuchos::ArrayRCP<Scalar> getDataNonConst () { return getDataNonConst (0); }
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getData; // overloading, not hiding
   //! Const view of the local values of this vector.
-  Teuchos::ArrayRCP<const scalar_type> getData() const { return getData(0); }
+  Teuchos::ArrayRCP<const Scalar> getData () const { return getData (0); }
 
   Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,

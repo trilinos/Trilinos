@@ -3202,14 +3202,14 @@ namespace Tpetra {
         "input scaling vector x's Map must be the same as either the row Map or "
         "the range Map of the CrsMatrix.");
     }
-    ArrayRCP<const scalar_type> vectorVals = xp->getData (0);
+    ArrayRCP<const Scalar> vectorVals = xp->getData (0);
     ArrayView<scalar_type> rowValues = null;
 
     const size_t lclNumRows = this->getNodeNumRows ();
     for (size_t i = 0; i < lclNumRows; ++i) {
       const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
       rowValues = this->getViewNonConst (rowinfo);
-      const scalar_type scaleValue = vectorVals[i];
+      const scalar_type scaleValue = static_cast<scalar_type> (vectorVals[i]);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
         rowValues[j] *= scaleValue;
       }
@@ -3261,7 +3261,7 @@ namespace Tpetra {
         "either the row Map or the range Map.");
     }
 
-    ArrayRCP<const scalar_type> vectorVals = xp->getData (0);
+    ArrayRCP<const Scalar> vectorVals = xp->getData (0);
     ArrayView<scalar_type> rowValues = null;
 
     const size_t lclNumRows = this->getNodeNumRows ();
@@ -3271,7 +3271,7 @@ namespace Tpetra {
       ArrayView<const LocalOrdinal> colInds;
       getCrsGraph ()->getLocalRowView (static_cast<LocalOrdinal> (i), colInds);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-        rowValues[j] *= vectorVals[colInds[j]];
+        rowValues[j] *= static_cast<scalar_type> (vectorVals[colInds[j]]);
       }
     }
   }

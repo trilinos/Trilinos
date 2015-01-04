@@ -1146,63 +1146,30 @@ namespace Tpetra {
     getVectorNonConst (size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
-    Teuchos::ArrayRCP<const scalar_type> getData (size_t j) const;
+    Teuchos::ArrayRCP<const Scalar> getData (size_t j) const;
 
     //! View of the local values in a particular vector of this multivector.
-    Teuchos::ArrayRCP<scalar_type> getDataNonConst (size_t j);
+    Teuchos::ArrayRCP<Scalar> getDataNonConst (size_t j);
 
-    /// \brief Fill the given array with a copy of this multivector's local values.
+    /// \brief Fill the given array with a copy of this multivector's
+    ///   local values.
     ///
     /// \param A [out] View of the array to fill.  We consider A as a
     ///   matrix with column-major storage.
     ///
     /// \param LDA [in] Leading dimension of the matrix A.
     void
-    get1dCopy (const Teuchos::ArrayView<scalar_type>& A,
+    get1dCopy (const Teuchos::ArrayView<Scalar>& A,
                const size_t LDA) const;
 
-    template<typename T>
-#ifdef KOKKOS_HAVE_CXX11
-    typename std::enable_if<! std::is_same<T, scalar_type>::value &&
-                            sizeof (T) == sizeof (scalar_type), void>::type
-#else
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
-#endif // KOKKOS_HAVE_CXX11
-    get1dCopy (const Teuchos::ArrayView<T>& A, const size_t LDA) const
-    {
-      Teuchos::ArrayView<scalar_type> A_r =
-        Teuchos::av_reinterpret_cast<scalar_type> (A);
-      this->get1dCopy (A_r, LDA);
-    }
-
-    /// \brief Fill the given array with a copy of this multivector's local values.
+    /// \brief Fill the given array with a copy of this multivector's
+    ///   local values.
     ///
     /// \param ArrayOfPtrs [out] Array of arrays, one for each column
     ///   of the multivector.  On output, we fill ArrayOfPtrs[j] with
     ///   the data for column j of this multivector.
-    void get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > ArrayOfPtrs) const;
-
-    template<typename T>
-#ifdef KOKKOS_HAVE_CXX11
-    typename std::enable_if<! std::is_same<T, scalar_type>::value &&
-                            sizeof (T) == sizeof (scalar_type), void>::type
-#else
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
-#endif // KOKKOS_HAVE_CXX11
-    get2dCopy (const Teuchos::ArrayView<const Teuchos::ArrayView<T> >& A,
-               const size_t LDA) const
-    {
-      const size_t numVecs = this->getNumVectors ();
-      const size_t numEnts = A.size ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numVecs != numEnts, std::invalid_argument, "Tpetra::MultiVector::"
-        "get2dCopy: this->getNumVectors() = " << numVecs << " != A.size() = "
-        << numEnts << ".");
-      for (size_t j = 0; j < numVecs; ++j) {
-        Teuchos::ArrayView<T> A_j = Teuchos::av_reinterpret_cast<T> (A[j]);
-        this->getVector (j)->get1dCopy (A_j);
-      }
-    }
+    void
+    get2dCopy (const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> >& ArrayOfPtrs) const;
 
     /// \brief Const persisting (1-D) view of this multivector's local values.
     ///
@@ -1248,6 +1215,13 @@ namespace Tpetra {
     getLocalMVNonConst ();
 
     /// \brief Get the Kokkos::DualView which implements local storage.
+    ///
+    /// Instead of getting the Kokkos::DualView, we highly recommend
+    /// calling the templated view() method, that returns a
+    /// Kokkos::View of the MultiVector's data in a given memory
+    /// space.  Since that MultiVector itself implements DualView
+    /// semantics, it's much better to use MultiVector's interface to
+    /// do "DualView things," like calling modify() and sync().
     ///
     /// \warning This method is ONLY for expert developers.  Its
     ///   interface may change or it may disappear at any time.
@@ -1364,6 +1338,21 @@ namespace Tpetra {
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
     dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
          const Teuchos::ArrayView<T> &dots) const
+    {
+      const size_t sz = static_cast<size_t> (dots.size ());
+      Teuchos::Array<dot_type> dts (sz);
+      this->dot (A, dts);
+      for (size_t i = 0; i < sz; ++i) {
+        // If T and dot_type differ, this does an implicit conversion.
+        dots[i] = dts[i];
+      }
+    }
+
+    //! Like the above dot() overload, but for std::vector output.
+    template <typename T>
+    typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         std::vector<T>& dots) const
     {
       const size_t sz = dots.size ();
       Teuchos::Array<dot_type> dts (sz);
