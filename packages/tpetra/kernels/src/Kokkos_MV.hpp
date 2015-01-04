@@ -2017,157 +2017,164 @@ struct MV_DotProduct_Right_FunctorUnroll
 };
 
 template<class rVector, class XVector, class YVector>
-rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y, int n = -1)
+rVector
+MV_Dot (const rVector& r,
+        const XVector& x,
+        const YVector& y,
+        typename XVector::size_type numRows)
 {
-    typedef typename XVector::size_type            size_type;
-    const size_type numVecs = x.dimension(1);
+  typedef typename XVector::size_type size_type;
+  const size_type numVecs = x.dimension(1);
 
-    if(n<0) n = x.dimension_0();
-    if(numVecs>16){
+  if (numVecs > 16) {
+    MV_DotProduct_Right_FunctorVector<XVector,YVector> op;
+    op.m_x = x;
+    op.m_y = y;
+    op.value_count = numVecs;
 
-        MV_DotProduct_Right_FunctorVector<XVector,YVector> op;
-        op.m_x = x;
-        op.m_y = y;
-        op.value_count = numVecs;
-
-        Kokkos::parallel_reduce( n , op, r );
-        return r;
-     }
-     else
-     switch(numVecs) {
-       case 16: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,16> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 15: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,15> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 14: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,14> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 13: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,13> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 12: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,12> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 11: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,11> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 10: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,10> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 9: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,9> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 8: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,8> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 7: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,7> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 6: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,6> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 5: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,5> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 4: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,4> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-
-           break;
-       }
-       case 3: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,3> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 2: {
-           MV_DotProduct_Right_FunctorUnroll<XVector,YVector,2> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce( n , op, r );
-           break;
-       }
-       case 1: {
-         typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
-         typedef View<typename YVector::const_value_type*,typename YVector::device_type> YVector1D;
-
-         XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
-         YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
-         r[0] = V_Dot(x_1d,y_1d,n);
-           break;
-       }
-     }
-
+    Kokkos::parallel_reduce (numRows, op, r);
     return r;
+  }
+  else {
+    switch (numVecs) {
+    case 16: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,16> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 15: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,15> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 14: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,14> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 13: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,13> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 12: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,12> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 11: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,11> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 10: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,10> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 9: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,9> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 8: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,8> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 7: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,7> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 6: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,6> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 5: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,5> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 4: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,4> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+
+      break;
+    }
+    case 3: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,3> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 2: {
+      MV_DotProduct_Right_FunctorUnroll<XVector,YVector,2> op;
+      op.m_x = x;
+      op.m_y = y;
+      op.value_count = numVecs;
+      Kokkos::parallel_reduce (numRows, op, r);
+      break;
+    }
+    case 1: {
+      // For the single-vector case, use the single-vector kernel for
+      // better performance.  (It's usually faster to use fewer
+      // indices when looking up View entries.)
+      typedef View<typename XVector::const_value_type*,
+                   typename XVector::device_type> XVector1D;
+      typedef View<typename YVector::const_value_type*,
+                   typename YVector::device_type> YVector1D;
+
+      XVector1D x_1d = Kokkos::subview<XVector1D> (x, ALL (), 0);
+      YVector1D y_1d = Kokkos::subview<YVector1D> (y, ALL (), 0);
+      r[0] = V_Dot (x_1d, y_1d, numRows);
+      break;
+    }
+    } // switch
+  } // if-else
+  return r;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -2826,13 +2833,14 @@ struct V_DotFunctor
 
 template<class XVector, class YVector>
 typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
-V_Dot( const XVector & x, const YVector & y, int n = -1)
+V_Dot (const XVector& x,
+       const YVector& y,
+       const typename XVector::size_type numRows)
 {
-  typedef V_DotFunctor<XVector,YVector> Functor;
-  Functor f(x,y);
-  if (n<0) n = x.dimension_0();
-  typename Functor::value_type ret_val;
-  parallel_reduce(n,f,ret_val);
+  typedef V_DotFunctor<XVector, YVector> functor_type;
+  functor_type f (x, y);
+  typename functor_type::value_type ret_val;
+  parallel_reduce (numRows, f, ret_val);
   return ret_val;
 }
 
@@ -2873,18 +2881,16 @@ struct V_DotWeighted_Functor
 
 template<class WeightVector, class XVector>
 typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
-V_DotWeighted(const WeightVector & w, const XVector & x, int n = -1)
+V_DotWeighted (const WeightVector& w,
+               const XVector& x,
+               const typename XVector::size_type numRows)
 {
-  if (n < 0) {
-    n = x.dimension_0 ();
-  }
-
   typedef Details::InnerProductSpaceTraits<typename XVector::non_const_value_type> IPT;
   typedef typename IPT::dot_type value_type;
   value_type ret_val;
 
-  typedef V_DotWeighted_Functor<WeightVector,XVector> functor_type;
-  Kokkos::parallel_reduce (n , functor_type (w, x), ret_val);
+  typedef V_DotWeighted_Functor<WeightVector, XVector> functor_type;
+  Kokkos::parallel_reduce (numRows, functor_type (w, x), ret_val);
   return ret_val;
 }
 

@@ -842,22 +842,22 @@ namespace Tpetra {
     //
     // FIXME (mfh 14 Jul 2014) It would be better to get this typedef
     // from mv_view_type itself, in case the layout changes.
-    typedef Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
+    typedef Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft,
+      device_type> vec_view_type;
     typedef typename dual_view_type::host_mirror_space host_mirror_space;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
       host_mirror_space, Kokkos::MemoryUnmanaged> host_dots_view_type;
     typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
       host_mirror_space> host_dots_managed_view_type;
-    const char tfecfFuncName[] = "Tpetra::MultiVector::dot";
+    const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
 #ifdef HAVE_TPETRA_DEBUG
     {
       const bool compat = this->getMap ()->isCompatible (* (A.getMap ()));
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        ! compat, std::invalid_argument, "Tpetra::MultiVector::dot: *this is "
-        "not compatible with the input MultiVector A.  We only test for this "
-        "in a debug build.");
+        ! compat, std::invalid_argument, "This MultiVector is not compatible "
+        "with the input A.  We only test for this in a debug build.");
     }
 #endif //  HAVE_TPETRA_DEBUG
 
@@ -919,11 +919,11 @@ namespace Tpetra {
         << Y_k.dimension_0 () << " != lclNumRows = " << lclNumRows
         << ".  Please report this bug to the Tpetra developers.");
 
-      dots[0] = Kokkos::V_Dot (X_k, Y_k, -1);
+      dots[0] = Kokkos::V_Dot (X_k, Y_k, lclNumRows);
     }
     else if (isConstantStride () && A.isConstantStride ()) {
       // Special case 2: Both MultiVectors have constant stride.
-      (void) Kokkos::MV_Dot (dots.getRawPtr (), X, Y, -1);
+      (void) Kokkos::MV_Dot (dots.getRawPtr (), X, Y, lclNumRows);
     }
     else {
       // FIXME (mfh 14 Jul 2014) This does a kernel launch for every
@@ -935,7 +935,7 @@ namespace Tpetra {
         const size_t Y_col = A.isConstantStride () ? k : A.whichVectors_[k];
         vec_view_type X_k = subview<vec_view_type> (X, ALL (), X_col);
         vec_view_type Y_k = subview<vec_view_type> (Y, ALL (), Y_col);
-        dots[k] = Kokkos::V_Dot (X_k, Y_k, -1);
+        dots[k] = Kokkos::V_Dot (X_k, Y_k, lclNumRows);
       }
     }
 
