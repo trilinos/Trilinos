@@ -534,13 +534,24 @@ namespace Tpetra {
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
-    //! The type of entries in the vector(s).
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type scalar_type;
-    //! The type of local indices.
+    /// \brief This class' first template parameter; the type of
+    ///   each entry in the MultiVector.
+    typedef Scalar scalar_type;
+    /// \brief The type used internally in place of \c Scalar.
+    ///
+    /// Some \c Scalar types might not work with Kokkos on all
+    /// execution spaces, due to missing CUDA device macros or
+    /// volatile overloads.  The C++ standard type std::complex<T> has
+    /// this problem.  To fix this, we replace std::complex<T> values
+    /// internally with the (usually) bitwise identical type
+    /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
+    /// corresponding to \c Scalar = std::complex.
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+    //! This class' second template parameter; the type of local indices.
     typedef LocalOrdinal local_ordinal_type;
-    //! The type of global indices.
+    //! This class' third template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
-    //! The Kokkos Node type.
+    //! This class' fourth template parameter; the Kokkos Node type.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
   private:
@@ -550,18 +561,18 @@ namespace Tpetra {
   public:
     /// \brief Type of an inner ("dot") product result.
     ///
-    /// This is usually the same as <tt>scalar_type</tt>, but may
-    /// differ if <tt>scalar_type</tt> is e.g., an uncertainty
+    /// This is usually the same as <tt>impl_scalar_type</tt>, but may
+    /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
     /// quantification type from the Stokhos package.
-    typedef typename Kokkos::Details::InnerProductSpaceTraits<scalar_type>::dot_type dot_type;
+    typedef typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type dot_type;
 
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
-    /// (absolute value) of <tt>scalar_type</tt>, but may differ if
-    /// <tt>scalar_type</tt> is e.g., an uncertainty quantification
+    /// (absolute value) of <tt>impl_scalar_type</tt>, but may differ if
+    /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
     /// type from the Stokhos package.
-    typedef typename Kokkos::Details::ArithTraits<scalar_type>::mag_type mag_type;
+    typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
 
     /// \brief Type of the (new) Kokkos execution space.
     ///
@@ -588,8 +599,11 @@ namespace Tpetra {
     /// even if the user-specified DeviceType is Kokkos::Serial.  That
     /// is why we go through the trouble of asking for the
     /// device_type's execution space.
-    typedef Kokkos::DualView<scalar_type**, Kokkos::LayoutLeft,
+    typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutLeft,
       typename device_type::execution_space> dual_view_type;
+
+    //! The type of the Map specialization used by this class.
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
     //@}
     //! @name Constructors and destructor
@@ -773,28 +787,28 @@ namespace Tpetra {
     void
     replaceGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
-                        const scalar_type& value);
+                        const impl_scalar_type& value);
 
     /// \brief Like the above replaceGlobalValue, but only enabled if
-    ///   T differs from scalar_type.
+    ///   T differs from impl_scalar_type.
     ///
     /// This method only exists if the template parameter T and
-    /// scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to scalar_type.
+    /// impl_scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to impl_scalar_type.
     ///
     /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from scalar_type.
+    /// Scalar differs from impl_scalar_type.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
-    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+    typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
 #else
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
 #endif // KOKKOS_HAVE_CXX11
     replaceGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
                         const T& value)
     {
-      replaceGlobalValue (globalRow, col, static_cast<scalar_type> (value));
+      replaceGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value));
     }
 
     /// \brief Add value to existing value, using global (row) index.
@@ -808,28 +822,28 @@ namespace Tpetra {
     void
     sumIntoGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
-                        const scalar_type& value);
+                        const impl_scalar_type& value);
 
     /// \brief Like the above sumIntoGlobalValue, but only enabled if
-    ///   T differs from scalar_type.
+    ///   T differs from impl_scalar_type.
     ///
     /// This method only exists if the template parameter T and
-    /// scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to scalar_type.
+    /// impl_scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to impl_scalar_type.
     ///
     /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from scalar_type.
+    /// Scalar differs from impl_scalar_type.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
-    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+    typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
 #else
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
 #endif // KOKKOS_HAVE_CXX11
     sumIntoGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
                         const T& value)
     {
-      sumIntoGlobalValue (globalRow, col, static_cast<scalar_type> (value));
+      sumIntoGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value));
     }
 
     /// \brief Replace value, using local (row) index.
@@ -843,28 +857,28 @@ namespace Tpetra {
     void
     replaceLocalValue (LocalOrdinal localRow,
                        size_t col,
-                       const scalar_type& value);
+                       const impl_scalar_type& value);
 
     /// \brief Like the above replaceLocalValue, but only enabled if
-    ///   T differs from scalar_type.
+    ///   T differs from impl_scalar_type.
     ///
     /// This method only exists if the template parameter T and
-    /// scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to scalar_type.
+    /// impl_scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to impl_scalar_type.
     ///
     /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from scalar_type.
+    /// Scalar differs from impl_scalar_type.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
-    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+    typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
 #else
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
 #endif // KOKKOS_HAVE_CXX11
     replaceLocalValue (LocalOrdinal localRow,
                        size_t col,
                        const T& value)
     {
-      replaceLocalValue (localRow, col, static_cast<scalar_type> (value));
+      replaceLocalValue (localRow, col, static_cast<impl_scalar_type> (value));
     }
 
     /// \brief Add value to existing value, using local (row) index.
@@ -878,28 +892,28 @@ namespace Tpetra {
     void
     sumIntoLocalValue (LocalOrdinal localRow,
                        size_t col,
-                       const scalar_type& value);
+                       const impl_scalar_type& value);
 
     /// \brief Like the above sumIntoLocalValue, but only enabled if
-    ///   T differs from scalar_type.
+    ///   T differs from impl_scalar_type.
     ///
     /// This method only exists if the template parameter T and
-    /// scalar_type differ.  If C++11 is enabled, we further require
-    /// that it be possible to convert T to scalar_type.
+    /// impl_scalar_type differ.  If C++11 is enabled, we further require
+    /// that it be possible to convert T to impl_scalar_type.
     ///
     /// This method is mainly useful for backwards compatibility, when
-    /// Scalar differs from scalar_type.
+    /// Scalar differs from impl_scalar_type.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
-    typename std::enable_if<! std::is_same<T, scalar_type>::value && std::is_convertible<T, scalar_type>::value, void>::type
+    typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
 #else
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, scalar_type>::value, void>::type
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<T, impl_scalar_type>::value, void>::type
 #endif // KOKKOS_HAVE_CXX11
     sumIntoLocalValue (LocalOrdinal localRow,
                        size_t col,
                        const T& value)
     {
-      sumIntoLocalValue (localRow, col, static_cast<scalar_type> (value));
+      sumIntoLocalValue (localRow, col, static_cast<impl_scalar_type> (value));
     }
 
     //! Set all values in the multivector with the given value.
@@ -1197,7 +1211,7 @@ namespace Tpetra {
     ///   It may change or be removed at any time.
     ///
     /// \note To Tpetra developers: This object's value type is Scalar
-    ///   and not scalar_type, precisely because it supports a
+    ///   and not impl_scalar_type, precisely because it supports a
     ///   backwards compatibility use case.
     KokkosClassic::MultiVector<Scalar, node_type> getLocalMV () const;
 
@@ -1310,7 +1324,7 @@ namespace Tpetra {
     ///   vectors (columns) in A and B.
     ///
     /// The "dot product" is the standard Euclidean inner product.  If
-    /// the type of entries of the vectors (scalar_type) is complex,
+    /// the type of entries of the vectors (impl_scalar_type) is complex,
     /// then A is transposed, not <tt>*this</tt>.  For example, if x
     /// and y each have one column, then <tt>x.dot (y, dots)</tt>
     /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
@@ -1328,9 +1342,9 @@ namespace Tpetra {
     /// \tparam T The output type of the dot products.
     ///
     /// This method only exists if dot_type and T are different types.
-    /// For example, if scalar_type and dot_type differ, then this
+    /// For example, if impl_scalar_type and dot_type differ, then this
     /// method ensures backwards compatibility with the previous
-    /// interface (that returned dot products as scalar_type rather
+    /// interface (that returned dot products as impl_scalar_type rather
     /// than as dot_type).  The complicated \c enable_if expression
     /// just ensures that the method only exists if dot_type and T are
     /// different types; the method still returns \c void, as above.
@@ -1368,7 +1382,7 @@ namespace Tpetra {
     ///   View.
     ///
     /// The "dot product" is the standard Euclidean inner product.  If
-    /// the type of entries of the vectors (scalar_type) is complex,
+    /// the type of entries of the vectors (impl_scalar_type) is complex,
     /// then A is transposed, not <tt>*this</tt>.  For example, if x
     /// and y each have one column, then <tt>x.dot (y, dots)</tt>
     /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
@@ -1447,7 +1461,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (const Kokkos::View<const scalar_type*, device_type> alpha);
+    void scale (const Kokkos::View<const impl_scalar_type*, device_type> alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
@@ -1743,16 +1757,16 @@ namespace Tpetra {
     ///
     /// The outcome of this routine is undefined for non-floating
     /// point scalar types (e.g., int).
-    void meanValue (const Teuchos::ArrayView<scalar_type>& means) const;
+    void meanValue (const Teuchos::ArrayView<impl_scalar_type>& means) const;
 
     template <typename T>
-    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<scalar_type, T>::value, void>::type
+    typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<impl_scalar_type, T>::value, void>::type
     meanValue (const Teuchos::ArrayView<T>& means) const
     {
       typedef typename Teuchos::Array<T>::size_type size_type;
       const size_type numMeans = means.size ();
 
-      Teuchos::Array<scalar_type> theMeans (numMeans);
+      Teuchos::Array<impl_scalar_type> theMeans (numMeans);
       this->meanValue (theMeans ());
       for (size_type k = 0; k < numMeans; ++k) {
         means[k] = static_cast<T> (theMeans[k]);
@@ -2068,7 +2082,7 @@ namespace Tpetra {
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
       const Kokkos::View<const local_ordinal_type*, device_type>& exportLIDs,
-      Kokkos::View<scalar_type*, device_type>& exports,
+      Kokkos::View<impl_scalar_type*, device_type>& exports,
       const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
@@ -2076,7 +2090,7 @@ namespace Tpetra {
     virtual void
     unpackAndCombineNew (
       const Kokkos::View<const LocalOrdinal*, device_type>& importLIDs,
-      const Kokkos::View<const scalar_type*, device_type>& imports,
+      const Kokkos::View<const impl_scalar_type*, device_type>& imports,
       const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,

@@ -320,7 +320,7 @@ namespace Experimental {
       const size_t meshEnd = ptr_[lclRow+1];
       for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
         little_block_type A_cur = getNonConstLocalBlockFromAbsOffset (absBlkOff);
-        A_cur.fill (static_cast<scalar_type> (alpha));
+        A_cur.fill (static_cast<impl_scalar_type> (alpha));
       }
     }
   }
@@ -340,7 +340,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const scalar_type* const vIn = reinterpret_cast<const scalar_type*> (vals);
+    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -519,8 +519,8 @@ namespace Experimental {
     // two-level parallelization.  Look to Stokhos for best practice
     // on making this fast for GPUs.
     const LO blockSize = getBlockSize ();
-    Teuchos::Array<scalar_type> localMem (blockSize);
-    Teuchos::Array<scalar_type> localMat (blockSize*blockSize);
+    Teuchos::Array<impl_scalar_type> localMem (blockSize);
+    Teuchos::Array<impl_scalar_type> localMat (blockSize*blockSize);
     little_vec_type X_lcl (localMem.getRawPtr (), blockSize, 1);
 
     const LO * columnIndices;
@@ -573,7 +573,7 @@ namespace Experimental {
         factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
                                             Dmat, numIndices);
         little_block_type D_lcl =
-          getNonConstLocalBlockFromInput (reinterpret_cast<scalar_type*> (Dmat), 0);
+          getNonConstLocalBlockFromInput (reinterpret_cast<impl_scalar_type*> (Dmat), 0);
 
         D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
         little_vec_type X_update = X.getLocalBlock (actlRow, 0);
@@ -606,7 +606,7 @@ namespace Experimental {
           factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
                                               Dmat, numIndices);
           little_block_type D_lcl =
-            getNonConstLocalBlockFromInput (reinterpret_cast<scalar_type*> (Dmat), 0);
+            getNonConstLocalBlockFromInput (reinterpret_cast<impl_scalar_type*> (Dmat), 0);
 
           D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
 
@@ -700,7 +700,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const scalar_type* const vIn = reinterpret_cast<const scalar_type*> (vals);
+    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -742,7 +742,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const scalar_type* const vIn = reinterpret_cast<const scalar_type*> (vals);
+    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -760,7 +760,7 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.update (static_cast<scalar_type> (STS::one ()), A_new);
+        A_old.update (static_cast<impl_scalar_type> (STS::one ()), A_new);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -786,7 +786,7 @@ namespace Experimental {
       const size_t absBlockOffsetStart = ptr_[localRowInd];
       colInds = ind_ + absBlockOffsetStart;
 
-      scalar_type* const vOut = val_ + absBlockOffsetStart * offsetPerBlock ();
+      impl_scalar_type* const vOut = val_ + absBlockOffsetStart * offsetPerBlock ();
       vals = reinterpret_cast<Scalar*> (vOut);
 
       numInds = ptr_[localRowInd + 1] - absBlockOffsetStart;
@@ -855,7 +855,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const scalar_type* const vIn = reinterpret_cast<const scalar_type*> (vals);
+    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -894,7 +894,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const scalar_type* const vIn = reinterpret_cast<const scalar_type*> (vals);
+    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -933,7 +933,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const scalar_type* const vIn = reinterpret_cast<const scalar_type*> (vals);
+    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -949,7 +949,7 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.update (static_cast<scalar_type> (STS::one ()), A_new);
+        A_old.update (static_cast<impl_scalar_type> (STS::one ()), A_new);
         ++validCount;
       }
     }
@@ -1109,7 +1109,7 @@ namespace Experimental {
     // two-level parallelization.  Look to Stokhos for best practice
     // on making this fast for GPUs.
     const LO blockSize = getBlockSize ();
-    Teuchos::Array<scalar_type> localMem (blockSize);
+    Teuchos::Array<impl_scalar_type> localMem (blockSize);
     little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
 
     if (numVecs == 1) {
@@ -1241,7 +1241,7 @@ namespace Experimental {
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::const_little_block_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getConstLocalBlockFromInput (const scalar_type* val,
+  getConstLocalBlockFromInput (const impl_scalar_type* val,
                                const size_t pointOffset) const
   {
     if (rowMajor_) {
@@ -1256,7 +1256,7 @@ namespace Experimental {
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNonConstLocalBlockFromInput (scalar_type* val,
+  getNonConstLocalBlockFromInput (impl_scalar_type* val,
                                   const size_t pointOffset) const
   {
     if (rowMajor_) {
@@ -1296,7 +1296,7 @@ namespace Experimental {
       return little_block_type (NULL, 0, 0, 0);
     } else {
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
-      return getNonConstLocalBlockFromInput (const_cast<scalar_type*> (val_),
+      return getNonConstLocalBlockFromInput (const_cast<impl_scalar_type*> (val_),
                                              absPointOffset);
     }
   }
@@ -1680,7 +1680,7 @@ namespace Experimental {
     Teuchos::Array<GO> gblColIndsSpace (srcGraph.getNodeMaxNumRowEntries ());
 
     // Temporary row-major contiguous buffer for a block's entries.
-    Teuchos::Array<scalar_type> tempBlockSpace (blockSize * blockSize);
+    Teuchos::Array<impl_scalar_type> tempBlockSpace (blockSize * blockSize);
     little_block_type tempBlock (tempBlockSpace.getRawPtr (),
                                  blockSize, blockSize, 1);
     // Source matrix's column Map.  We verified in checkSizes() that

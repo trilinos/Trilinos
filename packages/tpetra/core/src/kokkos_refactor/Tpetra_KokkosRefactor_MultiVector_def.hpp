@@ -505,7 +505,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::subview;
-    typedef Kokkos::DualView<scalar_type*,
+    typedef Kokkos::DualView<impl_scalar_type*,
       typename dual_view_type::array_layout,
       device_type> col_dual_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
@@ -595,7 +595,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   packAndPrepareNew (const SrcDistObject& sourceObj,
                      const Kokkos::View<const local_ordinal_type*, device_type> &exportLIDs,
-                     Kokkos::View<scalar_type*, device_type> &exports,
+                     Kokkos::View<impl_scalar_type*, device_type> &exports,
                      const Kokkos::View<size_t*, device_type> &numExportPacketsPerLID,
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
@@ -693,7 +693,7 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   unpackAndCombineNew (const Kokkos::View<const local_ordinal_type*, device_type> &importLIDs,
-                       const Kokkos::View<const scalar_type*, device_type> &imports,
+                       const Kokkos::View<const impl_scalar_type*, device_type> &imports,
                        const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
                        size_t constantNumPackets,
                        Distributor & /* distor */,
@@ -842,7 +842,7 @@ namespace Tpetra {
     //
     // FIXME (mfh 14 Jul 2014) It would be better to get this typedef
     // from mv_view_type itself, in case the layout changes.
-    typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
+    typedef Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
     typedef typename dual_view_type::host_mirror_space host_mirror_space;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
@@ -990,7 +990,7 @@ namespace Tpetra {
     //
     // FIXME (mfh 14 Jul 2014) It would be better to get this typedef
     // from mv_view_type itself, in case the layout changes.
-    typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
+    typedef Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, device_type> dots_view_type;
     // Scalar view; view of a single dot product result.
@@ -1176,9 +1176,9 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
+    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Kokkos::Details::ArithTraits<mag_type> ATM;
-    typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "normWeighted";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -1360,7 +1360,7 @@ namespace Tpetra {
     // View of a MultiVector's local data (all columns).
     typedef typename dual_view_type::t_dev mv_view_type;
     // View of a single column of a MultiVector's local data.
-    typedef Kokkos::View<scalar_type*, typename mv_view_type::array_layout,
+    typedef Kokkos::View<impl_scalar_type*, typename mv_view_type::array_layout,
       typename mv_view_type::execution_space> vec_view_type;
 
     const size_t numVecs = this->getNumVectors ();
@@ -1532,7 +1532,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  meanValue (const Teuchos::ArrayView<scalar_type>& means) const
+  meanValue (const Teuchos::ArrayView<impl_scalar_type>& means) const
   {
     // KR FIXME Overload this method to take a View.
 
@@ -1542,7 +1542,7 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
+    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
 
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
@@ -1562,14 +1562,14 @@ namespace Tpetra {
     else {
       const std::pair<size_t, size_t> rowRng (0, lclNumRows);
       for (size_t j = 0; j < numVecs; ++j) {
-        typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+        typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
         const size_t col = whichVectors_[j];
         view_type X_col = subview<view_type> (view_.d_view, rowRng, col);
         means[j] = Kokkos::V_Sum (X_col);
       }
     }
     if (this->isDistributed ()) {
-      Teuchos::Array<scalar_type> lmeans (means);
+      Teuchos::Array<impl_scalar_type> lmeans (means);
       // only combine if we are a distributed MV
       reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
                  static_cast<int> (numVecs), lmeans.getRawPtr (),
@@ -1578,7 +1578,7 @@ namespace Tpetra {
     // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
     // to the magnitude type, since operator/ (std::complex<T>, int)
     // isn't necessarily defined.
-    const scalar_type OneOverN =
+    const impl_scalar_type OneOverN =
       ATS::one () / static_cast<mag_type> (getGlobalLength ());
     for (size_t k = 0; k < numMeans; ++k) {
       means[k] = means[k] * OneOverN;
@@ -1591,7 +1591,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   randomize ()
   {
-    typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
+    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
 
     const uint64_t myRank =
       static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
@@ -1600,8 +1600,8 @@ namespace Tpetra {
 
     Kokkos::Random_XorShift64_Pool<DeviceType> rand_pool(seed);
 
-    const scalar_type max = Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type, scalar_type>::max ();
-    const scalar_type min = ATS::is_signed ? scalar_type (-max) : ATS::zero ();
+    const impl_scalar_type max = Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type, impl_scalar_type>::max ();
+    const impl_scalar_type min = ATS::is_signed ? impl_scalar_type (-max) : ATS::zero ();
 
     if (isConstantStride ()) {
       Kokkos::fill_random (view_.d_view, rand_pool, min, max);
@@ -1610,7 +1610,7 @@ namespace Tpetra {
     else {
       const size_t numVecs = getNumVectors ();
       view_.template sync<DeviceType> ();
-      typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
       for (size_t k = 0; k < numVecs; ++k) {
         view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
         Kokkos::fill_random (vector_k, rand_pool, min, max);
@@ -1631,7 +1631,7 @@ namespace Tpetra {
     typedef typename dual_view_type::t_dev::execution_space DMS;
     typedef typename dual_view_type::t_host::execution_space HMS;
 
-    const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
@@ -1646,7 +1646,7 @@ namespace Tpetra {
       // Type of the device memory View of the MultiVector's data.
       typedef typename dual_view_type::t_dev mv_view_type;
       // Type of a View of a single column of the MultiVector's data.
-      typedef Kokkos::View<scalar_type*,
+      typedef Kokkos::View<impl_scalar_type*,
         typename mv_view_type::array_layout, DMS> vec_view_type;
 
       this->template modify<DMS> (); // we are about to modify on the device
@@ -1673,7 +1673,7 @@ namespace Tpetra {
     }
     else { // last modified in host memory, so modify data there.
       typedef typename dual_view_type::t_host mv_view_type;
-      typedef Kokkos::View<scalar_type*,
+      typedef Kokkos::View<impl_scalar_type*,
         typename mv_view_type::array_layout, HMS> vec_view_type;
 
       this->template modify<HMS> (); // we are about to modify on the host
@@ -1807,11 +1807,11 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
+    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef typename dual_view_type::t_dev::execution_space DMS;
     typedef typename dual_view_type::t_host::execution_space HMS;
 
-    const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
@@ -1835,7 +1835,7 @@ namespace Tpetra {
       // Type of the device memory View of the MultiVector's data.
       typedef typename dual_view_type::t_dev mv_view_type;
       // Type of a View of a single column of the MultiVector's data.
-      typedef Kokkos::View<scalar_type*,
+      typedef Kokkos::View<impl_scalar_type*,
         typename mv_view_type::array_layout, DMS> vec_view_type;
 
       this->template modify<DMS> (); // we are about to modify on the device
@@ -1860,7 +1860,7 @@ namespace Tpetra {
     }
     else { // last modified in host memory, so modify data there.
       typedef typename dual_view_type::t_host mv_view_type;
-      typedef Kokkos::View<scalar_type*,
+      typedef Kokkos::View<impl_scalar_type*,
         typename mv_view_type::array_layout, HMS> vec_view_type;
 
       this->template modify<HMS> (); // we are about to modify on the host
@@ -1910,11 +1910,11 @@ namespace Tpetra {
 
     if (isConstantStride ()) {
       // Use a DualView to copy the scaling constants onto the device.
-      typedef Kokkos::DualView<scalar_type*, device_type> k_alphas_type ;
+      typedef Kokkos::DualView<impl_scalar_type*, device_type> k_alphas_type ;
       k_alphas_type k_alphas ("alphas::tmp", numAlphas);
       k_alphas.template modify<typename k_alphas_type::host_mirror_space> ();
       for (size_t i=0; i < numAlphas; ++i) {
-        k_alphas.h_view(i) = static_cast<scalar_type> (alphas[i]);
+        k_alphas.h_view(i) = static_cast<impl_scalar_type> (alphas[i]);
       }
       k_alphas.template sync<device_type> ();
 
@@ -1924,10 +1924,10 @@ namespace Tpetra {
       Kokkos::MV_MulScalar (view_.d_view, k_alphas.d_view, view_.d_view);
     }
     else {
-      typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
       for (size_t k = 0; k < numVecs; ++k) {
         const size_t col = isConstantStride () ? k : whichVectors_[k];
-        const scalar_type alpha_k = static_cast<scalar_type> (alphas[k]);
+        const impl_scalar_type alpha_k = static_cast<impl_scalar_type> (alphas[k]);
         view_type vector_k = subview<view_type> (view_.d_view, ALL (), col);
         Kokkos::V_MulScalar (vector_k, alpha_k, vector_k);
       }
@@ -1937,11 +1937,11 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  scale (const Kokkos::View<const scalar_type*, device_type> alphas)
+  scale (const Kokkos::View<const impl_scalar_type*, device_type> alphas)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef Kokkos::View<scalar_type*, device_type> view_type;
+    typedef Kokkos::View<impl_scalar_type*, device_type> view_type;
     typedef typename view_type::HostMirror host_view_type;
 
     const size_t numVecs = this->getNumVectors ();
@@ -1997,7 +1997,7 @@ namespace Tpetra {
     else {
       using Kokkos::ALL;
       using Kokkos::subview;
-      typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
 
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
@@ -2042,7 +2042,7 @@ namespace Tpetra {
       else {
         using Kokkos::ALL;
         using Kokkos::subview;
-        typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+        typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
 
         view_.template sync<DeviceType> ();
         view_.template modify<DeviceType> ();
@@ -2094,7 +2094,7 @@ namespace Tpetra {
     else {
       using Kokkos::ALL;
       using Kokkos::subview;
-      typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
 
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
@@ -2124,7 +2124,7 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "update: ";
 
     // this = beta*this + alpha*A
@@ -2147,8 +2147,8 @@ namespace Tpetra {
       "The input MultiVector A has " << A.getNumVectors () << " column(s), "
       "but this MultiVector has " << numVecs << " column(s).");
 
-    const scalar_type theAlpha = static_cast<scalar_type> (alpha);
-    const scalar_type theBeta = static_cast<scalar_type> (beta);
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
+    const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const size_t lclNumRows = getLocalLength ();
     if (isConstantStride () && A.isConstantStride ()) {
       Kokkos::MV_Add (view_.d_view, theAlpha, A.view_.d_view, theBeta,
@@ -2182,7 +2182,7 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::V_Add;
     using Kokkos::subview;
-    typedef Kokkos::View<scalar_type*, DeviceType> view_type;
+    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "update";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2205,11 +2205,11 @@ namespace Tpetra {
       ": The input MultiVector B has " << B.getNumVectors () << " column(s), "
       "but this MultiVector has " << numVecs << " column(s).");
 
-    const scalar_type zero = Kokkos::Details::ArithTraits<scalar_type>::zero ();
-    const scalar_type one = Kokkos::Details::ArithTraits<scalar_type>::one ();
-    const scalar_type theAlpha = static_cast<scalar_type> (alpha);
-    const scalar_type theBeta = static_cast<scalar_type> (beta);
-    const scalar_type theGamma = static_cast<scalar_type> (gamma);
+    const impl_scalar_type zero = Kokkos::Details::ArithTraits<impl_scalar_type>::zero ();
+    const impl_scalar_type one = Kokkos::Details::ArithTraits<impl_scalar_type>::one ();
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
+    const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
+    const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
     if (isConstantStride() && A.isConstantStride () && B.isConstantStride ()) {
       if (theGamma == zero) {
@@ -2284,8 +2284,8 @@ namespace Tpetra {
       hostView_j = subview<host_view_type> (hostView, ALL (), whichVectors_[j]);
     }
 
-    // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
-    Teuchos::ArrayRCP<const scalar_type> dataAsArcp =
+    // Wrap up the subview of column j in an ArrayRCP<const impl_scalar_type>.
+    Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2333,8 +2333,8 @@ namespace Tpetra {
     // here.
     view_.template modify<host_type> ();
 
-    // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
-    Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+    // Wrap up the subview of column j in an ArrayRCP<const impl_scalar_type>.
+    Teuchos::ArrayRCP<impl_scalar_type> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2685,16 +2685,16 @@ namespace Tpetra {
     using Kokkos::subview;
     typedef typename dual_view_type::host_mirror_space host_mirror_space;
     // The user's array is column major ("LayoutLeft").
-    typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft,
+    typedef Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft,
       host_mirror_space, Kokkos::MemoryUnmanaged> input_col_type;
     // Types of views of this MultiVector's data.
     typedef typename dual_view_type::t_host host_view_type;
     typedef typename dual_view_type::t_dev dev_view_type;
-    typedef Kokkos::View<scalar_type*,
+    typedef Kokkos::View<impl_scalar_type*,
       typename host_view_type::array_layout,
       typename host_view_type::device_type,
       Kokkos::MemoryUnmanaged> host_col_type;
-    typedef Kokkos::View<scalar_type*,
+    typedef Kokkos::View<impl_scalar_type*,
       typename dev_view_type::array_layout,
       typename dev_view_type::device_type,
       Kokkos::MemoryUnmanaged> dev_col_type;
@@ -2727,8 +2727,8 @@ namespace Tpetra {
     for (size_t j = 0; j < numCols; ++j) {
       const size_t srcCol = this->isConstantStride () ? j : this->whichVectors_[j];
       const size_t dstCol = j;
-      scalar_type* const dstColRaw =
-        reinterpret_cast<scalar_type*> (A.getRawPtr () + LDA * dstCol);
+      impl_scalar_type* const dstColRaw =
+        reinterpret_cast<impl_scalar_type*> (A.getRawPtr () + LDA * dstCol);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         static_cast<size_t> (A.size ()) < LDA * dstCol + numRows,
@@ -2823,7 +2823,7 @@ namespace Tpetra {
       view_.template sync<host_type> ();
       // Both get1dView() and get1dViewNonConst() return a host view
       // of the data.
-      Teuchos::ArrayRCP<const scalar_type> dataAsArcp =
+      Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (view_.template view<host_type> ());
       return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
     }
@@ -2852,7 +2852,7 @@ namespace Tpetra {
       view_.template sync<host_type> ();
       // Both get1dView() and get1dViewNonConst() return a host view
       // of the data.
-      Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+      Teuchos::ArrayRCP<impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (view_.template view<host_type> ());
       return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
     }
@@ -2866,7 +2866,7 @@ namespace Tpetra {
   get2dViewNonConst ()
   {
     using Teuchos::ArrayRCP;
-    typedef Kokkos::DualView<scalar_type*,
+    typedef Kokkos::DualView<impl_scalar_type*,
       typename dual_view_type::array_layout, device_type> col_dual_view_type;
 
     const size_t numCols = getNumVectors ();
@@ -2875,7 +2875,7 @@ namespace Tpetra {
       const size_t col = isConstantStride () ? j : whichVectors_[j];
       col_dual_view_type X_col =
         Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
-      ArrayRCP<scalar_type> X_col_arcp =
+      ArrayRCP<impl_scalar_type> X_col_arcp =
         Kokkos::Compat::persistingView (X_col.d_view);
       views[j] = Teuchos::arcp_reinterpret_cast<Scalar> (X_col_arcp);
     }
@@ -2890,7 +2890,7 @@ namespace Tpetra {
   get2dView () const
   {
     using Teuchos::ArrayRCP;
-    typedef Kokkos::DualView<const scalar_type*,
+    typedef Kokkos::DualView<const impl_scalar_type*,
       typename dual_view_type::array_layout, device_type> col_dual_view_type;
 
     const size_t numCols = getNumVectors ();
@@ -2899,7 +2899,7 @@ namespace Tpetra {
       const size_t col = isConstantStride () ? j : whichVectors_[j];
       col_dual_view_type X_col =
         Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
-      ArrayRCP<const scalar_type> X_col_arcp =
+      ArrayRCP<const impl_scalar_type> X_col_arcp =
         Kokkos::Compat::persistingView (X_col.d_view);
       views[j] = Teuchos::arcp_reinterpret_cast<const Scalar> (X_col_arcp);
     }
@@ -2924,7 +2924,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    typedef Kokkos::Details::ArithTraits<scalar_type> ATS;
+    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
     const char errPrefix[] = "Tpetra::MultiVector::multiply: ";
@@ -2970,7 +2970,7 @@ namespace Tpetra {
     size_t B_nrows = (transB==CONJ_TRANS) ? B.getNumVectors() : B.getLocalLength();
     size_t B_ncols = (transB==CONJ_TRANS) ? B.getLocalLength() : B.getNumVectors();
 
-    scalar_type beta_local = beta; // local copy of beta; might be reassigned below
+    impl_scalar_type beta_local = beta; // local copy of beta; might be reassigned below
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       getLocalLength () != A_nrows || getNumVectors () != B_ncols ||
@@ -3040,7 +3040,7 @@ namespace Tpetra {
       ! A_tmp->isConstantStride (), std::logic_error, errPrefix
       << "Failed to make temporary constant-stride copies of MultiVectors.");
 
-    typedef Kokkos::DeviceGEMM<scalar_type, device_type> gemm_type;
+    typedef Kokkos::DeviceGEMM<impl_scalar_type, device_type> gemm_type;
 
     gemm_type::GEMM (transA, transB, alpha,
                      A_tmp->getDualView ().d_view, B_tmp->getDualView ().d_view,
@@ -3071,7 +3071,7 @@ namespace Tpetra {
     using Kokkos::subview;
 
     typedef typename dual_view_type::t_dev view_2d_type;
-    typedef Kokkos::View<scalar_type*,
+    typedef Kokkos::View<impl_scalar_type*,
       typename view_2d_type::array_layout,
       typename view_2d_type::device_type,
       typename view_2d_type::memory_traits> view_1d_type;
@@ -3188,7 +3188,7 @@ namespace Tpetra {
     device_view_type tgtBuf ("tgtBuf", numLclRows, numCols);
 
     const int reduceCount = static_cast<int> (numLclRows * numCols);
-    reduceAll<int, scalar_type> (comm, REDUCE_SUM, reduceCount,
+    reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
                                  srcBuf.ptr_on_device (),
                                  tgtBuf.ptr_on_device ());
 
@@ -3228,7 +3228,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   replaceLocalValue (LocalOrdinal MyRow,
                      size_t VectorIndex,
-                     const scalar_type& ScalarValue)
+                     const impl_scalar_type& ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
@@ -3257,7 +3257,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   sumIntoLocalValue (LocalOrdinal MyRow,
                      size_t VectorIndex,
-                     const scalar_type& ScalarValue)
+                     const impl_scalar_type& ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
@@ -3286,7 +3286,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   replaceGlobalValue (GlobalOrdinal GlobalRow,
                       size_t VectorIndex,
-                      const scalar_type& ScalarValue)
+                      const impl_scalar_type& ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
@@ -3310,7 +3310,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   sumIntoGlobalValue (GlobalOrdinal GlobalRow,
                       size_t VectorIndex,
-                      const scalar_type& ScalarValue)
+                      const impl_scalar_type& ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -3336,7 +3336,7 @@ namespace Tpetra {
   getSubArrayRCP (Teuchos::ArrayRCP<T> arr,
                   size_t j) const
   {
-    typedef Kokkos::DualView<scalar_type*,
+    typedef Kokkos::DualView<impl_scalar_type*,
       typename dual_view_type::array_layout,
       device_type> col_dual_view_type;
     const size_t col = isConstantStride () ? j : whichVectors_[j];
@@ -3363,7 +3363,7 @@ namespace Tpetra {
     // This method creates the KokkosClassic object on the fly.  Thus,
     // it's OK to leave this in place for backwards compatibility.
     KMV kmv (this->getMap ()->getNode ());
-    ArrayRCP<scalar_type> dataTmp = (getLocalLength() > 0) ?
+    ArrayRCP<impl_scalar_type> dataTmp = (getLocalLength() > 0) ?
       Kokkos::Compat::persistingView (view_.d_view) :
       Teuchos::null;
     ArrayRCP<Scalar> data = Teuchos::arcp_reinterpret_cast<Scalar> (dataTmp);
@@ -3406,7 +3406,7 @@ namespace Tpetra {
     typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
 
     KMV kmv (this->getMap ()->getNode ());
-    ArrayRCP<scalar_type> dataTmp = (getLocalLength() > 0) ?
+    ArrayRCP<impl_scalar_type> dataTmp = (getLocalLength() > 0) ?
       Kokkos::Compat::persistingView (view_.d_view) :
       Teuchos::null;
     ArrayRCP<Scalar> data = Teuchos::arcp_reinterpret_cast<Scalar> (dataTmp);

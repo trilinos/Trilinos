@@ -59,12 +59,12 @@ namespace { // anonymous
   /// \brief Return the Teuchos::LAPACK specialization corresponding
   ///   to the given Scalar type.
   ///
-  /// The reason this exists is the same reason why the scalar_type
-  /// typedef in Tpetra::MultiVector may differ from its Scalar
-  /// template parameter.  For example, Scalar = std::complex<T>
-  /// corresponds to scalar_type = Kokkos::complex<T>.  The latter has
-  /// no Teuchos::LAPACK specialization, so we have to map it back to
-  /// std::complex<T>.
+  /// The reason this exists is the same reason why the
+  /// impl_scalar_type typedef in Tpetra::MultiVector may differ from
+  /// its Scalar template parameter.  For example, Scalar =
+  /// std::complex<T> corresponds to impl_scalar_type =
+  /// Kokkos::complex<T>.  The latter has no Teuchos::LAPACK
+  /// specialization, so we have to map it back to std::complex<T>.
   template<class Scalar>
   struct GetLapackType {
     typedef Scalar lapack_scalar_type;
@@ -115,11 +115,19 @@ namespace Experimental {
 /// LittleBlock (e.g., LittleBlock<double, int>).
 template<class Scalar, class LO>
 class LittleBlock {
+public:
+  typedef Scalar scalar_type;
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+#else
+  typedef Scalar impl_scalar_type;
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
 private:
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
 #else
-  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef Teuchos::ScalarTraits<impl_scalar_type> STS;
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 public:
@@ -132,31 +140,84 @@ public:
                const LO blockSize,
                const LO strideX,
                const LO strideY) :
-    A_ (A), blockSize_ (blockSize), strideX_ (strideX), strideY_ (strideY)
-  {
-  }
+    A_ (reinterpret_cast<impl_scalar_type*> (A)),
+    blockSize_ (blockSize),
+    strideX_ (strideX),
+    strideY_ (strideY)
+  {}
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  /// \brief Constructor that takes an \c impl_scalar_type pointer.
+  ///
+  /// \param A [in] Pointer to the block's entries, as
+  ///   <tt>impl_scalar_type*</tt> rather than <tt>Scalar*</tt>
+  /// \param blockSize [in] Dimension of the block (all blocks are square)
+  /// \param strideX [in] Stride between consecutive entries in a column
+  /// \param strideY [in] Stride between consecutive entries in a row
+  ///
+  /// While this constructor is templated on a type \c T, the intent
+  /// is that <tt>T == impl_scalar_type</tt>.  (We must template on T
+  /// rather than using <tt>impl_scalar_type</tt> directly, because of
+  /// how std::enable_if works.)  The long, complicated std::enable_if
+  /// expression ensures that this constructor only exists if
+  /// <tt>Scalar</tt> differs from <tt>impl_scalar_type</tt>, but the
+  /// two types are mutually compatible and have the same size.  (They
+  /// must be bitwise compatible, so that \c reinterpret_cast makes
+  /// sense between them.)
+  template<class T>
+  LittleBlock (T* const A,
+               const LO blockSize,
+               const LO strideX,
+               const LO strideY,
+#  ifdef KOKKOS_HAVE_CXX11
+               typename std::enable_if<
+                 ! std::is_same<Scalar, T>::value &&
+                 std::is_convertible<Scalar, T>::value &&
+                 sizeof (Scalar) == sizeof (T),
+#  else
+               typename Kokkos::Impl::enable_if<
+                 ! Kokkos::Impl::is_same<Scalar, T>::value &&
+                 sizeof (Scalar) == sizeof (T),
+#  endif // KOKKOS_HAVE_CXX11
+               int*>::type ignoreMe = NULL) :
+    A_ (reinterpret_cast<impl_scalar_type*> (A)),
+    blockSize_ (blockSize),
+    strideX_ (strideX),
+    strideY_ (strideY)
+  {}
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
   //! The block size (number of rows, and number of columns).
   LO getBlockSize () const {
     return blockSize_;
   }
 
-  //! Pointer to the block's entries.
+  //! Pointer to the block's entries, as <tt>Scalar*</tt>.
   Scalar* getRawPtr () const {
-    return A_;
+    return reinterpret_cast<Scalar*> (A_);
   }
 
-  //! Reference to entry (i,j) of the block.
-  Scalar& operator() (const LO i, const LO j) const {
+  /// \brief Reference to entry (i,j) of the block.
+  ///
+  /// \note To Tpetra developers: This is returned as
+  ///   <tt>impl_scalar_type</tt> and not as \c Scalar, in order to
+  ///   avoid a lot of reinterpret_cast calls in the inner loop of the
+  ///   sparse matrix-vector multiply kernel of
+  ///   Tpetra::Experimental::BlockCrsMatrix.  Any pair of types
+  ///   <tt>impl_scalar_type</tt>, \c Scalar used here should always
+  ///   be convertible in either direction, so the return type should
+  ///   not pose any issues in practice.
+  impl_scalar_type& operator() (const LO i, const LO j) const {
     return A_[i * strideX_ + j * strideY_];
   }
 
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleBlockType>
   void update (const Scalar& alpha, const LittleBlockType& X) const {
+    const impl_scalar_type theAlpha = static_cast<Scalar> (alpha);
     for (LO j = 0; j < blockSize_; ++j) {
       for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) += alpha * X(i,j);
+        (*this)(i,j) += theAlpha * X(i,j);
       }
     }
   }
@@ -173,18 +234,20 @@ public:
 
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
+    const impl_scalar_type theAlpha = static_cast<Scalar> (alpha);
     for (LO j = 0; j < blockSize_; ++j) {
       for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) *= alpha;
+        (*this)(i,j) *= theAlpha;
       }
     }
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
   void fill (const Scalar& alpha) const {
+    const impl_scalar_type theAlpha = static_cast<Scalar> (alpha);
     for (LO j = 0; j < blockSize_; ++j) {
       for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) = alpha;
+        (*this)(i,j) = theAlpha;
       }
     }
   }
@@ -197,8 +260,8 @@ public:
   void absmax (const LittleBlockType& X) const {
     for (LO j = 0; j < blockSize_; ++j) {
       for (LO i = 0; i < blockSize_; ++i) {
-        Scalar& Y_ij = (*this)(i,j);
-        const Scalar X_ij = X(i,j);
+        impl_scalar_type& Y_ij = (*this)(i,j);
+        const impl_scalar_type X_ij = X(i,j);
         Y_ij = std::max (STS::magnitude (Y_ij), STS::magnitude (X_ij));
       }
     }
@@ -223,8 +286,8 @@ public:
     typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
     typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
 
-    // FIXME (mfh 03 Jan 2015) Check using enable_if that
-    // LittleVectorType::scalar_type can be safely converted to LST.
+    // FIXME (mfh 03 Jan 2015) Check using enable_if that Scalar can
+    // be safely converted to LST.
 
     lapack_type lapack;
     LST* const A_raw = reinterpret_cast<LST*> (A_);
@@ -237,10 +300,14 @@ public:
   }
 
 private:
-  Scalar* const A_;
+  impl_scalar_type* const A_;
   const LO blockSize_;
   const LO strideX_;
   const LO strideY_;
+  // FIXME (mfh 04 Jan 2015) I strongly object to putting the LU
+  // factorization's pivot array here.  Pivot arrays should be stored
+  // separately in the preconditioner.  std::vector adds a void* and
+  // two size_t values (size and capacity) to the struct.
   std::vector<int> ipiv_;
 };
 
@@ -263,11 +330,19 @@ private:
 /// LittleVector (e.g., LittleVector<double, int>).
 template<class Scalar, class LO>
 class LittleVector {
+public:
+  typedef Scalar scalar_type;
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+#else
+  typedef Scalar impl_scalar_type;
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
 private:
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
 #else
-  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef Teuchos::ScalarTraits<impl_scalar_type> STS;
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 public:
@@ -276,12 +351,52 @@ public:
   /// \param blockSize [in] Dimension of the vector
   /// \param stride [in] Stride between consecutive entries
   LittleVector (Scalar* const A, const LO blockSize, const LO stride) :
-    A_ (A), blockSize_ (blockSize), strideX_ (stride)
+    A_ (reinterpret_cast<impl_scalar_type*> (A)),
+    blockSize_ (blockSize),
+    strideX_ (stride)
   {}
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  /// \brief Constructor that takes an \c impl_scalar_type pointer.
+  ///
+  /// \param A [in] Pointer to the vector's entries, as
+  ///   <tt>impl_scalar_type*</tt> rather than <tt>Scalar*</tt>
+  /// \param blockSize [in] Dimension of the vector
+  /// \param stride [in] Stride between consecutive entries
+  ///
+  /// While this constructor is templated on a type \c T, the intent
+  /// is that <tt>T == impl_scalar_type</tt>.  (We must template on T
+  /// rather than using <tt>impl_scalar_type</tt> directly, because of
+  /// how std::enable_if works.)  The long, complicated std::enable_if
+  /// expression ensures that this constructor only exists if
+  /// <tt>Scalar</tt> differs from <tt>impl_scalar_type</tt>, but the
+  /// two types are mutually compatible and have the same size.  (They
+  /// must be bitwise compatible, so that \c reinterpret_cast makes
+  /// sense between them.)
+  template<class T>
+  LittleVector (T* const A,
+                const LO blockSize,
+                const LO stride,
+#  ifdef KOKKOS_HAVE_CXX11
+                typename std::enable_if<
+                  ! std::is_same<Scalar, T>::value &&
+                  std::is_convertible<Scalar, T>::value &&
+                  sizeof (Scalar) == sizeof (T),
+#  else
+                typename Kokkos::Impl::enable_if<
+                  ! Kokkos::Impl::is_same<Scalar, T>::value &&
+                  sizeof (Scalar) == sizeof (T),
+#  endif // KOKKOS_HAVE_CXX11
+                int*>::type ignoreMe = NULL) :
+    A_ (reinterpret_cast<impl_scalar_type*> (A)),
+    blockSize_ (blockSize),
+    strideX_ (stride)
+  {}
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
   //! Pointer to the block's entries.
   Scalar* getRawPtr () const {
-    return A_;
+    return reinterpret_cast<Scalar*> (A_);
   }
 
   //! The block size (number of degrees of freedom per mesh point).
@@ -294,16 +409,26 @@ public:
     return strideX_;
   }
 
-  //! Reference to entry (i) of the vector.
-  Scalar& operator() (const LO i) const {
+  /// \brief Reference to entry (i) of the vector.
+  ///
+  /// \note To Tpetra developers: This is returned as
+  ///   <tt>impl_scalar_type</tt> and not as \c Scalar, in order to
+  ///   avoid a lot of reinterpret_cast calls in the inner loop of the
+  ///   sparse matrix-vector multiply kernel of
+  ///   Tpetra::Experimental::BlockCrsMatrix.  Any pair of types
+  ///   <tt>impl_scalar_type</tt>, \c Scalar used here should always
+  ///   be convertible in either direction, so the return type should
+  ///   not pose any issues in practice.
+  impl_scalar_type& operator() (const LO i) const {
     return A_[i * strideX_];
   }
 
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleVectorType>
   void update (const Scalar& alpha, const LittleVectorType& X) const {
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) += alpha * X(i);
+      (*this)(i) += theAlpha * X(i);
     }
   }
 
@@ -317,15 +442,17 @@ public:
 
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) *= alpha;
+      (*this)(i) *= theAlpha;
     }
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
   void fill (const Scalar& alpha) const {
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) = alpha;
+      (*this)(i) = theAlpha;
     }
   }
 
@@ -336,7 +463,7 @@ public:
   template<class LittleVectorType>
   void absmax (const LittleVectorType& X) const {
     for (LO i = 0; i < blockSize_; ++i) {
-      Scalar& Y_i = (*this)(i);
+      impl_scalar_type& Y_i = (*this)(i);
       Y_i = std::max (STS::magnitude (Y_i), STS::magnitude (X (i)));
     }
   }
@@ -362,18 +489,19 @@ public:
                 const LittleBlockType& A,
                 const LittleVectorType& X) const
   {
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     // FIXME (mfh 07 May 2014) This is suitable for column major, not
     // for row major.  Of course, we'll have to change other loops
     // above as well to make row major faster.
     for (LO j = 0; j < blockSize_; ++j) {
       for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i) += alpha * A(i,j) * X(j);
+        (*this)(i) += theAlpha * A(i,j) * X(j);
       }
     }
   }
 
 private:
-  Scalar* const A_;
+  impl_scalar_type* const A_;
   const LO blockSize_;
   const LO strideX_;
 };

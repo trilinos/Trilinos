@@ -139,15 +139,17 @@ public:
   //! \name Public typedefs
   //@{
 
-  /// \brief The type of entries in the matrix.
+  //! The type of entries in the matrix.
+  typedef Scalar scalar_type;
+
+  /// \brief The implementation type of entries in the matrix.
   ///
-  /// The odd expression for this type addresses a work-around that
-  /// the new ("Kokkos refactor," as opposed to "classic") version of
-  /// Tpetra uses, to deal with missing device macros and volatile
-  /// overloads in types like std::complex<T>.  There, Scalar and this
-  /// scalar_type typedef might differ.  For Scalar = double, float,
-  /// int, etc., Scalar == scalar_type.
-  typedef typename BlockMultiVector<Scalar, LO, GO, Node>::scalar_type scalar_type;
+  /// Letting scalar_type and impl_scalar_type differ addresses a
+  /// work-around that the new ("Kokkos refactor," as opposed to
+  /// "classic") version of Tpetra uses, to deal with missing device
+  /// macros and volatile overloads in types like std::complex<T>.
+  typedef typename BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type impl_scalar_type;
+
   //! The type of local indices.
   typedef LO local_ordinal_type;
   //! The type of global indices.
@@ -159,10 +161,10 @@ public:
   typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
   typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
 
-  typedef LittleBlock<scalar_type, LO> little_block_type;
-  typedef LittleBlock<const scalar_type, LO> const_little_block_type;
-  typedef LittleVector<scalar_type, LO> little_vec_type;
-  typedef LittleVector<const scalar_type, LO> const_little_vec_type;
+  typedef LittleBlock<impl_scalar_type, LO> little_block_type;
+  typedef LittleBlock<const impl_scalar_type, LO> const_little_block_type;
+  typedef LittleVector<impl_scalar_type, LO> little_vec_type;
+  typedef LittleVector<const impl_scalar_type, LO> const_little_vec_type;
 
   //@}
   //! \name Constructors and destructor
@@ -661,12 +663,12 @@ private:
   /// This is stored as a Teuchos::ArrayRCP, so that BlockCrsMatrix
   /// has view (shallow copy) semantics.  In the future, we will want
   /// to replace this with Kokkos::View.
-  Teuchos::ArrayRCP<scalar_type> valView_;
+  Teuchos::ArrayRCP<impl_scalar_type> valView_;
   /// \brief Raw pointer version of valView_.
   ///
   /// It must always be true, outside of the constructors, that
   /// <tt>valView_.getRawPtr() == val_</tt>.
-  scalar_type* val_;
+  impl_scalar_type* val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
@@ -816,10 +818,10 @@ private:
   LO offsetPerBlock () const;
 
   const_little_block_type
-  getConstLocalBlockFromInput (const scalar_type* val, const size_t pointOffset) const;
+  getConstLocalBlockFromInput (const impl_scalar_type* val, const size_t pointOffset) const;
 
   little_block_type
-  getNonConstLocalBlockFromInput (scalar_type* val, const size_t pointOffset) const;
+  getNonConstLocalBlockFromInput (impl_scalar_type* val, const size_t pointOffset) const;
 
   const_little_block_type
   getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;

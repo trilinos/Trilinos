@@ -99,6 +99,12 @@ public:
 
   //! The type of each entry in the Vector.
   typedef Scalar scalar_type;
+  /// \brief The implementation type of entries in the matrix.
+  ///
+  /// This typedef helps ensure smooth transition to the Kokkos
+  /// refactor version of Tpetra.  Users should not worry about this
+  /// typedef.
+  typedef Scalar impl_scalar_type;
   //! The type of local indices.
   typedef LocalOrdinal local_ordinal_type;
   //! The type of global indices.
@@ -108,17 +114,17 @@ public:
 
   /// \brief Type of an inner ("dot") product result.
   ///
-  /// This is usually the same as <tt>scalar_type</tt>, but may differ
-  /// if <tt>scalar_type</tt> is e.g., an uncertainty quantification
-  /// type from the Stokhos package.
+  /// This is usually the same as <tt>impl_scalar_type</tt>, but may
+  /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
+  /// quantification type from the Stokhos package.
   typedef typename base_type::dot_type dot_type;
 
   /// \brief Type of a norm result.
   ///
   /// This is usually the same as the type of the magnitude (absolute
-  /// value) of <tt>scalar_type</tt>, but may differ if
-  /// <tt>scalar_type</tt> is e.g., an uncertainty quantification type
-  /// from the Stokhos package.
+  /// value) of <tt>impl_scalar_type</tt>, but may differ if
+  /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
+  /// type from the Stokhos package.
   typedef typename base_type::mag_type mag_type;
 
   //! The type of the Map specialization used by this class.

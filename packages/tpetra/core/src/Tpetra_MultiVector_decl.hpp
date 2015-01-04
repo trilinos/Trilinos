@@ -436,6 +436,12 @@ namespace Tpetra {
 
     //! The type of entries in the vector(s).
     typedef Scalar scalar_type;
+    /// \brief The implementation type of entries in the matrix.
+    ///
+    /// This typedef helps ensure smooth transition to the Kokkos
+    /// refactor version of Tpetra.  Users should not worry about this
+    /// typedef.
+    typedef Scalar impl_scalar_type;
     //! The type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
@@ -445,18 +451,18 @@ namespace Tpetra {
 
     /// \brief Type of an inner ("dot") product result.
     ///
-    /// This is usually the same as <tt>scalar_type</tt>, but may
-    /// differ if <tt>scalar_type</tt> is e.g., an uncertainty
+    /// This is usually the same as <tt>impl_scalar_type</tt>, but may
+    /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
     /// quantification type from the Stokhos package.
-    typedef scalar_type dot_type;
+    typedef impl_scalar_type dot_type;
 
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
-    /// (absolute value) of <tt>scalar_type</tt>, but may differ if
-    /// <tt>scalar_type</tt> is e.g., an uncertainty quantification
-    /// type from the Stokhos package.
-    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType mag_type;
+    /// (absolute value) of <tt>impl_scalar_type</tt>, but may differ
+    /// if <tt>impl_scalar_type</tt> is e.g., an uncertainty
+    /// quantification type from the Stokhos package.
+    typedef typename Teuchos::ScalarTraits<impl_scalar_type>::magnitudeType mag_type;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
@@ -970,10 +976,10 @@ namespace Tpetra {
     ///   vectors (columns) in A and B.
     ///
     /// The "dot product" is the standard Euclidean inner product.  If
-    /// the type of entries of the vectors (scalar_type) is complex,
-    /// then A is transposed, not <tt>*this</tt>.  For example, if x
-    /// and y each have one column, then <tt>x.dot (y, dots)</tt>
-    /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
+    /// the type of entries of the vectors (Scalar) is complex, then A
+    /// is transposed, not <tt>*this</tt>.  For example, if x and y
+    /// each have one column, then <tt>x.dot (y, dots)</tt> computes
+    /// \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
     ///
     /// \pre <tt>*this</tt> and A have the same number of columns (vectors).
     /// \pre \c dots has at least as many entries as the number of columns in A.

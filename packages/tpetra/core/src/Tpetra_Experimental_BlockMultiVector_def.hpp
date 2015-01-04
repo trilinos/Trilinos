@@ -59,10 +59,10 @@ namespace { // anonymous
   ///   instead.
   template<class MultiVectorType>
   struct RawPtrFromMultiVector {
-    typedef typename MultiVectorType::scalar_type scalar_type;
-    static scalar_type* getRawPtr (MultiVectorType& X) {
-      Teuchos::ArrayRCP<scalar_type> X_view = X.get1dViewNonConst ();
-      scalar_type* X_raw = X_view.getRawPtr ();
+    typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
+    static impl_scalar_type* getRawPtr (MultiVectorType& X) {
+      Teuchos::ArrayRCP<impl_scalar_type> X_view = X.get1dViewNonConst ();
+      impl_scalar_type* X_raw = X_view.getRawPtr ();
       return X_raw;
     }
   };
@@ -75,8 +75,8 @@ namespace { // anonymous
   {
     typedef Tpetra::MultiVector<
       S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > MultiVectorType;
-    typedef typename MultiVectorType::scalar_type scalar_type;
-    static scalar_type* getRawPtr (MultiVectorType& X) {
+    typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
+    static impl_scalar_type* getRawPtr (MultiVectorType& X) {
       typedef typename MultiVectorType::dual_view_type dual_view_type;
       typedef typename dual_view_type::t_host::memory_space host_memory_space;
 
@@ -86,7 +86,7 @@ namespace { // anonymous
       X.template modify<host_memory_space> ();
 
       dual_view_type X_view = X.getDualView ();
-      scalar_type* X_raw = X_view.h_view.ptr_on_device ();
+      impl_scalar_type* X_raw = X_view.h_view.ptr_on_device ();
       return X_raw;
     }
   };
@@ -105,7 +105,7 @@ namespace { // anonymous
   ///   Tpetra::Experimental::BlockMultiVector implementation below a
   ///   bit easier to read.
   template<class S, class LO, class GO, class N>
-  typename Tpetra::MultiVector<S, LO, GO, N>::scalar_type*
+  typename Tpetra::MultiVector<S, LO, GO, N>::impl_scalar_type*
   getRawPtrFromMultiVector (Tpetra::MultiVector<S, LO, GO, N>& X) {
     typedef Tpetra::MultiVector<S, LO, GO, N> MV;
     return RawPtrFromMultiVector<MV>::getRawPtr (X);
@@ -299,7 +299,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
 {
   little_vec_type X_dst = getLocalBlock (localRowIndex, colIndex);
   const LO strideX = 1;
-  const_little_vec_type X_src (reinterpret_cast<const scalar_type*> (vals),
+  const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                getBlockSize (), strideX);
   X_dst.assign (X_src);
 }
@@ -345,7 +345,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
 {
   little_vec_type X_dst = getLocalBlock (localRowIndex, colIndex);
   const LO strideX = 1;
-  const_little_vec_type X_src (reinterpret_cast<const scalar_type*> (vals),
+  const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                getBlockSize (), strideX);
   X_dst.update (STS::one (), X_src);
 }
@@ -423,7 +423,7 @@ getLocalBlock (const LO localRowIndex,
     const size_t blockSize = getBlockSize ();
     const size_t offset = colIndex * this->getStrideY () +
       localRowIndex * blockSize * strideX;
-    scalar_type* blockRaw = this->getRawPtr () + offset;
+    impl_scalar_type* blockRaw = this->getRawPtr () + offset;
     return little_vec_type (blockRaw, blockSize, strideX);
   }
 }
@@ -512,7 +512,7 @@ template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 packAndPrepare (const Tpetra::SrcDistObject& src,
                 const Teuchos::ArrayView<const LO>& exportLIDs,
-                Teuchos::Array<scalar_type>& exports,
+                Teuchos::Array<impl_scalar_type>& exports,
                 const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
                 size_t& constantNumPackets,
                 Tpetra::Distributor& /* distor */)
@@ -547,7 +547,7 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
     for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
       for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
         const LO meshLid = exportLIDs[meshLidIndex];
-        scalar_type* const curExportPtr = &exports[curExportPos];
+        impl_scalar_type* const curExportPtr = &exports[curExportPos];
         little_vec_type X_dst (curExportPtr, blockSize, 1);
         little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
 
@@ -565,7 +565,7 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
-                  const Teuchos::ArrayView<const scalar_type>& imports,
+                  const Teuchos::ArrayView<const impl_scalar_type>& imports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t constantNumPackets,
                   Tpetra::Distributor& distor,
@@ -600,7 +600,7 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
   for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
     for (LO j = 0; j < numVecs; ++j, curImportPos += blockSize) {
       const LO meshLid = importLIDs[meshLidIndex];
-      const scalar_type* const curImportPtr = &imports[curImportPos];
+      const impl_scalar_type* const curImportPtr = &imports[curImportPos];
 
       const_little_vec_type X_src (curImportPtr, blockSize, 1);
       little_vec_type X_dst = getLocalBlock (meshLid, j);

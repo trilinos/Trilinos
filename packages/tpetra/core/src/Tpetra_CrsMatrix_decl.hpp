@@ -191,6 +191,12 @@ namespace Tpetra {
 
     //! This class' first template parameter; the type of entries in the matrix.
     typedef Scalar scalar_type;
+    /// \brief The implementation type of entries in the matrix.
+    ///
+    /// This typedef helps ensure smooth transition to the Kokkos
+    /// refactor version of Tpetra.  Users should not worry about this
+    /// typedef.
+    typedef Scalar impl_scalar_type;
     //! This class' second template parameter; the type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! This class' third template parameter; the type of global indices.

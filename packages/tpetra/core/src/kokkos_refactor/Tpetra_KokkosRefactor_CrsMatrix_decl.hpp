@@ -78,8 +78,19 @@ namespace Tpetra {
     //! @name Typedefs
     //@{
 
-    //! The type of entries in the matrix.
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type scalar_type;
+    /// \brief This class' first template parameter; the type of each
+    ///   entry in the matrix.
+    typedef Scalar scalar_type;
+    /// \brief The type used internally in place of \c Scalar.
+    ///
+    /// Some \c Scalar types might not work with Kokkos on all
+    /// execution spaces, due to missing CUDA device macros or
+    /// volatile overloads.  The C++ standard type std::complex<T> has
+    /// this problem.  To fix this, we replace std::complex<T> values
+    /// internally with the (usually) bitwise identical type
+    /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
+    /// corresponding to \c Scalar = std::complex.
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
     //! This class' second template parameter; the type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! This class' third template parameter; the type of global indices.
@@ -90,11 +101,9 @@ namespace Tpetra {
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
-    /// (absolute value) of \c scalar_type, but may differ for certain
-    /// Scalar types.  For example, we reserve the option to use a
-    /// type other than std::complex<T> internally, if Scalar is
-    /// std::complex<T>.
-    typedef typename Kokkos::Details::ArithTraits<scalar_type>::mag_type mag_type;
+    /// (absolute value) of <tt>Scalar</tt>, but may differ for
+    /// certain <tt>Scalar</tt> types.
+    typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
 
     /// \brief The Kokkos Node type used by this class.
     ///
@@ -117,8 +126,8 @@ namespace Tpetra {
 
     typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
     typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
-    typedef Kokkos::View<scalar_type*, device_type> t_ValuesType;
-    typedef Kokkos::CrsMatrix<scalar_type, LocalOrdinal, device_type,
+    typedef Kokkos::View<impl_scalar_type*, device_type> t_ValuesType;
+    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, device_type,
                               void, size_t> k_local_matrix_type;
     //@}
     //! @name Constructors and destructor
@@ -465,7 +474,7 @@ namespace Tpetra {
                                       CrsMatrix2::GraphNotYetAllocated);
         if (this->isLocallyIndexed ()) {
           ArrayView<const LocalOrdinal> linds;
-          ArrayView<const scalar_type> vals;
+          ArrayView<const impl_scalar_type> vals;
           for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
                lrow <= clonedRowMap->getMaxLocalIndex ();
                ++lrow) {
@@ -477,7 +486,7 @@ namespace Tpetra {
         }
         else { // this->isGloballyIndexed()
           Array<LocalOrdinal> linds;
-          Array<scalar_type> vals;
+          Array<impl_scalar_type> vals;
           for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
                lrow <= clonedRowMap->getMaxLocalIndex ();
                ++lrow) {
@@ -502,7 +511,7 @@ namespace Tpetra {
                                       CrsMatrix2::GraphNotYetAllocated);
         if (this->isGloballyIndexed ()) {
           ArrayView<const GlobalOrdinal> ginds;
-          ArrayView<const scalar_type> vals;
+          ArrayView<const impl_scalar_type> vals;
           for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
                grow <= clonedRowMap->getMaxGlobalIndex ();
                ++grow) {
@@ -514,7 +523,7 @@ namespace Tpetra {
         }
         else { // this->isLocallyIndexed()
           Array<GlobalOrdinal> ginds;
-          Array<scalar_type> vals;
+          Array<impl_scalar_type> vals;
           for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
                grow <= clonedRowMap->getMaxGlobalIndex ();
                ++grow) {
@@ -1366,25 +1375,26 @@ namespace Tpetra {
     /// \param NumEntries [out] Number of entries.
     ///
     /// \note To Tpetra developers: Discussion of whether to use
-    ///   <tt>Scalar</tt> or <tt>scalar_type</tt> for output array of
-    ///   matrix values.
+    ///   <tt>Scalar</tt> or <tt>impl_scalar_type</tt> for output
+    ///   array of matrix values.
     ///
-    /// If \c Scalar differs from <tt>scalar_type</tt>, as for example
-    /// with std::complex and Kokkos::complex, we must choose which
-    /// type to use.  We must make the same choice as RowMatrix does,
-    /// else CrsMatrix won't compile, because it won't implement a
-    /// pure virtual method.  We choose <tt>Scalar</tt>, for the
-    /// following reasons.  First, <tt>Scalar</tt> is the user's
-    /// preferred type, and <tt>scalar_type</tt> an implementation
-    /// detail that makes Tpetra work with Kokkos.  Second, Tpetra's
-    /// public interface provides a host-only interface, which
-    /// eliminates some reasons for requiring implementation-specific
-    /// types like Kokkos::complex.
+    /// If \c Scalar differs from <tt>impl_scalar_type</tt>, as for
+    /// example with std::complex<T> and Kokkos::complex<T>, we must
+    /// choose which type to use.  We must make the same choice as
+    /// RowMatrix does, else CrsMatrix won't compile, because it won't
+    /// implement a pure virtual method.  We choose <tt>Scalar</tt>,
+    /// for the following reasons.  First, <tt>Scalar</tt> is the
+    /// user's preferred type, and <tt>impl_scalar_type</tt> an
+    /// implementation detail that makes Tpetra work with Kokkos.
+    /// Second, Tpetra's public interface provides a host-only
+    /// interface, which eliminates some reasons for requiring
+    /// implementation-specific types like Kokkos::complex.
     ///
     /// We do eventually want to put Tpetra methods in Kokkos kernels,
     /// but we only <i>need</i> to put them in host kernels, since
     /// Tpetra is a host-only interface.  Users can still manually
-    /// handle conversion from Scalar to scalar_type for reductions.
+    /// handle conversion from <tt>Scalar</tt> to
+    /// <tt>impl_scalar_type</tt> for reductions.
     ///
     /// The right thing to do would be to rewrite RowMatrix so that
     /// getGlobalRowCopy is NOT inherited, but is implemented by a
@@ -2176,8 +2186,8 @@ namespace Tpetra {
     /// the column Map.
     ///
     /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c scalar_type here for the
-    /// input array type.
+    /// about why we use \c Scalar and not \c impl_scalar_type here
+    /// for the input array type.
     void
     insertGlobalValuesFiltered (const GlobalOrdinal globalRow,
                                 const Teuchos::ArrayView<const GlobalOrdinal>& indices,
@@ -2190,8 +2200,8 @@ namespace Tpetra {
     /// the column Map.
     ///
     /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c scalar_type here for the
-    /// input array type.
+    /// about why we use \c Scalar and not \c impl_scalar_type here
+    /// for the input array type.
     void
     insertLocalValuesFiltered (const LocalOrdinal localRow,
                                const Teuchos::ArrayView<const LocalOrdinal>& indices,
@@ -2206,8 +2216,8 @@ namespace Tpetra {
     /// has a static graph.
     ///
     /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c scalar_type here for the
-    /// input array type.
+    /// about why we use \c Scalar and not \c impl_scalar_type here
+    /// for the input array type.
     void
     combineGlobalValues (const GlobalOrdinal globalRowIndex,
                          const Teuchos::ArrayView<const GlobalOrdinal>& columnIndices,
@@ -2245,8 +2255,8 @@ namespace Tpetra {
     /// case.
     ///
     /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c scalar_type here for the
-    /// input array type.
+    /// about why we use \c Scalar and not \c impl_scalar_type here
+    /// for the input array type.
     template<class BinaryFunction>
     LocalOrdinal
     transformGlobalValues (GlobalOrdinal globalRow,
@@ -2258,7 +2268,7 @@ namespace Tpetra {
       using Teuchos::ArrayView;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
-      typedef scalar_type ST;
+      typedef impl_scalar_type ST;
       typedef typename ArrayView<const GO>::size_type size_type;
 
       if (! isFillActive ()) {
@@ -2330,8 +2340,8 @@ namespace Tpetra {
     ///   is <i>not<i> owned by the calling process.
     ///
     /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c scalar_type here for the
-    /// input array type.
+    /// about why we use \c Scalar and not \c impl_scalar_type here
+    /// for the input array type.
     void
     insertNonownedGlobalValues (const GlobalOrdinal globalRow,
                                 const Teuchos::ArrayView<const GlobalOrdinal>& indices,
@@ -2343,8 +2353,8 @@ namespace Tpetra {
   protected:
     // useful typedefs
     typedef Teuchos::OrdinalTraits<LocalOrdinal> OTL;
-    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
-    typedef Kokkos::Details::ArithTraits<mag_type>    STM;
+    typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
+    typedef Kokkos::Details::ArithTraits<mag_type> STM;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>      V;
     typedef crs_graph_type Graph;
@@ -2502,18 +2512,20 @@ namespace Tpetra {
     /// \brief Constant view of all entries (including extra space) in
     ///   the given row.
     ///
-    /// Unlike getGlobalRowView(), this method returns \c scalar_type,
-    /// not \c Scalar.  This is because this method is <i>not</i> part
-    /// of the public interface of CrsMatrix.
-    Teuchos::ArrayView<const scalar_type> getView (RowInfo rowinfo) const;
+    /// Unlike getGlobalRowView(), this method returns
+    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
+    /// this method is <i>not</i> part of the public interface of
+    /// CrsMatrix.
+    Teuchos::ArrayView<const impl_scalar_type> getView (RowInfo rowinfo) const;
 
     /// \brief Nonconst view of all entries (including extra space) in
     ///   the given row.
     ///
-    /// Unlike getGlobalRowView(), this method returns \c scalar_type,
-    /// not \c Scalar.  This is because this method is <i>not</i> part
-    /// of the public interface of CrsMatrix.
-    Teuchos::ArrayView<scalar_type> getViewNonConst (RowInfo rowinfo);
+    /// Unlike getGlobalRowView(), this method returns
+    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
+    /// this method is <i>not</i> part of the public interface of
+    /// CrsMatrix.
+    Teuchos::ArrayView<impl_scalar_type> getViewNonConst (RowInfo rowinfo);
 
     /// \brief Fill data into the local matrix.
     ///
@@ -2565,7 +2577,7 @@ namespace Tpetra {
     /// the allocation for the matrix.
     //@{
     t_ValuesType k_values1D_;
-    Teuchos::ArrayRCP<Teuchos::Array<scalar_type> > values2D_;
+    Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> > values2D_;
     //@}
 
     /// \brief Status of the matrix's storage, when not in a

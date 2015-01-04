@@ -201,19 +201,19 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 
 template <typename Matrix>
 struct MatrixSerializationTraits {
-  typedef typename Matrix::scalar_type scalar_type;
+  typedef typename Matrix::impl_scalar_type impl_scalar_type;
 
   static inline
-  size_t scalarSize (const Matrix& mat) { return sizeof (scalar_type); }
+  size_t scalarSize (const Matrix& mat) { return sizeof (impl_scalar_type); }
 
   static inline void
   packBuffer (const Matrix& mat,
               const size_t numEntries,
-              const Teuchos::ArrayView<const scalar_type>& vals,
+              const Teuchos::ArrayView<const impl_scalar_type>& vals,
               const Teuchos::ArrayView<char> packed_vals)
   {
-    Teuchos::ArrayView<scalar_type> packed_vals_scalar =
-      Teuchos::av_reinterpret_cast<scalar_type> (packed_vals);
+    Teuchos::ArrayView<impl_scalar_type> packed_vals_scalar =
+      Teuchos::av_reinterpret_cast<impl_scalar_type> (packed_vals);
     std::copy (vals.begin (), vals.begin () + numEntries,
                packed_vals_scalar.begin());
   }
@@ -221,9 +221,9 @@ struct MatrixSerializationTraits {
   static inline void
   unpackScalar (const Matrix& mat,
                 const char* val_char,
-                scalar_type& val)
+                impl_scalar_type& val)
   {
-    val = * (reinterpret_cast<const scalar_type*> (val_char));
+    val = * (reinterpret_cast<const impl_scalar_type*> (val_char));
   }
 };
 
@@ -258,7 +258,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef GlobalOrdinal GO;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef typename matrix_type::scalar_type ST;
+  typedef typename matrix_type::impl_scalar_type ST;
   typedef typename ArrayView<const LO>::size_type size_type;
   typedef MatrixSerializationTraits<matrix_type> serialization_type;
   const char prefix[] = "Tpetra::Import_Util::packAndPrepareWithOwningPIDs: ";
@@ -464,8 +464,8 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef typename matrix_type::scalar_type scalar_type;
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
+  typedef typename matrix_type::impl_scalar_type impl_scalar_type;
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
   typedef MatrixSerializationTraits<matrix_type> serialization_type;
   const char prefix[] = "Tpetra::Import_Util::unpackAndCombineIntoCrsArrays: ";
@@ -615,13 +615,14 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
 
       for (size_t j = 0; j < rowSize; ++j) {
         // mfh 03 Jan 2015: In the Kokkos refactor version of Tpetra,
-        // Scalar and scalar_type might differ.  scalar_type is what
-        // the matrix uses internally.  I've made unpackScalar() (see
-        // below) use scalar_type, which is why we need the
-        // reinterpret cast here.  The cast is trivial (Scalar ==
-        // scalar_type) for built-in "plain old data" types like
-        // double, float, and int.
-        scalar_type& valOut = reinterpret_cast<scalar_type&> (CSR_vals[StartRow+j]);
+        // Scalar and impl_scalar_type might differ.  impl_scalar_type
+        // is what the matrix uses internally.  I've made
+        // unpackScalar() (see below) use impl_scalar_type, which is
+        // why we need the reinterpret cast here.  The cast is trivial
+        // (Scalar == impl_scalar_type) for built-in "plain old data"
+        // types like double, float, and int.
+        impl_scalar_type& valOut =
+          reinterpret_cast<impl_scalar_type&> (CSR_vals[StartRow+j]);
         serialization_type::unpackScalar (SourceMatrix, avValsC_ptr, valOut);
         CSR_colind[StartRow + j] = avInds[j];
         TargetPids[StartRow + j] = (avPids[j] != MyPID) ? avPids[j] : -1;

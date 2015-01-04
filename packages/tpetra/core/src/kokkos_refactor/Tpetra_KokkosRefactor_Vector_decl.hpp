@@ -89,35 +89,46 @@ public:
   //! \name Typedefs to facilitate template metaprogramming
   //@{
 
-  //! The type of local indices.
+  /// \brief This class' first template parameter; the type of each
+  ///   entry in the Vector.
+  typedef Scalar scalar_type;
+  /// \brief The type used internally in place of \c Scalar.
+  ///
+  /// Some \c Scalar types might not work with Kokkos on all execution
+  /// spaces, due to missing CUDA device macros or volatile overloads.
+  /// The C++ standard type std::complex<T> has this problem.  To fix
+  /// this, we replace std::complex<T> values internally with the
+  /// (usually) bitwise identical type Kokkos::complex<T>.  The latter
+  /// is the \c impl_scalar_type corresponding to \c Scalar =
+  /// std::complex.
+  typedef typename base_type::impl_scalar_type impl_scalar_type;
+  //! This class' second template parameter; the type of local indices.
   typedef LocalOrdinal local_ordinal_type;
-  //! The type of global indices.
+  //! This class' third template parameter; the type of global indices.
   typedef GlobalOrdinal global_ordinal_type;
   //! The Kokkos Node type.
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-  //! The type of each entry in the Vector.
-  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::scalar_type scalar_type;
+  typedef typename base_type::node_type node_type;
 
   /// \brief Type of an inner ("dot") product result.
   ///
-  /// This is usually the same as <tt>scalar_type</tt>, but may differ
-  /// if <tt>scalar_type</tt> is e.g., an uncertainty quantification
-  /// type from the Stokhos package.
+  /// This is usually the same as <tt>impl_scalar_type</tt>, but may
+  /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
+  /// quantification type from the Stokhos package.
   typedef typename base_type::dot_type dot_type;
 
   /// \brief Type of a norm result.
   ///
   /// This is usually the same as the type of the magnitude (absolute
-  /// value) of <tt>scalar_type</tt>, but may differ if
-  /// <tt>scalar_type</tt> is e.g., an uncertainty quantification type
-  /// from the Stokhos package.
+  /// value) of <tt>impl_scalar_type</tt>, but may differ if
+  /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
+  /// type from the Stokhos package.
   typedef typename base_type::mag_type mag_type;
-
-  //! The type of the Map specialization used by this class.
-  typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   //! Kokkos::DualView specialization used by this class.
   typedef typename base_type::dual_view_type dual_view_type;
+
+  //! The type of the Map specialization used by this class.
+  typedef typename base_type::map_type map_type;
 
   //@}
   //! \name Constructors and destructor

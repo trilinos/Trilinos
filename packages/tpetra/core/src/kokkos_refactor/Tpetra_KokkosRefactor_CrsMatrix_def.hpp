@@ -288,8 +288,8 @@ namespace Tpetra {
     // FIXME (mfh 05 Aug 2014) It should be possible to convince the
     // ArrayRCP to relinquish its allocation, but that might require
     // passing the ArrayRCP in by nonconst reference.
-    Teuchos::ArrayRCP<scalar_type> vals =
-      Teuchos::arcp_reinterpret_cast<scalar_type> (values);
+    Teuchos::ArrayRCP<impl_scalar_type> vals =
+      Teuchos::arcp_reinterpret_cast<impl_scalar_type> (values);
     k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (vals ());
     resumeFill (params);
     checkInternalState ();
@@ -776,7 +776,7 @@ namespace Tpetra {
       // values in "2-D storage," meaning an array of arrays.  The
       // outer array has as many inner arrays as there are rows in the
       // matrix, and each inner array stores the values in that row.
-      values2D_ = staticGraph_->template allocateValues2D<scalar_type> ();
+      values2D_ = staticGraph_->template allocateValues2D<impl_scalar_type> ();
     }
   }
 
@@ -810,7 +810,7 @@ namespace Tpetra {
         true, std::runtime_error,
         "Caught exception while calling getCrsGraph()->getAllIndices().");
     }
-    Teuchos::ArrayRCP<const scalar_type> vals =
+    Teuchos::ArrayRCP<const impl_scalar_type> vals =
       Kokkos::Compat::persistingView (k_values1D_);
     values = Teuchos::arcp_reinterpret_cast<const Scalar> (vals);
   }
@@ -1610,7 +1610,7 @@ namespace Tpetra {
 
       // Make space for the new matrix entries.
       try {
-        rowInfo = myGraph_->template updateLocalAllocAndValues<scalar_type> (rowInfo,
+        rowInfo = myGraph_->template updateLocalAllocAndValues<impl_scalar_type> (rowInfo,
                                                                              newNumEntries,
                                                                              values2D_[localRow]);
       } catch (std::exception& e) {
@@ -1624,7 +1624,7 @@ namespace Tpetra {
     indsView.linds = indices;
 
 #ifdef HAVE_TPETRA_DEBUG
-    ArrayView<scalar_type> valsView;
+    ArrayView<impl_scalar_type> valsView;
     try {
       valsView = this->getViewNonConst (rowInfo);
     } catch (std::exception& e) {
@@ -1633,13 +1633,13 @@ namespace Tpetra {
         "getViewNonConst threw an exception: " << e.what ());
     }
 #else
-    ArrayView<scalar_type> valsView = this->getViewNonConst (rowInfo);
+    ArrayView<impl_scalar_type> valsView = this->getViewNonConst (rowInfo);
 #endif // HAVE_TPETRA_DEBUG
 
-    ArrayView<const scalar_type> valsIn =
-      av_reinterpret_cast<const scalar_type> (values);
+    ArrayView<const impl_scalar_type> valsIn =
+      av_reinterpret_cast<const impl_scalar_type> (values);
     try {
-      myGraph_->template insertIndicesAndValues<scalar_type> (rowInfo, indsView,
+      myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, indsView,
                                                               valsView, valsIn,
                                                               LocalIndices,
                                                               LocalIndices);
@@ -1704,11 +1704,11 @@ namespace Tpetra {
     // Use the graph to filter incoming entries whose column indices
     // aren't in the column Map.
     Array<LocalOrdinal> f_inds (indices);
-    ArrayView<const scalar_type> valsIn =
-      av_reinterpret_cast<const scalar_type> (values);
-    Array<scalar_type> f_vals (valsIn);
+    ArrayView<const impl_scalar_type> valsIn =
+      av_reinterpret_cast<const impl_scalar_type> (values);
+    Array<impl_scalar_type> f_vals (valsIn);
     const size_t numFilteredEntries =
-      myGraph_->template filterLocalIndicesAndValues<scalar_type> (f_inds (),
+      myGraph_->template filterLocalIndicesAndValues<impl_scalar_type> (f_inds (),
                                                                    f_vals ());
     if (numFilteredEntries > 0) {
       RowInfo rowInfo = myGraph_->getRowInfo (localRow);
@@ -1722,13 +1722,13 @@ namespace Tpetra {
           << rowInfo.allocSize << ").");
         // Make space for the new matrix entries.
         rowInfo =
-          myGraph_->template updateLocalAllocAndValues<scalar_type> (rowInfo,
+          myGraph_->template updateLocalAllocAndValues<impl_scalar_type> (rowInfo,
                                                                      newNumEntries,
                                                                      values2D_[localRow]);
       }
       typename Graph::SLocalGlobalViews inds_view;
       inds_view.linds = f_inds (0, numFilteredEntries);
-      myGraph_->template insertIndicesAndValues<scalar_type> (rowInfo, inds_view,
+      myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, inds_view,
                                                               this->getViewNonConst (rowInfo),
                                                               f_vals, LocalIndices,
                                                               LocalIndices);
@@ -1864,10 +1864,10 @@ namespace Tpetra {
       }
 
       typename Graph::SLocalGlobalViews inds_view;
-      ArrayView<const scalar_type> vals_view;
+      ArrayView<const impl_scalar_type> vals_view;
 
       inds_view.ginds = indices;
-      vals_view       = av_reinterpret_cast<const scalar_type> (values);
+      vals_view       = av_reinterpret_cast<const impl_scalar_type> (values);
 
 #ifdef HAVE_TPETRA_DEBUG
       RowInfo rowInfo;
@@ -1896,7 +1896,7 @@ namespace Tpetra {
         // Update allocation only as much as necessary
         try {
           rowInfo =
-            myGraph_->template updateGlobalAllocAndValues<scalar_type> (rowInfo,
+            myGraph_->template updateGlobalAllocAndValues<impl_scalar_type> (rowInfo,
                                                                         newNumEntries,
                                                                         values2D_[localRow]);
         } catch (std::exception& e) {
@@ -1910,7 +1910,7 @@ namespace Tpetra {
           // lg=GlobalIndices, I=GlobalIndices means the method calls
           // getGlobalViewNonConst() and does direct copying, which
           // should be reasonably fast.
-          myGraph_->template insertIndicesAndValues<scalar_type> (rowInfo, inds_view,
+          myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, inds_view,
                                                                   this->getViewNonConst (rowInfo),
                                                                   vals_view,
                                                                   GlobalIndices, GlobalIndices);
@@ -1919,7 +1919,7 @@ namespace Tpetra {
           // lg=GlobalIndices, I=LocalIndices means the method calls
           // the Map's getLocalElement() method once per entry to
           // insert.  This may be slow.
-          myGraph_->template insertIndicesAndValues<scalar_type> (rowInfo, inds_view,
+          myGraph_->template insertIndicesAndValues<impl_scalar_type> (rowInfo, inds_view,
                                                                   this->getViewNonConst (rowInfo),
                                                                   vals_view,
                                                                   GlobalIndices, LocalIndices);
@@ -1959,7 +1959,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef scalar_type ST;
+    typedef impl_scalar_type ST;
     const char tfecfFuncName[] = "insertGlobalValuesFiltered: ";
 
     // mfh 14 Dec 2012: Defer test for static graph until we know that
@@ -2082,7 +2082,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef scalar_type ST;
+    typedef impl_scalar_type ST;
     // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
@@ -2188,7 +2188,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef scalar_type ST;
+    typedef impl_scalar_type ST;
     // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
@@ -2282,7 +2282,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef scalar_type ST;
+    typedef impl_scalar_type ST;
     typedef std::plus<Scalar> f_type;
     typedef typename ArrayView<GO>::size_type size_type;
 
@@ -2379,7 +2379,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef scalar_type ST;
+    typedef impl_scalar_type ST;
     typedef std::plus<Scalar> f_type;
     typedef typename ArrayView<GO>::size_type size_type;
 
@@ -2468,7 +2468,7 @@ namespace Tpetra {
            class DeviceType>
   Teuchos::ArrayView<const typename CrsMatrix<
                        Scalar, LocalOrdinal, GlobalOrdinal,
-                       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type>
+                       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::impl_scalar_type>
   CrsMatrix<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
@@ -2477,7 +2477,7 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
     using Teuchos::ArrayView;
-    typedef scalar_type ST;
+    typedef impl_scalar_type ST;
     typedef std::pair<size_t, size_t> range_type;
 
     if (k_values1D_.dimension_0 () != 0 && rowinfo.allocSize > 0) {
@@ -2498,7 +2498,7 @@ namespace Tpetra {
       return values2D_[rowinfo.localRow] ();
     }
     else {
-      return ArrayView<scalar_type> ();
+      return ArrayView<impl_scalar_type> ();
     }
   }
 
@@ -2508,13 +2508,13 @@ namespace Tpetra {
            class DeviceType>
   Teuchos::ArrayView<typename CrsMatrix<
                        Scalar, LocalOrdinal, GlobalOrdinal,
-                       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type>
+                       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::impl_scalar_type>
   CrsMatrix<
     Scalar, LocalOrdinal,GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getViewNonConst (RowInfo rowinfo)
   {
-    return Teuchos::av_const_cast<scalar_type> (this->getView (rowinfo));
+    return Teuchos::av_const_cast<impl_scalar_type> (this->getView (rowinfo));
   }
 
   template<class Scalar,
@@ -2775,7 +2775,7 @@ namespace Tpetra {
     typedef Kokkos::SparseRowView<k_local_matrix_type> row_view_type;
     typedef typename Teuchos::Array<Scalar>::size_type size_type;
     const char tfecfFuncName[] = "scale: ";
-    const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isFillActive (), std::runtime_error,
@@ -2803,7 +2803,7 @@ namespace Tpetra {
       else if (staticGraph_->getProfileType () == DynamicProfile) {
         for (size_t row = 0; row < nlrs; ++row) {
           const size_type numEnt = getNumEntriesInLocalRow (row);
-          Teuchos::ArrayView<scalar_type> rowVals = values2D_[row] ();
+          Teuchos::ArrayView<impl_scalar_type> rowVals = values2D_[row] ();
           for (size_type k = 0; k < numEnt; ++k) {
             rowVals[k] *= theAlpha;
           }
@@ -2823,7 +2823,7 @@ namespace Tpetra {
   setAllToScalar (const Scalar& alpha)
   {
     const char tfecfFuncName[] = "setAllToScalar: ";
-    const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isFillActive (), std::runtime_error,
       "Fill must be active before you may call this method.  "
@@ -2845,7 +2845,7 @@ namespace Tpetra {
         // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
         // semantics, this would be the place to mark memory as
         // modified.
-        const scalar_type theAlpha = static_cast<scalar_type> (alpha);
+        const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
         Kokkos::Impl::ViewFill<t_ValuesType> (k_values1D_, theAlpha);
       }
       else if (profType == DynamicProfile) {
@@ -2913,8 +2913,8 @@ namespace Tpetra {
         true, std::runtime_error, "Caught exception while calling myGraph_->"
         "setAllIndices(): " << e.what ());
     }
-    Teuchos::ArrayRCP<scalar_type> vals =
-      Teuchos::arcp_reinterpret_cast<scalar_type> (values);
+    Teuchos::ArrayRCP<impl_scalar_type> vals =
+      Teuchos::arcp_reinterpret_cast<impl_scalar_type> (values);
     k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (vals ());
     checkInternalState ();
   }
@@ -3060,7 +3060,7 @@ namespace Tpetra {
     // 1-D subview of lclVecHost.  All the "typename" stuff ensures
     // that we get the same layout and memory traits as the original
     // 2-D view.
-    typedef typename Kokkos::View<scalar_type*,
+    typedef typename Kokkos::View<impl_scalar_type*,
       typename host_view_type::array_layout,
       typename host_view_type::device_type,
       typename host_view_type::memory_traits>
@@ -3083,7 +3083,7 @@ namespace Tpetra {
             // NOTE (mfh 02 Jan 2015) This technically does not assume
             // UVM, since getView and getViewNonConst are supposed to
             // return views of host data.
-            ArrayView<const scalar_type> view = this->getView (rowinfo);
+            ArrayView<const impl_scalar_type> view = this->getView (rowinfo);
             lclVecHost1d(r) = view[j];
           }
         }
@@ -3131,7 +3131,7 @@ namespace Tpetra {
     // 1-D subview of lclVecHost.  All the "typename" stuff ensures
     // that we get the same layout and memory traits as the original
     // 2-D view.
-    typedef typename Kokkos::View<scalar_type*,
+    typedef typename Kokkos::View<impl_scalar_type*,
       typename host_view_type::array_layout,
       typename host_view_type::device_type,
       typename host_view_type::memory_traits>
@@ -3150,7 +3150,7 @@ namespace Tpetra {
         // UVM, since the get{Global,Local}RowView methods are
         // supposed to return views of host data.
         this->getLocalRowView (i, ind, val);
-        lclVecHost1d(i) = static_cast<scalar_type> (val[offsets[i]]);
+        lclVecHost1d(i) = static_cast<impl_scalar_type> (val[offsets[i]]);
       }
     }
     lclVec.template sync<device_type> (); // sync changes back to device
@@ -3203,13 +3203,13 @@ namespace Tpetra {
         "the range Map of the CrsMatrix.");
     }
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-    ArrayView<scalar_type> rowValues = null;
+    ArrayView<impl_scalar_type> rowValues = null;
 
     const size_t lclNumRows = this->getNodeNumRows ();
     for (size_t i = 0; i < lclNumRows; ++i) {
       const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
       rowValues = this->getViewNonConst (rowinfo);
-      const scalar_type scaleValue = static_cast<scalar_type> (vectorVals[i]);
+      const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
         rowValues[j] *= scaleValue;
       }
@@ -3262,7 +3262,7 @@ namespace Tpetra {
     }
 
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-    ArrayView<scalar_type> rowValues = null;
+    ArrayView<impl_scalar_type> rowValues = null;
 
     const size_t lclNumRows = this->getNodeNumRows ();
     for (size_t i = 0; i < lclNumRows; ++i) {
@@ -3271,7 +3271,7 @@ namespace Tpetra {
       ArrayView<const LocalOrdinal> colInds;
       getCrsGraph ()->getLocalRowView (static_cast<LocalOrdinal> (i), colInds);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-        rowValues[j] *= static_cast<scalar_type> (vectorVals[colInds[j]]);
+        rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
       }
     }
   }
@@ -3288,7 +3288,7 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
-    typedef typename Teuchos::ArrayRCP<const scalar_type>::size_type size_type;
+    typedef typename Teuchos::ArrayRCP<const impl_scalar_type>::size_type size_type;
 
     // FIXME (mfh 05 Aug 2014) Write a thread-parallel kernel for the
     // local part of this computation.  It could make sense to put
@@ -3306,7 +3306,7 @@ namespace Tpetra {
             static_cast<size_type> (getNodeNumEntries ());
           for (size_type k = 0; k < numEntries; ++k) {
             // FIXME (mfh 05 Aug 2014) This assumes UVM.
-            const scalar_type val = k_values1D_(k);
+            const impl_scalar_type val = k_values1D_(k);
             mySum += STS::real (val) * STS::real (val) +
               STS::imag (val) * STS::imag (val);
           }
@@ -3317,10 +3317,10 @@ namespace Tpetra {
             RowInfo rowInfo = myGraph_->getRowInfo (r);
             const size_type numEntries =
               static_cast<size_type> (rowInfo.numEntries);
-            ArrayView<const scalar_type> A_r =
+            ArrayView<const impl_scalar_type> A_r =
               this->getView (rowInfo).view (0, numEntries);
             for (size_type k = 0; k < numEntries; ++k) {
-              const scalar_type val = A_r[k];
+              const impl_scalar_type val = A_r[k];
               mySum += STS::real (val) * STS::real (val) +
                 STS::imag (val) * STS::imag (val);
             }
@@ -3388,8 +3388,8 @@ namespace Tpetra {
       const size_t lclNumRows = theGraph.getNodeNumRows ();
       for (size_t row = 0; row < lclNumRows; ++row) {
         RowInfo rowInfo = theGraph.getRowInfo (row);
-        Teuchos::ArrayView<scalar_type> rv = this->getViewNonConst (rowInfo);
-        theGraph.template sortRowIndicesAndValues<scalar_type> (rowInfo, rv);
+        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
+        theGraph.template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
       theGraph.indicesAreSorted_ = true;
     }
@@ -4056,8 +4056,8 @@ namespace Tpetra {
       const size_t lclNumRows = this->getNodeNumRows ();
       for (size_t row = 0; row < lclNumRows; ++row) {
         RowInfo rowInfo = myGraph_->getRowInfo (row);
-        Teuchos::ArrayView<scalar_type> rv = this->getViewNonConst (rowInfo);
-        myGraph_->template sortRowIndicesAndValues<scalar_type> (rowInfo, rv);
+        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
+        myGraph_->template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
       // we just sorted every row
       myGraph_->indicesAreSorted_ = true;
@@ -4081,8 +4081,8 @@ namespace Tpetra {
       const size_t lclNumRows = this->getNodeNumRows ();
       for (size_t row = 0; row < lclNumRows; ++row) {
         RowInfo rowInfo = myGraph_->getRowInfo (row);
-        Teuchos::ArrayView<scalar_type> rv = this->getViewNonConst (rowInfo);
-        myGraph_->template mergeRowIndicesAndValues<scalar_type> (rowInfo, rv);
+        Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
+        myGraph_->template mergeRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
       myGraph_->noRedundancies_ = true; // we just merged every row
     }
@@ -5057,17 +5057,17 @@ namespace Tpetra {
   {
     using Teuchos::NO_TRANS;
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
-    // Just like Scalar and scalar_type may differ in CrsMatrix,
-    // RangeScalar and its corresponding scalar_type may differ in
+    // Just like Scalar and impl_scalar_type may differ in CrsMatrix,
+    // RangeScalar and its corresponding impl_scalar_type may differ in
     // MultiVector.
     typedef typename MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal,
-                                 node_type>::scalar_type range_scalar_type;
+                                 node_type>::impl_scalar_type range_impl_scalar_type;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "localMultiply: ";
 #endif // HAVE_TPETRA_DEBUG
 
-    const range_scalar_type theAlpha = static_cast<range_scalar_type> (alpha);
-    const range_scalar_type theBeta = static_cast<range_scalar_type> (beta);
+    const range_impl_scalar_type theAlpha = static_cast<range_impl_scalar_type> (alpha);
+    const range_impl_scalar_type theBeta = static_cast<range_impl_scalar_type> (beta);
     const bool conjugate = (mode == Teuchos::CONJ_TRANS);
     const bool transpose = (mode != Teuchos::NO_TRANS);
 
@@ -5206,7 +5206,7 @@ namespace Tpetra {
     typename k_local_matrix_type::values_type val = lclMatrix.values;
     const offset_type* const ptrRaw = ptr.ptr_on_device ();
     const LO* const indRaw = ind.ptr_on_device ();
-    const scalar_type* const valRaw = val.ptr_on_device ();
+    const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
     Kokkos::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
                                      static_cast<LO> (numVecs),
@@ -5214,7 +5214,7 @@ namespace Tpetra {
                                      B_lcl.ptr_on_device (), B_stride[1],
                                      X_lcl.ptr_on_device (), X_stride[1],
                                      D_lcl.ptr_on_device (),
-                                     static_cast<scalar_type> (dampingFactor),
+                                     static_cast<impl_scalar_type> (dampingFactor),
                                      direction);
   }
 
@@ -5281,7 +5281,7 @@ namespace Tpetra {
     typename k_local_matrix_type::values_type val = lclMatrix.values;
     const offset_type* const ptrRaw = ptr.ptr_on_device ();
     const LO* const indRaw = ind.ptr_on_device ();
-    const scalar_type* const valRaw = val.ptr_on_device ();
+    const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
     Kokkos::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
                                               static_cast<LO> (numVecs),
@@ -5293,7 +5293,7 @@ namespace Tpetra {
                                               D_lcl.ptr_on_device (),
                                               rowIndices.getRawPtr (),
                                               static_cast<LO> (lclNumRows),
-                                              static_cast<scalar_type> (dampingFactor),
+                                              static_cast<impl_scalar_type> (dampingFactor),
                                               direction);
   }
 
@@ -5413,7 +5413,7 @@ namespace Tpetra {
       const size_type numVals =
         static_cast<size_type> (this->k_lclMatrix_.values.dimension_0 ());
 
-      // FIXME (mfh 05 Aug 2014) Write a copy kernel (scalar_type and
+      // FIXME (mfh 05 Aug 2014) Write a copy kernel (impl_scalar_type and
       // T differ, so we can't use Kokkos::deep_copy).
       //
       // FIXME (mfh 05 Aug 2014) This assumes UVM.

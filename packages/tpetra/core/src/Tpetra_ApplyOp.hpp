@@ -71,9 +71,9 @@ namespace Tpetra {
     ///   MultiVector of the apply() method.  Same as the first template
     ///   parameter of Operator.
     ///
-    /// \tparam OperatorType The type of the underlying Operator, whose
-    ///   first template parameter OperatorType::scalar_type may be different
-    ///   than this Operator's Scalar type.
+    /// \tparam OperatorType The type of the underlying Operator,
+    ///   whose first template parameter OperatorType::scalar_type may
+    ///   differ from this Operator's Scalar type.
     template <class Scalar, class OperatorType>
     class ApplyOp :
       public Tpetra::Operator<Scalar,
@@ -95,9 +95,6 @@ namespace Tpetra {
 
       //! The type of the Kokkos Node used by the input OperatorType.
       typedef typename OperatorType::node_type node_type;
-
-      //! The type of the magnitude (absolute value) of a matrix entry.
-      typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
       //@}
       //! @name Constructor and destructor
