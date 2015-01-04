@@ -79,11 +79,14 @@ class Vector<Scalar,
                       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
 {
 private:
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
   // need this so that MultiVector::operator() can call Vector's
   // private view constructor
-  friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-  typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> base_type;
+  friend class MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >;
+  typedef MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > base_type;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
@@ -155,7 +158,7 @@ public:
   /// another, and use the two-argument copy constructor below (with
   /// copyOrView=Teuchos::Copy) to create a Vector which is a deep
   /// copy of an existing Vector.
-  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source);
+  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>& source);
 
   /// \brief Copy constructor (shallow or deep copy).
   ///
@@ -168,7 +171,7 @@ public:
   ///   with the resulting object will always do a shallow copy, and
   ///   will transmit view semantics to the result of the shallow
   ///   copy.
-  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>& source,
           const Teuchos::DataAccess copyOrView);
 
   //! \brief Set vector values from an existing array (copy)
@@ -221,7 +224,7 @@ public:
   ///
   /// \param node2 [in] The returned Vector's Kokkos Node instance.
   template <class Node2>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
   clone (const Teuchos::RCP<Node2>& node2);
 
   //@}
@@ -253,53 +256,53 @@ public:
   //! @name Extraction methods
   //@{
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::get1dCopy; // overloading, not hiding
   //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-  void get1dCopy (Teuchos::ArrayView<Scalar> A) const;
+  void get1dCopy (const Teuchos::ArrayView<Scalar>& A) const;
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::getDataNonConst; // overloading, not hiding
   //! View of the local values of this vector.
   Teuchos::ArrayRCP<Scalar> getDataNonConst () { return getDataNonConst (0); }
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getData; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::getData; // overloading, not hiding
   //! Const view of the local values of this vector.
   Teuchos::ArrayRCP<const Scalar> getData () const { return getData (0); }
 
-  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
-              size_t offset) const;
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false> >
+  offsetView (const Teuchos::RCP<const map_type>& subMap,
+              const size_t offset) const;
 
-  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
-                      size_t offset);
-
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false> >
+  offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
+                      const size_t offset);
   //@}
   //! @name Mathematical methods
   //@{
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::dot; // overloading, not hiding
   //! Computes dot product of this Vector against input Vector x.
-  dot_type dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+  dot_type dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>& y) const;
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type,false>::norm1; // overloading, not hiding
   //! Return 1-norm of this Vector.
   mag_type norm1() const;
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type,false>::norm2; // overloading, not hiding
   //! Compute 2-norm of this Vector.
   mag_type norm2() const;
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type,false>::normInf; // overloading, not hiding
   //! Compute Inf-norm of this Vector.
   mag_type normInf() const;
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type,false>::normWeighted; // overloading, not hiding
   //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-  mag_type normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+  mag_type
+  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>& weights) const;
 
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.
-  Scalar meanValue() const;
+  Scalar meanValue () const;
 
   //@}
   //! @name Implementation of the Teuchos::Describable interface
@@ -316,33 +319,24 @@ public:
   //@}
 
 protected:
-
   template <class S,class LO,class GO,class N>
-  friend RCP< Vector<S,LO,GO,N> >
+  friend Teuchos::RCP< Vector<S,LO,GO,N> >
   createVectorFromView(const RCP<const Map<LO,GO,N> > &,const ArrayRCP<S> &);
 
-  typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
+  typedef KokkosClassic::MultiVector<Scalar,node_type> KMV;
   typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
 
-/** \brief Non-member function to create a Vector from a specified Map.
-    \relatesalso Vector
-*/
-/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-createVector (const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
-{
-  const bool DO_INIT_TO_ZERO = true;
-  return rcp (new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map, DO_INIT_TO_ZERO));
-}*/
 
-//! \brief Non-member function to create a Vector with view semantics using user-allocated data.
-/*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
-    \relatesalso Vector
- */
+/// \brief Nonmember function to create a Vector with view semantics
+///   using user-allocated data.
+///
+/// \warning This function is DEPRECATED and exists only for backwards
+///   compatibility with the "classic" version of Tpetra.
+/// \relatesalso Vector
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
-createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &map,
+Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+createVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &map,
                       const ArrayRCP<Scalar> &view)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -360,21 +354,6 @@ createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Com
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
 Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
 createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src);
-
-/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class Node2>
-RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2){
-        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-        typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
-        Teuchos::ArrayRCP<const Scalar> V_view = this->getData();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
-        Teuchos::RCP<V2> clonedV = Teuchos::rcp(new V2(clonedMap));
-        Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst();
-        clonedV_view.deepCopy(V_view());
-        clonedV_view = Teuchos::null;
-        return clonedV;
-  }*/
 
 } // namespace Tpetra
 
