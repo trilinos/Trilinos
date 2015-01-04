@@ -2809,12 +2809,11 @@ namespace Tpetra {
     }
   }
 
-
-  // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
-  // because scalar_type may differ from Scalar.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::ArrayRCP<const typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  Teuchos::ArrayRCP<const Scalar>
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   get1dView () const
   {
     if (getLocalLength () == 0 || getNumVectors () == 0) {
@@ -2833,18 +2832,17 @@ namespace Tpetra {
       view_.template sync<host_type> ();
       // Both get1dView() and get1dViewNonConst() return a host view
       // of the data.
-      Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+      Teuchos::ArrayRCP<const scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (view_.template view<host_type> ());
-      return Teuchos::arcp_const_cast<const scalar_type> (dataAsArcp);
+      return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
     }
   }
 
-
-  // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
-  // because scalar_type may differ from Scalar.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::ArrayRCP<typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  Teuchos::ArrayRCP<Scalar>
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   get1dViewNonConst ()
   {
     if (getLocalLength () == 0 || getNumVectors () == 0) {
@@ -2865,64 +2863,69 @@ namespace Tpetra {
       // of the data.
       Teuchos::ArrayRCP<scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (view_.template view<host_type> ());
-      return dataAsArcp;
+      return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
     }
   }
 
-
-  // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
-  // because scalar_type may differ from Scalar.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type> >
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   get2dViewNonConst ()
   {
+    using Teuchos::ArrayRCP;
     typedef Kokkos::DualView<scalar_type*,
       typename dual_view_type::array_layout, device_type> col_dual_view_type;
 
     const size_t numCols = getNumVectors ();
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > views (numCols);
+    ArrayRCP<ArrayRCP<Scalar> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
       const size_t col = isConstantStride () ? j : whichVectors_[j];
       col_dual_view_type X_col =
         Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
-      views[j] = Kokkos::Compat::persistingView (X_col.d_view);
+      ArrayRCP<scalar_type> X_col_arcp =
+        Kokkos::Compat::persistingView (X_col.d_view);
+      views[j] = Teuchos::arcp_reinterpret_cast<Scalar> (X_col_arcp);
     }
     return views;
   }
 
-
-  // mfh 09 Nov 2014: Don't use Scalar in the return value's type,
-  // because scalar_type may differ from Scalar.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::scalar_type> >
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   get2dView () const
   {
+    using Teuchos::ArrayRCP;
     typedef Kokkos::DualView<const scalar_type*,
       typename dual_view_type::array_layout, device_type> col_dual_view_type;
 
     const size_t numCols = getNumVectors ();
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > views (numCols);
+    ArrayRCP<ArrayRCP<const Scalar> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
       const size_t col = isConstantStride () ? j : whichVectors_[j];
       col_dual_view_type X_col =
         Kokkos::subview<col_dual_view_type> (view_, Kokkos::ALL (), col);
-      views[j] = Kokkos::Compat::persistingView (X_col.d_view);
+      ArrayRCP<const scalar_type> X_col_arcp =
+        Kokkos::Compat::persistingView (X_col.d_view);
+      views[j] = Teuchos::arcp_reinterpret_cast<const Scalar> (X_col_arcp);
     }
     return views;
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   multiply (Teuchos::ETransp transA,
             Teuchos::ETransp transB,
-            const Scalar &alpha,
-            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A,
-            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& B,
-            const Scalar &beta)
+            const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& A,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& B,
+            const Scalar& beta)
   {
     using Teuchos::CONJ_TRANS;
     using Teuchos::NO_TRANS;

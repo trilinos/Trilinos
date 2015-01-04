@@ -1209,20 +1209,20 @@ namespace Tpetra {
     /// This method assumes that the columns of the multivector are
     /// stored contiguously.  If not, this method throws
     /// std::runtime_error.
-    Teuchos::ArrayRCP<const scalar_type> get1dView () const;
+    Teuchos::ArrayRCP<const Scalar> get1dView () const;
 
     //! Return const persisting pointers to values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > get2dView () const;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView () const;
 
     /// \brief Nonconst persisting (1-D) view of this multivector's local values.
     ///
     /// This method assumes that the columns of the multivector are
     /// stored contiguously.  If not, this method throws
     /// std::runtime_error.
-    Teuchos::ArrayRCP<scalar_type> get1dViewNonConst ();
+    Teuchos::ArrayRCP<Scalar> get1dViewNonConst ();
 
     //! Return non-const persisting pointers to values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > get2dViewNonConst ();
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
 
     /// \brief A view of the underlying KokkosClassic::MultiVector object.
     ///
