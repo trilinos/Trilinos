@@ -147,24 +147,31 @@ public:
   //! The type T itself.
   typedef T val_type;
 
-  //! The type returned by norm(x) for a value x of type T.
-  typedef typename ArithTraits<T>::mag_type mag_type;
+  //! The type returned by norm(x) for a value x of type val_type.
+  typedef typename ArithTraits<val_type>::mag_type mag_type;
 
-  //! The type returned by dot(x,y) for values x and y of type T.
-  typedef T dot_type;
+  //! The type returned by dot(x,y) for values x and y of type val_type.
+  typedef val_type dot_type;
 
-  //! The "norm" (absolute value or magnitude) of a value x of type T.
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm (const T& x) {
-    return ArithTraits<T>::abs (x);
+  //! The "norm" (absolute value or magnitude) of a value x of type val_type.
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm (const val_type& x) {
+    return ArithTraits<val_type>::abs (x);
   }
-  //! The "dot product" of two values x and y of type T.
-  static KOKKOS_FORCEINLINE_FUNCTION dot_type dot (const T& x, const T& y) {
+  /// \brief The "dot product" of two values x and y of type val_type.
+  ///
+  /// This default implementation should suffice unless val_type is
+  /// complex.  In that case, see the partial specialization for
+  /// Kokkos::complex below to see our convention for which input gets
+  /// conjugated.
+  static KOKKOS_FORCEINLINE_FUNCTION dot_type
+  dot (const val_type& x, const val_type& y) {
     return x * y;
   }
 };
 
-
-// CUDA does not support long double in device functions.
+/// \brief Partial specialization for long double.
+///
+/// \warning CUDA does not support long double in device functions.
 template<>
 struct InnerProductSpaceTraits<long double>
 {
@@ -180,8 +187,28 @@ struct InnerProductSpaceTraits<long double>
   }
 };
 
+//! Partial specialization for Kokkos::complex<T>.
+template<class T>
+class InnerProductSpaceTraits<Kokkos::complex<T> > {
+public:
+  typedef Kokkos::complex<T> val_type;
+  typedef typename ArithTraits<val_type>::mag_type mag_type;
+  typedef val_type dot_type;
 
-// CUDA does not support std::complex<T> in device functions.
+  static KOKKOS_FORCEINLINE_FUNCTION
+  mag_type norm (const val_type& x) {
+    return ArithTraits<val_type>::abs (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION dot_type
+  dot (const val_type& x, const val_type& y) {
+    return Kokkos::conj (y) * x;
+  }
+};
+
+/// \brief Partial specialization for std::complex<T>.
+///
+/// \warning CUDA does not support std::complex<T> in device
+///   functions.
 template<class T>
 struct InnerProductSpaceTraits<std::complex<T> >
 {
@@ -193,7 +220,7 @@ struct InnerProductSpaceTraits<std::complex<T> >
     return ArithTraits<val_type>::abs (x);
   }
   static dot_type dot (const val_type& x, const val_type& y) {
-    return x * y;
+    return std::conj (y) * x;
   }
 };
 
