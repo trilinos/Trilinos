@@ -90,7 +90,8 @@ void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 //
 //  Generalized comm plans
 //
-
+//  This plan assumes the send and recv lists have identical sizes so no extra sizing communications are needed
+//
 template<typename T>
 void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
                                   std::vector< std::vector<T> > &recv_lists,
@@ -110,6 +111,78 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   std::vector<MPI_Request> recv_handles(num_procs);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     recv_lists[iproc].resize(send_lists[iproc].size());
+    if(recv_lists[iproc].size() > 0) {
+      char* recv_buffer = (char*)&recv_lists[iproc][0];
+      int recv_size = recv_lists[iproc].size()*class_size;
+      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
+                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
+    }
+  }
+  MPI_Barrier(mpi_communicator);
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(send_lists[iproc].size() > 0) {
+      char* send_buffer = (char*)&send_lists[iproc][0];
+      int send_size = send_lists[iproc].size()*class_size;
+      MPI_Send(send_buffer, send_size, MPI_CHAR,
+               iproc, msg_tag, mpi_communicator);
+    }
+  }
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(recv_lists[iproc].size() > 0) {
+      MPI_Status status;
+      MPI_Wait( &recv_handles[iproc], &status );
+    }
+  }
+#endif
+}
+
+//
+//  This plan assumes the send and recv lists are matched, but that the actual ammount of data to send is unknown.
+//  A processor knows which other processors it will be receiving data from, but does not know who much data.
+//  Thus the comm plan is known from the inputs, but an additional message sizing call must be done.
+//
+template<typename T>
+void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &send_lists,
+                                               std::vector< std::vector<T> > &recv_lists,
+                                               MPI_Comm &mpi_communicator )
+{
+#if defined( STK_HAS_MPI)
+  const int msg_tag = 10242;
+  int num_procs = stk::parallel_machine_size(mpi_communicator);
+  int class_size = sizeof(T);
+
+  //
+  //  Send the message sizes
+  //
+  std::vector<int> send_msg_sizes(num_procs);
+  std::vector<int> recv_msg_sizes(num_procs);
+  std::vector<MPI_Request> recv_handles(num_procs);
+
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    send_msg_sizes[iproc] = send_lists[iproc].size();
+  }    
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(recv_lists[iproc].size()>0) {
+      MPI_Irecv(&recv_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
+    }
+  }
+  MPI_Barrier(mpi_communicator);
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(send_lists[iproc].size()>0) {
+      MPI_Send(&send_msg_sizes[iproc], 1, MPI_INT, iproc, msg_tag, mpi_communicator);
+    }
+  }
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(recv_lists[iproc].size() > 0) {
+      MPI_Status status;
+      MPI_Wait( &recv_handles[iproc], &status );
+      recv_lists[iproc].resize(recv_msg_sizes[iproc]);
+    }
+  }
+  //
+  //  Send the actual messages as raw byte streams.
+  //
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
       char* recv_buffer = (char*)&recv_lists[iproc][0];
       int recv_size = recv_lists[iproc].size()*class_size;
