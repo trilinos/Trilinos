@@ -474,7 +474,7 @@ namespace Tpetra {
                                       CrsMatrix2::GraphNotYetAllocated);
         if (this->isLocallyIndexed ()) {
           ArrayView<const LocalOrdinal> linds;
-          ArrayView<const impl_scalar_type> vals;
+          ArrayView<const Scalar> vals;
           for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
                lrow <= clonedRowMap->getMaxLocalIndex ();
                ++lrow) {
@@ -486,7 +486,7 @@ namespace Tpetra {
         }
         else { // this->isGloballyIndexed()
           Array<LocalOrdinal> linds;
-          Array<impl_scalar_type> vals;
+          Array<Scalar> vals;
           for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
                lrow <= clonedRowMap->getMaxLocalIndex ();
                ++lrow) {
@@ -511,7 +511,7 @@ namespace Tpetra {
                                       CrsMatrix2::GraphNotYetAllocated);
         if (this->isGloballyIndexed ()) {
           ArrayView<const GlobalOrdinal> ginds;
-          ArrayView<const impl_scalar_type> vals;
+          ArrayView<const Scalar> vals;
           for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
                grow <= clonedRowMap->getMaxGlobalIndex ();
                ++grow) {
@@ -523,7 +523,7 @@ namespace Tpetra {
         }
         else { // this->isLocallyIndexed()
           Array<GlobalOrdinal> ginds;
-          Array<impl_scalar_type> vals;
+          Array<Scalar> vals;
           for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
                grow <= clonedRowMap->getMaxGlobalIndex ();
                ++grow) {
