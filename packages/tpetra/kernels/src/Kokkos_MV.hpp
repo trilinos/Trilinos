@@ -2016,6 +2016,21 @@ struct MV_DotProduct_Right_FunctorUnroll
   }
 };
 
+/// \brief Compute the dot product(s) of the column(s) of the
+///   multivectors (2-D arrays) x and y, and store the result(s) in r.
+template<class rVector, class XVector, class YVector>
+rVector
+MV_Dot (const rVector& r,
+        const XVector& x,
+        const YVector& y)
+{
+  const typename XVector::size_type numRows = x.dimension_0 ();
+  MV_Dot<rVector, XVector, YVector> (r, x, y, numRows);
+}
+
+/// \brief Compute the dot product(s) of the column(s) of the
+///   multivectors (2-D arrays) x and y, and store the result(s) in r.
+///   Only use the first numRows rows of x and y.
 template<class rVector, class XVector, class YVector>
 rVector
 MV_Dot (const rVector& r,
@@ -2511,7 +2526,11 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,2>
 };
 
 template<class rVector, class WeightVector, class XVector>
-rVector MV_DotWeighted(const rVector &r, const WeightVector & w, const XVector & x, int n = -1)
+rVector
+MV_DotWeighted (const rVector &r,
+                const WeightVector & w,
+                const XVector & x,
+                int n = -1)
 {
   if (n < 0) {
     n = x.dimension_0 ();
@@ -2831,6 +2850,18 @@ struct V_DotFunctor
   }
 };
 
+//! Return the dot product of the vectors (1-D arrays) x and y.
+template<class XVector, class YVector>
+typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+V_Dot (const XVector& x,
+       const YVector& y)
+{
+  const typename XVector::size_type numRows = x.dimension_0 ();
+  return V_Dot<XVector, YVector> (x, y, numRows);
+}
+
+/// \brief Return the dot product of the vectors (1-D arrays) x and y.
+///   Only use the first numRows entries of x and y.
 template<class XVector, class YVector>
 typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
 V_Dot (const XVector& x,
@@ -2878,6 +2909,15 @@ struct V_DotWeighted_Functor
     update += source;
   }
 };
+
+template<class WeightVector, class XVector>
+typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+V_DotWeighted (const WeightVector& w,
+               const XVector& x)
+{
+  const typename XVector::size_type = x.dimension_0 ();
+  return V_DotWeighted<WeightVector, XVector> (w, x, numRows);
+}
 
 template<class WeightVector, class XVector>
 typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
