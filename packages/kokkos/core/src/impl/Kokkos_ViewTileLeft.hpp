@@ -139,12 +139,19 @@ struct ViewOffset< ShapeType
 template<>
 struct ViewAssignment< ViewTile , void , void >
 {
-  template< class T , unsigned long N0 , unsigned long N1 , class A2 , class A3 >
+  // Some compilers have type-matching issues on the integer values when using:
+  //   template< class T , unsigned N0 , unsigned N1 , class A2 , class A3 >
+  template< class T , unsigned dN0 , unsigned dN1
+          , class A2 , class A3
+          , unsigned sN0 , unsigned sN1 >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment( View< T[N0][N1], LayoutLeft, A2, A3, Impl::ViewDefault > & dst
-                , View< T** , LayoutTileLeft<N0,N1,true>, A2, A3, Impl::ViewDefault > const & src
+  ViewAssignment( View< T[dN0][dN1], LayoutLeft, A2, A3, Impl::ViewDefault > & dst
+                , View< T** , LayoutTileLeft<sN0,sN1,true>, A2, A3, Impl::ViewDefault > const & src
                 , size_t const i_tile0
-                , size_t const i_tile1
+                , typename Impl::enable_if< unsigned(dN0) == unsigned(sN0) &&
+                                            unsigned(dN1) == unsigned(sN1)
+                                          , size_t const
+                                          >::type i_tile1
                 )
    {
      // Destination is always contiguous but source may be non-contiguous
