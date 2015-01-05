@@ -216,7 +216,7 @@ public:
   {
     typedef Test::ReduceTeamFunctor< ScalarType , device_type > functor_type ;
     typedef typename functor_type::value_type value_type ;
-    typedef Kokkos::View< value_type , Kokkos::Serial , Kokkos::MemoryUnmanaged >  result_type ;
+    typedef Kokkos::View< value_type, Kokkos::HostSpace, Kokkos::MemoryUnmanaged > result_type ;
 
     enum { Count = 3 };
     enum { Repeat = 100 };
