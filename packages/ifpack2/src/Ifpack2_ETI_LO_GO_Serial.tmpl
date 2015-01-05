@@ -56,11 +56,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Ifpack2 already does ETI for the default Node type.  Don't do it
 // again if Kokkos::Compat::KokkosSerialWrapperNode is the default.
-//
-// FIXME (mfh 02 Oct 2014) Currently, there is no macro to test if the
-// Kokkos::Serial device (and its corresponding wrapper Node) is
-// defined.
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
   IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosSerialWrapperNode)
 #endif
 
