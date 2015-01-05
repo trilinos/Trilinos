@@ -4941,7 +4941,7 @@ void set_coords_on_new_node(stk::mesh::MetaData& meta, stk::mesh::Entity nodeA, 
     fieldValue[2] = z;
 }
 
-TEST(BulkData, create_node_along_shared_edge)
+TEST(BulkData, create_vigilante_nodes_along_shared_edge)
 {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
@@ -5039,7 +5039,7 @@ TEST(BulkData, create_node_along_shared_edge)
     }
 }
 
-TEST(BulkData, three_nodes_along_every_edge)
+TEST(BulkData, renegade_nodes_along_every_edge)
 {
     unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
