@@ -2915,7 +2915,7 @@ typename Details::InnerProductSpaceTraits<typename XVector::non_const_value_type
 V_DotWeighted (const WeightVector& w,
                const XVector& x)
 {
-  const typename XVector::size_type = x.dimension_0 ();
+  const typename XVector::size_type numRows = x.dimension_0 ();
   return V_DotWeighted<WeightVector, XVector> (w, x, numRows);
 }
 
