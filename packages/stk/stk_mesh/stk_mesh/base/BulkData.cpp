@@ -2086,8 +2086,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
                          << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
           if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
           {
-            induced_part_membership(*this, all_parts, rel_entities[j], empty, e_to_entity_rank, keep,
-                                    true /*Do look at supersets*/);
+            induced_part_membership(*this, all_parts, rel_entities[j], empty, e_to_entity_rank, keep);
           }
         }
       }
@@ -2103,8 +2102,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
       {
         if ( rel_entities[j] == e_to && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) )
         {
-          induced_part_membership(*this, all_parts, e_from, keep, e_to_entity_rank, del,
-                                  true /*Do look at supersets*/);
+          induced_part_membership(*this, all_parts, e_from, keep, e_to_entity_rank, del);
           break; // at most 1 relation can match our specification
         }
       }

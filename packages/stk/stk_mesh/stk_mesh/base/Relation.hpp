@@ -314,8 +314,7 @@ void get_entities_through_relations(
 void induced_part_membership( const Part & part ,
                               EntityRank entity_rank_from ,
                               EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts,
-                              bool include_supersets=true);
+                              OrdinalVector & induced_parts);
 
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities.  Do not include and parts in the 'omit' list.
@@ -324,16 +323,14 @@ void induced_part_membership(const BulkData& mesh, const PartVector& all_parts,
                              const Entity entity_from ,
                               const OrdinalVector       & omit ,
                                     EntityRank            entity_rank_to ,
-                                    OrdinalVector       & induced_parts,
-                                    bool include_supersets=true);
+                                    OrdinalVector       & induced_parts);
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.
  */
 void induced_part_membership(const BulkData& mesh, const Entity entity ,
                               const OrdinalVector & omit ,
-                                    OrdinalVector & induced_parts,
-                                    bool include_supersets=true);
+                                    OrdinalVector & induced_parts);
 
 
 //----------------------------------------------------------------------
