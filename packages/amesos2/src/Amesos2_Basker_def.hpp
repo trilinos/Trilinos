@@ -140,7 +140,7 @@ Basker<Matrix,Vector>::numericFactorization_impl()
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
-  global_size_type info_st = as<global_size_type>(info);
+  //global_size_type info_st = as<global_size_type>(info);
   /* TODO : Proper error messages*/
   TEUCHOS_TEST_FOR_EXCEPTION( (info == -1) ,
     std::runtime_error,
