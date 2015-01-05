@@ -49,7 +49,7 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 // Kokkos includes
-#include "KokkosClassic_config.h"
+#include "TpetraClassic_config.h"
 #include "Kokkos_Core.hpp"
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
