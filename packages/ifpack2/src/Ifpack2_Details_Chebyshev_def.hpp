@@ -1156,35 +1156,64 @@ ifpackApplyImpl (const op_type& A,
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
-powerMethod (const op_type& A, const V& D_inv, const int numIters)
+powerMethodWithInitGuess (const op_type& A,
+                          const V& D_inv,
+                          const int numIters,
+                          V& x)
 {
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);
   ST lambdaMax = zero;
   ST RQ_top, RQ_bottom, norm;
 
-  V x (A.getDomainMap ());
   V y (A.getRangeMap ());
-  x.randomize ();
   norm = x.norm2 ();
-  TEUCHOS_TEST_FOR_EXCEPTION(norm == zero, std::runtime_error,
-    "Ifpack2::Chebyshev::powerMethod: "
-    "Tpetra::Vector's randomize() method filled the vector "
-    "with zeros.  This is not impossible, but is unlikely.  "
-    "It's far more likely that there is a bug in Tpetra.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    norm == zero, std::runtime_error,
+    "Ifpack2::Chebyshev::powerMethodWithInitGuess: "
+    "The initial guess has zero norm.  This could be either because Tpetra::"
+    "Vector::randomize() filled the vector with zeros (if that was used to "
+    "compute the initial guess), or because the norm2 method has a bug.  The "
+    "first is not impossible, but unlikely.");
 
+  //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
   x.scale (one / norm);
+  //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
   for (int iter = 0; iter < numIters; ++iter) {
     A.apply (x, y);
+    //std::cerr << "norm1(y) before: " << y.norm1 ();
     solve (y, D_inv, y);
+    //std::cerr << ", norm1(y) after: " << y.norm1 () << std::endl;
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
+    //std::cerr << "RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << std::endl;
     lambdaMax = RQ_top / RQ_bottom;
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
       return zero;
     }
     x.update (one / norm, y, zero);
+  }
+  return lambdaMax;
+}
+
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::ST
+Chebyshev<ScalarType, MV>::
+powerMethod (const op_type& A, const V& D_inv, const int numIters)
+{
+  const ST zero = Teuchos::as<ST> (0);
+  V x (A.getDomainMap ());
+  x.randomize ();
+
+  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+  if (lambdaMax < zero) {
+    // Max eigenvalue estimate is negative.  Perhaps we got unlucky
+    // with the random initial guess.  Try again with a different (but
+    // still random) initial guess.  Only try again once, so that the
+    // run time is bounded.
+    x.randomize ();
+    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
   }
   return lambdaMax;
 }
