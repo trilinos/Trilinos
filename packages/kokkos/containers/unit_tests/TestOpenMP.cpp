@@ -52,6 +52,7 @@
 //----------------------------------------------------------------------------
 #include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
+#include <TestStaticCrsGraph.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
 #include <TestSegmentedView.hpp>
@@ -92,6 +93,12 @@ TEST_F( openmp, complex )
 TEST_F( openmp, bitset )
 {
   test_bitset<Kokkos::OpenMP>();
+}
+
+TEST_F( openmp , staticcrsgraph )
+{
+  TestStaticCrsGraph::run_test_graph< Kokkos::OpenMP >();
+  TestStaticCrsGraph::run_test_graph2< Kokkos::OpenMP >();
 }
 
 #define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat, near )                                \

@@ -55,6 +55,7 @@
 
 #include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
+#include <TestStaticCrsGraph.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
 #include <TestSegmentedView.hpp>
@@ -75,6 +76,13 @@ protected:
     Kokkos::Serial::finalize ();
   }
 };
+
+
+TEST_F( serial , staticcrsgraph )
+{
+  TestStaticCrsGraph::run_test_graph< Kokkos::Serial >();
+  TestStaticCrsGraph::run_test_graph2< Kokkos::Serial >();
+}
 
 TEST_F( serial, complex )
 {

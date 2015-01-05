@@ -55,6 +55,7 @@
 
 #include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
+#include <TestStaticCrsGraph.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
 #include <TestSegmentedView.hpp>
@@ -80,6 +81,13 @@ protected:
     Kokkos::HostSpace::execution_space::finalize();
   }
 };
+
+TEST_F( cuda , staticcrsgraph )
+{
+  TestStaticCrsGraph::run_test_graph< Kokkos::Cuda >();
+  TestStaticCrsGraph::run_test_graph2< Kokkos::Cuda >();
+}
+
 
 void cuda_test_insert_close(  uint32_t num_nodes
                             , uint32_t num_inserts
