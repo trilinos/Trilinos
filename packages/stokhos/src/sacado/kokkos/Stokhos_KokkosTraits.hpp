@@ -48,10 +48,12 @@
 
 namespace Sacado {
 
+#ifdef KOKKOS_HAVE_SERIAL
   template <>
   struct StringName< Kokkos::Serial > {
     static std::string eval() { return "Kokkos::Serial"; }
   };
+#endif
 
 #ifdef KOKKOS_HAVE_PTHREAD
   template <>
