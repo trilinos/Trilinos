@@ -2845,7 +2845,6 @@ namespace Tpetra {
         // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
         // semantics, this would be the place to mark memory as
         // modified.
-        const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
         Kokkos::Impl::ViewFill<t_ValuesType> (k_values1D_, theAlpha);
       }
       else if (profType == DynamicProfile) {
