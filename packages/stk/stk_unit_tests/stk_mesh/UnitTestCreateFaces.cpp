@@ -52,6 +52,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 
+
 using stk::mesh::MetaData;
 
 namespace {
@@ -99,7 +100,7 @@ namespace {
     size_t exp_elem = 6 * nx * ny * nz;
     return exp_elem;
   }
-}
+
 
 TEST ( UnitTestCreateFaces, Hex_2x1x1 )
 {
@@ -819,6 +820,7 @@ TEST ( UnitTestCreateFaces, Degenerate )
     EXPECT_EQ(11u, counts[face_rank] ); // faces
     EXPECT_EQ( 2u, counts[elem_rank] ); // elements
   }
-
 }
+
+} //end empty namespace
 
