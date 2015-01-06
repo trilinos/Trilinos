@@ -133,7 +133,7 @@ public:
     return this->epetra_vec_;
   }
 
-  Teuchos::RCP<Epetra_MultiVector> getNonConstVector() {
+  Teuchos::RCP<Epetra_MultiVector> getVector() {
     return this->epetra_vec_;
   }
 
@@ -144,7 +144,7 @@ public:
     Epetra_Map linearMap(domainMap.NumGlobalElements(), domainMap.NumMyElements(), 0, domainMap.Comm());
     int lid = linearMap.LID(i);
     if(lid >=0)
-      (*e->getNonConstVector())[0][lid]= 1.0;
+      (*e->getVector())[0][lid]= 1.0;
 
     return e;
 
@@ -171,7 +171,7 @@ public:
       int curGlobalCol = rootDomainMap.GID(i); // Should return same value on all processors
       if (domainMap.MyGID(curGlobalCol)){
         int curCol = domainMap.LID(curGlobalCol);
-        (*e->getNonConstVector())[0][curCol]= 1.0;
+        (*e->getVector())[0][curCol]= 1.0;
       }
     }
 

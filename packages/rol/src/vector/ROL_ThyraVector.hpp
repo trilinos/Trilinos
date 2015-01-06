@@ -124,7 +124,7 @@ public:
 
   /**  \brief nonconst get of the Thyra vector.
     */
-  Teuchos::RCP<Thyra::VectorBase<Real> > getNonConstVector()  {
+  Teuchos::RCP<Thyra::VectorBase<Real> > getVector()  {
     return thyra_vec_;
   }
 

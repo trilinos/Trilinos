@@ -112,10 +112,10 @@ public:
 	//  ThyraVector<Real> thyra_x_up = Teuchos::dyn_cast<ThyraVector<Real> >(*x_up);
 	//  thyra_x_lo.putScalar(p_min_);
 	//  thyra_x_up.putScalar(p_max_);
-	  Thyra::ele_wise_bound(*thyra_x_lo_, *thyra_x_up_, thyra_x.getNonConstVector().ptr() );
+	  Thyra::ele_wise_bound(*thyra_x_lo_, *thyra_x_up_, thyra_x.getVector().ptr() );
 
 //	  {
-//		  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getNonConstVector());
+//		  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
 //		  for (int i = 0; i < thyra_x_view.subDim(); ++i)
 //			  thyra_x_view[i] = std::max(p_min_,std::min(p_max_,thyra_x_view[i]));
 //	  }
@@ -144,12 +144,12 @@ public:
 //  Teuchos::RCP<Vector<Real> > x_up = x.clone();
 //  ThyraVector<Real> thyra_x_up = Teuchos::dyn_cast<ThyraVector<Real> >(*x_up);
 //  thyra_x_up.putScalar(p_max_);
-  Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, thyra_v.getNonConstVector().ptr(), epsn );
+  Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, thyra_v.getVector().ptr(), epsn );
 
 
 /*	{
-      Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getNonConstVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getNonConstVector());
+      Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
+	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
 
 	  for (int i = 0; i < thyra_v_view.subDim(); ++i) {
 		if (thyra_x_view[i] >= p_max_-epsn)
@@ -182,12 +182,12 @@ public:
   //Teuchos::RCP<Vector<Real> > x_up = x.clone();
  // ThyraVector<Real> thyra_x_up = Teuchos::dyn_cast<ThyraVector<Real> >(*x_up);
   //thyra_x_up.putScalar(p_max_);
-  Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, *thyra_g.getVector(), thyra_v.getNonConstVector().ptr(), epsn );
+  Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, *thyra_g.getVector(), thyra_v.getVector().ptr(), epsn );
 
 /*	{
-	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getNonConstVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getNonConstVector());
-	  Thyra::DetachedVectorView<Real> thyra_g_view(thyra_g.getNonConstVector());
+	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
+	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
+	  Thyra::DetachedVectorView<Real> thyra_g_view(thyra_g.getVector());
 	  for (int i = 0; i < thyra_v_view.subDim(); ++i) {
 		if ( (thyra_x_view[i] >= p_max_-epsn) && (thyra_g_view[i] < 0.0))
 		  thyra_v_view[i] = 0.0;
@@ -216,10 +216,10 @@ public:
   //Teuchos::RCP<Vector<Real> > x_lo = x.clone();
  // ThyraVector<Real> thyra_x_lo = Teuchos::dyn_cast<ThyraVector<Real> >(*x_lo);
  // thyra_x_lo.putScalar(p_min_);
-  Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, thyra_v.getNonConstVector().ptr(), epsn );
+  Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, thyra_v.getVector().ptr(), epsn );
 /*	{
-	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getNonConstVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getNonConstVector());
+	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
+	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
 	  for (int i = 0; i < thyra_v_view.subDim(); ++i) {
 	    if (thyra_x_view[i] <= p_min_+epsn)
 	      thyra_v_view[i] = 0.0;
@@ -250,12 +250,12 @@ public:
  // Teuchos::RCP<Vector<Real> > x_lo = x.clone();
  // ThyraVector<Real> thyra_x_lo = Teuchos::dyn_cast<ThyraVector<Real> >(*x_lo);
  // thyra_x_lo.putScalar(p_min_);
-  Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, *thyra_g.getVector(), thyra_v.getNonConstVector().ptr(), epsn );
+  Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, *thyra_g.getVector(), thyra_v.getVector().ptr(), epsn );
 
 	/*{
-	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getNonConstVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getNonConstVector());
-      Thyra::DetachedVectorView<Real> thyra_g_view(thyra_g.getNonConstVector());
+	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
+	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
+      Thyra::DetachedVectorView<Real> thyra_g_view(thyra_g.getVector());
       for (int i = 0; i < thyra_v_view.subDim(); ++i) {
 		if ( (thyra_x_view[i] <= p_min_+epsn) && (thyra_g_view[i] > 0.0))
 		  thyra_v_view[i] = 0.0;

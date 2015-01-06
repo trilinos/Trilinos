@@ -104,13 +104,13 @@ public:
     return this->std_vec_;
   }
 
-  Teuchos::RCP<std::vector<Element> > getNonConstVector() {
+  Teuchos::RCP<std::vector<Element> > getVector() {
     return this->std_vec_;
   }
 
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
     Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(this->std_vec_->size(), 0.0)) ));
-    (*e->getNonConstVector())[i]= 1.0;
+    (*e->getVector())[i]= 1.0;
     return e;
   }
 
@@ -127,7 +127,7 @@ Teuchos::RCP<const std::vector<Real> > constDownCast( const Vector<Real> &x ) {
 
 template<class Real>
 Teuchos::RCP<std::vector<Real> > downCast( Vector<Real> &x ) {
-  return (Teuchos::dyn_cast<StdVector<Real> >(x)).getNonConstVector();
+  return (Teuchos::dyn_cast<StdVector<Real> >(x)).getVector();
 }
 
 } // namespace StdVector_Helper

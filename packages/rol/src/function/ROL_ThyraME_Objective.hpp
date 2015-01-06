@@ -93,7 +93,7 @@ public:
     const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
     ThyraVector<Real>  & thyra_dgdp = Teuchos::dyn_cast<ThyraVector<Real> >(rol_g);
 
-    Teuchos::RCP<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getNonConstVector();
+    Teuchos::RCP<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
