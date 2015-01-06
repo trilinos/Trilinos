@@ -132,7 +132,7 @@ B = NULL;
 template < >
 Epetra_CrsMatrix* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reorderMatrix()
 {
-  Epetra_CrsMatrix *B;
+  Epetra_CrsMatrix *B = NULL;
   string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
   if(partitioningPackage.compare("Isorropia") == 0)
     {
@@ -162,7 +162,7 @@ Vector* PartitionInterface<Matrix, Vector>::reorderVector(Vector* x)
 template < >
 Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reorderVector(Epetra_MultiVector* x )
 {
-  Epetra_MultiVector *b;
+  Epetra_MultiVector *b = NULL;
   string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
   if(partitioningPackage.compare("Isorropia") == 0)
     {
