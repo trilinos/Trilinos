@@ -389,10 +389,7 @@ public:
       verify_dimension_storage_static_size();
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( Alloc::label( prop );
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                Impl::capacity( m_array_shape , m_stride ) );
+        memory_space::allocate( Alloc::label( prop ) , sizeof(scalar_type) * Impl::capacity( m_array_shape , m_stride ) );
 
       (void) Kokkos::Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
           ( m_ptr_on_device , Impl::capacity( m_array_shape , m_stride ) );

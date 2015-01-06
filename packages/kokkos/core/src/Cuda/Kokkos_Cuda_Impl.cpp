@@ -492,11 +492,7 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
     m_scratchFlagsCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchFlags = (size_type *)
-      CudaSpace::allocate(
-        std::string("InternalScratchFlags") ,
-        typeid( ScratchGrain ),
-        sizeof( ScratchGrain ),
-        m_scratchFlagsCount );
+      CudaSpace::allocate( std::string("InternalScratchFlags") , sizeof( ScratchGrain ) * m_scratchFlagsCount );
 
     CUDA_SAFE_CALL( cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeScratchGrain ) );
   }
@@ -514,11 +510,7 @@ CudaInternal::scratch_space( const Cuda::size_type size )
     m_scratchSpaceCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchSpace = (size_type *)
-      CudaSpace::allocate(
-        std::string("InternalScratchSpace") ,
-        typeid( ScratchGrain ),
-        sizeof( ScratchGrain ),
-        m_scratchSpaceCount );
+      CudaSpace::allocate( std::string("InternalScratchSpace") , sizeof( ScratchGrain ) * m_scratchSpaceCount );
   }
 
   return m_scratchSpace ;
@@ -535,11 +527,7 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
     m_scratchUnifiedCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchUnified = (size_type *)
-      CudaHostPinnedSpace::allocate(
-        std::string("InternalScratchUnified") ,
-        typeid( ScratchGrain ),
-        sizeof( ScratchGrain ),
-        m_scratchUnifiedCount );
+      CudaHostPinnedSpace::allocate( std::string("InternalScratchUnified") , sizeof( ScratchGrain ) * m_scratchUnifiedCount );
   }
 
   return m_scratchUnified ;

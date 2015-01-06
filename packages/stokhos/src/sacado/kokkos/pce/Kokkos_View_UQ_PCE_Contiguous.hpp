@@ -121,10 +121,7 @@ struct PCEAllocation {
     const size_t size_values =
       num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
-    char *data = (char*) memory_space::allocate( label ,
-                                                 typeid(char) ,
-                                                 sizeof(char) ,
-                                                 size );
+    char *data = (char*) memory_space::allocate( label , size );
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
 

@@ -98,40 +98,9 @@ typedef enable_if<
   sizeof(::cudaTextureObject_t) == sizeof(const void *) ,
   ::cudaTextureObject_t >::type cuda_texture_object_type ;
 
-cuda_texture_object_type
-cuda_texture_object_attach(
-  const cudaChannelFormatDesc & ,
-  const void * const );
-
-int cuda_texture_object_release(
-    cuda_texture_object_type obj
-    );
-
-int cuda_texture_object_release(
-    const void * const
-    );
-
-template< typename TextureType >
-inline
-cuda_texture_object_type
-cuda_texture_object_attach( const void * const base_view_ptr )
-{
-  return cuda_texture_object_attach( cudaCreateChannelDesc<TextureType>() , base_view_ptr );
-}
-
 #else
 
 typedef const void * cuda_texture_object_type ;
-
-template< typename TextureType >
-inline
-cuda_texture_object_type
-cuda_texture_object_attach( const void * const )
-{ return 0 ; }
-
-int cuda_texture_object_release(
-    const void * const
-    );
 
 #endif
 
@@ -189,6 +158,7 @@ public:
     {
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
       MemorySpace::texture_object_attach( arg_ptr
+                                        , sizeof(ValueType)
                                         , cudaCreateChannelDesc< AliasType >()
                                         , & m_obj
                                         , reinterpret_cast<const void **>( & m_alloc_ptr )
@@ -202,6 +172,7 @@ public:
     {
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
       MemorySpace::texture_object_attach( arg_ptr
+                                        , sizeof(ValueType)
                                         , cudaCreateChannelDesc< AliasType >()
                                         , & m_obj
                                         , reinterpret_cast<const void **>( & m_alloc_ptr )

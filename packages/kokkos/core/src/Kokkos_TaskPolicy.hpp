@@ -265,11 +265,7 @@ public:
     : m_future(0)
     {
       if ( n ) {
-        m_future = (future_type *)
-          MemorySpace::allocate( "FutureArray"
-                               , typeid(future_type)
-                               , sizeof(future_type)
-                               , n + 1 );
+        m_future = (future_type *) MemorySpace::allocate( "FutureArray" , sizeof(future_type) * ( n + 1 ) );
         for ( size_t i = 0 ; i <= n ; ++i ) m_future[i].m_task = 0 ;
       }
     }

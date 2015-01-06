@@ -459,10 +459,7 @@ public:
       m_offset_map.set_padding();
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( Alloc::label( prop ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                m_offset_map.capacity() );
+        memory_space::allocate( Alloc::label( prop ) , sizeof(scalar_type) * m_offset_map.capacity() );
 
       (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
         ( m_ptr_on_device , m_offset_map.capacity() );

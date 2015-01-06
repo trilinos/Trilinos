@@ -255,8 +255,7 @@ public:
 
       const size_t count = offset_map.capacity();
 
-      value_type * ptr = (value_type*)
-        memory_space::allocate( label , typeid(value_type) , sizeof(value_type) , count );
+      value_type * ptr = (value_type*) memory_space::allocate( label , sizeof(value_type) * count );
 
         // Default construct within the view's execution space.
       (void) ViewDefaultConstruct< execution_space , value_type , Initialize >( ptr , count );

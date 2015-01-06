@@ -124,7 +124,7 @@ TEST_F( cuda, spaces )
 {
   if ( Kokkos::CudaUVMSpace::available() ) {
 
-    int * uvm_ptr = (int*) Kokkos::CudaUVMSpace::allocate("uvm_ptr",typeid(int),sizeof(int),1);
+    int * uvm_ptr = (int*) Kokkos::CudaUVMSpace::allocate("uvm_ptr",sizeof(int));
 
     *uvm_ptr = 42 ;
 

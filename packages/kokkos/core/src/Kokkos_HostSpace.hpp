@@ -88,8 +88,7 @@ public:
 #  error "At least one of the following host execution spaces must be defined: Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads.  You might be seeing this message if you disabled the Kokkos::Serial device explicitly using the Kokkos_ENABLE_Serial:BOOL=OFF CMake option, but did not enable any of the other host execution space devices."
 #endif
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device
-   *          with size = scalar_size * scalar_count.
+  /** \brief  Allocate a contiguous block of memory.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
@@ -97,10 +96,7 @@ public:
    *
    *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string    & label ,
-                          const std::type_info & scalar_type ,
-                          const size_t           scalar_size ,
-                          const size_t           scalar_count );
+  static void * allocate( const std::string & label , const size_t size );
 
   /** \brief  Increment the reference count of the block of memory
    *          in which the input pointer resides.

@@ -163,7 +163,7 @@ void OpenMPexec::resize_scratch( size_t reduce_size , size_t thread_size )
         kokkos_omp_in_critical_region = 1 ;
 
         m_pool[ rank_rev ] =
-          (OpenMPexec *) HostSpace::allocate( "openmp_scratch" , typeid(unsigned char) , 1 , alloc_size );
+          (OpenMPexec *) HostSpace::allocate( "openmp_scratch" , alloc_size );
         new( m_pool[ rank_rev ] ) OpenMPexec( rank , ALLOC_EXEC , reduce_size , thread_size );
 
         kokkos_omp_in_critical_region = 0 ;
