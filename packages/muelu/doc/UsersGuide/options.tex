@@ -46,6 +46,24 @@ parameters.
 
 \begin{table}[h!]
   \begin{center}
+    \begin{tabular}{p{3cm} p{12cm}}
+      \toprule
+      Verbosity level           & Description \\
+      \midrule
+      \verb!none!               & No output \\
+      \verb!low!                & Errors, important warnings, and some statistics \\
+      \verb!medium!             & Same as \verb!low!, but with more statistics \\
+      \verb!high!               & Errors, all warnings, and all statistics \\
+      \verb!extreme!            & Same as \verb!high!, but also includes output from other packages (\textit{i.e.}, \zoltan{}) \\
+      \bottomrule
+    \end{tabular}
+    \caption{Verbosity levels.}
+\label{t:verbosity_types}
+  \end{center}
+\end{table}
+
+\begin{table}[h!]
+  \begin{center}
     \begin{tabular}{p{4.3cm} p{4.3cm} c p{4.5cm}}
       \toprule
       Problem type               & Multigrid algorithm    & Block size  & Smoother \\

@@ -16,7 +16,7 @@
       <name>verbosity</name>
       <type>string</type>
       <default>"high"</default>
-      <description>Control of the amount of printed information. Possible values: "none", "low", "medium", "high", "extreme".</description>
+      <description>Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.</description>
       <name-ML>ML output</name-ML>
       <comment-ML>The ML type of this parameter is int! MLParameter interpreter transformes int to MueLu verbosity strings</comment-ML>
       <type-ML>int</type-ML>
