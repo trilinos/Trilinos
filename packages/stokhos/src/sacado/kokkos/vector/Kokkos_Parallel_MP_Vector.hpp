@@ -114,6 +114,7 @@ public:
 };
 #endif
 
+#if defined(KOKKOS_HAVE_SERIAL)
 // Specialization of ParallelFor<> for MPVectorWorkConfig and Serial
 // The default implementation ignores the team size and uses the standard
 // work-range implementation.  In the future maybe we should try and use
@@ -132,6 +133,7 @@ public:
     ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
   }
 };
+#endif // defined(KOKKOS_HAVE_SERIAL)
 
 #if defined( KOKKOS_HAVE_CUDA ) && defined( __CUDACC__ )
 

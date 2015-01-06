@@ -77,13 +77,30 @@
 
 namespace Stokhos {
 
-// Traits for determining device type from node type
+/// \brief Trait class that determines (new) Kokkos execution space
+///   type from Kokkos(Classic) Node type.
+/// \tparam Node Kokkos(Classic) Node type.
+///
+/// The \c type typedef of this class gives the (new) Kokkos execution
+/// space corresponding to the given (classic) Kokkos \c Node type.
 template <typename Node>
 struct DeviceForNode {
+#if defined(KOKKOS_HAVE_SERIAL)
+  // Prefer the Kokkos::Serial execution space if it exists.
   typedef Kokkos::Serial type;
+#else
+  // If the Kokkos::Serial execution space does not exist, use the
+  // default host execution space.  Kokkos::HostSpace (the host memory
+  // space) always exists, and it always has an execution_space
+  // typedef, which corresponds to the default host execution space.
+  typedef Kokkos::HostSpace::execution_space type;
+#endif // defined(KOKKOS_HAVE_SERIAL)
 };
 
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
+/// \brief Partial specialization of DeviceForNode, for new Kokkos
+///   "wrapper" Node types.
+/// \tparam Device (New) Kokkos execution space type.
 template <typename Device>
 struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
