@@ -67,7 +67,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  OPENMPI_1.8.3_RELEASE_MueLu
+  OPENMPI_1.8.4_RELEASE_MueLu
   ctest_linux_nightly_mpi_release_muelu_negima.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
@@ -75,7 +75,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  OPENMPI_1.8.3_DEBUG_MueLu_KLU2
+  OPENMPI_1.8.4_DEBUG_MueLu_KLU2
   ctest_linux_nightly_mpi_debug_muelu_klu2_negima.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
@@ -83,7 +83,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  OPENMPI_1.8.3_DEBUG_MueLu_Basker
+  OPENMPI_1.8.4_DEBUG_MueLu_Basker
   ctest_linux_nightly_mpi_debug_muelu_basker_negima.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
@@ -101,7 +101,7 @@ if(RUN_HEAVY_MEMORY_TESTS)
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.8.3_DEBUG_MueLu
+    OPENMPI_1.8.4_DEBUG_MueLu
     ctest_linux_nightly_mpi_debug_muelu_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -119,7 +119,7 @@ else()
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.8.3_DEBUG_MueLu_Valgrind
+    OPENMPI_1.8.4_DEBUG_MueLu_Valgrind
     ctest_linux_nightly_mpi_debug_valgrind_muelu_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -131,7 +131,7 @@ endif()
 if(RUN_COVERAGE_TESTS)
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.8.3_DEBUG_MueLu_Coverage
+    OPENMPI_1.8.4_DEBUG_MueLu_Coverage
     ctest_linux_nightly_mpi_debug_muelu_coverage_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
