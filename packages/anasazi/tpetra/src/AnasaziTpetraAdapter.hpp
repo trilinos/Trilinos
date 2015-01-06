@@ -411,7 +411,7 @@ namespace Anasazi {
     }
 
     static void
-    MvTransMv (Scalar alpha,
+    MvTransMv (const Scalar alpha,
                const MV& A,
                const MV& B,
                Teuchos::SerialDenseMatrix<int,Scalar>& C)
@@ -455,7 +455,15 @@ namespace Anasazi {
 
       // Check if numRowsC == numColsC == 1, in which case we can call dot()
       if (numRowsC == 1 && numColsC == 1) {
+        if (alpha == Teuchos::ScalarTraits<Scalar>::zero ()) {
+          // Short-circuit, as required by BLAS semantics.
+          C(0,0) = alpha;
+          return;
+        }
         A.dot (B, Teuchos::ArrayView<Scalar> (C.values (), 1));
+        if (alpha != Teuchos::ScalarTraits<Scalar>::one ()) {
+          C(0,0) *= alpha;
+        }
         return;
       }
 
