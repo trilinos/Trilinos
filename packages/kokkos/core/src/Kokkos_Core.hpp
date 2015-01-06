@@ -77,9 +77,23 @@
 
 namespace Kokkos {
 
+struct InitArguments {
+  int nthreads;
+  int nnuma;
+  int device;
+
+  InitArguments() {
+    nthreads = -1;
+    nnuma = -1;
+    device = -1;
+  }
+};
+
 void initialize();
 
 void initialize(int& narg, char* arg[]);
+
+void initialize(const InitArguments& args);
 
 void finalize();
 

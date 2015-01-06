@@ -67,8 +67,11 @@ bool is_unsigned_int(const char* str)
   return true;
 }
 
-void initialize_internal(const int nthreads, const int use_numa, const int use_gpu)
+void initialize_internal(const InitArguments& args)
 {
+  const int nthreads = args.nthreads;
+  const int use_numa = args.nnuma;
+  const int use_gpu = args.device;
 
 #if defined( KOKKOS_HAVE_OPENMP )
 
@@ -217,7 +220,7 @@ namespace Kokkos {
 
 void initialize()
 {
-  Impl::initialize_internal( -1 , -1 , -1 );
+  Impl::initialize_internal( InitArguments() );
 }
 
 void initialize(int& narg, char* arg[])
@@ -409,7 +412,15 @@ void initialize(int& narg, char* arg[])
       iarg++;
     }
 
-    Impl::initialize_internal(nthreads,numa,device);
+    InitArguments arguments;
+    arguments.nthreads = nthreads;
+    arguments.nnuma = numa;
+    arguments.device = device;
+    Impl::initialize_internal(arguments);
+}
+
+void initialize(const InitArguments& arguments) {
+  Impl::initialize_internal(arguments);
 }
 
 void finalize()
