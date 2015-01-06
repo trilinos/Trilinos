@@ -175,7 +175,7 @@ namespace Impl {
         expected_numa = 1;
       }
     }
-    ASSERT_EQ(Kokkos::HostSpace::execution_space::thread_pool_size(),expected_nthreads*expected_numa);
+    ASSERT_EQ(Kokkos::HostSpace::execution_space::thread_pool_size(),expected_nthreads);
 
 #ifdef KOKKOS_HAVE_CUDA
     if(Kokkos::Impl::is_same<Kokkos::DefaultExecutionSpace,Kokkos::Cuda>::value) {
