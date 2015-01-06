@@ -492,6 +492,7 @@ public:
     }
     algo_state.value = fnew;
 
+    // If step is accepted ...
     // Compute new gradient and update secant storage
     if ( TRflag_ == 0 || TRflag_ == 1 ) {  
       // Perform line search (smoothing) to ensure decrease 
@@ -568,6 +569,13 @@ public:
 
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
+    }
+    else {
+      // If step is rejected and soft updates are performed, 
+      // then update gradient. 
+      if ( softUp_ ) {
+        updateGradient(x,obj,con,algo_state);
+      }
     }
   }
 
