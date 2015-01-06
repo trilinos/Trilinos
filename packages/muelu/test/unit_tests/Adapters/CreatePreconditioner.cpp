@@ -65,10 +65,14 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 
+#ifdef HAVE_MUELU_TPETRA
 #include "MueLu_CreateTpetraPreconditioner.hpp"
+#include "MueLu_TpetraOperator.hpp"
+#endif
+#ifdef HAVE_MUELU_EPETRA
 #include "MueLu_CreateEpetraPreconditioner.hpp"
 #include "MueLu_EpetraOperator.hpp"
-#include "MueLu_TpetraOperator.hpp"
+#endif
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -77,35 +81,49 @@ namespace MueLuTests {
 #include "MueLu_UseShortNames.hpp"
 
   typedef MueLu::Utils<SC,LO,GO,NO>          Utils;
-  typedef MueLu::TpetraOperator<SC,LO,GO,NO> TpetraOperator;
-  typedef MueLu::EpetraOperator                  EpetraOperator;
 
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    // Matrix
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
     GO nx = 1000;
-    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize());
+
+    // Matrix
+    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
     RCP<const Map > map = Op->getRowMap();
 
-    Teuchos::RCP<TpetraOperator> tH;
-    Teuchos::RCP<EpetraOperator> eH;
-
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+#ifdef HAVE_MUELU_TPETRA
+    Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH;
+#endif
+#ifdef HAVE_MUELU_EPETRA
+    Teuchos::RCP<MueLu::EpetraOperator> eH;
+#endif
 
     std::string xmlFileName = "test.xml";
     if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
-    } else {
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
+#endif
+
+    } else if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
       RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
       eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Epetra is not available");
+#endif
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown Xpetra lib");
     }
 
     // Normalized RHS
-    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(map, 1);
     RHS1->setSeed(846930886);
     RHS1->randomize();
     Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
@@ -180,18 +198,23 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    Teuchos::RCP<TpetraOperator> tH;
-    Teuchos::RCP<EpetraOperator> eH;
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO nx = 972;
 
     // Matrix
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    GO nx = 972;
-    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize());
+    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
     RCP<const Map > map = Op->getRowMap();
 
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+#ifdef HAVE_MUELU_TPETRA
+    Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH;
+#endif
+#ifdef HAVE_MUELU_EPETRA
+    Teuchos::RCP<MueLu::EpetraOperator> eH;
+#endif
 
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
     Teuchos::ParameterList clist;
     clist.set("nx", (nx * comm->getSize())/3);
     RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/3), Teuchos::as<int>(0), comm);
@@ -203,14 +226,24 @@ namespace MueLuTests {
       if (k == 1) xmlFileName = "testPDE1.xml";
 
       if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
+#endif
 
-      } else {
+      } else if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
         RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
         RCP<Epetra_MultiVector> epcoordinates = Utils::MV2NonConstEpetraMV(coordinates);
         eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Epetra is not available");
+#endif
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown Xpetra lib");
       }
 
       // Normalized RHS
@@ -265,24 +298,40 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    // Matrix
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
     GO nx = 1000;
-    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize());
+
+    // Matrix
+    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
     RCP<const Map > map = Op->getRowMap();
 
-    Teuchos::RCP<TpetraOperator> tH;
-    Teuchos::RCP<EpetraOperator> eH;
-
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+#ifdef HAVE_MUELU_TPETRA
+    Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH;
+#endif
+#ifdef HAVE_MUELU_EPETRA
+    Teuchos::RCP<MueLu::EpetraOperator> eH;
+#endif
 
     std::string xmlFileName = "testReuse.xml";
     if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
-    } else {
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
+#endif
+
+    } else if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
       RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
       eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Epetra is not available");
+#endif
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown Xpetra lib");
     }
 
     // Normalized RHS
@@ -323,6 +372,6 @@ namespace MueLuTests {
 
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-  } //CreatePreconditioner
+  }
 
 }//namespace MueLuTests
