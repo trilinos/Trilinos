@@ -280,23 +280,21 @@ public:
   //------------------------------------
   // Construct or assign compatible view:
 
-  template< class RT , class RL , class RD , class RM >
+  template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
-  View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
+  View( const View<RT,RL,RD,RM,RS> & rhs )
     : m_ptr_on_device(0)
     {
       (void) Impl::ViewAssignment<
-        typename traits::specialize ,
-        typename traits::specialize >( *this , rhs );
+        typename traits::specialize , RS >( *this , rhs );
     }
 
-  template< class RT , class RL , class RD , class RM >
+  template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
-  View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
+  View & operator = ( const View<RT,RL,RD,RM,RS> & rhs )
     {
       (void) Impl::ViewAssignment<
-        typename traits::specialize ,
-        typename traits::specialize >( *this , rhs );
+        typename traits::specialize , RS >( *this , rhs );
       return *this ;
     }
 
@@ -847,8 +845,10 @@ void deep_copy(
 {
   typedef View<T,L,D,M,Impl::ViewSpecializeSacadoFad> ViewType;
   typedef typename ViewType::fad_value_type ScalarType;
-  if (value == ScalarType(0))
-    Impl::ViewFill< typename ViewType::array_type >( view , value );
+  if (value == ScalarType(0)) {
+    typename ViewType::array_type view_array = view;
+    Impl::ViewFill< typename ViewType::array_type >( view_array , value );
+  }
   else
     Impl::ViewFill< ViewType >( view , value );
 }
