@@ -583,8 +583,6 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
     cout << (removeSelfEdges ? "yes" : "no") << endl;
   }
 
-  typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
-
   // Input generator
   UserInputForTests *uinput;
 
