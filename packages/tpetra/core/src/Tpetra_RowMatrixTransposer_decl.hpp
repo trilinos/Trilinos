@@ -47,7 +47,7 @@
 ///
 /// Declaration of Tpetra::RowMatrixTransposer.
 
-#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
 
 namespace Tpetra {
 

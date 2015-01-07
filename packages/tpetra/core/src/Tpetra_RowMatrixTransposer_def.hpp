@@ -42,11 +42,10 @@
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 
-#include "Tpetra_Export.hpp"
-#include "Tpetra_Import.hpp"
-#include "Tpetra_Map.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
 #include "Tpetra_RowMatrixTransposer_decl.hpp"
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Export.hpp>
+#include <Tpetra_Import.hpp>
 
 namespace Tpetra {
 
@@ -73,7 +72,7 @@ template<class Scalar,
      class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-createTranspose()
+createTranspose ()
 {
   using Teuchos::RCP;
 
