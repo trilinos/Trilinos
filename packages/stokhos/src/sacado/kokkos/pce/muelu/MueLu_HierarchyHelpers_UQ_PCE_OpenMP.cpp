@@ -55,7 +55,8 @@
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
   template class MueLu::TopRAPFactory<S, LO, GO, N>; \
-  template class MueLu::TopSmootherFactory<S, LO, GO, N>;
+  template class MueLu::TopSmootherFactory<S, LO, GO, N>; \
+  template class MueLu::HierarchyUtils<S, LO, GO, N>;
 
 #define MUELU_INST_N(N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
