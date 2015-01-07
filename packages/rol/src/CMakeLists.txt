@@ -36,18 +36,6 @@ APPEND_SET(HEADERS
   vector/ROL_Vector_SimOpt.hpp
   vector/ROL_StdVector.hpp
   )
-  
-IF (ROL_ENABLE_Epetra)
-  APPEND_SET(HEADERS 
-    adapter/vector/ROL_EpetraMultiVector.hpp
-  )
-ENDIF()
-
-IF (ROL_ENABLE_Thyra)
-  APPEND_SET(HEADERS 
-    adapter/vector/ROL_ThyraVector.hpp
-  )
-ENDIF()
 
 #
 # function headers
@@ -71,14 +59,6 @@ APPEND_SET(HEADERS
   function/ROL_PrimalDualHessian.hpp
   function/ROL_PrimalDualPreconditioner.hpp
 )
-
-IF (ROL_ENABLE_Thyra)
-  APPEND_SET(HEADERS 
-    adapter/function/ROL_ThyraME_Objective.hpp
-    adapter/function/ROL_Thyra_BoundConstraint.hpp
-    adapter/function/TOpEleWiseBoundsHelpers.hpp
-  )
-ENDIF()
 
 #
 # step headers
