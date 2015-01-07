@@ -53,13 +53,14 @@
 // (b) every color class has at least minSize vertices.
 // This function can be called as a post-processing after any initial
 // coloring.
-//
+// This is a greedy heuristic so there is no guarantee of success,
+// though in practice we believe it will work well.
    int rebalanceColoring(
      const lno_t nVtx,
      ArrayView<const lno_t> edgeIds,
      ArrayView<const lno_t> offsets,
      ArrayRCP<int> colors,
-     const int balance_all,
+     const int balanceColors,
      const lno_t minSize
      )
    {
@@ -80,7 +81,7 @@
      colorSize[colors[i]]++;
    }
    lno_t targetSize = 0;
-   if (balance_all > 0)
+   if (balanceColors > 0)
      targetSize = nVtx/maxColor;
    else
      targetSize = minSize;
@@ -98,14 +99,15 @@
            forbidden[colors[nbor]] = i;
          }
        }
-       // Pick first (smallest) underfull color > 0
-       for (int c=1; c <= maxColor+1; c++){
-            if ((forbidden[c] != i) && (colorSize[c]<targetSize)){ 
-              colors[i] = c;
-              break;
-            }
-          }
-        }
+       // Pick first (smallest) underfull color > 0.
+       // If no such color, just keep colors[i].
+       int newcolor = colors[i];
+       for (int c=1; c <= maxColor; c++){
+         if ((forbidden[c] != i) && (colorSize[c]<targetSize)){ 
+           newcolor = c;
+           break;
+         }
+       }
        
        // Move vertex i to underfull color.
        colorSize[colors[i]]--;
