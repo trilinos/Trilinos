@@ -85,7 +85,7 @@ typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 
 int validateColoring(RCP<SparseMatrix> A, int *color)
-// returns 0 if coloring is valid, negative if invalid
+// returns 0 if coloring is valid, nonzero if invalid
 {
   int nconflicts = 0;
   Teuchos::ArrayView<const zlno_t> indices;
@@ -105,6 +105,54 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   } 
   
   return nconflicts;
+}
+
+int checkBalance(RCP<SparseMatrix> A, int *color)
+// Check size of color classes
+{
+  Teuchos::ArrayView<const zlno_t> indices;
+  Teuchos::ArrayView<const zscalar_t> values; // Not used
+
+  zlno_t n = A->getNodeNumRows();
+
+  // Find max color
+  int maxColor = 0;
+  for (zlno_t i=0; i<n; i++) {
+    if (color[i] > maxColor) maxColor = color[i];
+  }
+
+  // Loop over local rows, treat local column indices as edges.
+  Teuchos::Array<int> colorCount(maxColor+1);
+  for (zlno_t i=0; i<n; i++) {
+    A->getLocalRowView(i, indices, values);
+    for (zlno_t j=0; j<indices.size(); j++) {
+      if ((indices[j]<n) && (indices[j]!=i) ){
+        colorCount[color[indices[j]]]++;
+      }
+    }
+  } 
+
+  // Find min and max, excluding color 0.
+  int smallest = 1;
+  int largest  = 1;
+  zlno_t small = colorCount[1];
+  zlno_t large = colorCount[1];
+  for (int i=1; i<=maxColor; i++){
+    if (colorCount[i] < small){
+      small = colorCount[i];
+      smallest = i;
+    }
+    if (colorCount[i] > large){
+      large = colorCount[i];
+      largest = i;
+    }
+  }
+
+  std::cout << "Color size[0:1] = " << colorCount[0] << ", " << colorCount[1] << std::endl;
+  std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " colors." << std::endl;
+  std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " colors." << std::endl;
+  
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -226,6 +274,9 @@ int main(int narg, char** arg)
   cout << "Going to validate the soln" << endl;
   // Verify that checkColoring is a coloring
   testReturn = validateColoring(Matrix, checkColoring);
+
+  // Check balance (not part of pass/fail for now)
+  checkBalance(Matrix, checkColoring);
 
   } catch (std::exception &e){
       std::cout << "Exception caught in coloring" << std::endl;
