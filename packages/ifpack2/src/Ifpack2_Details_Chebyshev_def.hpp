@@ -1207,7 +1207,14 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   x.randomize ();
 
   ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
-  if (lambdaMax < zero) {
+  // mfh 07 Jan 2015: Taking the real part here is only a concession
+  // to the compiler, so that this class can build with ScalarType =
+  // std::complex<T>.  Our Chebyshev implementation only works with
+  // real, symmetric positive definite matrices.  The right thing to
+  // do would be what Belos does, which is provide a partial
+  // specialization for ScalarType = std::complex<T> with a stub
+  // implementation (that builds, but whose constructor throws).
+  if (STS::real (lambdaMax) < STS::real (zero)) {
     // Max eigenvalue estimate is negative.  Perhaps we got unlucky
     // with the random initial guess.  Try again with a different (but
     // still random) initial guess.  Only try again once, so that the
