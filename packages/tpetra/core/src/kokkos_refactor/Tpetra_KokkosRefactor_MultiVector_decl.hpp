@@ -287,7 +287,6 @@ namespace Tpetra {
   template<class LO, class GO, class N> class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  /// \class MultiVector
   /// \brief One or more distributed dense vectors.
   ///
   /// A "multivector" contains one or more dense vectors.  All the
@@ -320,181 +319,173 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam GlobalOrdinal The type of global indices.  See the
   ///   documentation of Map for requirements.
-  /// \tparam Node The Kokkos Node type.  See the documentation of Map
-  ///   for requirements.
-  /// \tparam classic This is an implementation detail of Tpetra.
-  ///   Users must NOT specify this explicitly.  The default value is
-  ///   ALWAYS correct.
+  /// \tparam DeviceType The Kokkos execution space type.  See the
+  ///   documentation of Map for requirements.
   ///
   /// \section Kokkos_KR_MV_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
-  /// something about the Teuchos memory management classes, in
-  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
-  /// Teuchos::ArrayView.  You may also want to know about the
-  /// differences between BLAS 1, 2, and 3 operations, and learn a
-  /// little bit about MPI (the Message Passing Interface for
-  /// distributed-memory programming).  You won't have to use MPI
-  /// directly to use MultiVector, but it helps to be familiar with
-  /// the general idea of distributed storage of data over a
-  /// communicator.
+  /// a little bit about Kokkos.  In particular, you should know about
+  /// execution spaces, memory spaces, and shallow copy semantics.
+  /// You should also know something about the Teuchos memory
+  /// management classes, in particular Teuchos::RCP, though it helps
+  /// to know a bit about Teuchos::ArrayRCP and Teuchos::ArrayView as
+  /// well.  You may also want to know about the differences between
+  /// BLAS 1, 2, and 3 operations, and learn a little bit about MPI
+  /// (the Message Passing Interface for distributed-memory
+  /// programming).  You won't have to use MPI directly to use
+  /// MultiVector, but it helps to be familiar with the general idea
+  /// of distributed storage of data over a communicator.
   ///
-  /// \section Kokkos_KR_MV_layout Data layout and access
+  /// \section Kokkos_KR_MV_view A MultiVector is a view of data
   ///
-  /// \subsection Kokkos_KR_MV_noncontig Multivectors which view another multivector
+  /// A MultiVector is a view of data.  A <i>view</i> behaves like a
+  /// pointer; it provides access to the original multivector's data
+  /// without copying the data.  This means that the copy constructor
+  /// and assignment operator (<tt>operator=</tt>) do <i>shallow</i>
+  /// copies.  They do <i>not</i> copy the data; they just copy
+  /// pointers and other "metadata."  If you would like to copy a
+  /// MultiVector into an existing MultiVector, call the nonmember
+  /// function deep_copy().  If you would like to create a new
+  /// MultiVector which is a deep copy of an existing MultiVector,
+  /// call the nonmember function createCopy(), or use the
+  /// two-argument copy constructor with Teuchos::Copy as the second
+  /// argument.
   ///
-  /// A multivector could be a <i>view</i> of some subset of another
-  /// multivector's columns and rows.  A view is like a pointer; it
-  /// provides access to the original multivector's data without
-  /// copying the data.  There are no public constructors for creating
-  /// a view, but any instance method with "view" in the name that
-  /// returns an RCP<MultiVector> serves as a view constructor.
+  /// Views have the additional property that they automatically
+  /// handle deallocation.  They use <i>reference counting</i> for
+  /// this, much like how std::shared_ptr works.  That means you do
+  /// not have to worry about "freeing" a MultiVector after it has
+  /// been created.  Furthermore, you may pass shallow copies around
+  /// without needing to worry about which is the "master" view of the
+  /// data.  There is no "master" view of the data; when the last view
+  /// falls out of scope, the data will be deallocated.
   ///
-  /// The subset of columns in a view need not be contiguous.  For
-  /// example, given a multivector X with 43 columns, it is possible
-  /// to have a multivector Y which is a view of columns 1, 3, and 42
-  /// (zero-based indices) of X.  We call such multivectors
-  /// <i>noncontiguous</i>.  They have the the property that
-  /// isConstantStride() returns false.
+  /// This is what the documentation means when it speaks of <i>view
+  /// semantics</i>.  The opposite of that is <i>copy</i> or
+  /// <i>container</i> semantics, where the copy constructor and
+  /// <tt>operator=</tt> do deep copies (of the data).  We say that
+  /// "std::vector has container semantics," and "MultiVector has view
+  /// semantics."
+  ///
+  /// MultiVector also has "subview" methods that give results
+  /// analogous to the Kokkos::subview() function.  That is, they
+  /// return a MultiVector which views some subset of another
+  /// MultiVector's rows and columns.  The subset of columns in a view
+  /// need not be contiguous.  For example, given a multivector X with
+  /// 43 columns, it is possible to have a multivector Y which is a
+  /// view of columns 1, 3, and 42 (zero-based indices) of X.  We call
+  /// such multivectors <i>noncontiguous</i>.  They have the the
+  /// property that isConstantStride() returns false.
   ///
   /// Noncontiguous multivectors lose some performance advantages.
   /// For example, local computations may be slower, since Tpetra
   /// cannot use BLAS 3 routines (e.g., matrix-matrix multiply) on a
   /// noncontiguous multivectors without copying into temporary
-  /// contiguous storage.  Noncontiguous multivectors also affect the
-  /// ability to access the data in certain ways, which we will
-  /// explain below.
+  /// contiguous storage.  For performance reasons, if you get a
+  /// Kokkos::View of a noncontiguous MultiVector's local data, it
+  /// does <i>not</i> correspond to the columns that the MultiVector
+  /// views.
   ///
-  /// \subsection Kokkos_KR_MV_views Views of a multivector's data
+  /// \section Kokkos_KR_MV_dual DualView semantics
   ///
-  /// We have unfortunately overloaded the term "view."  In the
-  /// section above, we explained the idea of a "multivector which is
-  /// a view of another multivector."  This section is about "views of
-  /// a multivector's data."  If you want to read or write the actual
-  /// values in a multivector, this is what you want.  All the
-  /// instance methods which return an ArrayRCP of Scalar data, or an
-  /// ArrayRCP of ArrayRCP of Scalar data, return views to the data.
-  /// These data are always <i>local</i> data, meaning that the
-  /// corresponding rows of the multivector are owned by the calling
-  /// process.  You can't use these methods to access remote data
-  /// (rows that do not belong to the calling process).
+  /// Tpetra was designed to perform well on many different kinds of
+  /// computers.  Some computers have different <i>memory spaces</i>.
+  /// For example, GPUs (Graphics Processing Units) by NVIDIA have
+  /// "device memory" and "host memory."  The GPU has faster access to
+  /// device memory than host memory, but usually there is less device
+  /// memory than host memory.  Intel's "Knights Landing" architecture
+  /// has two different memory spaces, also with different capacity
+  /// and performance characteristics.  Some architectures let the
+  /// processor address memory in any space, possibly with a
+  /// performance penalty.  Others can only access data in certain
+  /// spaces, and require a special system call to copy memory between
+  /// spaces.
   ///
-  /// Data views may be either one-dimensional (1-D) or
-  /// two-dimensional (2-D).  A 1-D view presents the data as a dense
-  /// matrix in column-major order, returned as a single array.  On
-  /// the calling process, the matrix has getLocalLength() rows,
-  /// getNumVectors() columns, and column stride getStride().  You may
-  /// not get a 1-D view of a noncontiguous multivector.  If you need
-  /// the data of a noncontiguous multivector in a 1-D format, you may
-  /// get a copy by calling get1dCopy().  A 2-D view presents the data
-  /// as an array of arrays, one array per column (i.e., vector in the
-  /// multivector).  The entries in each column are stored
-  /// contiguously.  You may get a 2-D view of <i>any</i> multivector,
-  /// whether or not it is noncontiguous.
+  /// The Kokkos package provides abstractions for handling multiple
+  /// memory spaces.  In particular, Kokkos::DualView lets users
+  /// "mirror" data that live in one space, with data in another
+  /// space.  It also lets users manually mark data in one space as
+  /// modified (modify()), and synchronize (sync()) data from one
+  /// space to another.  The latter only actually copies if the data
+  /// have been marked as modified.  Users can access data in a
+  /// particular space by calling view().  All three of these methods
+  /// -- modify(), sync(), and view() -- are templated on the memory
+  /// space.  This is how users select the memory space on which they
+  /// want the method to act.
   ///
-  /// Views are not necessarily just encapsulated pointers.  The
-  /// meaning of view depends in part on the Kokkos Node type (the
-  /// Node template parameter).  This matters in particular if you are
-  /// running on a Graphics Processing Unit (GPU) device.  You can
-  /// tell at compile time whether you are running on a GPU by looking
-  /// at the Kokkos Node type.  (Currently, the only GPU Node type we
-  /// provide is KokkosClassic::ThrustGPUNode.  All other types are CPU
-  /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
-  /// always reside in host (CPU) memory, rather than device (GPU)
-  /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.
+  /// MultiVector implements "DualView semantics."  This means that it
+  /// implements the above three operations:
+  /// <ul>
+  /// <li> modify(): Mark data in a memory space as modified (or about
+  ///      to be modified) </li>
+  /// <li> sync(): If data in the target memory space are least
+  ///      recently modified compared witht he other space, copy data
+  ///      to the target memory space </li>
+  /// <li> getLocalView(): Return a Kokkos::View of the data in a
+  ///      given memory space </li>
+  /// </ul>
   ///
-  /// What happens next to your view depends on whether the view is
-  /// const (read-only) or nonconst (read and write).  Const views
-  /// disappear (their host memory is deallocated) when the
-  /// corresponding reference count (of the ArrayRCP) goes to zero.
-  /// (Since the data were not changed, there is no need to update the
-  /// original copy on the device.)  When a nonconst view's reference
-  /// count goes to zero, the view's data are copied back to device
-  /// memory, thus "pushing" your changes on the host back to the
-  /// device.
+  /// If your computer only has one memory space, as with conventional
+  /// single-core or multicore processors, you don't have to worry
+  /// about this.  You can ignore the modify() and sync() methods in
+  /// that case.
   ///
-  /// These device-host-device copy semantics on GPUs mean that we can
-  /// only promise that a view is a snapshot of the multivector's data
-  /// at the time the view was created.  If you create a const view,
-  /// then a nonconst view, then modify the nonconst view, the
-  /// contents of the const view are undefined.  For host-only (CPU
-  /// only, no GPU) Kokkos Nodes, views may be just encapsulated
-  /// pointers to the data, so modifying a nonconst view will change
-  /// the original data.  For GPU Nodes, modifying a nonconst view
-  /// will <i>not</i> change the original data until the view's
-  /// reference count goes to zero.  Furthermore, if the nonconst
-  /// view's reference count never goes to zero, the nonconst view
-  /// will <i>never</i> be copied back to device memory, and thus the
-  /// original data will never be changed.
+  /// \section Kokkos_KR_MV_access How to access the local data
   ///
-  /// \subsection Kokkos_KR_MV_why_views Why won't you give me a raw pointer?
+  /// The getLocalView() method for getting a Kokkos::View, and
+  /// getDualView() for getting a Kokkos::DualView, are the two main
+  /// ways to access a MultiVector's local data.  If you want to read
+  /// or write the actual values in a multivector, this is what you
+  /// want.  The resulting Kokkos::View behaves like a 2-D array.  You
+  /// can address it using an index pair (i,j), where i is the local
+  /// row index, and j is the column index.
+  ///
+  /// MultiVector also has methods that return an
+  /// Teuchos::ArrayRCP<Scalar> ("1-D view"), or a
+  /// Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > ("2-D view").
+  /// These exist only for backwards compatibility, and also give
+  /// access to the local data.
+  ///
+  /// All of these views only view <i>local</i> data.  This means that
+  /// the corresponding rows of the multivector are owned by the
+  /// calling (MPI) process.  You may <i>not</i> use these methods to
+  /// access <i>remote</i> data, that is, rows that do not belong to
+  /// the calling process.
+  ///
+  /// MultiVector's public interface also has methods for modifying
+  /// local data, like sumIntoLocalValue() and replaceGlobalValue().
+  /// These methods act on host data <i>only</i>.  To access or modify
+  /// device data, you must get the Kokkos::View and work with it
+  /// directly.
+  ///
+  /// \section Kokkos_KR_MV_why Why won't you give me a raw pointer?
   ///
   /// Tpetra was designed to allow different data representations
   /// underneath the same interface.  This lets Tpetra run correctly
-  /// and efficiently on many different kinds of hardware, including
-  /// single-core CPUs, multicore CPUs with Non-Uniform Memory Access
-  /// (NUMA), and even "discrete compute accelerators" like Graphics
-  /// Processing Units (GPUs).  These different kinds of hardware all
-  /// have in common the following:
-  ///
-  /// - Data layout matters a lot for performance
-  /// - The right layout for your data depends on the hardware
-  /// - Data may be distributed over different memory spaces in
-  ///   hardware, and efficient code must respect this, whether or not
-  ///   the programming model presents the different memories as a
-  ///   single address space
-  /// - Copying between different data layouts or memory spaces is
-  ///   expensive and should be avoided whenever possible
-  /// - Optimal data layout may require control over initialization of
-  ///   storage
-  ///
+  /// and efficiently on many different kinds of hardware.  These
+  /// different kinds of hardware all have in common the following:
+  /// <ul>
+  /// <li> Data layout matters a lot for performance </li>
+  /// <li> The right layout for your data depends on the hardware </li>
+  /// <li> Data may be distributed over different memory spaces in
+  ///      hardware, and efficient code must respect this, whether or
+  ///      not the programming model presents the different memories
+  ///      as a single address space </li>
+  /// <li> Copying between different data layouts or memory spaces is
+  ///      expensive and should be avoided whenever possible </li>
+  /// <li> Optimal data layout may require control over initialization
+  ///      of storage </li>
+  /// </ul>
   /// These conclusions have practical consequences for the
   /// MultiVector interface.  In particular, we have deliberately made
   /// it difficult for you to access data directly by raw pointer.
   /// This is because the underlying layout may not be what you
-  /// expect.  In some cases, you are not even allowed to dereference
-  /// the raw pointer (for example, if it resides in GPU device
-  /// memory, and you are working on the host CPU).  This is why we
-  /// require accessing the data through views.
-  ///
-  /// \subsection Kokkos_KR_MV_why_no_square_brackets Why no operator[]?
-  ///
-  /// The above section also explains why we do not offer a <tt>Scalar&
-  /// operator[]</tt> to access each entry of a vector directly.  Direct
-  /// access on GPUs would require implicitly creating an internal
-  /// host copy of the device data.  This would consume host memory,
-  /// and it would not be clear when to write the resulting host data
-  /// back to device memory.  The resulting operator would violate
-  /// users' performance expectations, since it would be much slower
-  /// than raw array access.  We have preferred in our design to
-  /// expose what is expensive, by exposing data views and letting
-  /// users control when to copy data between host and device.
-  ///
-  /// \subsection Kokkos_KR_MV_device_kernels How do I access the data directly?
-  ///
-  /// "Directly" here means without views, using a device kernel if
-  /// the data reside on the GPU.
-  ///
-  /// There are two different options for direct access to the
-  /// multivector's data.  One is to use the optional RTI (Reduction /
-  /// Transformation Interface) subpackage of Tpetra.  You may enable
-  /// this at Trilinos configure time by setting the CMake Boolean
-  /// option \c Tpetra_ENABLE_RTI to \c ON.  Be aware that building
-  /// and using RTI requires that your C++ compiler support the
-  /// language features in the new C++11 standard.  RTI allows you to
-  /// implement arbitrary element-wise operations over a vector,
-  /// followed by arbitrary reductions over the elements of that
-  /// vector.  We recommend RTI for most users.
-  ///
-  /// Another option is to access the local data through its Kokkos
-  /// container data structure, KokkosClassic::MultiVector, and then use the
-  /// \ref kokkos_node_api "Kokkos Node API" to implement arbitrary
-  /// operations on the data.  We do not recommend this approach for
-  /// most users.  In particular, the local data structures are likely
-  /// to change over the next few releases.  If you find yourself
-  /// wanting to try this option, please contact the Tpetra developers
-  /// for recommendations.  We will be happy to work with you.
+  /// expect.  The memory might not even be accessible from the host
+  /// CPU.  Instead, we give access through a Kokkos::View, which
+  /// behaves like a 2-D array.  You can ask the Kokkos::View for a
+  /// raw pointer by calling its <tt>ptr_on_device()</tt> method, but
+  /// then you are responsible for understanding its layout in memory.
   ///
   /// \section Kokkos_KR_MV_dist Parallel distribution of data
   ///
@@ -508,7 +499,8 @@ namespace Tpetra {
   ///
   /// MultiVector includes methods that perform parallel all-reduces.
   /// These include inner products and various kinds of norms.  All of
-  /// these methods have the same blocking semantics as MPI_Allreduce.
+  /// these methods have the same blocking semantics as
+  /// <tt>MPI_Allreduce</tt>.
   ///
   /// \warning Some computational methods, such as inner products and
   ///   norms, may return incorrect results if the MultiVector's Map
@@ -782,6 +774,14 @@ namespace Tpetra {
     /// and column \c col with the given value.  The column index is
     /// zero based.
     ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
+    ///
     /// \pre \c globalRow must be a valid global element on this
     ///   process, according to the row Map.
     void
@@ -798,6 +798,14 @@ namespace Tpetra {
     ///
     /// This method is mainly useful for backwards compatibility, when
     /// Scalar differs from impl_scalar_type.
+    ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
@@ -817,6 +825,14 @@ namespace Tpetra {
     /// (a global index) and column \c col.  The column index is zero
     /// based.
     ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
+    ///
     /// \pre \c globalRow must be a valid global element on this
     ///   process, according to the row Map.
     void
@@ -833,6 +849,14 @@ namespace Tpetra {
     ///
     /// This method is mainly useful for backwards compatibility, when
     /// Scalar differs from impl_scalar_type.
+    ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
@@ -852,6 +876,14 @@ namespace Tpetra {
     /// and column \c col with the given value.  The column index is
     /// zero based.
     ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
+    ///
     /// \pre \c localRow must be a valid local element on this
     ///   process, according to the row Map.
     void
@@ -868,6 +900,14 @@ namespace Tpetra {
     ///
     /// This method is mainly useful for backwards compatibility, when
     /// Scalar differs from impl_scalar_type.
+    ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
@@ -887,6 +927,14 @@ namespace Tpetra {
     /// (a local index) and column \c col.  The column index is zero
     /// based.
     ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
+    ///
     /// \pre \c localRow must be a valid local element on this process,
     ///   according to the row Map.
     void
@@ -903,6 +951,14 @@ namespace Tpetra {
     ///
     /// This method is mainly useful for backwards compatibility, when
     /// Scalar differs from impl_scalar_type.
+    ///
+    /// This method affects the host memory version of the data.  If
+    /// the \c DeviceType template parameter is a device that has two
+    /// memory spaces, and you want to modify the non-host version of
+    /// the data, you must access the DualView directly by calling
+    /// getDualView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.
     template<typename T>
 #ifdef KOKKOS_HAVE_CXX11
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type

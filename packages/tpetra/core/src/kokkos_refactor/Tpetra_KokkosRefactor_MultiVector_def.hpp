@@ -57,6 +57,10 @@ namespace Kokkos {
   // FIXME (mfh 10 Nov 2014) It seems to make sense that the draw()
   // functions should take real numbers, but I'm not sure if it will
   // compile.
+  //
+  // FIXME (mfh 07 Jan 2015) Move these functions elsewhere.  They
+  // should really go in KokkosAlgorithms, but currently
+  // Kokkos::complex lives in KokkosContainers.
 
   template<class Generator>
   struct rand<Generator, ::Kokkos::complex<float> > {
@@ -151,10 +155,10 @@ namespace Tpetra {
       // first-touch allocation optimization.
 
       // Allocate a DualView from new Kokkos, wrap its device data into an ArrayRCP
-      view_ = dual_view_type("MV::dual_view",myLen,NumVectors);
+      view_ = dual_view_type("MV::DualView",myLen,NumVectors);
     }
     else {
-      view_ = dual_view_type("MV::dual_view",0,NumVectors);
+      view_ = dual_view_type("MV::DualView",0,NumVectors);
     }
 
     origView_ = view_;
@@ -376,12 +380,12 @@ namespace Tpetra {
     // Deep copy constructor, constant stride (NO whichVectors_).
     // There is no need for a deep copy constructor with nonconstant stride.
 
-    const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
+    const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs): ";
     const size_t numRows = this->getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
-      ": LDA = " << LDA << " < numRows = " << numRows << ".");
+      "LDA = " << LDA << " < numRows = " << numRows << ".");
 
-    view_ = dual_view_type ("MV::view_", numRows, numVecs);
+    view_ = dual_view_type ("MV::DualView", numRows, numVecs);
     for (size_t i = 0; i < numRows; ++i) {
       for (size_t j = 0; j < numVecs; ++j) {
         view_.h_view(i,j) = data[j*LDA+i];
@@ -408,7 +412,7 @@ namespace Tpetra {
       std::runtime_error,
       ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
     const size_t myLen = getLocalLength ();
-    view_ = dual_view_type ("MV::view_", myLen, NumVectors);
+    view_ = dual_view_type ("MV::DualView", myLen, NumVectors);
 
     // TODO: write a functor and use parallel_for.
 
@@ -1623,20 +1627,35 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   randomize ()
   {
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef impl_scalar_type IST;
+    typedef Kokkos::Details::ArithTraits<IST> ATS;
+    typedef Kokkos::Random_XorShift64_Pool<DeviceType> pool_type;
+    typedef typename pool_type::generator_type generator_type;
+
+    // Seed the pseudorandom number generator using the calling
+    // process' rank.  This helps decorrelate different process'
+    // pseudorandom streams.  It's not perfect but it's effective and
+    // doesn't require MPI communication.  The seed also includes bits
+    // from the standard library's rand().
+    //
+    // FIXME (mfh 07 Jan 2015) Should we save the seed for later use?
+    // The code below just makes a new seed each time.
 
     const uint64_t myRank =
       static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
     uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
     unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
 
-    Kokkos::Random_XorShift64_Pool<DeviceType> rand_pool(seed);
-
-    const impl_scalar_type max = Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type, impl_scalar_type>::max ();
-    const impl_scalar_type min = ATS::is_signed ? impl_scalar_type (-max) : ATS::zero ();
+    pool_type rand_pool (seed);
+    const IST max = Kokkos::rand<generator_type, IST>::max ();
+    const IST min = ATS::is_signed ? IST (-max) : ATS::zero ();
 
     if (isConstantStride ()) {
       Kokkos::fill_random (view_.d_view, rand_pool, min, max);
@@ -1645,10 +1664,11 @@ namespace Tpetra {
     else {
       const size_t numVecs = getNumVectors ();
       view_.template sync<DeviceType> ();
-      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
+      typedef Kokkos::View<IST*, DeviceType> view_type;
       for (size_t k = 0; k < numVecs; ++k) {
-        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
-        Kokkos::fill_random (vector_k, rand_pool, min, max);
+        const size_t col = whichVectors_[k];
+        view_type X_k = subview<view_type> (view_.d_view, ALL (), col);
+        Kokkos::fill_random (X_k, rand_pool, min, max);
       }
       view_.template modify<DeviceType> ();
     }
@@ -1657,7 +1677,9 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   putScalar (const Scalar& alpha)
   {
     using Kokkos::ALL;
@@ -1738,7 +1760,9 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& newMap)
   {
     using Teuchos::ArrayRCP;
@@ -1773,10 +1797,10 @@ namespace Tpetra {
     // Case 3 means that the calling process is excluded from the
     // current Map's communicator, but will be included in the new
     // Map's communicator.  This means we need to (re)allocate the
-    // local (KokkosClassic::)MultiVector if it does not have the right
-    // number of rows.  If the new number of rows is nonzero, we'll
-    // fill the newly allocated local data with zeros, as befits a
-    // projection operation.
+    // local DualView if it does not have the right number of rows.
+    // If the new number of rows is nonzero, we'll fill the newly
+    // allocated local data with zeros, as befits a projection
+    // operation.
     //
     // The typical use case for Case 3 is that the MultiVector was
     // first created with the Map with more processes, then that Map
@@ -1816,7 +1840,7 @@ namespace Tpetra {
       const size_t numCols = this->getNumVectors ();
 
       if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
-        view_ = dual_view_type ("MV::dual_view", newNumRows, numCols);
+        view_ = dual_view_type ("MV::DualView", newNumRows, numCols);
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
@@ -1824,7 +1848,7 @@ namespace Tpetra {
       // have 0 rows.  Keep the number of columns as before.
       const size_t newNumRows = static_cast<size_t> (0);
       const size_t numCols = this->getNumVectors ();
-      view_ = dual_view_type ("MV::dual_view", newNumRows, numCols);
+      view_ = dual_view_type ("MV::DualView", newNumRows, numCols);
     }
 
     this->map_ = newMap;
@@ -1971,7 +1995,9 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   scale (const Kokkos::View<const impl_scalar_type*, device_type> alphas)
   {
     using Kokkos::ALL;
@@ -2007,22 +2033,30 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  scale (const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A)
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  scale (const Scalar& alpha,
+         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
   {
-    const char tfecfFuncName[] = "scale(alpha,A)";
+    const char tfecfFuncName[] = "scale(alpha,A): ";
     const size_t numVecs = getNumVectors ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
        getLocalLength () != A.getLocalLength (), std::runtime_error,
-       ": MultiVectors do not have the same local length.  "
+       "MultiVectors do not have the same local length.  "
        "this->getLocalLength() = " << getLocalLength ()
        << " != A.getLocalLength() = " << A.getLocalLength () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       A.getNumVectors () != numVecs, std::runtime_error,
-      ": MultiVectors do not have the same number of columns (vectors).  "
+      "MultiVectors do not have the same number of columns (vectors).  "
        "this->getNumVectors() = " << getNumVectors ()
        << " != A.getNumVectors() = " << A.getNumVectors () << ".");
+
+    // FIXME (mfh 07 Jan 2015) We shouldn't call modify() or sync() on
+    // the input MultiVector, because it's const.  We should instead
+    // move _this_ MultiVector's data to the space where A's data have
+    // been most recently updated.
 
     if (isConstantStride () && A.isConstantStride ()) {
       view_.template sync<DeviceType>();
@@ -2066,6 +2100,8 @@ namespace Tpetra {
       ": MultiVectors do not have the same number of columns (vectors).  "
        "this->getNumVectors() = " << getNumVectors ()
        << " != A.getNumVectors() = " << A.getNumVectors () << ".");
+
+    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
 
     const size_t numVecs = getNumVectors ();
     try {
@@ -2120,6 +2156,8 @@ namespace Tpetra {
        "this->getNumVectors() = " << getNumVectors ()
        << " != A.getNumVectors() = " << A.getNumVectors () << ".");
 
+    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
+
     const size_t numVecs = getNumVectors ();
     if (isConstantStride () && A.isConstantStride ()) {
       view_.template sync<DeviceType>();
@@ -2133,9 +2171,6 @@ namespace Tpetra {
 
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
-
-      // FIXME (mfh 23 Jul 2014) I'm not sure if it should be our
-      // responsibility to sync A.
       A.view_.template sync<DeviceType> ();
       A.view_.template modify<DeviceType> ();
 
@@ -2162,20 +2197,13 @@ namespace Tpetra {
     typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "update: ";
 
-    // this = beta*this + alpha*A
-    // must support case where &this == &A
-    // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
-
-    // FIXME (mfh 23 Jul 2014) Actually, the BLAS' AXPY allows short
-    // circuiting for alpha == 0.  This is the convention for both the
-    // dense and sparse BLAS.
+    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength () != A.getLocalLength (), std::invalid_argument,
       "The input MultiVector A has " << A.getLocalLength () << " local "
       "row(s), but this MultiVector has " << getLocalLength () << " local "
       "row(s).");
-
     const size_t numVecs = getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       A.getNumVectors () != numVecs, std::invalid_argument,
@@ -2218,26 +2246,28 @@ namespace Tpetra {
     using Kokkos::V_Add;
     using Kokkos::subview;
     typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-    const char tfecfFuncName[] = "update";
+    const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
+
+    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength () != A.getLocalLength (), std::invalid_argument,
-      ": The input MultiVector A has " << A.getLocalLength () << " local "
+      "The input MultiVector A has " << A.getLocalLength () << " local "
       "row(s), but this MultiVector has " << getLocalLength () << " local "
       "row(s).");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength () != B.getLocalLength (), std::invalid_argument,
-      ": The input MultiVector B has " << B.getLocalLength () << " local "
+      "The input MultiVector B has " << B.getLocalLength () << " local "
       "row(s), but this MultiVector has " << getLocalLength () << " local "
       "row(s).");
     const size_t numVecs = getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       A.getNumVectors () != numVecs, std::invalid_argument,
-      ": The input MultiVector A has " << A.getNumVectors () << " column(s), "
+      "The input MultiVector A has " << A.getNumVectors () << " column(s), "
       "but this MultiVector has " << numVecs << " column(s).");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors () != numVecs, std::invalid_argument,
-      ": The input MultiVector B has " << B.getNumVectors () << " column(s), "
+      "The input MultiVector B has " << B.getNumVectors () << " column(s), "
       "but this MultiVector has " << numVecs << " column(s).");
 
     const impl_scalar_type zero = Kokkos::Details::ArithTraits<impl_scalar_type>::zero ();
@@ -2414,7 +2444,9 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   subCopy (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::RCP;
@@ -2443,7 +2475,9 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   subCopy (const Teuchos::Range1D &colRng) const
   {
     using Teuchos::RCP;
@@ -2457,21 +2491,27 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getOrigNumLocalRows () const {
     return origView_.dimension_0 ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getOrigNumLocalCols () const {
     return origView_.dimension_1 ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
               size_t offset) const
   {
@@ -2517,7 +2557,7 @@ namespace Tpetra {
     // desired (degenerate) dimensions.
     if (newView.dimension_0 () == 0 &&
         newView.dimension_1 () != view_.dimension_1 ()) {
-      newView = dual_view_type ("MV::dual_view", size_t (0),
+      newView = dual_view_type ("MV::DualView", size_t (0),
                                 this->getNumVectors ());
     }
     RCP<const MV> subViewMV;
@@ -3284,7 +3324,9 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   replaceLocalValue (LocalOrdinal MyRow,
                      size_t VectorIndex,
                      const impl_scalar_type& ScalarValue)
@@ -3307,13 +3349,15 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ?
       VectorIndex : whichVectors_[VectorIndex];
-    view_.d_view (static_cast<size_t> (MyRow), colInd) = ScalarValue;
+    view_.h_view (MyRow, colInd) = ScalarValue;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   sumIntoLocalValue (LocalOrdinal MyRow,
                      size_t VectorIndex,
                      const impl_scalar_type& ScalarValue)
@@ -3336,29 +3380,31 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ?
       VectorIndex : whichVectors_[VectorIndex];
-    view_.d_view (static_cast<size_t> (MyRow), colInd) += ScalarValue;
+    view_.h_view (MyRow, colInd) += ScalarValue;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   replaceGlobalValue (GlobalOrdinal GlobalRow,
                       size_t VectorIndex,
                       const impl_scalar_type& ScalarValue)
   {
-    LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
+    const LocalOrdinal MyRow = this->getMap ()->getLocalElement (GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
+    const int myRank = this->getMap ()->getComm ()->getRank ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: global row index " << GlobalRow
-      << "is not present on this process " << this->getMap()->getComm()->getRank()
-      << ".");
+      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << GlobalRow
+      << "is not present on this process "
+      << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(VectorIndex),
-      std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: vector index " << VectorIndex
+      vectorIndexOutOfRange (VectorIndex), std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << VectorIndex
       << " of the multivector is invalid.");
 #endif
     replaceLocalValue (MyRow, VectorIndex, ScalarValue);
@@ -3366,23 +3412,25 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   sumIntoGlobalValue (GlobalOrdinal GlobalRow,
                       size_t VectorIndex,
                       const impl_scalar_type& ScalarValue)
   {
-    LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
+    const LocalOrdinal MyRow = this->getMap ()->getLocalElement (GlobalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: global row index " << GlobalRow
-      << "is not present on this process " << this->getMap()->getComm()->getRank()
-      << ".");
+      "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << GlobalRow
+      << "is not present on this process "
+      << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       vectorIndexOutOfRange(VectorIndex),
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: vector index " << VectorIndex
+      "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << VectorIndex
       << " of the multivector is invalid.");
 #endif
     sumIntoLocalValue (MyRow, VectorIndex, ScalarValue);
@@ -3391,7 +3439,9 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class T>
   Teuchos::ArrayRCP<T>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getSubArrayRCP (Teuchos::ArrayRCP<T> arr,
                   size_t j) const
   {
