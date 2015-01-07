@@ -107,30 +107,20 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   return nconflicts;
 }
 
-int checkBalance(RCP<SparseMatrix> A, int *color)
+int checkBalance(zlno_t n, int *color)
 // Check size of color classes
 {
-  Teuchos::ArrayView<const zlno_t> indices;
-  Teuchos::ArrayView<const zscalar_t> values; // Not used
-
-  zlno_t n = A->getNodeNumRows();
-
   // Find max color
   int maxColor = 0;
   for (zlno_t i=0; i<n; i++) {
     if (color[i] > maxColor) maxColor = color[i];
   }
 
-  // Loop over local rows, treat local column indices as edges.
+  // Compute color class sizes
   Teuchos::Array<int> colorCount(maxColor+1);
   for (zlno_t i=0; i<n; i++) {
-    A->getLocalRowView(i, indices, values);
-    for (zlno_t j=0; j<indices.size(); j++) {
-      if ((indices[j]<n) && (indices[j]!=i) ){
-        colorCount[color[indices[j]]]++;
-      }
-    }
-  } 
+    colorCount[color[i]]++;
+  }
 
   // Find min and max, excluding color 0.
   int smallest = 1;
@@ -148,9 +138,9 @@ int checkBalance(RCP<SparseMatrix> A, int *color)
     }
   }
 
-  std::cout << "Color size[0:1] = " << colorCount[0] << ", " << colorCount[1] << std::endl;
-  std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " colors." << std::endl;
-  std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " colors." << std::endl;
+  std::cout << "Color size[0:2] = " << colorCount[0] << ", " << colorCount[1] << ", " << colorCount[2] << std::endl;
+  std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " vertices." << std::endl;
+  std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " vertices." << std::endl;
   
   return 0;
 }
@@ -276,7 +266,7 @@ int main(int narg, char** arg)
   testReturn = validateColoring(Matrix, checkColoring);
 
   // Check balance (not part of pass/fail for now)
-  checkBalance(Matrix, checkColoring);
+  checkBalance((zlno_t)checkLength, checkColoring);
 
   } catch (std::exception &e){
       std::cout << "Exception caught in coloring" << std::endl;
