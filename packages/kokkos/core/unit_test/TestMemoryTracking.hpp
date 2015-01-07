@@ -63,9 +63,9 @@ public:
     double b ;
     long c[10] ;
 
-    tracking.insert( std::string("a") , & a , sizeof(int) , 1 );
-    tracking.insert( std::string("b") , & b , sizeof(double) , 1 );
-    tracking.insert( std::string("c[10]") , c , sizeof(long) , 10 );
+    tracking.insert( std::string("a") , & a , sizeof(a) );
+    tracking.insert( std::string("b") , & b , sizeof(b) );
+    tracking.insert( std::string("c[10]") , c , sizeof(c) );
 
     Kokkos::Impl::MemoryTracking<>::Entry * info_a = tracking.query( & a );
     Kokkos::Impl::MemoryTracking<>::Entry * info_b = tracking.query( & b );
@@ -79,13 +79,9 @@ public:
     ASSERT_TRUE( info_b->m_alloc_ptr == & b );
     ASSERT_TRUE( info_c->m_alloc_ptr == & c[0] );
 
-    ASSERT_TRUE( info_a->m_type_size == sizeof(int) );
-    ASSERT_TRUE( info_b->m_type_size == sizeof(double) );
-    ASSERT_TRUE( info_c->m_type_size == sizeof(long) );
-
-    ASSERT_TRUE( info_a->m_array_len == 1 );
-    ASSERT_TRUE( info_b->m_array_len == 1 );
-    ASSERT_TRUE( info_c->m_array_len == 10 );
+    ASSERT_TRUE( info_a->m_alloc_size == sizeof(int) );
+    ASSERT_TRUE( info_b->m_alloc_size == sizeof(double) );
+    ASSERT_TRUE( info_c->m_alloc_size == sizeof(long) * 10 );
 
     ASSERT_TRUE( std::string( info_a->label() ) == std::string("a") );
     ASSERT_TRUE( std::string( info_b->label() ) == std::string("b") );

@@ -338,10 +338,7 @@ public:
       m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
 
       m_ptr_on_device = (fad_value_type *)
-        memory_space::allocate( Alloc::label( prop ),
-                                typeid(fad_value_type) ,
-                                sizeof(fad_value_type) ,
-                                m_offset_map.capacity() );
+        memory_space::allocate( Alloc::label( prop ), sizeof(fad_value_type) * m_offset_map.capacity() );
 
       (void) Kokkos::Impl::ViewDefaultConstruct
         < typename traits::execution_space , fad_value_type , Alloc::Initialize >

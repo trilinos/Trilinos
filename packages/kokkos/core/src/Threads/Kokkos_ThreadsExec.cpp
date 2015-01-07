@@ -413,7 +413,7 @@ void ThreadsExec::execute_resize_scratch( ThreadsExec & exec , const void * )
   if ( s_threads_process.m_scratch_thread_end ) {
 
     exec.m_scratch =
-      HostSpace::allocate( "thread_scratch" , typeid(unsigned char) , 1 , s_threads_process.m_scratch_thread_end );
+      HostSpace::allocate( "thread_scratch" , s_threads_process.m_scratch_thread_end );
 
     unsigned * ptr = (unsigned *)( exec.m_scratch );
     unsigned * const end = ptr + s_threads_process.m_scratch_thread_end / sizeof(unsigned);

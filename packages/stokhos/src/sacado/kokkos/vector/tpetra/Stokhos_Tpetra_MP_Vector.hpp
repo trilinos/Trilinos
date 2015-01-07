@@ -50,6 +50,7 @@
 
 // Kokkos includes
 #include "TpetraClassic_config.h"
+#include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_Core.hpp"
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
@@ -59,7 +60,6 @@
 #endif
 
 // Kokkos-Linalg
-#include "Tpetra_ConfigDefs.hpp"
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_MP_Vector.hpp"
 #include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"

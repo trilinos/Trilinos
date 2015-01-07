@@ -155,7 +155,9 @@ namespace Impl {
     int expected_nthreads = argstruct.num_threads;
     if(expected_nthreads<1) {
       if(Kokkos::hwloc::available()) {
-        expected_nthreads = Kokkos::hwloc::get_available_cores_per_numa() * Kokkos::hwloc::get_available_threads_per_core();
+        expected_nthreads = Kokkos::hwloc::get_available_numa_count()
+                          * Kokkos::hwloc::get_available_cores_per_numa()
+                          * Kokkos::hwloc::get_available_threads_per_core();
       } else {
         #ifdef KOKKOS_HAVE_OPENMP
         if(Kokkos::Impl::is_same<Kokkos::HostSpace::execution_space,Kokkos::OpenMP>::value) {
