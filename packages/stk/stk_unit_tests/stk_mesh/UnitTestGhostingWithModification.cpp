@@ -61,6 +61,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_mesh/base/MeshUtils.hpp"
 
 void fillStkMeshFromFileSpec(const std::string fileSpec, stk::mesh::BulkData &stkMeshBulkData)
 {
@@ -161,12 +162,10 @@ TEST(UnitTestGhosting, WithChangeParts)
         {
             EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //          __ __
             EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |  |
-            EXPECT_EQ(10u, entityCounts[stk::topology::FACE_RANK]);             //      |  |__|__|
-            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);          //      ^------------one face still ghosted
-//            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);
-//            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |  |__|__|
+            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);          //      ^------------one face still ghosted
         }
-}
+    }
 }
 
 TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
@@ -240,14 +239,46 @@ TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
             stkMeshBulkData.declare_relation(constraint, node1, 0);
         }
 
-        //problem: the above declaration of a (locally-owned) constraint on proc 2, with
-        //relation to recv-ghost-node 1, puts node 1 into owned-closure on proc 2, triggering
-        //an exception-throw in a consistency check in the modification_end we're about to call.
-        //This replicates (at least partially) a scenario being debugged in SM contact tests.
-        //The test is adagio contact tied_Frictionless np3dash.
-        EXPECT_THROW(stkMeshBulkData.modification_end(), std::runtime_error);
+        fixup_ghosted_to_shared_nodes(stkMeshBulkData);
+        EXPECT_NO_THROW(stkMeshBulkData.modification_end());
 
-        //TO-DO: add expect_eq tests like above, to count entities on each proc.
+        stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
+        if(stkMeshBulkData.parallel_rank() == 0)
+        {
+            stk::mesh::EntityId constraintId = 1;
+            stk::mesh::Entity constraint = stkMeshBulkData.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+            EXPECT_TRUE(stkMeshBulkData.bucket(constraint).in_aura());
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
+            EXPECT_TRUE(stkMeshBulkData.bucket(node1).owned());
+            EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
+            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
+            EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
+            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
+            EXPECT_EQ( 1u, entityCounts[stk::topology::CONSTRAINT_RANK]);
+        }
+        else if(stkMeshBulkData.parallel_rank() == 1)
+        {
+            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
+            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+            EXPECT_EQ( 0u, entityCounts[stk::topology::CONSTRAINT_RANK]);
+        }
+        else
+        {
+            stk::mesh::EntityId constraintId = 1;
+            stk::mesh::Entity constraint = stkMeshBulkData.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+            EXPECT_TRUE(stkMeshBulkData.bucket(constraint).owned());
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
+            EXPECT_TRUE(!stkMeshBulkData.bucket(node1).owned());
+            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
+            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+            EXPECT_EQ( 1u, entityCounts[stk::topology::CONSTRAINT_RANK]);
+        }
     }
 }
 

@@ -3474,8 +3474,8 @@ void BulkData::internal_regenerate_aura()
   Entity const* rels = NULL;
   int num_rels = 0;
   for ( EntityCommListInfoVector::const_iterator
-      i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
-
+      i = comm_list().begin() ; i != comm_list().end() ; ++i )
+  {
     const EntityRank erank = static_cast<EntityRank>(i->key.rank());
 
     const PairIterEntityComm aura = internal_entity_comm_map_shared(i->key);
@@ -3866,7 +3866,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_ghosted_modify_delete");
 
-
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
   // Resolve modifications for ghosted entities:
 
@@ -3877,6 +3876,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   communicate_entity_modification( *this , communicate_shared , remotely_modified_ghosted_entities );
 
   const size_t ghosting_count = m_ghosting.size();
+  const size_t ghosting_count_minus_shared = ghosting_count - 1;
 
   std::vector< int > ghosting_change_flags( ghosting_count , 0 );
 
@@ -3891,7 +3891,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     const int      remote_proc    = i->from_proc;
     const bool     local_owner    = i->comm_info.owner == parallel_rank() ;
     const bool remotely_destroyed = Deleted == i->state ;
-    const bool locally_destroyed  = !is_valid(entity);
+    const bool isAlreadyDestroyed  = !is_valid(entity);
+
 
     if ( local_owner ) { // Sending to 'remote_proc' for ghosting
 
@@ -3900,7 +3901,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
         // remove from ghost-send list
 
          // j=2, j=1,
-        for ( size_t j = ghosting_count ; --j ; ) {
+        for ( size_t j = ghosting_count_minus_shared ; j>=1 ; --j) {
           if ( entity_comm_map_erase( key, EntityCommInfo( j , remote_proc ) ) ) {
             ghosting_change_flags[ j ] = true ;
           }
@@ -3912,27 +3913,36 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     }
     else { // Receiving from 'remote_proc' for ghosting
 
-      // Owner modified or destroyed, must locally destroy.
-
-      for ( PairIterEntityComm ec = entity_comm_map(key); !ec.empty() ; ++ec ) {
-        ghosting_change_flags[ ec->ghost_id ] = true ;
-      }
-
-      // This is a receive ghost so the only communication information
-      // is the ghosting information, can clear it all out.
-      //entity_comm_map_clear(key);
-      entity_comm_map_erase(key, aura_ghosting());
-
-      const bool hasBeenPromotedToSharedOrOwned = this->owned_closure(entity);
-      const bool shouldDestroyGhost = !locally_destroyed && !hasBeenPromotedToSharedOrOwned;
-      if ( shouldDestroyGhost )
+      bool isCustomGhost = false;
+      PairIterEntityComm pairIterEntityComm = entity_comm_map(key);
+      for(unsigned i=0; i<pairIterEntityComm.size(); ++i)
       {
-          const bool was_ghost = true;
-          const bool destroy_entity_successful = internal_destroy_entity(entity, was_ghost);
-          ThrowRequireMsg(destroy_entity_successful,
-                          "Could not destroy ghost entity " << entity_rank(entity)<<":"<<identifier(entity));
+          if (pairIterEntityComm[i].ghost_id > 1)
+          {
+              isCustomGhost = true;
+              break;
+          }
+      }
+      const bool isAuraGhost = !isCustomGhost;
+
+      if(isAuraGhost)
+      {
+          entity_comm_map_erase(key, aura_ghosting());
+          ghosting_change_flags[AURA] = true ;
       }
 
+      if(!isAlreadyDestroyed)
+      {
+          const bool hasBeenPromotedToSharedOrOwned = this->owned_closure(entity);
+          const bool wasDestroyedByOwner = remotely_destroyed;
+          const bool shouldDestroyGhost = wasDestroyedByOwner || (isAuraGhost && !hasBeenPromotedToSharedOrOwned);
+
+          if ( shouldDestroyGhost )
+          {
+              const bool was_ghost = true;
+              internal_destroy_entity(entity, was_ghost);
+          }
+      }
     }
   } // end loop on remote mod
 
@@ -3950,14 +3960,16 @@ void BulkData::internal_resolve_ghosted_modify_delete()
       Modified == state(entity) &&
       parallel_rank()   == i->owner ;
 
-    if ( locally_destroyed || locally_owned_and_modified ) {
-
-      // m_ghosting[0] is the SHARED communication
-
-      for ( size_t j = ghosting_count ; --j ; ) {
+    if ( locally_destroyed ) {
+      for ( size_t j = ghosting_count_minus_shared ; j >=1 ; --j ) {
         if ( entity_comm_map_erase( i->key, *m_ghosting[j] ) ) {
           ghosting_change_flags[ j ] = true ;
         }
+      }
+    }
+    else if ( locally_owned_and_modified ) {
+      if ( entity_comm_map_erase( i->key, aura_ghosting() ) ) {
+        ghosting_change_flags[ AURA ] = true ;
       }
     }
   }
