@@ -92,8 +92,9 @@ namespace Xpetra {
   {
     XPETRA_MONITOR("EpetraVectorT::normWeighted");
     XPETRA_DYNAMIC_CAST(const EpetraVectorT, weights, tWeights, "This Xpetra::EpetraVectorT method only accept Xpetra::EpetraVectorT as input arguments.");
-    double r;
-    this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r;
+    double r[1];
+    this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), r);
+    return r[0];
   }
 
   template<class EpetraGlobalOrdinal>
