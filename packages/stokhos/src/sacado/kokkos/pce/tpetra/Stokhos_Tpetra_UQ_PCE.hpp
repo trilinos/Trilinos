@@ -49,7 +49,7 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
 // Kokkos includes
-#include "TpetraClassic_config.h"
+#include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_Core.hpp"
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
@@ -96,7 +96,6 @@ namespace Kokkos {
 #endif
 
 // Kokkos-Linalg
-#include "Tpetra_ConfigDefs.hpp"
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
