@@ -86,6 +86,8 @@ APPEND_SET(HEADERS
   BelosStubTsqrAdapter.hpp
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
+  BelosPseudoBlockTFQMRIter.hpp
+  BelosPseudoBlockTFQMRSolMgr.hpp
   BelosTypes.hpp
   )
 
@@ -104,6 +106,7 @@ APPEND_SET(HEADERS
   BelosPseudoBlockGmresSolMgr.hpp
   BelosPseudoBlockStochasticCGSolMgr.hpp
   BelosTFQMRSolMgr.hpp
+  BelosPseudoBlockTFQMRSolMgr.hpp
   BelosCGIter.hpp
   BelosBlockCGIter.hpp
   BelosMinresIter.hpp
@@ -112,6 +115,7 @@ APPEND_SET(HEADERS
   BelosPseudoBlockGmresIter.hpp
   BelosPseudoBlockStochasticCGIter.hpp
   BelosTFQMRIter.hpp
+  BelosPseudoBlockTFQMRIter.hpp
   )
 
 ######################################################################

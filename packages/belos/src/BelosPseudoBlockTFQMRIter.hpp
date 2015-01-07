@@ -47,8 +47,8 @@
 // found in Saad's "Iterative Methods for Sparse Linear Systems".
 //
 
-#ifndef BELOS_TFQMR_ITER_HPP
-#define BELOS_TFQMR_ITER_HPP
+#ifndef BELOS_PSEUDO_BLOCK_TFQMR_ITER_HPP
+#define BELOS_PSEUDO_BLOCK_TFQMR_ITER_HPP
 
 /*!
   \file BelosPseudoBlockTFQMRIter.hpp
@@ -237,6 +237,7 @@ namespace Belos {
       state.Rtilde = Rtilde_;
       state.D = D_;
       state.V = V_;
+      state.solnUpdate = solnUpdate_;
       return state;
     }
     
@@ -257,9 +258,10 @@ namespace Belos {
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
-    /*! \note This method returns a null pointer because the linear problem is updated every iteration.
+    /*! \note This method returns the accumulated update to the solution instead of updating
+              the linear problem, since it may incur an additional preconditioner application each iteration.
      */
-    Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
+    Teuchos::RCP<MV> getCurrentUpdate() const { return solnUpdate_; }
 
     //@}
 
@@ -325,6 +327,7 @@ namespace Belos {
     Teuchos::RCP<MV> Rtilde_;
     Teuchos::RCP<MV> D_;
     Teuchos::RCP<MV> V_;
+    Teuchos::RCP<MV> solnUpdate_;
 
   };
   
@@ -397,6 +400,7 @@ namespace Belos {
       AU_ = MVT::Clone( *tmp, numRHS_ );
       D_ = MVT::Clone( *tmp, numRHS_ );
       V_ = MVT::Clone( *tmp, numRHS_ );
+      solnUpdate_ = MVT::Clone( *tmp, numRHS_ );
        
       // Resize work vectors.
       alpha_.resize( numRHS_ );
@@ -434,6 +438,7 @@ namespace Belos {
       U_ = MVT::CloneCopy( *R_ );
       Rtilde_ = MVT::CloneCopy( *R_ );
       MVT::MvInit( *D_ );
+      MVT::MvInit( *solnUpdate_ );
       // Multiply the current residual by Op and store in V_
       //       V_ = Op * R_ 
       //
@@ -562,19 +567,15 @@ namespace Belos {
       }
       //
       //--------------------------------------------------------
-      // Update the solution x := x + eta*D_
+      // Accumulate the update for the solution x := x + eta*D_
       //--------------------------------------------------------
-      //
       //
       for (int i=0; i<numRHS_; ++i) {
         index[0]=i;
         Teuchos::RCP<const MV> D_i = MVT::CloneView( *D_, index );
-        Teuchos::RCP<MV> X_i = MVT::CloneViewNonConst( *cur_soln_vec, index );
-	MVT::MvAddMv( STone, *X_i, eta[i], *D_i, *X_i );
+        Teuchos::RCP<MV> update_i = MVT::CloneViewNonConst( *solnUpdate_, index );
+	MVT::MvAddMv( STone, *update_i, eta[i], *D_i, *update_i );
       }      
-
-      lp_->updateSolution();
-
       //
       if (iter_%2) {
 	//
@@ -625,7 +626,7 @@ namespace Belos {
 
 } // namespace Belos
 //
-#endif // BELOS_TFQMR_ITER_HPP
+#endif // BELOS_PSEUDO_BLOCK_TFQMR_ITER_HPP
 //
 // End of file BelosPseudoBlockTFQMRIter.hpp
 

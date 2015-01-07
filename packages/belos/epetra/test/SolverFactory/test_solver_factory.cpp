@@ -322,6 +322,16 @@ main (int argc, char *argv[])
       testCreatingSolver<factory_type, solver_base_type,
         solver_impl_type> (factory, "LSQR", out, verbose);
     }
+    {
+      typedef Belos::TFQMRSolMgr<scalar_type, MV, OP> solver_impl_type;
+      testCreatingSolver<factory_type, solver_base_type,
+        solver_impl_type> (factory, "TFQMR", out, verbose);
+    }
+    {
+      typedef Belos::PseudoBlockTFQMRSolMgr<scalar_type, MV, OP> solver_impl_type;
+      testCreatingSolver<factory_type, solver_base_type,
+        solver_impl_type> (factory, "Pseudoblock TFQMR", out, verbose);
+    }
     //
     // Test aliases.
     //
@@ -354,6 +364,11 @@ main (int argc, char *argv[])
       typedef Belos::PseudoBlockCGSolMgr<scalar_type, MV, OP> solver_impl_type;
       testCreatingSolver<factory_type, solver_base_type,
         solver_impl_type> (factory, "Pseudo Block CG", out, verbose);
+    }
+    {
+      typedef Belos::PseudoBlockTFQMRSolMgr<scalar_type, MV, OP> solver_impl_type;
+      testCreatingSolver<factory_type, solver_base_type,
+        solver_impl_type> (factory, "Pseudo Block TFQMR", out, verbose);
     }
 
     success = true;

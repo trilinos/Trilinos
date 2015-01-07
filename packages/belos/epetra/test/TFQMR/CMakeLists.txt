@@ -25,6 +25,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
   )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    pseudo_ptfqmr_hb
+    SOURCES test_pseudo_ptfqmr_hb.cpp createEpetraProblem.cpp
+    COMM serial mpi
+    ARGS
+      "--verbose --left-prec --num-rhs=10"
+      "--verbose --right-prec --num-rhs=10"
+    STANDARD_PASS_OUTPUT 
+  )
+
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRFiles

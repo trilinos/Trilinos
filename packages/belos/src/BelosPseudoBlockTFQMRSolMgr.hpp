@@ -768,6 +768,9 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
             if (convIdx.size() == currRHSIdx.size())
               break;  // break from while(1){block_tfqmr_iter->iterate()}
 
+            // Update the current solution with the update computed by the iteration object.
+            problem_->updateSolution( block_tfqmr_iter->getCurrentUpdate(), true );
+
             // Inform the linear problem that we are finished with this current linear system.
             problem_->setCurrLS();
 
@@ -833,7 +836,10 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
 	  throw;
 	}
       }
-      
+     
+      // Update the current solution with the update computed by the iteration object.
+      problem_->updateSolution( block_tfqmr_iter->getCurrentUpdate(), true );
+ 
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
       
