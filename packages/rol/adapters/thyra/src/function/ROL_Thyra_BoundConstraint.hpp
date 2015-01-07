@@ -44,8 +44,8 @@
 #ifndef ROL_THYRA_BOUND_CONSTRAINT_H
 #define ROL_THYRA_BOUND_CONSTRAINT_H
 
-#include "ROL_BoundConstraint.hpp"
 #include "TOpEleWiseBoundsHelpers.hpp"
+#include "ROL_BoundConstraint.hpp"
 
 /** @ingroup func_group
     \class ROL::Thyra_BoundConstraint
@@ -77,13 +77,6 @@ public:
 
   virtual ~Thyra_BoundConstraint() {}
 
-  virtual bool isFeasible( const Vector<Real> &v ) {
-	  bool check = BoundConstraint<Real>::isFeasible(v);
-	  if(!check)
-	    std::cout << "It's not feasible!!" << std::endl;
-	  return check;
-  }
-
   Thyra_BoundConstraint(Teuchos::RCP<Thyra::VectorBase<Real> > p_min, Teuchos::RCP<Thyra::VectorBase<Real> > p_max, Real min_diff) : BoundConstraint<Real>(), thyra_x_lo_(p_min), thyra_x_up_(p_max), min_diff_(min_diff) {};
 
   /** \brief Update bounds.
@@ -105,20 +98,7 @@ public:
   */
   virtual void project( Vector<Real> &x ) {
 	  ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<ThyraVector<Real> >(x);
-
-	  //Teuchos::RCP<Vector<Real> > x_lo = x.clone();
-	  //Teuchos::RCP<Vector<Real> > x_up = x.clone();
-	//  ThyraVector<Real> thyra_x_lo = Teuchos::dyn_cast<ThyraVector<Real> >(*x_lo);
-	//  ThyraVector<Real> thyra_x_up = Teuchos::dyn_cast<ThyraVector<Real> >(*x_up);
-	//  thyra_x_lo.putScalar(p_min_);
-	//  thyra_x_up.putScalar(p_max_);
-	  Thyra::ele_wise_bound(*thyra_x_lo_, *thyra_x_up_, thyra_x.getVector().ptr() );
-
-//	  {
-//		  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
-//		  for (int i = 0; i < thyra_x_view.subDim(); ++i)
-//			  thyra_x_view[i] = std::max(p_min_,std::min(p_max_,thyra_x_view[i]));
-//	  }
+    Thyra::ele_wise_bound(*thyra_x_lo_, *thyra_x_up_, thyra_x.getVector().ptr() );
   }
 
 
@@ -139,24 +119,9 @@ public:
 	  const ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<const ThyraVector<Real> >(x);
 	  ThyraVector<Real>  & thyra_v = Teuchos::dyn_cast<ThyraVector<Real> >(v);
 
-	Real epsn = std::min(eps,min_diff_);
+	  Real epsn = std::min(eps,min_diff_);
+    Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, thyra_v.getVector().ptr(), epsn );
 
-//  Teuchos::RCP<Vector<Real> > x_up = x.clone();
-//  ThyraVector<Real> thyra_x_up = Teuchos::dyn_cast<ThyraVector<Real> >(*x_up);
-//  thyra_x_up.putScalar(p_max_);
-  Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, thyra_v.getVector().ptr(), epsn );
-
-
-/*	{
-      Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
-
-	  for (int i = 0; i < thyra_v_view.subDim(); ++i) {
-		if (thyra_x_view[i] >= p_max_-epsn)
-		  thyra_v_view[i] = 0.0;
-	  }
-	}
-	*/
 }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
@@ -179,21 +144,8 @@ public:
 
 	Real epsn = std::min(eps,min_diff_);
 
-  //Teuchos::RCP<Vector<Real> > x_up = x.clone();
- // ThyraVector<Real> thyra_x_up = Teuchos::dyn_cast<ThyraVector<Real> >(*x_up);
-  //thyra_x_up.putScalar(p_max_);
   Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, *thyra_g.getVector(), thyra_v.getVector().ptr(), epsn );
 
-/*	{
-	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
-	  Thyra::DetachedVectorView<Real> thyra_g_view(thyra_g.getVector());
-	  for (int i = 0; i < thyra_v_view.subDim(); ++i) {
-		if ( (thyra_x_view[i] >= p_max_-epsn) && (thyra_g_view[i] < 0.0))
-		  thyra_v_view[i] = 0.0;
-	  }
-	}
-	*/
   }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
@@ -213,18 +165,8 @@ public:
 
 	Real epsn = std::min(eps,min_diff_);
 
-  //Teuchos::RCP<Vector<Real> > x_lo = x.clone();
- // ThyraVector<Real> thyra_x_lo = Teuchos::dyn_cast<ThyraVector<Real> >(*x_lo);
- // thyra_x_lo.putScalar(p_min_);
   Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, thyra_v.getVector().ptr(), epsn );
-/*	{
-	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
-	  for (int i = 0; i < thyra_v_view.subDim(); ++i) {
-	    if (thyra_x_view[i] <= p_min_+epsn)
-	      thyra_v_view[i] = 0.0;
-	  	}
-	}*/
+
   }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-binding set.
@@ -247,20 +189,7 @@ public:
 
 	Real epsn = std::min(eps,min_diff_);
 
- // Teuchos::RCP<Vector<Real> > x_lo = x.clone();
- // ThyraVector<Real> thyra_x_lo = Teuchos::dyn_cast<ThyraVector<Real> >(*x_lo);
- // thyra_x_lo.putScalar(p_min_);
   Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, *thyra_g.getVector(), thyra_v.getVector().ptr(), epsn );
-
-	/*{
-	  Thyra::DetachedVectorView<Real> thyra_x_view(thyra_x.getVector());
-	  Thyra::DetachedVectorView<Real> thyra_v_view(thyra_v.getVector());
-      Thyra::DetachedVectorView<Real> thyra_g_view(thyra_g.getVector());
-      for (int i = 0; i < thyra_v_view.subDim(); ++i) {
-		if ( (thyra_x_view[i] <= p_min_+epsn) && (thyra_g_view[i] > 0.0))
-		  thyra_v_view[i] = 0.0;
-	  }
-	}*/
   }
 
   /** \brief Set the input vector to the upper bound.
