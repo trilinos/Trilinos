@@ -213,6 +213,9 @@ public:
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
+
+  typedef typename row_matrix_type::mag_type mag_type;
+
   //@}
   //! @name Implementation of Teuchos::Describable
   //@{
@@ -451,7 +454,7 @@ public:
   ///
   /// The Frobenius norm of a matrix \f$A\f$ is defined as
   /// \f$\|A\|_F = \sqrt{\sum_{i,j} \|A_{ij}\|^2}\f$.
-  virtual magnitude_type getFrobeniusNorm() const;
+  virtual mag_type getFrobeniusNorm() const;
 
   /// \brief Compute Y = beta*Y + alpha*A_local*X.
   ///

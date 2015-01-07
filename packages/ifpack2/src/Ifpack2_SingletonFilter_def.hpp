@@ -577,7 +577,7 @@ void SingletonFilter<MatrixType>::UpdateLHSTempl(const Tpetra::MultiVector<Domai
 
 //==========================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType SingletonFilter<MatrixType>::getFrobeniusNorm() const
+typename SingletonFilter<MatrixType>::mag_type SingletonFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getFrobeniusNorm.");
 }

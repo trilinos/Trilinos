@@ -515,7 +515,7 @@ bool ReorderFilter<MatrixType>::supportsRowViews() const
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType ReorderFilter<MatrixType>::getFrobeniusNorm() const
+typename ReorderFilter<MatrixType>::mag_type ReorderFilter<MatrixType>::getFrobeniusNorm() const
 {
   // Reordering doesn't change the Frobenius norm.
   return A_->getFrobeniusNorm ();

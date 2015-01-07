@@ -84,6 +84,8 @@ public:
                       global_ordinal_type,
                       node_type> map_type;
 
+  typedef typename row_matrix_type::mag_type mag_type;
+
   //! \name Constructor & destructor methods
   //@{
 
@@ -304,7 +306,7 @@ public:
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType getFrobeniusNorm() const;
+  virtual mag_type getFrobeniusNorm() const;
 
   /// \brief \f$ Y := \beta Y + \alpha Op(A) X \f$,
   ///   where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
