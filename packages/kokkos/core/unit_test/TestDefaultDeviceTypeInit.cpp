@@ -83,7 +83,7 @@ namespace Impl {
                        * Kokkos::hwloc::get_available_numa_count();
       }
 
-      init_args.nthreads = nthreads;
+      init_args.num_threads = nthreads;
       sprintf(args_kokkos[threads_idx],"--threads=%i",nthreads);
     }
 
@@ -92,13 +92,13 @@ namespace Impl {
       if(Kokkos::hwloc::available())
         numa = Kokkos::hwloc::get_available_numa_count();
 
-      init_args.nnuma = numa;
+      init_args.num_numa = numa;
       sprintf(args_kokkos[numa_idx],"--numa=%i",numa);
     }
 
     if(do_device) {
 
-      init_args.device = 0;
+      init_args.device_id = 0;
       sprintf(args_kokkos[device_idx],"--device=%i",0);
     }
 
@@ -130,18 +130,18 @@ namespace Impl {
                        * Kokkos::hwloc::get_available_numa_count();
       }
 
-      args.nthreads = nthreads;
+      args.num_threads = nthreads;
     }
 
     if(do_numa) {
       int numa = 1;
       if(Kokkos::hwloc::available())
         numa = Kokkos::hwloc::get_available_numa_count();
-      args.nnuma = numa;
+      args.num_numa = numa;
     }
 
     if(do_device) {
-      args.device = 0;
+      args.device_id = 0;
     }
 
     return args;
@@ -152,7 +152,7 @@ namespace Impl {
     ASSERT_EQ( Kokkos::HostSpace::execution_space::is_initialized(), 1);
 
     //Figure out the number of threads the HostSpace ExecutionSpace should have initialized to
-    int expected_nthreads = argstruct.nthreads;
+    int expected_nthreads = argstruct.num_threads;
     if(expected_nthreads<1) {
       if(Kokkos::hwloc::available()) {
         expected_nthreads = Kokkos::hwloc::get_available_cores_per_numa() * Kokkos::hwloc::get_available_threads_per_core();
@@ -167,7 +167,7 @@ namespace Impl {
       }
     }
 
-    int expected_numa = argstruct.nnuma;
+    int expected_numa = argstruct.num_numa;
     if(expected_numa<1) {
       if(Kokkos::hwloc::available()) {
         expected_numa = Kokkos::hwloc::get_available_numa_count();
@@ -181,8 +181,8 @@ namespace Impl {
     if(Kokkos::Impl::is_same<Kokkos::DefaultExecutionSpace,Kokkos::Cuda>::value) {
       int device;
       cudaGetDevice( &device );
-      int expected_device = argstruct.device;
-      if(argstruct.device<0) {
+      int expected_device = argstruct.device_id;
+      if(argstruct.device_id<0) {
         expected_device = 0;
       }
       ASSERT_EQ(expected_device,device);

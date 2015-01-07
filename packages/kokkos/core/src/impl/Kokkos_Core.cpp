@@ -69,21 +69,21 @@ bool is_unsigned_int(const char* str)
 
 void initialize_internal(const InitArguments& args)
 {
-  const int nthreads = args.nthreads;
-  const int use_numa = args.nnuma;
-  const int use_gpu = args.device;
+  const int num_threads = args.num_threads;
+  const int use_numa = args.num_numa;
+  const int use_gpu = args.device_id;
 
 #if defined( KOKKOS_HAVE_OPENMP )
 
   if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ) {
 
-    if(nthreads>0) {
+    if(num_threads>0) {
       if(use_numa>0) {
-        Kokkos::OpenMP::initialize(nthreads,use_numa);
+        Kokkos::OpenMP::initialize(num_threads,use_numa);
       }
       else {
-        Kokkos::OpenMP::initialize(nthreads);
+        Kokkos::OpenMP::initialize(num_threads);
       }
     } else {
       Kokkos::OpenMP::initialize();
@@ -101,12 +101,12 @@ void initialize_internal(const InitArguments& args)
   if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ) {
 
-    if(nthreads>0) {
+    if(num_threads>0) {
       if(use_numa>0) {
-        Kokkos::Threads::initialize(nthreads,use_numa);
+        Kokkos::Threads::initialize(num_threads,use_numa);
       }
       else {
-        Kokkos::Threads::initialize(nthreads);
+        Kokkos::Threads::initialize(num_threads);
       }
     } else {
       Kokkos::Threads::initialize();
@@ -218,14 +218,9 @@ void fence_internal()
 
 namespace Kokkos {
 
-void initialize()
-{
-  Impl::initialize_internal( InitArguments() );
-}
-
 void initialize(int& narg, char* arg[])
 {
-    int nthreads = -1;
+    int num_threads = -1;
     int numa = -1;
     int device = -1;
 
@@ -248,7 +243,7 @@ void initialize(int& narg, char* arg[])
           Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--threads/--kokkos-threads'. Raised by Kokkos::initialize(int narg, char* argc[]).");
 
         if((strncmp(arg[iarg],"--kokkos-threads",16) == 0) || !kokkos_threads_found)
-          nthreads = atoi(number);
+          num_threads = atoi(number);
 
         //Remove the --kokkos-threads argument from the list but leave --threads
         if(strncmp(arg[iarg],"--kokkos-threads",16) == 0) {
@@ -413,9 +408,9 @@ void initialize(int& narg, char* arg[])
     }
 
     InitArguments arguments;
-    arguments.nthreads = nthreads;
-    arguments.nnuma = numa;
-    arguments.device = device;
+    arguments.num_threads = num_threads;
+    arguments.num_numa = numa;
+    arguments.device_id = device;
     Impl::initialize_internal(arguments);
 }
 
