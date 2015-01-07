@@ -91,15 +91,15 @@ void panzer::evaluateInitialCondition(WorksetContainer & wkstContainer,
 				      Teuchos::RCP<panzer::LinearObjContainer> loc,
 				      const double time_stamp)
 {   
-  GlobalEvaluationDataContainer gedc;
-  gedc.addDataObject("Scatter IC Container",loc);
+  panzer::Traits::PreEvalData ped;
+  ped.gedc.addDataObject("Scatter IC Container",loc);
 
   for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();
       itr!=phx_ic_field_managers.end();++itr) {
     std::string blockId = itr->first;
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = itr->second;
 
-    fm->preEvaluate<panzer::Traits::Residual>(gedc);
+    fm->preEvaluate<panzer::Traits::Residual>(ped);
 
     // Loop over worksets in this element block
     std::vector<panzer::Workset>& w = *wkstContainer.getVolumeWorksets(blockId);

@@ -169,7 +169,11 @@ namespace panzer {
     typedef SD SetupData;
 
     typedef panzer::Workset& EvalData;
-    typedef GlobalEvaluationDataContainer& PreEvalData;
+
+    typedef struct {
+      GlobalEvaluationDataContainer gedc;
+    } PreEvalData;
+    // typedef GlobalEvaluationDataContainer& PreEvalData;
 
     typedef void* PostEvalData;
 

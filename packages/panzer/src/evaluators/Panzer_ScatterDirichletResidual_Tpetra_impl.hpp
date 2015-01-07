@@ -145,11 +145,11 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, Traits,LO
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -157,7 +157,7 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = tpetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -321,11 +321,11 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -333,7 +333,7 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = tpetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -497,11 +497,11 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -509,7 +509,7 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = tpetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));

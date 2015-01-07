@@ -107,7 +107,7 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
 
   TEUCHOS_ASSERT(sgEpetraContainer_!=Teuchos::null);
 }
@@ -245,7 +245,7 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
 
   TEUCHOS_ASSERT(sgEpetraContainer_!=Teuchos::null);
 }

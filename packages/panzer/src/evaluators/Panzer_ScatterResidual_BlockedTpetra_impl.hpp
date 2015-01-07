@@ -160,7 +160,7 @@ void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -301,10 +301,10 @@ preEvaluate(typename Traits::PreEvalData d)
    using Teuchos::rcp_dynamic_cast;
 
    // extract linear object container
-   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_));
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_));
 
    if(blockedContainer_==Teuchos::null) {
-     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true);
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true);
      blockedContainer_ = rcp_dynamic_cast<const ContainerType>(gdata->getGhostedLOC());
    }
 }

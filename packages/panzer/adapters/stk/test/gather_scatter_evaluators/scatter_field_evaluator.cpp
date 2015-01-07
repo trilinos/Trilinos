@@ -184,7 +184,7 @@ namespace panzer {
     fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
 
     std::vector<panzer::Workset> & worksets = *volume_worksets;
-    GlobalEvaluationDataContainer preEvalData;
+    panzer::Traits::PreEvalData preEvalData;
     fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
     for(std::size_t ws=0;ws<worksets.size();ws++) {
        fm->evaluateFields<panzer::Traits::Residual>(worksets[ws]);
@@ -294,7 +294,7 @@ namespace panzer {
     fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
 
     std::vector<panzer::Workset> & worksets = *volume_worksets;
-    GlobalEvaluationDataContainer preEvalData;
+    panzer::Traits::PreEvalData preEvalData;
     fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
     for(std::size_t ws=0;ws<worksets.size();ws++) {
        fm->evaluateFields<panzer::Traits::Residual>(worksets[ws]);

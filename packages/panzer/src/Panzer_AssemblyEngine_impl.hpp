@@ -168,10 +168,10 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  GlobalEvaluationDataContainer gedc;
-  gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
-  in.fillGlobalEvaluationDataContainer(gedc);
+  panzer::Traits::PreEvalData ped;
+  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  in.fillGlobalEvaluationDataContainer(ped.gedc);
 
   // Loop over volume field managers
   for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
@@ -179,7 +179,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volume_field_managers[block];
     std::vector<panzer::Workset>& w = *wkstContainer->getWorksets(wd);
 
-    fm->template preEvaluate<EvalT>(gedc);
+    fm->template preEvaluate<EvalT>(ped);
 
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
@@ -283,12 +283,11 @@ evaluateBCs(const panzer::BCType bc_type,
 {
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  panzer::GlobalEvaluationDataContainer gedc;
-
-  gedc.addDataObject("Dirichlet Counter",preEval_loc);
-  gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
-  in.fillGlobalEvaluationDataContainer(gedc);
+  panzer::Traits::PreEvalData ped;
+  ped.gedc.addDataObject("Dirichlet Counter",preEval_loc);
+  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  in.fillGlobalEvaluationDataContainer(ped.gedc);
 
   // this helps work around issues when constructing a mass
   // matrix using an evaluation of only the transient terms.
@@ -346,7 +345,7 @@ evaluateBCs(const panzer::BCType bc_type,
             const_cast<panzer::Workset&>(wkst_it->second); 
 
           // run prevaluate
-          local_side_fm.template preEvaluate<EvalT>(gedc);
+          local_side_fm.template preEvaluate<EvalT>(ped);
 
           // build and evaluate fields for the workset: only one workset per face
           workset.alpha = in.alpha;

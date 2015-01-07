@@ -167,7 +167,7 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -309,7 +309,7 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -456,10 +456,10 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_));
+   blockedContainer_ = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
 
    if(blockedContainer_==Teuchos::null) {
-     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true);
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true);
      blockedContainer_ = rcp_dynamic_cast<const BLOC>(gdata->getGhostedLOC());
    }
 }

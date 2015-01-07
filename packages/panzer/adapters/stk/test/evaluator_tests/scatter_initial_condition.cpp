@@ -270,10 +270,10 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Scatter IC Container",gl_loc);
-    gedc.addDataObject("Solution Gather Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Scatter IC Container",gl_loc);
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////

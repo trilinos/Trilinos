@@ -186,13 +186,13 @@ preEvaluate(typename Traits::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<const ContainerType> blockContainer 
-         = Teuchos::rcp_dynamic_cast<ContainerType>(d.getDataObject("Dirichlet Counter"),true);
+         = Teuchos::rcp_dynamic_cast<ContainerType>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_x(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
 }
 
@@ -372,13 +372,13 @@ preEvaluate(typename Traits::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<const ContainerType> blockContainer 
-         = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject("Dirichlet Counter"),true);
+         = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_x(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
 }
 

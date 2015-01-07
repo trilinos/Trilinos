@@ -259,10 +259,10 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Solution Gather Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
-    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
+    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////
@@ -502,10 +502,10 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Solution Gather Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
-    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
+    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////

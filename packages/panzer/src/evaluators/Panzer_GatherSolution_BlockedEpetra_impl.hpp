@@ -146,7 +146,7 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -291,7 +291,7 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -444,7 +444,7 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************

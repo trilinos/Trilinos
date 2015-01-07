@@ -150,11 +150,11 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits,LO
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -162,7 +162,7 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject("Dirichlet Counter"),true);
+       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = epetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -315,11 +315,11 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, Traits,LO,
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -327,7 +327,7 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject("Dirichlet Counter"),true);
+       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = epetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -338,11 +338,11 @@ preEvaluate(typename Traits::PreEvalData d)
   
   // this is the list of parameters and their names that this scatter has to account for
   std::vector<std::string> activeParameters = 
-    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
   dfdp_vectors_.clear();
   for(std::size_t i=0;i<activeParameters.size();i++) {
-    RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(activeParameters[i]),true)->get_f();
+    RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();
     dfdp_vectors_.push_back(vec);
   }
 }
@@ -507,11 +507,11 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits,LO
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc,true);
 
     dirichletCounter_ = Teuchos::null;
@@ -519,7 +519,7 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject("Dirichlet Counter"),true);
+       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
     dirichletCounter_ = epetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));

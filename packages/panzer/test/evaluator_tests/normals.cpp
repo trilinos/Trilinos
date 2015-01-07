@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   setupData.worksets_->push_back(*workset);
   fm->postRegistrationSetup(setupData);
 
-  panzer::GlobalEvaluationDataContainer preEvalData;
+  panzer::Traits::PreEvalData preEvalData;
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);

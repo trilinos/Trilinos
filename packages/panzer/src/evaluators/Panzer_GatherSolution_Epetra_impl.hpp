@@ -131,11 +131,11 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
 
    if(epetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
       epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
    }
 }
@@ -258,11 +258,11 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
 
    if(epetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
       epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
    }
 }
@@ -404,11 +404,11 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
 
    if(epetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
       epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
    }
 }
