@@ -3395,7 +3395,6 @@ namespace Tpetra {
   {
     const LocalOrdinal MyRow = this->getMap ()->getLocalElement (GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
-    const int myRank = this->getMap ()->getComm ()->getRank ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
@@ -3406,7 +3405,7 @@ namespace Tpetra {
       vectorIndexOutOfRange (VectorIndex), std::runtime_error,
       "Tpetra::MultiVector::replaceGlobalValue: Vector index " << VectorIndex
       << " of the multivector is invalid.");
-#endif
+#endif // HAVE_TPETRA_DEBUG
     replaceLocalValue (MyRow, VectorIndex, ScalarValue);
   }
 
@@ -3467,7 +3466,6 @@ namespace Tpetra {
   {
     using Teuchos::ArrayRCP;
     typedef KokkosClassic::MultiVector<Scalar, node_type> KMV;
-    typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
 
     // This method creates the KokkosClassic object on the fly.  Thus,
     // it's OK to leave this in place for backwards compatibility.
@@ -3487,9 +3485,9 @@ namespace Tpetra {
       origView_.dimension_1 () > 1 ? stride[1] : origView_.dimension_0 ();
 
     KMV kmv (this->getMap ()->getNode ());
-    MVT::initializeValues (kmv, getLocalLength (), getNumVectors (),
-                           data, LDA, getOrigNumLocalRows (),
-                           getOrigNumLocalCols ());
+    kmv.initializeValues (getLocalLength (), getNumVectors (),
+                          data, LDA, getOrigNumLocalRows (),
+                          getOrigNumLocalCols ());
     return kmv;
   }
 

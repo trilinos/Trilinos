@@ -52,15 +52,6 @@
 #  include <type_traits>
 #endif // KOKKOS_HAVE_CXX11
 
-namespace KokkosClassic {
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of DefaultArithmetic
-  template<class KokkosMultiVectorType>
-  class DefaultArithmetic;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-} // namespace KokkosClassic
-
-
 namespace { // anonymous
 
   // Functor for deep-copying between two 2-D Kokkos Views.
