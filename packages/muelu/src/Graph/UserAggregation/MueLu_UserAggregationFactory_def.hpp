@@ -92,11 +92,12 @@ namespace MueLu {
 
     std::string fileName = pL.get<std::string>("filePrefix") + toString(currentLevel.GetLevelID()) + "_" + toString(myRank) + "." + pL.get<std::string>("fileExt");
     std::ifstream ifs(fileName.c_str());
-    if (!ifs.good())
-      throw Exceptions::RuntimeError("Cannot read data from \"" + fileName + "\"");
+    TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), Exceptions::RuntimeError, "Cannot read data from \"" << fileName << "\"");
 
     LO numVertices, numAggregates;
-    ifs >> numVertices >> numAggregates;
+    ifs >> numVertices;
+    TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), Exceptions::RuntimeError, "Cannot read data from \"" << fileName << "\"");
+    ifs >> numAggregates;
     TEUCHOS_TEST_FOR_EXCEPTION(numVertices   <= 0, Exceptions::InvalidArgument, "Number of vertices   must be > 0");
     TEUCHOS_TEST_FOR_EXCEPTION(numAggregates <= 0, Exceptions::InvalidArgument, "Number of aggregates must be > 0");
 
