@@ -12,6 +12,7 @@
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_MasterList.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyHelpers.hpp>
