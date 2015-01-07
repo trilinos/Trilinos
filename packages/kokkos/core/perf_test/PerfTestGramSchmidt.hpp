@@ -159,8 +159,8 @@ struct ModifiedGramSchmidt
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      const vector_type Qj  = Kokkos::subview< vector_type >( Q , ALL , j );
-      const value_view  Rjj = Kokkos::subview< value_view >( R , j , j );
+      const vector_type Qj  = Kokkos::subview( Q , ALL , j );
+      const value_view  Rjj = Kokkos::subview( R , j , j );
 
       invnorm2( Qj , Rjj , tmp );
 
@@ -168,8 +168,8 @@ struct ModifiedGramSchmidt
       Kokkos::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        const vector_type Qk = Kokkos::subview< vector_type >( Q , ALL , k );
-        const value_view  Rjk = Kokkos::subview< value_view >( R , j , k );
+        const vector_type Qk = Kokkos::subview( Q , ALL , k );
+        const value_view  Rjk = Kokkos::subview( R , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
         // PostProcess : tmp = - R(j,k);

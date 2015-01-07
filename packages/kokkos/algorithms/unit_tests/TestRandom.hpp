@@ -55,14 +55,13 @@ struct RandomProperties {
   }
 
   KOKKOS_INLINE_FUNCTION
-  volatile RandomProperties& operator+=(const volatile RandomProperties& add) volatile {
+  void operator+=(const volatile RandomProperties& add) volatile {
     count      += add.count;
     mean       += add.mean;
     variance   += add.variance;
     covariance += add.covariance;
     min         = add.min<min?add.min:min;
     max         = add.max>max?add.max:max;
-    return *this;
   }
 };
 

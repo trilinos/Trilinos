@@ -5,7 +5,7 @@ Generic TriBITS Project, Build, Test, and Install Quick Reference Guide
 :Author: Roscoe A. Bartlett
 :Contact: bartlett.roscoe@gmail.com
 :Date: |date|
-:Version: TriBITS Development at |date|
+:Version: .. include:: TribitsGitVersion.txt
 
 .. |date| date::
 

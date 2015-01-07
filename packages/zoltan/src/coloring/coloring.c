@@ -1618,14 +1618,11 @@ static int D1ParallelColoring (
     int rreqcnt=0, sreqcnt=0, repcount;
     int ierr;
     MPI_Datatype gno_mpi_type;
-    ZOLTAN_GNO_TYPE *colored=NULL;
 
     int flag = 0; /* if set to one, will color all the vertices with color 1 */
     gno_mpi_type = Zoltan_mpi_gno_type();
 
     memset(Ssize, 0, sizeof(int) * zz->Num_Proc);
-
-    colored = newcolored[zz->Proc];
 
     /* Issue async recvs */
     for (rreqcnt = i = 0; i < plstcnt; ++i) {
@@ -2360,7 +2357,7 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
   static char *yo = "Recoloring";
   int globnumofcolor = 0;
   int numofcolor = 0; 
-  int marksize, nStart, nEnd, length, color_of_i;
+  int nStart, nEnd, length, color_of_i;
   int *howmanynodeinthatcolor = NULL; /* number of vertices in the color classes of a proc*/
   int *howmanynodeinthatcolorglobal = NULL; /* number of vertices in the color classes of all procs */
   int *sorted_color = NULL; /* sorted colors wrt to number of vertices at them */
@@ -2491,7 +2488,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
           /* for  synchronous coloring, recoloring is done for  each color classes separately,i.e. relevant neigs wait each other while  coloring same colored vertices*/
           if (recoloring_type == SYNCHRONOUS) {
               carrierbufsize = globmaxnvtx;
-              marksize = *nColor;
               *nColor = -1;
               for (i=1; i<globnumofcolor+1; i++) {
                   if (recoloring_permutation == REVERSE) {

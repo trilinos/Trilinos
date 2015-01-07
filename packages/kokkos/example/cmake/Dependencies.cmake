@@ -5,7 +5,7 @@
 # Subpackage names specified as {Package}{Subpackage}
 # where {Subpackage} name is defined in kokkos/cmake/Dependencies.cmake
 #
-SET(LIB_REQUIRED_DEP_PACKAGES KokkosCore KokkosContainers KokkosLinAlg KokkosAlgorithms)
+SET(LIB_REQUIRED_DEP_PACKAGES KokkosCore KokkosContainers KokkosAlgorithms)
 SET(LIB_OPTIONAL_DEP_PACKAGES)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)

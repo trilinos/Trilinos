@@ -63,133 +63,97 @@
     enum types.
 */
 
-namespace Teuchos
-{
+namespace Teuchos {
 
-class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object
-{
-  public:
+class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object {
+public:
   //! @name Constructors/Destructor.
   //@{
   //! Default Constructor.
-  /*! Object is the primary base class in Teuchos.  All Teuchos class
+  /*! Object is the primary base class in Teuchos.  All Teuchos class [sic]
       are derived from it, directly or indirectly.  This class is seldom
       used explictly.
+
+     \warning (mfh 23 Nov 2014) Pretty much just ignore the above
+       description of this class.  Very few classes in Teuchos inherit
+       from Object.  Such inheritance should be treated as deprecated
+       legacy behavior.  It's not 1990 and C++ is not Java 1.0; we
+       don't need a common base class for everything.
   */
-  Object(int tracebackModeIn = -1);
+  Object (int tracebackModeIn = -1);
 
   //! Labeling Constructor.
   /*! Creates an Object with the given label.
+   *
+   * LEGACY; DEPRECATE.
   */
-  Object(const char* label, int tracebackModeIn = -1);
+  Object (const char* label, int tracebackModeIn = -1);
 
-  //! Copy Constructor.
-  /*! Makes an exact copy of an existing Object instance.
-  */
-  Object(const Object& obj);
+  /// \brief Create an Object with the given label, and optionally,
+  ///   with the given traceback mode.
+  Object (const std::string& label, int tracebackModeIn = -1);
 
-  //! Destructor.
-  /*! Completely deletes an Object object.
-  */
-  virtual ~Object();
+  //! Destructor (virtual, for safety of derived classes).
+  virtual ~Object () {}
 
   //@}
-
   //! @name Set methods.
   //@{
 
-  //! Define object label using a character std::string.
-  /*! Defines the label used to describe \c this object.
-  */
-  virtual void setLabel(const char* label);
+  // LEGACY; REPLACE "const char*" with std::string.
+  virtual void setLabel (const char* theLabel);
 
-  //! Set the value of the Object error traceback report mode.
-  /*! Sets the integer error traceback behavior.
-      TracebackMode controls whether or not traceback information is printed when run time
-      integer errors are detected:
-
-      <= 0 - No information report
-
-       = 1 - Fatal (negative) values are reported
-
-      >= 2 - All values (except zero) reported.
-
-      \note Default is set to -1 when object is constructed.
-  */
-  static void setTracebackMode(int tracebackModeValue);
+  /// \brief Set the value of the Object error traceback report mode.
+  ///
+  /// TracebackMode controls whether or not traceback information is
+  /// printed when run time integer errors are detected:
+  ///
+  /// <= 0 - No information report
+  ///
+  /// = 1 - Fatal (negative) values are reported
+  ///
+  /// >= 2 - All values (except zero) reported.
+  ///
+  /// \note Default is set to -1 when object is constructed.
+  static void setTracebackMode (int tracebackModeValue);
 
   //@}
-
   //! @name Accessor methods.
   //@{
 
-  //! Access the object label.
-  /*! Returns the std::string used to define \e this object.
-  */
-  virtual char* label() const;
+  //! Access the object's label (LEGACY; return std::string instead).
+  virtual const char* label () const;
 
   //! Get the value of the Object error traceback report mode.
   static int getTracebackMode();
 
   //@}
-
   //! @name I/O method.
   //@{
 
-  //! Print method for placing the object in an output stream
-  virtual void print(std::ostream& os) const;
-  //@}
+  //! Print the object to the given output stream.
+  virtual void print (std::ostream& os) const;
 
+  //@}
   //! @name Error reporting method.
   //@{
 
-  //!  Method for reporting errors with Teuchos objects.
-  virtual int reportError(const std::string message, int errorCode) const
-  {
-  // NOTE:  We are extracting a C-style std::string from Message because
-  //        the SGI compiler does not have a real std::string class with
-  //        the << operator.  Some day we should get rid of ".c_str()"
-	if ( (tracebackMode==1) && (errorCode < 0) )
-	{  // Report fatal error
-	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl
-		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << std::endl;
-	   return(errorCode);
-        }
-	if ( (tracebackMode==2) && (errorCode != 0 ) )
-	{
-	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl
-		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << std::endl;
-	   return(errorCode);
-	}
-	return(errorCode);
-  }
+  //! Report an error with this Object.
+  virtual int reportError (const std::string message, int errorCode) const;
 
   //@}
 
   static int tracebackMode;
 
- protected:
+private:
+  //! The Object's current label.
+  std::string label_;
+};
 
- private:
-
-  char* label_;
-
-}; // class Object
-
-/*! \relates Object
-    Output stream operator for handling the printing of Object.
-*/
-inline std::ostream& operator<<(std::ostream& os, const Teuchos::Object& Obj)
-{
-  os << Obj.label() << std::endl;
-  Obj.print(os);
-
-  return os;
-}
+/// \brief Print the given Object to the given output stream.
+/// \relates Object
+std::ostream& operator<< (std::ostream& os, const Teuchos::Object& obj);
 
 } // namespace Teuchos
-
-// #include "Teuchos_Object.cpp"
-
 
 #endif /* _TEUCHOS_OBJECT_HPP_ */

@@ -45,6 +45,8 @@
 // @HEADER
 #include "MueLu_Utilities_def.hpp"
 
+#include <string>
+
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_Transpose_RowMatrix.h"
 #endif
@@ -376,4 +378,45 @@ namespace MueLu {
     }
   }
 
-}
+
+  /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates)
+     from level-specific sublists from inList
+     and moves it to nonSerialList.  Everything else is copied to serialList.
+     This function returns the level number of the highest level for which
+     non-serializable data was provided.
+  */
+  long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
+    using Teuchos::ParameterList;
+
+    ParameterList dummy;
+    long maxLevel = 0;
+
+    for (ParameterList::ConstIterator it = inList.begin(); it != inList.end(); it++) {
+      const std::string& levelName = it->first;
+
+      // Check for mach of the form "level X" where X is a positive integer
+      if (inList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
+        int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
+        if (maxLevel < levelID)
+          maxLevel = levelID;
+
+        // Split the sublist
+        const ParameterList& levelList = inList.sublist(levelName);
+        for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
+          const std::string& name = it2->first;
+          if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
+            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          else
+            serialList   .sublist(levelName).setEntry(name, it2->second);
+        }
+
+      } else {
+        serialList.setEntry(it->first, it->second);
+      }
+    }
+
+    return maxLevel;
+  }
+
+
+} // namespace MueLu

@@ -41,8 +41,8 @@ namespace Sacado {
 
 namespace Sacado {
 
-  // We don't specialize Promote because otherwise we can get ambiguous
-  // partial specializations with the Fad classes.
+  //! Specialization of %Promote to Expr types
+  SACADO_EXPR_PROMOTE_SPEC( CacheFad )
 
   //! Specialization of %ScalarType to Expr types
   template <typename T>

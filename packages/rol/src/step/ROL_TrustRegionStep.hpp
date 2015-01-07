@@ -151,11 +151,16 @@ private:
   int               CGflag_;     ///< Truncated CG termination flag.
   int               CGiter_;     ///< Truncated CG iteration count.
 
+  Real              delMax_;     ///< Maximum trust-region radius.
+
   Real              alpha_init_; ///< Initial line-search parameter for projected methods.
   int               max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
 
   Real              scale0_; ///< Scale for inexact gradient computation.
   Real              scale1_; ///< Scale for inexact gradient computation.
+
+  bool              softUp_;
+  Real              scaleEps_;
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
 
@@ -245,6 +250,7 @@ public:
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
     step_state->searchSize = parlist.get("Initial Trust-Region Radius", -1.0);
+    delMax_                = parlist.get("Maximum Trust-Region Radius", 1000.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -266,6 +272,12 @@ public:
       int BBtype = parlist.get("Barzilai-Borwein Type",1);
       secant_ = getSecant<Real>(esec_,L,BBtype);
     }
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
+
+    // Scale for epsilon active sets
+    scaleEps_ = parlist.get("Scale for Epsilon Active Sets",1.0);
   }
 
   /** \brief Constructor.
@@ -289,6 +301,7 @@ public:
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     // Trust-Region Parameters
     step_state->searchSize = parlist.get("Initial Trust-Region Radius", -1.0);
+    delMax_                = parlist.get("Maximum Trust-Region Radius", 1000.0);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -302,6 +315,12 @@ public:
     max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
     alpha_init_       = parlist.get("Initial Linesearch Parameter", 1.0);
     trustRegion_      = Teuchos::rcp( new TrustRegion<Real>(parlist) );
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
+
+    // Scale for epsilon active sets
+    scaleEps_ = parlist.get("Scale for Epsilon Active Sets",1.0);
   }
 
   /** \brief Initialize step.
@@ -312,7 +331,7 @@ public:
       @param[in]     con         is the bound constraint.
       @param[in]     algo_state  is the algorithm state.
   */
-  void initialize( Vector<Real> &x, Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
@@ -376,7 +395,7 @@ public:
       Real a  = fnew - algo_state.value - gs - 0.5*alpha*alpha*gBg;
       if ( std::abs(a) < ROL_EPSILON ) { 
         // a = 0 implies the objective is quadratic in the negative gradient direction
-        step_state->searchSize = alpha*algo_state.gnorm;
+        step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
       }
       else {
         Real b  = 0.5*alpha*alpha*gBg;
@@ -387,15 +406,15 @@ public:
           Real t2 = (-b+std::sqrt(b*b-3.0*a*c))/(3.0*a);
           if ( 6.0*a*t1 + 2.0*b > 0.0 ) {
             // t1 is the minimizer
-            step_state->searchSize = t1*alpha*algo_state.gnorm;          
+            step_state->searchSize = std::min(t1*alpha*algo_state.gnorm,delMax_);
           }
           else {
             // t2 is the minimizer
-            step_state->searchSize = t2*alpha*algo_state.gnorm;
+            step_state->searchSize = std::min(t2*alpha*algo_state.gnorm,delMax_);
           }
         }
         else {
-          step_state->searchSize = alpha*algo_state.gnorm;
+          step_state->searchSize = std::min(alpha*algo_state.gnorm,delMax_);
         }
       }
     }
@@ -417,7 +436,7 @@ public:
 
     Real eps = 0.0;
     if ( con.isActivated() ) {
-      eps = algo_state.gnorm;
+      eps = scaleEps_*algo_state.gnorm;
     }
     ProjectedObjective<Real> pObj(obj,con,secant_,useSecantPrecond_,useSecantHessVec_,eps);
 
@@ -464,10 +483,16 @@ public:
     algo_state.iter++;
     trustRegion_->update(x,fnew,state->searchSize,TR_nfval_,TR_ngrad_,TRflag_,
                                s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
-    algo_state.value = fnew;
     algo_state.nfval += TR_nfval_;
     algo_state.ngrad += TR_ngrad_;
+    if ( softUp_ ) {
+      pObj.update(x,true,algo_state.iter);
+      fnew = pObj.value(x,tol);
+      algo_state.nfval++;
+    }
+    algo_state.value = fnew;
 
+    // If step is accepted ...
     // Compute new gradient and update secant storage
     if ( TRflag_ == 0 || TRflag_ == 1 ) {  
       // Perform line search (smoothing) to ensure decrease 
@@ -481,7 +506,12 @@ public:
         xnew_->axpy(-alpha*alpha_init_,gp_->dual());
         con.project(*xnew_);
         // Compute new objective value
-        obj.update(*xnew_,true,algo_state.iter);
+        if ( softUp_ ) {
+          obj.update(*xnew_);
+        } 
+        else {
+          obj.update(*xnew_,true,algo_state.iter);
+        }
         Real ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
@@ -491,7 +521,12 @@ public:
           xnew_->set(x);
           xnew_->axpy(-alpha*alpha_init_,gp_->dual());
           con.project(*xnew_);
-          obj.update(*xnew_,true,algo_state.iter);
+          if ( softUp_ ) {
+            obj.update(*xnew_);
+          }
+          else {
+            obj.update(*xnew_,true,algo_state.iter);
+          }
           ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= max_fval_ ) {
@@ -503,6 +538,12 @@ public:
         // Store objective function and iteration information
         fnew = ftmp;
         x.set(*xnew_);
+        if ( softUp_ ) {
+          obj.update(x,true,algo_state.iter);
+          fnew = pObj.value(x,tol);
+          algo_state.nfval++;
+        }
+        algo_state.value = fnew; 
       }
 
       // Store previous gradient for secant update
@@ -528,7 +569,14 @@ public:
 
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
-    }    
+    }
+    else {
+      // If step is rejected and soft updates are performed, 
+      // then update gradient. 
+      if ( softUp_ ) {
+        updateGradient(x,obj,con,algo_state);
+      }
+    }
   }
 
   /** \brief Print iterate header.

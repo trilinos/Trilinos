@@ -68,8 +68,6 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 
-namespace sierra { namespace Fmwk { class MeshBulkData; } }
-namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -135,16 +133,6 @@ public:
             );
 
   virtual ~BulkData();
-
-  //Power users only.
-  //Call this right after construction, before any field-data has been allocated.
-  //If you call this method too late (after any field-data has been allocated, it will have no effect.
-  //It turns off field-data updating so that movement of entities between buckets etc., as is done during
-  //mesh-setup, will not cause corresponding churn of field-data.
-  //Once the mesh is initialized with entities and relations, turn on field-data by calling the
-  //method 'allocate_field_data'.
-  void deactivate_field_updating();
-  bool is_field_updating_active() const { return m_keep_fields_updated; }
 
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Ghosting & ghost);
@@ -222,16 +210,6 @@ public:
   bool modification_end( modification_optimization opt = MOD_END_SORT );
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
-
-  /** If field-data was set to not stay in sync with buckets as the mesh was populated,
-   * (by calling 'deactivate_field_updating' right after construction) this call
-   * causes field-data to be allocated and field-data updating is re-activated.
-   * If field-data was already allocated and staying in sync, then this call is a no-op.
-   */
-  void allocate_field_data();
-
-  inline bool final_modification_end();
-
   /** \brief  Give away ownership of entities to other parallel processes.
    *
    *  A parallel-synchronous operation while the mesh is not being modified
@@ -272,7 +250,7 @@ public:
    *           - Fields that exist on the dest that don't exist on the src will
    *             be zeroed or initialized with the Field-specified initial-value.
    */
-  inline void copy_entity_fields( Entity src, Entity dst);
+  inline void copy_entity_fields( Entity src, Entity dst);      // CLEANUP: only used in usecases and perf tests - REMOVE from class
 
   //------------------------------------
   /** \brief  Query all buckets of a given entity rank
@@ -471,9 +449,9 @@ public:
       const Entity side , unsigned local_side_id ) const;
 
   /** \brief  All entities with communication information. */
-  const EntityCommListInfoVector & comm_list() const { return m_entity_comm_list; }
+  const EntityCommListInfoVector & comm_list() const { return m_entity_comm_list; }     // CLEANUP: outside of unit tests only used in percept for consistency checks (copied from BulkData) and printing
 
-  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;
+  inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
 
   /** \brief  Query the shared-entity aura.
    *          Is likely to be stale if ownership or sharing has changed
@@ -524,26 +502,26 @@ public:
 
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
-  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
-  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
-  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
+  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)
+  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }    // CLEANUP: switch apps to use comm_shared_procs
+  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }   //CLEANUP: can replace app usage with comm_procs
 
-  int entity_comm_map_owner(const EntityKey & key) const;
+  int entity_comm_map_owner(const EntityKey & key) const;       // CLEANUP: can make protected
 
   // Comm-related convenience methods
 
-  bool in_shared(EntityKey key) const { return !entity_comm_map_shared(key).empty(); }
-  bool in_shared(EntityKey key, int proc) const;
-  bool in_receive_ghost( EntityKey key ) const;
+  bool in_shared(EntityKey key) const { return !entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
+  bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
+  bool in_receive_ghost( EntityKey key ) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
-  bool in_send_ghost( EntityKey key) const;
-  bool in_send_ghost( EntityKey key , int proc ) const;
-  bool is_ghosted_onto_another_proc( EntityKey key ) const;
-  bool is_ghosted_onto_proc( EntityKey key, int otherProc ) const;
-  bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
+  bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
+  bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
+  bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
+  bool is_aura_ghosted_onto_proc( EntityKey key, int otherProc ) const;     // CLEANUP: used only by modification_end_for_entity_creation
+  bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
-  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;
 
@@ -553,57 +531,32 @@ public:
   bool has_no_relations(Entity entity) const;
 
   inline const MeshIndex& mesh_index(Entity entity) const;
-  inline MeshIndex& mesh_index(Entity entity);
+  inline MeshIndex& mesh_index(Entity entity);                          //CLEANUP: move to protected for Partition unit test
   inline EntityId identifier(Entity entity) const;
   inline EntityRank entity_rank(Entity entity) const;
   inline EntityKey entity_key(Entity entity) const;
   inline EntityState state(Entity entity) const;
-  inline size_t synchronized_count(Entity entity) const;
-  inline void mark_entity(Entity entity, entitySharing sharedType);
-  inline entitySharing is_entity_marked(Entity entity) const;
-  inline bool add_node_sharing_called() const;
+  inline void mark_entity(Entity entity, entitySharing sharedType);     //CLEANUP: move this and calling functions to private
+  inline entitySharing is_entity_marked(Entity entity) const;           //CLEANUP: move this and calling functions to private
+  inline bool add_node_sharing_called() const;                          //CLEANUP: move this and calling functions to private
   inline Bucket & bucket(Entity entity) const;
   inline Bucket * bucket_ptr(Entity entity) const;
   inline Bucket::size_type bucket_ordinal(Entity entity) const;
   inline int parallel_owner_rank(Entity entity) const;
   inline unsigned local_id(Entity entity) const;
 
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
-  inline void set_entity_key(Entity entity, EntityKey key);
-  inline void set_state(Entity entity, EntityState entity_state);
-  inline void set_synchronized_count(Entity entity, size_t sync_count);
   inline void set_local_id(Entity entity, unsigned id);
 
 #ifdef SIERRA_MIGRATION
-
-  //this typedef for FmwkId must use the same type as the typedef
-  //in the sierra-framework header framewk/mesh/Fmwk_Id.h
-  //In other words, if you change this one, make the same change to the
-  //one in Fmwk_Id.h.
   typedef int FmwkId; //must be a signed type -- fmwk uses negative values sometimes
-  inline FmwkId global_id(Entity entity) const;
+  inline FmwkId global_id(stk::mesh::Entity entity) const;
   inline const RelationVector& aux_relations(Entity entity) const;
   inline RelationVector& aux_relations(Entity entity);
-  inline const sierra::Fmwk::MeshObjSharedAttr* get_shared_attr(Entity entity) const;
-  inline int get_connect_count(Entity entity) const;
-  inline void set_global_id(Entity entity, int id);
-  template <typename SharedAttr>
-  void set_shared_attr(Entity entity, SharedAttr* attr)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    entity_setter_debug_check(entity);
+  inline void set_global_id(stk::mesh::Entity entity, int id);
+  void reserve_relation(stk::mesh::Entity entity, const unsigned num);
+  void erase_and_clear_if_empty(stk::mesh::Entity entity, RelationIterator rel_itr);
+  void internal_verify_initialization_invariant(stk::mesh::Entity entity);
 
-    m_fmwk_shared_attrs[entity.local_offset()] = attr;
-  }
-  inline void set_connect_count(Entity entity, int count);
-
-  void set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation);
-  void reserve_relation(Entity entity, const unsigned num);
-  void erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr);
-  void internal_verify_initialization_invariant(Entity entity);
-
-  inline void set_fmwk_bulk_data(const sierra::Fmwk::MeshBulkData* fmwk_bulk_ptr);
-  inline const sierra::Fmwk::MeshBulkData* get_fmwk_bulk_data() const;
   inline RelationIterator internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const;
   inline RelationIterator internal_end_relation(Entity entity, const Relation::RelationType relation_type) const;
   inline void compress_relation_capacity(Entity entity);
@@ -699,17 +652,6 @@ public:
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
 
-  //reserves space for a new entity, or reclaims space from a previously-deleted entity
-  size_t generate_next_local_offset(size_t preferred_offset = 0);
-
-  inline bool set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
-
-  // Do not call!
-  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
-
-  // Do not call!  Just for a legacy test!
-  impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
-
   // Print all mesh info
   void dump_all_mesh_info(std::ostream& out = std::cout) const;
 
@@ -725,12 +667,32 @@ public:
   //
   void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
-  void internal_sync_comm_list_owners();
   bool use_entity_ids_for_resolving_sharing() const { return m_use_identifiers_for_resolving_sharing; }
   void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
 
+
+  //Power users only.
+  //Call this right after construction, before any field-data has been allocated.
+  //If you call this method too late (after any field-data has been allocated, it will have no effect.
+  //It turns off field-data updating so that movement of entities between buckets etc., as is done during
+  //mesh-setup, will not cause corresponding churn of field-data.
+  //Once the mesh is initialized with entities and relations, turn on field-data by calling the
+  //method 'allocate_field_data'.
+  void deactivate_field_updating();
+  bool is_field_updating_active() const { return m_keep_fields_updated; }
+  /** If field-data was set to not stay in sync with buckets as the mesh was populated,
+   * (by calling 'deactivate_field_updating' right after construction) this call
+   * causes field-data to be allocated and field-data updating is re-activated.
+   * If field-data was already allocated and staying in sync, then this call is a no-op.
+   */
+  void allocate_field_data();
+
 protected: //functions
+  inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
+
+  impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
+
+  inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
 
@@ -799,7 +761,7 @@ protected: //functions
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
 
-  void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
+  void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
   bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
@@ -840,7 +802,22 @@ protected: //functions
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
-private: //functions
+  bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
+  void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
+  void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc);
+  void update_sharing_after_change_entity_owner();
+  void get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
+          stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
+  void get_locally_modified_shared_entities(stk::mesh::EntityToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
+  void fill_modified_entities_and_add_sharing_comm_map_info_for_shared_entities(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+          const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
+  void erase_all_sharing_for_invalid_entities_on_comm_map();
+  void fill_entities_that_have_lost_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+          const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
+  void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities);
+
+  //reserves space for a new entity, or reclaims space from a previously-deleted entity
+  virtual size_t generate_next_local_offset(size_t preferred_offset = 0);
 
   void entity_setter_debug_check(Entity entity) const
   {
@@ -853,6 +830,19 @@ private: //functions
   {
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
+
+private: //functions
+
+
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+  inline void set_entity_key(Entity entity, EntityKey key);
+  inline void set_synchronized_count(Entity entity, size_t sync_count);
+  void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
+
+  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
+  void internal_sync_comm_list_owners();
+
+  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
@@ -968,6 +958,7 @@ private: //functions
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::Partition;
+  friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
 
@@ -985,6 +976,13 @@ private: //functions
   void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
   std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
 
+  struct MarkAsModified
+  {
+      MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
+      void operator()(Entity entity);
+      BulkData & mesh;
+  };
+
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
 
@@ -998,6 +996,13 @@ protected: //data
   std::vector<int> m_mark_entity;
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count;
+  std::vector<MeshIndex> m_mesh_indexes;
+
+#ifdef SIERRA_MIGRATION
+  bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
+  std::vector<FmwkId> m_fmwk_global_ids;
+  mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
+#endif
 
 private: // data
   Parallel m_parallel;
@@ -1008,25 +1013,13 @@ private: // data
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
-  bool m_meta_data_verified;
-  bool m_mesh_finalized;
   std::string m_modification_begin_description;
   int m_num_fields;
   bool m_keep_fields_updated;
-  std::vector<MeshIndex> m_mesh_indexes;
   std::vector<EntityKey> m_entity_keys;
   std::vector<uint16_t> m_entity_states;
   std::vector<size_t> m_entity_sync_counts;
   std::vector<unsigned> m_local_ids;
-
-#ifdef SIERRA_MIGRATION
-  bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
-  const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
-  mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
-  std::vector<FmwkId> m_fmwk_global_ids;
-  std::vector<const sierra::Fmwk::MeshObjSharedAttr*> m_fmwk_shared_attrs;
-  std::vector<unsigned short> m_fmwk_connect_counts;
-#endif
 
   //  ContiguousFieldDataManager m_default_field_data_manager;
   DefaultFieldDataManager m_default_field_data_manager;

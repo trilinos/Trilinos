@@ -69,23 +69,25 @@ ENDIF()
 
 IF (Sacado_ENABLE_KokkosCore)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    FadKokkosTests_Serial
-    SOURCES Fad_KokkosTests.hpp
-            Fad_KokkosTests_Serial.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
+  IF (Kokkos_ENABLE_Serial)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      FadKokkosTests_Serial
+      SOURCES Fad_KokkosTests.hpp
+        Fad_KokkosTests_Serial.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    FadKokkosTests_NoViewSpec_Serial
-    SOURCES Fad_KokkosTests.hpp
-            Fad_KokkosTests_NoViewSpec_Serial.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      FadKokkosTests_NoViewSpec_Serial
+      SOURCES Fad_KokkosTests.hpp
+        Fad_KokkosTests_NoViewSpec_Serial.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      )
+  ENDIF ()
 
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -166,3 +168,12 @@ IF (Sacado_ENABLE_CXX11)
     STANDARD_PASS_OUTPUT
   )
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ConversionTests
+  SOURCES ConversionTests.cpp
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )

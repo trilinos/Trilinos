@@ -583,7 +583,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_MemoryTraits.cpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
       )
-    IF (Stokhos_ENABLE_KokkosLinAlg)
+    IF (Stokhos_ENABLE_TpetraKernels)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
       LIST(APPEND SACADO_HEADERS
@@ -603,7 +603,7 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
     ENDIF()
-    IF (Stokhos_ENABLE_KokkosMpiComm)
+    IF (Stokhos_ENABLE_TeuchosKokkosComm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
       LIST(APPEND SACADO_HEADERS
@@ -639,7 +639,7 @@ IF (Stokhos_ENABLE_Sacado)
       SET(TPETRA_CU_SOURCES "")
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
-      IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+      IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
         APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
         APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.cpp)
         SET(TPETRA_ETI_CLASSES
@@ -923,7 +923,7 @@ IF (Stokhos_ENABLE_Sacado)
   # ENDIF()
   # IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Tpetra)
   #   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
-  #   IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+  #   IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
   #     SET(SOURCES ${SOURCES}
   #       tpetra/tpetra_pce_instantiations.cpp
   #       )

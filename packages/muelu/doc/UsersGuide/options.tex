@@ -46,6 +46,24 @@ parameters.
 
 \begin{table}[h!]
   \begin{center}
+    \begin{tabular}{p{3cm} p{12cm}}
+      \toprule
+      Verbosity level           & Description \\
+      \midrule
+      \verb!none!               & No output \\
+      \verb!low!                & Errors, important warnings, and some statistics \\
+      \verb!medium!             & Same as \verb!low!, but with more statistics \\
+      \verb!high!               & Errors, all warnings, and all statistics \\
+      \verb!extreme!            & Same as \verb!high!, but also includes output from other packages (\textit{i.e.}, \zoltan{}) \\
+      \bottomrule
+    \end{tabular}
+    \caption{Verbosity levels.}
+\label{t:verbosity_types}
+  \end{center}
+\end{table}
+
+\begin{table}[h!]
+  \begin{center}
     \begin{tabular}{p{4.3cm} p{4.3cm} c p{4.5cm}}
       \toprule
       Problem type               & Multigrid algorithm    & Block size  & Smoother \\
@@ -182,10 +200,10 @@ post-smoothing, and SuperLU for coarse system solver.
   \begin{center}
     \begin{tabular}{p{3.5cm} p{11cm}}
       \toprule
-      \verb!sa!         & Classic smoothed aggregation~\cite{VMB1996}\\
-      \verb!unsmoothed! & Aggregation-based, same as \verb!sa! but without damped Jacobi prolongator improvement step\\
-      \verb!pg!         & Prolongator smoothing using $A$, restriction smoothing using $A^T$, local damping factors~\cite{ST2008}\\
-      \verb!emin!       & Constrained minimization of energy in basis functions of grid transfer operator~\cite{WTWG2014,OST2011}\\
+      \verb!sa!         & Classic smoothed aggregation~\cite{VMB1996} \\
+      \verb!unsmoothed! & Aggregation-based, same as \verb!sa! but without damped Jacobi prolongator improvement step \\
+      \verb!pg!         & Prolongator smoothing using $A$, restriction smoothing using $A^T$, local damping factors~\cite{ST2008} \\
+      \verb!emin!       & Constrained minimization of energy in basis functions of grid transfer operator~\cite{WTWG2014,OST2011} \\
       \bottomrule
     \end{tabular}
     \caption{Available multigrid algorithms for generating grid transfer matrices. }
@@ -194,6 +212,40 @@ post-smoothing, and SuperLU for coarse system solver.
 \end{table}
 
 \input{options_multigrid}
+
+% ==================== REUSE ====================
+\section{Reuse options}
+\label{sec:options_reuse}
+
+Reuse options are currently only used with \verb!sa! multigrid algorithm. We
+also assume that the matrix preserves graph structure, and only matrix values
+change.
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{p{3.0cm} p{12cm}}
+      \toprule
+      \verb!none!   & No reuse \\
+      \verb!emin!   & Reuse old prolongator as an initial guess to energy
+                      minimization, and reuse the prolongator pattern \\
+      \verb!RP!     & Reuse smoothed prolongator and restrictor. Smoothers are
+                      recomputed.  \ding{42} \verb!RP! should reuse matrix graphs for
+                      matrix-matrix product, but currently that is disabled as only \epetra{}
+                      supports it. \\
+
+      % \verb!tP!     & Reuse tentative prolongator. The graphs of smoothed prolongator and matrices in Galerkin product are reused only
+                      % if filtering is not being used ({\it i.e.}, either \verb!sa: use filtered matrix! or \verb!aggregation: drop tol! is
+                      % false) \\
+      \verb!RAP!    & Recompute only the finest level smoothers, reuse all other operators \\
+      \verb!full!   & Reuse everything \\
+      \bottomrule
+    \end{tabular}
+    \caption{Available coarsening schemes. }
+\label{t:reuse_types}
+  \end{center}
+\end{table}
+
+\input{options_reuse}
 
 % ==================== MISCELLANEOUS ====================
 \section{Miscellaneous options}

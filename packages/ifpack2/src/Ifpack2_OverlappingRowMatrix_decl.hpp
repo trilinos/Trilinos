@@ -102,7 +102,7 @@ public:
   //! The communicator over which the matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-  //! The matrix's Kokkos Node instance.
+  //! The matrix's Node instance.
   virtual Teuchos::RCP<node_type> getNode() const;
 
   //! The Map that describes the distribution of rows over processes.

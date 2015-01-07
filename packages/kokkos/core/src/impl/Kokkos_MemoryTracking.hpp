@@ -111,19 +111,16 @@ public:
     Entry()
      : m_count(0)
      , m_alloc_ptr( reinterpret_cast<void*>( std::numeric_limits<ptrdiff_t>::max() ) )
-     , m_type_size(0)
-     , m_array_len(0)
+     , m_alloc_size(0)
      , m_attribute()
      { strcpy( m_label , "sentinel" ); }
 
     Entry( const std::string & arg_label 
          , void * const        arg_alloc_ptr 
-         , size_t const        arg_type_size 
-         , size_t const        arg_array_len )
+         , size_t const        arg_alloc_size )
       : m_count( 0 )
       , m_alloc_ptr( arg_alloc_ptr )
-      , m_type_size( arg_type_size )
-      , m_array_len( arg_array_len )
+      , m_alloc_size( arg_alloc_size )
       , m_attribute()
       {
         strncpy( m_label , arg_label.c_str() , LABEL_LENGTH );
@@ -136,8 +133,7 @@ public:
   public:
 
     void * const   m_alloc_ptr ;
-    size_t const   m_type_size ;
-    size_t const   m_array_len ;
+    size_t const   m_alloc_size ;
     AttributeType  m_attribute ;
 
     size_t       count() const { return m_count ; }
@@ -148,8 +144,7 @@ public:
         oss << "{ \"" << m_label
             << "\" count(" << m_count
             << ") memory[ " << m_alloc_ptr
-            << " + " << m_type_size
-            << " * " << m_array_len
+            << " + " << m_alloc_size
             << " ]" ;
       }
   };
@@ -161,13 +156,13 @@ public:
    */
   Entry * insert( const std::string & arg_label
                 , void * const  arg_alloc_ptr
-                , size_t const  arg_type_size
-                , size_t const  arg_array_len )
+                , size_t const  arg_alloc_size
+                )
     {
       Entry * result = 0 ;
 
       const ptrdiff_t alloc_begin = reinterpret_cast<ptrdiff_t>(arg_alloc_ptr);
-      const ptrdiff_t alloc_end   = alloc_begin + arg_type_size * arg_array_len ;
+      const ptrdiff_t alloc_end   = alloc_begin + arg_alloc_size ;
 
       const bool ok_exist = ! m_tracking_end.empty(); 
 
@@ -188,7 +183,7 @@ public:
         ok_range &&
         ( alloc_end == *m_tracking_end.insert(m_tracking_end.begin()+i,alloc_end) ) &&
         ( 0 == *m_tracking.insert(m_tracking.begin()+i,0) ) &&
-        ( 0 != ( result = new Entry(arg_label,arg_alloc_ptr,arg_type_size,arg_array_len) ) );
+        ( 0 != ( result = new Entry(arg_label,arg_alloc_ptr,arg_alloc_size) ) );
 
       if ( ok_insert ) {
         result->m_count = 1 ;
@@ -199,8 +194,7 @@ public:
         msg << m_space
             << "::insert( " << arg_label
             << " , " << arg_alloc_ptr
-            << " , " << arg_type_size
-            << " , " << arg_array_len
+            << " , " << arg_alloc_size
             << " ) ERROR : " ;
         if ( ! ok_exist ) {
           msg << " called after return from main()" ;
@@ -212,8 +206,7 @@ public:
           msg << " overlapping memory range with"
               << " { " << m_tracking[i]->m_label
               << " , " << m_tracking[i]->m_alloc_ptr
-              << " , " << m_tracking[i]->m_type_size
-              << " , " << m_tracking[i]->m_array_len
+              << " , " << m_tracking[i]->m_alloc_size
               << " }" ;
         }
         else {

@@ -102,34 +102,43 @@ namespace {
     "unless the matrix has changed or you have changed parameters\n"
     "(by calling setParameters()).";
 
-  // Utility function for inverting diagonal
-  //
-  // FIXME (mfh 06 Oct 2014) Ifpack2's CMake isn't defining
-  // HAVE_IFPACK2_KOKKOSCLASSIC for some reason, even though
-  // KokkosClassic is listed as a dependency of Ifpack2.  We'll need
-  // to protect use of KokkosClassic with some kind of macro, at some
-  // point, once we deprecate the KokkosClassic subpackage.
+  // Utility function for inverting diagonal with threshold.
   template <typename S, typename L, typename G, typename N>
   void
-  reciprocal_threshold (const Tpetra::Vector<S,L,G,N>& v,
+  reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V,
                         const S& min_val)
   {
-    typedef KokkosClassic::MultiVector<S,N> KMV;
-    typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
-    KMV local_v = v.getLocalMV ();
-    KMVT::ReciprocalThreshold (local_v, min_val);
+    typedef typename Tpetra::Vector<S, L, G, N>::scalar_type scalar_type;
+    typedef typename Tpetra::Vector<S, L, G, N>::mag_type mag_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+    const scalar_type ONE = STS::one ();
+    const mag_type min_val_abs = STS::magnitude (min_val);
+
+    Teuchos::ArrayRCP<scalar_type> V_0 = V.getDataNonConst (0);
+    scalar_type* const V_0_raw = V_0.getRawPtr ();
+    const size_t lclNumRows = V.getLocalLength ();
+
+    for (size_t i = 0; i < lclNumRows; ++i) {
+      const scalar_type V_0i = V_0_raw[i];
+      if (STS::magnitude (V_0i) < min_val_abs) {
+        V_0_raw[i] = min_val;
+      } else {
+        V_0_raw[i] = ONE / V_0i;
+      }
+    }
   }
 
-  // mfh 06 Oct 2014: This specialization is still valid, whether or
-  // not we allow the above default implementation that uses
-  // KokkosClassic.
+  // Partial specialization for the Kokkos refactor version of Tpetra.
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   template <typename S, typename L, typename G, typename D>
-  void reciprocal_threshold(
-    const Tpetra::Vector<S,L,G,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& v,
-    const S& min_val ) {
-    Kokkos::MV_ReciprocalThreshold( v.template getLocalView<D>(),
-                                    min_val );
+  void
+  reciprocal_threshold (Tpetra::Vector<S, L, G, Kokkos::Compat::KokkosDeviceWrapperNode<D> >& v,
+                        const S& min_val)
+  {
+    v.template sync<D> ();
+    v.template modify<D> ();
+    Kokkos::MV_ReciprocalThreshold (v.template getLocalView<D> (), min_val);
   }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
@@ -1147,35 +1156,71 @@ ifpackApplyImpl (const op_type& A,
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
-powerMethod (const op_type& A, const V& D_inv, const int numIters)
+powerMethodWithInitGuess (const op_type& A,
+                          const V& D_inv,
+                          const int numIters,
+                          V& x)
 {
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);
   ST lambdaMax = zero;
   ST RQ_top, RQ_bottom, norm;
 
-  V x (A.getDomainMap ());
   V y (A.getRangeMap ());
-  x.randomize ();
   norm = x.norm2 ();
-  TEUCHOS_TEST_FOR_EXCEPTION(norm == zero, std::runtime_error,
-    "Ifpack2::Chebyshev::powerMethod: "
-    "Tpetra::Vector's randomize() method filled the vector "
-    "with zeros.  This is not impossible, but is unlikely.  "
-    "It's far more likely that there is a bug in Tpetra.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    norm == zero, std::runtime_error,
+    "Ifpack2::Chebyshev::powerMethodWithInitGuess: "
+    "The initial guess has zero norm.  This could be either because Tpetra::"
+    "Vector::randomize() filled the vector with zeros (if that was used to "
+    "compute the initial guess), or because the norm2 method has a bug.  The "
+    "first is not impossible, but unlikely.");
 
+  //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
   x.scale (one / norm);
+  //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
   for (int iter = 0; iter < numIters; ++iter) {
     A.apply (x, y);
+    //std::cerr << "norm1(y) before: " << y.norm1 ();
     solve (y, D_inv, y);
+    //std::cerr << ", norm1(y) after: " << y.norm1 () << std::endl;
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
+    //std::cerr << "RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << std::endl;
     lambdaMax = RQ_top / RQ_bottom;
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
       return zero;
     }
     x.update (one / norm, y, zero);
+  }
+  return lambdaMax;
+}
+
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::ST
+Chebyshev<ScalarType, MV>::
+powerMethod (const op_type& A, const V& D_inv, const int numIters)
+{
+  const ST zero = Teuchos::as<ST> (0);
+  V x (A.getDomainMap ());
+  x.randomize ();
+
+  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+  // mfh 07 Jan 2015: Taking the real part here is only a concession
+  // to the compiler, so that this class can build with ScalarType =
+  // std::complex<T>.  Our Chebyshev implementation only works with
+  // real, symmetric positive definite matrices.  The right thing to
+  // do would be what Belos does, which is provide a partial
+  // specialization for ScalarType = std::complex<T> with a stub
+  // implementation (that builds, but whose constructor throws).
+  if (STS::real (lambdaMax) < STS::real (zero)) {
+    // Max eigenvalue estimate is negative.  Perhaps we got unlucky
+    // with the random initial guess.  Try again with a different (but
+    // still random) initial guess.  Only try again once, so that the
+    // run time is bounded.
+    x.randomize ();
+    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
   }
   return lambdaMax;
 }

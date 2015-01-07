@@ -62,13 +62,13 @@ namespace Details {
 /// \warning This class is an implementation detail of Ifpack2.  Users
 ///   should not rely on its interface.
 template<class GraphType>
-class OverlappingRowGraph : 
+class OverlappingRowGraph :
     virtual public Tpetra::RowGraph<typename GraphType::local_ordinal_type,
-				    typename GraphType::global_ordinal_type,
-				    typename GraphType::node_type> {
+                                    typename GraphType::global_ordinal_type,
+                                    typename GraphType::node_type> {
 public:
   //! \name Typedefs
-  //@{ 
+  //@{
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
@@ -79,7 +79,7 @@ public:
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
   //@}
   //! \name Constructors and destructor
-  //@{ 
+  //@{
 
   /// Standard constructor.
   ///
@@ -101,31 +101,31 @@ public:
   /// \param overlappingImporter [in] Import from the nonoverlapping
   ///   graph's row Map, to the overlapping graph's row Map.
   OverlappingRowGraph (const Teuchos::RCP<const row_graph_type>& nonoverlappingGraph,
-		       const Teuchos::RCP<const row_graph_type>& overlappingGraph,
-		       const Teuchos::RCP<const map_type>& rowMap,
-		       const Teuchos::RCP<const map_type>& colMap,
-		       const Tpetra::global_size_t numGlobalRows,
-		       const Tpetra::global_size_t numGlobalCols,
-		       const Tpetra::global_size_t numGlobalNonzeros,
-		       const size_t maxNumEntries,
-		       const Teuchos::RCP<const import_type>& nonoverlappingImporter,
-		       const Teuchos::RCP<const import_type>& overlappingImporter);
+                       const Teuchos::RCP<const row_graph_type>& overlappingGraph,
+                       const Teuchos::RCP<const map_type>& rowMap,
+                       const Teuchos::RCP<const map_type>& colMap,
+                       const Tpetra::global_size_t numGlobalRows,
+                       const Tpetra::global_size_t numGlobalCols,
+                       const Tpetra::global_size_t numGlobalNonzeros,
+                       const size_t maxNumEntries,
+                       const Teuchos::RCP<const import_type>& nonoverlappingImporter,
+                       const Teuchos::RCP<const import_type>& overlappingImporter);
   //! Destructor
   virtual ~OverlappingRowGraph ();
 
   //@}
   //! @name Matrix query methods
-  //@{ 
-  
+  //@{
+
   //! The communicator over which the graph is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
-  
-  //! The graph's Kokkos Node instance.
+
+  //! The graph's Node instance.
   virtual Teuchos::RCP<node_type> getNode () const;
-  
+
   //! The Map that describes the distribution of rows over processes.
   virtual Teuchos::RCP<const map_type> getRowMap () const;
-  
+
   //! The Map that describes the distribution of columns over processes.
   virtual Teuchos::RCP<const map_type> getColMap () const;
 
@@ -146,13 +146,13 @@ public:
 
   //! Export object (from row Map to range Map).
   virtual Teuchos::RCP<const export_type> getExporter () const;
-  
+
   //! The global number of rows in this graph.
   virtual global_size_t getGlobalNumRows () const;
-  
+
   //! The global number of columns in this graph.
   virtual global_size_t getGlobalNumCols () const;
-  
+
   //! The number of rows owned by the calling process.
   virtual size_t getNodeNumRows () const;
 
@@ -162,16 +162,16 @@ public:
   /// operator on the calling process, that is, the number of elements
   /// listed in the column Map on the calling process.
   virtual size_t getNodeNumCols () const;
-  
-  //! The index base for global indices for this graph. 
+
+  //! The index base for global indices for this graph.
   virtual global_ordinal_type getIndexBase () const;
-  
+
   //! The global number of entries in this graph.
   virtual global_size_t getGlobalNumEntries () const;
-  
+
   //! The number of entries in this graph owned by the calling process.
   virtual size_t getNodeNumEntries () const;
-  
+
   /// \brief The number of entries in the given global row that are
   ///   owned by the calling process.
   ///
@@ -199,19 +199,19 @@ public:
 
   //! The number of diagonal entries owned by the calling process.
   virtual size_t getNodeNumDiags () const;
-  
+
   //! The maximum number of entries in any row on any process.
   virtual size_t getGlobalMaxNumRowEntries () const;
-  
+
   //! The maximum number of entries in any row on the calling process.
   virtual size_t getNodeMaxNumRowEntries() const;
-  
-  //! Whether this graph has a column Map. 
+
+  //! Whether this graph has a column Map.
   virtual bool hasColMap() const;
-  
+
   //! Whether this graph is lower triangular.
   virtual bool isLowerTriangular() const;
-  
+
   //! Whether this graph is upper triangular.
   virtual bool isUpperTriangular() const;
 
@@ -220,13 +220,13 @@ public:
 
   //! Whether this graph is globally indexed.
   virtual bool isGloballyIndexed () const;
-  
+
   //! \c true if fillComplete() has been called, else \c false.
   virtual bool isFillComplete() const;
 
   //@}
   //! @name Extraction methods
-  //@{ 
+  //@{
 
   /// \brief Copy out a list of column indices in the given global row
   ///   that are owned by the calling process.
@@ -241,10 +241,10 @@ public:
   /// \c globalRow does not belong to this process, then \c indices is
   /// not modified and \c numIndices is set to
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
-  virtual void 
+  virtual void
   getGlobalRowCopy (global_ordinal_type globalRow,
-		    const Teuchos::ArrayView<global_ordinal_type>& indices,
-		    size_t& numIndices) const;
+                    const Teuchos::ArrayView<global_ordinal_type>& indices,
+                    size_t& numIndices) const;
 
   /// \brief Copy out a list of local column indices in the given
   ///   local row that are owned by the calling process.
@@ -263,12 +263,12 @@ public:
   /// <tt>localRow</tt> does not belong to this process, then
   /// <tt>indices</tt> is not modified and \c numIndices is set to
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
-  virtual void 
+  virtual void
   getLocalRowCopy (local_ordinal_type localRow,
-		   const Teuchos::ArrayView<local_ordinal_type>& indices,
-		   size_t& numIndices) const;
+                   const Teuchos::ArrayView<local_ordinal_type>& indices,
+                   size_t& numIndices) const;
   //@}
-private: 
+private:
   //! \name Internal data
   //@{
   Teuchos::RCP<const row_graph_type> nonoverlappingGraph_;

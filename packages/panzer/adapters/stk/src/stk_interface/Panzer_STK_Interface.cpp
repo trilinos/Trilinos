@@ -220,11 +220,13 @@ void STK_Interface::initialize(stk_classic::ParallelMachine parallelMach,bool se
 
    stk_classic::mesh::EntityRank elementRank = getElementRank();
    stk_classic::mesh::EntityRank nodeRank = getNodeRank();
+   stk_classic::mesh::EntityRank edgeRank = getEdgeRank();
 
    procRank_ = stk_classic::parallel_machine_rank(*mpiComm_->getRawMpiComm());
 
    // associating the field with a part: universal part!
    stk_classic::mesh::put_field( *coordinatesField_ , nodeRank, metaData_->universal_part(), getDimension());
+   stk_classic::mesh::put_field( *edgesField_ , edgeRank, metaData_->universal_part(), getDimension());
    stk_classic::mesh::put_field( *processorIdField_ , elementRank, metaData_->universal_part());
    stk_classic::mesh::put_field( *loadBalField_ , elementRank, metaData_->universal_part());
 
@@ -265,6 +267,7 @@ void STK_Interface::initialize(stk_classic::ParallelMachine parallelMach,bool se
 	stk_classic::io::put_io_part_attribute(*nodesPart_);
 
       stk_classic::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
+      stk_classic::io::set_field_role(*edgesField_, Ioss::Field::MESH);
       stk_classic::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
       // stk_classic::io::set_field_role(*loadBalField_, Ioss::Field::TRANSIENT);
    }
@@ -385,6 +388,37 @@ void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk_cl
    procId[0] = Teuchos::as<ProcIdData>(procRank_);
 }
 
+
+void STK_Interface::addEdges()
+{
+   // loop over elements
+   stk_classic::mesh::EntityRank edgeRank = getEdgeRank();
+   stk_classic::mesh::EntityRank nodeRank = getNodeRank();
+   std::vector<stk_classic::mesh::Entity*> localElmts;
+   getMyElements(localElmts);
+   std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
+   for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
+     stk_classic::mesh::Entity * element = (*itr);
+     stk_classic::mesh::EntityId gid = element->identifier();
+     std::vector<stk_classic::mesh::EntityId> subcellIds;
+     getSubcellIndices(edgeRank,gid,subcellIds);
+
+     for(std::size_t i=0;i<subcellIds.size();++i) {
+       stk_classic::mesh::Entity * edge = bulkData_->get_entity(edgeRank,subcellIds[i]);
+       stk_classic::mesh::PairIterRelation relations = edge->relations(nodeRank);
+
+       double * node_coord_1 = stk_classic::mesh::field_data(*coordinatesField_,*(relations[0].entity()));
+       double * node_coord_2 = stk_classic::mesh::field_data(*coordinatesField_,*(relations[1].entity()));
+
+       // set coordinate vector
+       double * edgeCoords = stk_classic::mesh::field_data(*edgesField_,*edge);
+       for(std::size_t i=0;i<getDimension();++i)
+          edgeCoords[i] = (node_coord_1[i]+node_coord_2[i])/2.0;
+     }
+   }
+}
+
+
 void STK_Interface::writeToExodus(const std::string & filename)
 {
    PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(filename)");
@@ -488,9 +522,17 @@ void STK_Interface::getOwnedElementsSharingNode(stk_classic::mesh::Entity * node
 }
 
 void STK_Interface::getOwnedElementsSharingNode(stk_classic::mesh::EntityId nodeId,std::vector<stk_classic::mesh::Entity *> & elements,
-                                                                           std::vector<int> & localNodeId) const
+                                                                           std::vector<int> & localNodeId, unsigned int matchType) const
 {
-   stk_classic::mesh::Entity * node = bulkData_->get_entity(getNodeRank(),nodeId);
+   stk_classic::mesh::EntityRank rank;
+   if(matchType == 0)
+     rank = getNodeRank();
+   else if(matchType == 1)
+     rank = getEdgeRank();
+   else
+     TEUCHOS_ASSERT(false);
+
+   stk_classic::mesh::Entity * node = bulkData_->get_entity(rank,nodeId);
 
    getOwnedElementsSharingNode(node,elements,localNodeId);
 }
@@ -591,6 +633,8 @@ void STK_Interface::buildSubcells()
 
    buildEntityCounts();
    buildMaxEntityIds();
+
+   addEdges();
 }
 
 const double * STK_Interface::getNodeCoordinates(stk_classic::mesh::EntityId nodeId) const
@@ -848,6 +892,7 @@ void STK_Interface::initializeFromMetaData()
 
    // declare coordinates and node parts
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
+   edgesField_       = &metaData_->declare_field<VectorFieldType>(edgesString);
    processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
    loadBalField_     = &metaData_->declare_field<SolutionFieldType>("LOAD_BAL");
 
@@ -855,6 +900,8 @@ void STK_Interface::initializeFromMetaData()
 
    nodesPart_        = &metaData_->declare_part(nodesString,getNodeRank());
    nodesPartVec_.push_back(nodesPart_);
+   edgesPart_        = &metaData_->declare_part(edgesString,getEdgeRank());
+   edgesPartVec_.push_back(edgesPart_);
 }
 
 void STK_Interface::buildLocalElementIDs()
@@ -943,17 +990,27 @@ STK_Interface::isMeshCoordField(const std::string & eBlock,
   return true;
 }
 
-Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
+std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > >
 STK_Interface::getPeriodicNodePairing() const
 {
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > vec;
+   Teuchos::RCP<std::vector<unsigned int > > type_vec = rcp(new std::vector<unsigned int>);
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & matchers = getPeriodicBCVector();
 
    // build up the vectors by looping over the matched pair
-   for(std::size_t m=0;m<matchers.size();m++)
+   for(std::size_t m=0;m<matchers.size();m++){
       vec = matchers[m]->getMatchedPair(*this,vec);
+      unsigned int type;
+      if(matchers[m]->getType() == "coord")
+        type = 0;
+      else if(matchers[m]->getType() == "edge")
+        type = 1;
+      else
+        TEUCHOS_ASSERT(false);
+      type_vec->insert(type_vec->begin(),vec->size()-type_vec->size(),type);
+   }
 
-   return vec;
+   return std::make_pair(vec,type_vec);
 }
 
 bool STK_Interface::validBlockId(const std::string & blockId) const

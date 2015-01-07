@@ -50,7 +50,7 @@
 #include <Xpetra_Operator.hpp>
 
 #include "MueLu_HierarchyHelpers_decl.hpp"
-
+#include "MueLu_HierarchyManager.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 
@@ -200,6 +200,49 @@ namespace MueLu {
 
         level.AddKeepFlag   ("PostSmoother", NoFactory::get(), MueLu::Final);
         level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData);
+      }
+    }
+  }
+
+
+  // Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+  // calling AddNewLevel as appropriate.
+  template<class SC, class LO, class GO, class NO>
+  void HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
+    for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
+      const std::string& levelName = it->first;
+
+      // Check for mach of the form "level X" where X is a positive integer
+      if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
+        int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
+        if (levelID > 0)  {
+          // Do enough level adding so we can be sure to add the data to the right place
+          for (int i = H.GetNumLevels(); i <= levelID; i++)
+            H.AddNewLevel();
+
+          RCP<Level> level = H.GetLevel(levelID);
+
+          RCP<FactoryManager> M = rcp(new FactoryManager());
+
+          // Grab the level sublist & loop over parameters
+          const ParameterList& levelList = paramList.sublist(levelName);
+          for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
+            const std::string& name = it2->first;
+            TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
+                                       name != "Nullspace" && name != "Coordinates",
+                                       Exceptions::InvalidArgument,
+                                       "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
+
+            if (name == "A" || name == "P" || name == "R")
+              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second));
+            else if (name == "Nullspace" || name == "Coordinates")
+              level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second));
+
+            M->SetFactory(name, NoFactory::getRCP());
+          }
+
+          HM.AddFactoryManager(levelID, 1, M);
+        }
       }
     }
   }

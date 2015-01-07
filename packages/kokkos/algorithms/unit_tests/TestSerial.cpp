@@ -46,6 +46,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <TestRandom.hpp>
+#include <TestSort.hpp>
 #include <iomanip>
 
 
@@ -79,11 +80,18 @@ protected:
     Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::Serial> >(num_draws); \
   }
 
+#define SERIAL_SORT_UNSIGNED( size )                                \
+  TEST_F( serial, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::Serial, unsigned >(size);                                   \
+  }
+
 SERIAL_RANDOM_XORSHIFT64( 10240000 )
 SERIAL_RANDOM_XORSHIFT1024( 10130144 )
+SERIAL_SORT_UNSIGNED(171)
 
 #undef SERIAL_RANDOM_XORSHIFT64
 #undef SERIAL_RANDOM_XORSHIFT1024
+#undef SERIAL_SORT_UNSIGNED
 
 #endif // KOKKOS_HAVE_SERIAL
 } // namespace Test

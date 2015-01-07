@@ -199,11 +199,13 @@ namespace MueLu {
          - have been allocated
          - requests already posted.
     */
-    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
-               const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
+    bool Setup(int coarseLevelID, const RCP<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const RCP<const FactoryManagerBase> coarseLevelManager,
+               const RCP<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
     //!
     void Setup(const FactoryManagerBase& manager = FactoryManager(), int startLevel = 0, int numDesiredLevels = GetDefaultMaxLevels());
+
+    void SetupRe();
 
     //! Clear impermanent data from previous setup
     void Clear(int startLevel = 0);
@@ -334,6 +336,9 @@ namespace MueLu {
     bool isDumpingEnabled_;
     int  dumpLevel_;
     std::string dumpFile_;
+
+    // Level managers used during the Setup
+    Array<RCP<const FactoryManagerBase> > levelManagers_;
 
   }; //class Hierarchy
 

@@ -8,3 +8,6 @@ ADD_SUBDIRECTORY(diode-circuit)
 ADD_SUBDIRECTORY(topology-optimization)
 ADD_SUBDIRECTORY(dual-spaces)
 ADD_SUBDIRECTORY(zakharov)
+ADD_SUBDIRECTORY(sacado)
+ADD_SUBDIRECTORY(gross-pitaevskii)
+

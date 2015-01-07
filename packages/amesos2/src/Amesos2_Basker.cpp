@@ -66,11 +66,50 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<double>,int,int);
 #endif
+#ifdef HAVE_TPETRA_INST_INT_LONG
+  AMESOS2_SOLVER_TPETRA_INST(Basker,double,int,long);
+#endif
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   AMESOS2_SOLVER_TPETRA_INST(Basker,double,int,long long int);
 #endif
 
 }
+
+//
+// 26-Nov-2014: JJH code copied from Amesos2_SuperLU.cpp.
+//
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+
+#define AMESOS2_BASKER_LOCAL_INSTANT(S,LO,GO,N)                        \
+  template class Amesos2::Basker<Tpetra::CrsMatrix<S, LO, GO, N>,      \
+                                  Tpetra::MultiVector<S, LO, GO,  N> >;
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+  AMESOS2_BASKER_LOCAL_INSTANT(double, int, int, KokkosClassic_TPINode)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
+  AMESOS2_BASKER_LOCAL_INSTANT(double, int, int, KokkosClassic_ThrustGPUNode)
+#endif
+
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_BASKER_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
+#endif
+
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_BASKER_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+#endif
+
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_BASKER_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
+#endif
+
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_BASKER_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+#endif
 
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

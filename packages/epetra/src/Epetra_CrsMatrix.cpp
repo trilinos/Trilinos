@@ -4599,7 +4599,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
  }
 
 //=============================================================================
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer, const Epetra_Export * Exporter, int NumMyDiagonals){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,const Epetra_Map & theRangeMap, const Epetra_Import * theImporter, const Epetra_Export * theExporter, int numMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4613,8 +4613,8 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     EPETRA_CHK_ERR(-1);
 
   // Maps
-  D.DomainMap_ = DomainMap;
-  D.RangeMap_  = RangeMap;
+  D.DomainMap_ = theDomainMap;
+  D.RangeMap_  = theRangeMap;
 
   // Create import, if needed
   if (!D.ColMap_.SameAs(D.DomainMap_)) {
@@ -4622,11 +4622,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       delete D.Importer_;
       D.Importer_ = 0;
     }
-    if(Importer && Importer->SourceMap().SameAs(D.DomainMap_) && Importer->TargetMap().SameAs(D.ColMap_)){
-      D.Importer_=Importer;
+    if(theImporter && theImporter->SourceMap().SameAs(D.DomainMap_) && theImporter->TargetMap().SameAs(D.ColMap_)){
+      D.Importer_=theImporter;
     }
     else {
-      delete Importer;
+      delete theImporter;
       D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
   }
@@ -4637,12 +4637,12 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       delete D.Exporter_;
       D.Exporter_ = 0;
     }
-    if(Exporter && Exporter->SourceMap().SameAs(D.RowMap_) && Exporter->TargetMap().SameAs(D.RangeMap_)){
-      D.Exporter_=Exporter;
+    if(theExporter && theExporter->SourceMap().SameAs(D.RowMap_) && theExporter->TargetMap().SameAs(D.RangeMap_)){
+      D.Exporter_=theExporter;
     }
     else {
-      delete Exporter;
-      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);				
+      delete theExporter;
+      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);
     }
   }
 
@@ -4715,34 +4715,34 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       if(jl_0 < i) D.UpperTriangular_ = false;
 
 
-      if(NumMyDiagonals == -1) {
-	// Binary search in GID space
-	// NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
-	// on the LIDs directly.
-	int insertPoint = -1;
-	if(UseLL)  {
+      if(numMyDiagonals == -1) {
+        // Binary search in GID space
+        // NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
+        // on the LIDs directly.
+        int insertPoint = -1;
+        if(UseLL)  {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-	  long long jg = D.RowMap_.GID64(i);
-	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
-	    D.NumMyBlockDiagonals_++;
-	    D.NumMyDiagonals_ ++;
-	  }
+          long long jg = D.RowMap_.GID64(i);
+          if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
+            D.NumMyBlockDiagonals_++;
+            D.NumMyDiagonals_ ++;
+          }
 #endif
-	}
-	else {
+        }
+        else {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-	  int jg = D.RowMap_.GID(i);
-	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
-	    D.NumMyBlockDiagonals_++;
-	    D.NumMyDiagonals_ ++;
-	  }
+          int jg = D.RowMap_.GID(i);
+          if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
+            D.NumMyBlockDiagonals_++;
+            D.NumMyDiagonals_ ++;
+          }
 #endif
-	}
+        }
       }
     }
   } // end DetermineTriangular
 
-  if(NumMyDiagonals > -1) D.NumMyDiagonals_ = D.NumMyBlockDiagonals_ = NumMyDiagonals;
+  if(numMyDiagonals > -1) D.NumMyDiagonals_ = D.NumMyBlockDiagonals_ = numMyDiagonals;
 
   D.MaxNumNonzeros_=D.MaxNumIndices_;
 
@@ -4920,9 +4920,9 @@ template<class TransferType>
 
   // Pack & Prepare w/ owning PIDs
   rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,
-						      NumExportIDs,ExportLIDs,
-						      LenExports_,Exports_,SizeOfPacket,
-						      Sizes_,VarSizes,SourcePids);
+                                                      NumExportIDs,ExportLIDs,
+                                                      LenExports_,Exports_,SizeOfPacket,
+                                                      Sizes_,VarSizes,SourcePids);
   if(rv) throw ReportError("Epetra_CrsMatrix: Fused import/export constructor failed in PackAndPrepareWithOwningPIDs()",-5);
 
   if (communication_needed) {
@@ -4994,17 +4994,17 @@ template<class TransferType>
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
     Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
-							     *MyDomainMap,pids_ptr,
-							     Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
-							     Graph_.CrsGraphData_->ColMap_);
+                                                             *MyDomainMap,pids_ptr,
+                                                             Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+                                                             Graph_.CrsGraphData_->ColMap_);
     Graph_.CrsGraphData_->HaveColMap_ = true;
 #endif
   }
   else {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),*MyDomainMap,pids_ptr,
-							     Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
-							     Graph_.CrsGraphData_->ColMap_);
+                                                             Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+                                                             Graph_.CrsGraphData_->ColMap_);
     Graph_.CrsGraphData_->HaveColMap_ = true;
 #endif
   }
@@ -5016,7 +5016,7 @@ template<class TransferType>
   const Epetra_Import* xferAsImport = dynamic_cast<const Epetra_Import*> (&RowTransfer);
   if(xferAsImport)
     Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
-  else 
+  else
     Epetra_Util::SortAndMergeCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
 
   /***************************************************/
@@ -5083,19 +5083,19 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
 
 // ===================================================================
 void Epetra_CrsMatrix::FusedImport(const Epetra_CrsMatrix & SourceMatrix,
-				   const Epetra_Import & RowImporter,
-				   const Epetra_Map * DomainMap,
-				   const Epetra_Map * RangeMap,
-				   bool RestrictCommunicator) {
+                                   const Epetra_Import & RowImporter,
+                                   const Epetra_Map * DomainMap,
+                                   const Epetra_Map * RangeMap,
+                                   bool RestrictCommunicator) {
   FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
 }  // end fused import non-constructor
 
 // ===================================================================
 void Epetra_CrsMatrix::FusedExport(const Epetra_CrsMatrix & SourceMatrix,
-				   const Epetra_Export & RowExporter,
-				   const Epetra_Map * DomainMap,
-				   const Epetra_Map * RangeMap,
-				   bool RestrictCommunicator) {
+                                   const Epetra_Export & RowExporter,
+                                   const Epetra_Map * DomainMap,
+                                   const Epetra_Map * RangeMap,
+                                   bool RestrictCommunicator) {
   FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
 } // end fused export non-constructor
 

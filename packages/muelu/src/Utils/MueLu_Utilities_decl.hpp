@@ -47,6 +47,7 @@
 #define MUELU_UTILITIES_DECL_HPP
 
 #include <unistd.h> //necessary for "sleep" function in debugging methods
+#include <string>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -94,8 +95,8 @@ class Epetra_Vector;
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
 
-namespace MueLu {
 
+namespace MueLu {
 // MPI helpers
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
@@ -188,8 +189,9 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true){
-      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string()){
+      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
@@ -197,7 +199,8 @@ namespace MueLu {
                               const Matrix& A,
                               const Matrix& B,
                               RCP<Matrix> C_in,
-                              Teuchos::FancyOStream &fos);
+                              Teuchos::FancyOStream &fos,
+			      const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -224,8 +227,8 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true
-                                );
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string());
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -246,6 +249,7 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                                                         BlockedCrsMatrix& B, bool transposeB,
+                                                        Teuchos::FancyOStream& fos,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true);
 
@@ -402,6 +406,14 @@ namespace MueLu {
     static void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14);
 
   }; // class Utils
+
+  /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
+    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level
+    for which non-serializable data was provided.
+  */
+  long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
+
+
 
 #ifdef HAVE_MUELU_EPETRA
   //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.

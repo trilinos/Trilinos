@@ -5,7 +5,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Clone example
 #
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND
-KokkosClassic_ENABLE_Thrust)
+TpetraClassic_ENABLE_Thrust)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Clone-Tpetra
     SOURCES Clone-Tpetra.cpp

@@ -1033,7 +1033,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   int indexT(0);
   if (writeTranspose) indexT = 1;
 
-  hsize_t q_dimsf[] = {GlobalLength, GlobalLength};
+  hsize_t q_dimsf[] = {static_cast<hsize_t>(GlobalLength), static_cast<hsize_t>(GlobalLength)};
   q_dimsf[indexT] = NumVectors;
 
   filespace_id = H5Screate_simple(2, q_dimsf, NULL);
@@ -1054,11 +1054,11 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 
 
   // Select hyperslab in the file.
-  hsize_t offset[] = {LinearX->Map().GID(0)-X.Map().IndexBase(),
-		      LinearX->Map().GID(0)-X.Map().IndexBase()};
+  hsize_t offset[] = {static_cast<hsize_t>(LinearX->Map().GID(0)-X.Map().IndexBase()),
+		      static_cast<hsize_t>(LinearX->Map().GID(0)-X.Map().IndexBase())};
   hsize_t stride[] = {1, 1};
-  hsize_t count[] = {LinearX->MyLength(),
-		     LinearX->MyLength()};
+  hsize_t count[] = {static_cast<hsize_t>(LinearX->MyLength()),
+		     static_cast<hsize_t>(LinearX->MyLength())};
   hsize_t block[] = {1, 1};
     
   // write vectors one by one
@@ -1073,7 +1073,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 			  count, block);
 
       // Each process defines dataset in memory and writes it to the hyperslab in the file.
-      hsize_t dimsm[] = {LinearX->MyLength()};
+      hsize_t dimsm[] = {static_cast<hsize_t>(LinearX->MyLength())};
       memspace_id = H5Screate_simple(1, dimsm, NULL);
 
       // Write hyperslab
@@ -1126,7 +1126,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
   int indexT(0);
   if (readTranspose) indexT = 1;
 
-  hsize_t q_dimsf[] = {GlobalLength, GlobalLength};
+  hsize_t q_dimsf[] = {static_cast<hsize_t>(GlobalLength), static_cast<hsize_t>(GlobalLength)};
   q_dimsf[indexT] = NumVectors;
 
   hid_t filespace_id = H5Screate_simple(2, q_dimsf, NULL);
@@ -1151,7 +1151,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
   LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
 
   // Select hyperslab in the file.
-  hsize_t offset[] = {LinearMap.GID(0) - indexBase, LinearMap.GID(0) - indexBase};
+  hsize_t offset[] = {static_cast<hsize_t>(LinearMap.GID(0) - indexBase), static_cast<hsize_t>(LinearMap.GID(0) - indexBase)};
   hsize_t stride[] = {1, 1};
 
   // If readTranspose is false, we can read the data in one shot.
@@ -1160,7 +1160,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
   {
   // Select hyperslab in the file.
   hsize_t count[] = {1, 1};
-  hsize_t block[] = {LinearX->MyLength(), LinearX->MyLength()};
+  hsize_t block[] = {static_cast<hsize_t>(LinearX->MyLength()), static_cast<hsize_t>(LinearX->MyLength())};
 
   offset[indexT]  = 0;
   count [indexT]  = NumVectors;
@@ -1171,7 +1171,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
                       count, block);
 
   // Each process defines dataset in memory and writes it to the hyperslab in the file.
-  hsize_t dimsm[] = {NumVectors * LinearX->MyLength()};
+  hsize_t dimsm[] = {NumVectors * static_cast<hsize_t>(LinearX->MyLength())};
   memspace_id = H5Screate_simple(1, dimsm, NULL);
 
   // Write hyperslab
@@ -1182,8 +1182,8 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
     // doing exactly the same as in write
 
     // Select hyperslab in the file.
-    hsize_t count[] = {LinearX->MyLength(),
-		       LinearX->MyLength()};
+    hsize_t count[] = {static_cast<hsize_t>(LinearX->MyLength()),
+		       static_cast<hsize_t>(LinearX->MyLength())};
     hsize_t block[] = {1, 1};
 
     // write vectors one by one
@@ -1198,7 +1198,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 			  count, block);
 
       // Each process defines dataset in memory and writes it to the hyperslab in the file.
-      hsize_t dimsm[] = {LinearX->MyLength()};
+      hsize_t dimsm[] = {static_cast<hsize_t>(LinearX->MyLength())};
       memspace_id = H5Screate_simple(1, dimsm, NULL);
 
       // Read hyperslab

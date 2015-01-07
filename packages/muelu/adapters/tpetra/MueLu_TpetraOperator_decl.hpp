@@ -104,6 +104,14 @@ namespace MueLu {
       return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
     }
 
+    //! @name MueLu specific
+    //@{
+
+    //! Direct access to the underlying MueLu::Hierarchy.
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const { return Hierarchy_; }
+
+    //@}
+
   private:
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Hierarchy_;
 

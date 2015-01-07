@@ -6,7 +6,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TestingToolsUnitTests
   SOURCES
     TestingTools_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
@@ -89,7 +89,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DetachedSpmdVectorViewUnitTests
   SOURCES
     DetachedSpmdVectorView_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 TRIBITS_ADD_TEST(
@@ -124,7 +124,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultProductVectorSpaceUnitTests
   SOURCES
     DefaultProductVectorSpace_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 TRIBITS_ADD_TEST(
@@ -139,7 +139,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultMultiVectorProductVectorSpaceUnitTests
   SOURCES
     DefaultMultiVectorProductVectorSpace_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 TRIBITS_ADD_TEST(
@@ -153,7 +153,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultBlockedLinearOpUnitTests
   SOURCES
     DefaultBlockedLinearOp_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DefaultImplicitLinearOpUnitTests
+  SOURCES
+    DefaultAddedLinearOp_UnitTests.cpp
+    DefaultMultipliedLinearOp_UnitTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
@@ -161,7 +172,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SimpleDenseLinearOpUnitTests
   SOURCES SimpleDenseLinearOp_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   )
 
@@ -203,7 +214,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_locally_replicated
   SOURCES
     test_locally_replicated.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2
   COMM mpi serial
@@ -213,7 +224,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MultiVector_RowStatScaledOp_UnitTests
   SOURCES
     MultiVector_RowStatScaledOp_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2
   COMM mpi serial

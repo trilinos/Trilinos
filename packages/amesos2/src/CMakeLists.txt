@@ -258,7 +258,7 @@ ENDIF()
          Amesos2_Superlu_TypeMap.cpp
      )
 
-  IF(KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+  IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
     APPEND_SET(AMESOS2_CU_SOURCES
       Amesos2_Superlu.cu
       )
@@ -374,7 +374,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-IF(KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
   IF( TPL_ENABLE_MPI )
     CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
   ENDIF()

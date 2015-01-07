@@ -133,8 +133,8 @@ will be supported by the Zoltan2 package in the future.
 The default is Restricted Additive Schwarz
 (RAS), which uses CombineMode Zero, see discussion below. Note that RAS
 does not preserve symmetry, so is generally not suitable as
-a preconditioner for CG.  
-Classical Additive Schwarz is supported by setting the 
+a preconditioner for CG.
+Classical Additive Schwarz is supported by setting the
 CombineMode to Add.
 
 \section Ifpack2_AdditiveSchwarz_CombineMode Combine modes
@@ -304,7 +304,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.

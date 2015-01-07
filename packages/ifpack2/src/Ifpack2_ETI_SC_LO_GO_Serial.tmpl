@@ -44,7 +44,6 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Kokkos_DefaultNode.hpp"
 #include "Tpetra_ETIHelperMacros.h"
 #include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
 #include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
@@ -55,13 +54,10 @@
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-// Ifpack2 already does ETI for the default Node type.  Don't do it
-// again if Kokkos::Compat::KokkosSerialWrapperNode is the default.
-//
-// FIXME (mfh 02 Oct 2014) Currently, there is no macro to test if the
-// Kokkos::Serial device (and its corresponding wrapper Node) is
-// defined.
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+// Ifpack2 already instantiates its classes for the default Node type.
+// Don't instantiate for that again if
+// Kokkos::Compat::KokkosSerialWrapperNode is the default Node type.
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
   IFPACK2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
 #endif
 

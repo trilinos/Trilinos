@@ -50,7 +50,6 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 // Examples headers:
@@ -149,7 +148,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template < class Device , BoxElemPart::ElemOrder ElemOrder >
+template < class Space , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
   MPI_Comm comm ,
   const int use_print ,
@@ -157,9 +156,9 @@ Perf fenl(
   const int use_atomic ,
   const int use_elems[] )
 {
-  typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder > FixtureType ;
+  typedef Kokkos::Example::BoxElemFixture< Space , ElemOrder > FixtureType ;
 
-  typedef Kokkos::CrsMatrix< double , unsigned , Device , void , unsigned >
+  typedef Kokkos::Example::CrsMatrix< double , Space >
     SparseMatrixType ;
 
   typedef typename SparseMatrixType::StaticCrsGraphType
@@ -193,7 +192,7 @@ Perf fenl(
 
   //------------------------------------
 
-  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
+  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Space::memory_space >::value ;
 
   int comm_rank ;
   int comm_size ;
@@ -344,9 +343,9 @@ Perf fenl(
     wall_clock.reset();
     // Create the sparse matrix from the graph:
 
-    SparseMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
+    SparseMatrixType jacobian( mesh_to_graph.graph );
 
-    Device::fence();
+    Space::fence();
 
     perf.create_sparse_matrix = maximum( comm , wall_clock.seconds() );
 
@@ -354,11 +353,9 @@ Perf fenl(
 
     for ( int k = 0 ; k < comm_size && print_flag ; ++k ) {
       if ( k == comm_rank ) {
-        const unsigned nrow = jacobian.numRows();
+        const unsigned nrow = jacobian.graph.numRows();
         std::cout << "MPI[" << comm_rank << "]" << std::endl ;
-        std::cout << "JacobianGraph[ "
-                  << jacobian.numRows() << " x " << jacobian.numCols()
-                  << " ] {" << std::endl ;
+        std::cout << "JacobianGraph {" << std::endl ;
         for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
           std::cout << "  row[" << irow << "]{" ;
           const unsigned entry_end = jacobian.graph.row_map(irow+1);
@@ -435,7 +432,7 @@ Perf fenl(
       wall_clock.reset();
 
       Kokkos::deep_copy( nodal_residual , double(0) );
-      Kokkos::deep_copy( jacobian.values , double(0) );
+      Kokkos::deep_copy( jacobian.coeff , double(0) );
 
       elemcomp.apply();
 
@@ -443,7 +440,7 @@ Perf fenl(
         gatherfill.apply();
       }
 
-      Device::fence();
+      Space::fence();
       perf.fill_time = maximum( comm , wall_clock.seconds() );
 
       //--------------------------------
@@ -453,7 +450,7 @@ Perf fenl(
 
       dirichlet.apply();
 
-      Device::fence();
+      Space::fence();
       perf.bc_time = maximum( comm , wall_clock.seconds() );
 
       //--------------------------------
@@ -462,7 +459,7 @@ Perf fenl(
       const double residual_norm =
         std::sqrt(
           Kokkos::Example::all_reduce(
-            Kokkos::V_Dot( nodal_residual, nodal_residual ) , comm ) );
+            Kokkos::Example::dot( fixture.node_count_owned() , nodal_residual, nodal_residual ) , comm ) );
 
       perf.newton_residual = residual_norm ;
 
@@ -473,17 +470,24 @@ Perf fenl(
       //--------------------------------
       // Solve for nonlinear update
 
-      CGSolve< ImportType , SparseMatrixType , VectorType >
-        cgsolve( comm_nodal_import , jacobian, nodal_residual, nodal_delta ,
-                 cg_iteration_limit , cg_iteration_tolerance );
+      CGSolveResult cg_result ;
+
+      Kokkos::Example::cgsolve( comm_nodal_import
+                              , jacobian
+                              , nodal_residual
+                              , nodal_delta
+                              , cg_iteration_limit
+                              , cg_iteration_tolerance
+                              , & cg_result
+                              );
 
       // Update solution vector
 
-      Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
+      Kokkos::Example::waxpby( fixture.node_count_owned() , nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
 
-      perf.cg_iter_count += cgsolve.iteration ;
-      perf.matvec_time   += cgsolve.matvec_time ;
-      perf.cg_time       += cgsolve.iter_time ;
+      perf.cg_iter_count += cg_result.iteration ;
+      perf.matvec_time   += cg_result.matvec_time ;
+      perf.cg_time       += cg_result.iter_time ;
 
       //--------------------------------
 
@@ -491,20 +495,20 @@ Perf fenl(
         const double delta_norm =
           std::sqrt(
             Kokkos::Example::all_reduce(
-              Kokkos::V_Dot( nodal_delta, nodal_delta ) , comm ) );
+              Kokkos::Example::dot( fixture.node_count_owned() , nodal_delta, nodal_delta ) , comm ) );
 
         if ( 0 == comm_rank ) {
           std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
                     << " residual[" << perf.newton_residual << "]"
                     << " update[" << delta_norm << "]"
-                    << " cg_iteration[" << cgsolve.iteration << "]"
-                    << " cg_residual[" << cgsolve.norm_res << "]"
+                    << " cg_iteration[" << cg_result.iteration << "]"
+                    << " cg_residual[" << cg_result.norm_res << "]"
                     << std::endl ;
         }
 
         for ( int k = 0 ; k < comm_size ; ++k ) {
           if ( k == comm_rank ) {
-            const unsigned nrow = jacobian.numRows();
+            const unsigned nrow = jacobian.graph.numRows();
 
             std::cout << "MPI[" << comm_rank << "]" << std::endl ;
             std::cout << "Residual {" ;
@@ -526,14 +530,14 @@ Perf fenl(
             std::cout << " }" << std::endl ;
 
             std::cout << "Jacobian[ "
-                      << jacobian.numRows() << " x " << jacobian.numCols()
+                      << jacobian.graph.numRows() << " x " << Kokkos::maximum_entry( jacobian.graph )
                       << " ] {" << std::endl ;
             for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
               std::cout << "  {" ;
               const unsigned entry_end = jacobian.graph.row_map(irow+1);
               for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
                 std::cout << " (" << jacobian.graph.entries(entry)
-                          << "," << jacobian.values(entry)
+                          << "," << jacobian.coeff(entry)
                           << ")" ;
               }
               std::cout << " }" << std::endl ;

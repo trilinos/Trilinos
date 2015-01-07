@@ -69,7 +69,6 @@ namespace Kokkos {
 namespace Impl {
 
 struct ViewSpecializeSacadoFad {};
-template <typename T,unsigned,unsigned> struct ViewFadType {};
 
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
@@ -159,12 +158,12 @@ private:
   fad_value_type                             * m_ptr_on_device ;
   offset_map_type                              m_offset_map ;
   typename traits::device_type::size_type      m_storage_size ;
-  Impl::ViewTracking< traits >                 m_tracking ;
+  Impl::ViewDataManagement< traits >           m_management ;
 
 public:
 
   // This needs to be public so that we know what the return type of () is
-  typedef typename Impl::ViewFadType<fad_type, FadStaticDimension, FadStaticStride>::type fad_view_type ;
+  typedef typename Sacado::ViewFadType<fad_type, FadStaticDimension, FadStaticStride>::type reference_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -263,7 +262,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( m_ptr_on_device ); }
+  ~View() { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -339,12 +338,11 @@ public:
       m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
 
       m_ptr_on_device = (fad_value_type *)
-        memory_space::allocate( Alloc::label( prop ),
-                                typeid(fad_value_type) ,
-                                sizeof(fad_value_type) ,
-                                m_offset_map.capacity() );
+        memory_space::allocate( Alloc::label( prop ), sizeof(fad_value_type) * m_offset_map.capacity() );
 
-      Alloc::initialize( array_type( *this ) );
+      (void) Kokkos::Impl::ViewDefaultConstruct
+        < typename traits::execution_space , fad_value_type , Alloc::Initialize >
+          ( m_ptr_on_device , m_offset_map.capacity() );
     }
 
   //------------------------------------
@@ -372,7 +370,7 @@ public:
 
       m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
 
-      m_tracking = false;
+      m_management.set_unmanaged();
     }
 
   //------------------------------------
@@ -445,7 +443,7 @@ public:
   // Scalar operator on traits::rank == 0
 
   typedef Impl::if_c< ( traits::rank == 0 ),
-                      fad_view_type ,
+                      reference_type ,
                       Impl::ViewError::scalar_operator_called_from_non_scalar_view >
     if_scalar_operator ;
 
@@ -455,7 +453,7 @@ public:
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return fad_view_type( m_ptr_on_device , m_storage_size-1 , 1 );
+      return reference_type( m_ptr_on_device , m_storage_size-1 , 1 );
     }
 
   //------------------------------------
@@ -464,21 +462,21 @@ public:
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type , traits, LayoutLeft, 1, iType0 >::type
+  typename Impl::ViewEnableArrayOper< reference_type , traits, LayoutLeft, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as fad dimension
-      return fad_view_type( m_ptr_on_device + m_offset_map(i0,0) ,
+      return reference_type( m_ptr_on_device + m_offset_map(i0,0) ,
                             m_storage_size-1 ,
                             m_offset_map.stride_1() );
     }
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
@@ -486,19 +484,19 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type( m_ptr_on_device + m_offset_map(i0,0),
+      return reference_type( m_ptr_on_device + m_offset_map(i0,0),
                             m_storage_size-1 , 1 );
     }
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type , traits, typename traits::array_layout, 1, iType0 >::type
+  typename Impl::ViewEnableArrayOper< reference_type , traits, typename traits::array_layout, 1, iType0 >::type
     operator[] ( const iType0 & i0 ) const
     { return operator()( i0 ); }
 
   template< typename iType0 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 1,
                                       iType0 >::type
     at( const iType0 & i0 , int , int , int , int , int , int , int ) const
@@ -510,7 +508,7 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutLeft, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
@@ -518,14 +516,14 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type( m_ptr_on_device + m_offset_map(i0,i1,0) ,
+      return reference_type( m_ptr_on_device + m_offset_map(i0,i1,0) ,
                             m_storage_size-1 ,
                             m_offset_map.stride_2() );
     }
 
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
@@ -533,14 +531,14 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,0) ,
         m_storage_size-1 , 1 );
     }
 
   template< typename iType0 , typename iType1 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 2,
                                       iType0, iType1 >::type
     at( const iType0 & i0 , const iType1 & i1 , int , int , int , int , int , int ) const
@@ -552,7 +550,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
@@ -560,7 +558,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,0) ,
         m_storage_size-1 ,
         m_offset_map.stride_3() );
@@ -568,7 +566,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
@@ -576,14 +574,14 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,0) ,
         m_storage_size-1 , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 3,
                                       iType0, iType1, iType2 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , int , int , int , int , int ) const
@@ -595,7 +593,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
@@ -603,7 +601,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,0) ,
         m_storage_size-1 ,
         m_offset_map.stride_4() );
@@ -611,7 +609,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
@@ -619,14 +617,14 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,0) ,
         m_storage_size-1 , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 4,
                                       iType0, iType1, iType2, iType3 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , int , int , int , int ) const
@@ -638,7 +636,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutLeft, 5, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ) const
     {
@@ -646,7 +644,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,0) ,
         m_storage_size-1 ,
         m_offset_map.stride_5() );
@@ -655,7 +653,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 5, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
@@ -664,7 +662,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,0) ,
         m_storage_size-1 , 1 );
     }
@@ -672,7 +670,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 5,
                                       iType0, iType1, iType2, iType3, iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
@@ -685,7 +683,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
                  const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
@@ -694,7 +692,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,0) ,
         m_storage_size-1 ,
         m_offset_map.stride_6() );
@@ -703,7 +701,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
@@ -712,7 +710,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,0) ,
         m_storage_size-1 , 1 );
     }
@@ -720,7 +718,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 6,
                                       iType0, iType1, iType2, iType3, iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
@@ -734,7 +732,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
@@ -743,7 +741,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0, i1, i2, i3, i4, i5, i6, 0 );
 
       // Strided storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,i6,0) ,
         m_storage_size-1 ,
         m_offset_map.stride_7() );
@@ -752,7 +750,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
@@ -761,7 +759,7 @@ public:
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the fad dimension
-      return fad_view_type(
+      return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,i6,0) ,
         m_storage_size-1 , 1 );
     }
@@ -769,7 +767,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< fad_view_type ,
+  typename Impl::ViewEnableArrayOper< reference_type ,
                                       traits, typename traits::array_layout, 7,
                                       iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
@@ -922,15 +920,15 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
                     )>::type * = 0
                   )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
-    dst.m_tracking      = src.m_tracking ;
+    dst.m_management      = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1003,15 +1001,15 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
     typedef View<ST,SL,SD,SM,ViewSpecializeSacadoFad>  src_type ;
     typedef typename src_type::array_type  dst_type ;
 
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    dst.m_tracking = src.m_tracking ;
+    dst.m_management = src.m_management ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 

@@ -57,8 +57,8 @@ operators, and dense and sparse matrices.
 %enddef
 
 %module(package   = "PyTrilinos",
-	directors = "1",
-	docstring = %tpetra_docstring) Tpetra
+        directors = "1",
+        docstring = %tpetra_docstring) Tpetra
 
 %{
 // PyTrilinos includes
@@ -148,24 +148,9 @@ import numpy
   typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosDefaultNode;
 %}
 
-//////////////////////////////////
-// Tpetra configuration support //
-//////////////////////////////////
-%include "Tpetra_config.h"
-%include "Tpetra_ConfigDefs.hpp"
-
-////////////////////////////
-// Tpetra version support //
-////////////////////////////
-%include "Tpetra_Version.hpp"
-%pythoncode
-%{
-__version__ = version()
-%}
-
-/////////////////////////////////////////////
-// Tpetra enumerations and typedef support //
-/////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+// Tpetra configuration, enumerations and typedef support //
+////////////////////////////////////////////////////////////
 // Use %import and forward declarations to prevent SWIG warnings when
 // we %include "Tpetra_ConfigDefs.hpp"
 %import "Teuchos_config.h"
@@ -183,8 +168,18 @@ template< class T > RCP< T > rcp(T* p, bool owns_mem = true);
 template< class T > RCP< T > rcpFromRef(T& r);
 template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
+%include "TpetraCore_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
+
+////////////////////////////
+// Tpetra version support //
+////////////////////////////
+%include "Tpetra_Version.hpp"
+%pythoncode
+%{
+__version__ = version()
+%}
 
 ////////////////////////
 // Tpetra Map support //
@@ -339,7 +334,41 @@ Map = Map_default
 /////////////////////////////
 // Tpetra Transfer support //
 /////////////////////////////
-%include "Tpetra_Details_Transfer.hpp"
+// If I do a %include "Tpetra_Details_Transfer.hpp", SWIG aborts with
+// a trap 6.  Yhis appears to be related to the template parameters of
+// class Tpetra::Details::Transfer using absolute namespaces
+// ::Tpetra::Map<>::... as default parameters.  I reproduce the
+// Transfer class here without the absolute namespace defaults.  This
+// could cause problems if the Transfer class changes.
+// %include "Tpetra_Details_Transfer.hpp"
+namespace Tpetra
+{
+class Distributor;
+namespace Details
+{
+template <class LO = Tpetra::Map<>::local_ordinal_type,
+          class GO = typename Tpetra::Map<LO>::global_ordinal_type,
+          class NT = typename Tpetra::Map<LO, GO>::node_type>
+class Transfer : public Teuchos::Describable
+{
+public:
+  virtual ~Transfer () {}
+  typedef ::Tpetra::Map<LO, GO, NT> map_type;
+  virtual size_t getNumSameIDs() const = 0;
+  virtual size_t getNumPermuteIDs () const = 0;
+  virtual Teuchos::ArrayView<const LO> getPermuteFromLIDs () const = 0;
+  virtual Teuchos::ArrayView<const LO> getPermuteToLIDs () const = 0;
+  virtual size_t getNumRemoteIDs () const = 0;
+  virtual Teuchos::ArrayView<const LO> getRemoteLIDs () const = 0;
+  virtual size_t getNumExportIDs () const = 0;
+  virtual Teuchos::ArrayView<const LO> getExportLIDs () const = 0;
+  virtual Teuchos::ArrayView<const int> getExportPIDs () const = 0;
+  virtual Teuchos::RCP<const map_type> getSourceMap () const = 0;
+  virtual Teuchos::RCP<const map_type> getTargetMap () const = 0;
+  virtual ::Tpetra::Distributor& getDistributor () const = 0;
+};
+} // namespace Details
+} // namespace Tpetra
 %teuchos_rcp(Tpetra::Details::Transfer< long, long, KokkosDefaultNode >)
 %template(Transfer_default)
     Tpetra::Details::Transfer< long, long, KokkosDefaultNode >;

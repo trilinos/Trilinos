@@ -123,6 +123,7 @@ namespace Sacado {                                                      \
       typedef typename remove_volatile<T>::type Tnv;                    \
       typedef typename Tnv::value_type value_type;                      \
       typedef typename Tnv::storage_type storage_type;                  \
+      typedef typename Tnv::base_expr_type base_expr_type;              \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T& expr_) : expr(expr_)  {}                              \
@@ -233,6 +234,7 @@ namespace Sacado {                                                      \
                                        value_type_2>::type value_type;  \
                                                                         \
       typedef typename Tnv1::storage_type storage_type;                 \
+      typedef typename Tnv1::base_expr_type base_expr_type;             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const T2& expr2_) :                          \
@@ -293,6 +295,7 @@ namespace Sacado {                                                      \
       typedef typename Tnv1::value_type ConstT;                         \
                                                                         \
       typedef typename Tnv1::storage_type storage_type;                 \
+      typedef typename Tnv1::base_expr_type base_expr_type;             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const ConstT& c_) :                          \
@@ -351,6 +354,7 @@ namespace Sacado {                                                      \
       typedef typename Tnv2::value_type ConstT;                         \
                                                                         \
       typedef typename Tnv2::storage_type storage_type;                 \
+      typedef typename Tnv2::base_expr_type base_expr_type;             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const ConstT& c_, const T2& expr2_) :                          \
@@ -527,6 +531,7 @@ namespace Sacado {                                                      \
                                        value_type_2>::type value_type;  \
                                                                         \
       typedef typename T1::storage_type storage_type;                   \
+      typedef typename T1::base_expr_type base_expr_type;               \
                                                                         \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
@@ -588,6 +593,7 @@ namespace Sacado {                                                      \
       typedef typename T1::value_type ConstT;                           \
                                                                         \
       typedef typename T1::storage_type storage_type;                   \
+      typedef typename T1::base_expr_type base_expr_type;               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const ConstT& c_) :                          \
@@ -643,6 +649,7 @@ namespace Sacado {                                                      \
       typedef typename T2::value_type ConstT;                           \
                                                                         \
       typedef typename T2::storage_type storage_type;                   \
+      typedef typename T2::base_expr_type base_expr_type;               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const ConstT& c_, const T2& expr2_) :                          \

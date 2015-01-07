@@ -98,40 +98,9 @@ typedef enable_if<
   sizeof(::cudaTextureObject_t) == sizeof(const void *) ,
   ::cudaTextureObject_t >::type cuda_texture_object_type ;
 
-cuda_texture_object_type
-cuda_texture_object_attach(
-  const cudaChannelFormatDesc & ,
-  const void * const );
-
-int cuda_texture_object_release(
-    cuda_texture_object_type obj
-    );
-
-int cuda_texture_object_release(
-    const void * const
-    );
-
-template< typename TextureType >
-inline
-cuda_texture_object_type
-cuda_texture_object_attach( const void * const base_view_ptr )
-{
-  return cuda_texture_object_attach( cudaCreateChannelDesc<TextureType>() , base_view_ptr );
-}
-
 #else
 
 typedef const void * cuda_texture_object_type ;
-
-template< typename TextureType >
-inline
-cuda_texture_object_type
-cuda_texture_object_attach( const void * const )
-{ return 0 ; }
-
-int cuda_texture_object_release(
-    const void * const
-    );
 
 #endif
 
@@ -189,6 +158,7 @@ public:
     {
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
       MemorySpace::texture_object_attach( arg_ptr
+                                        , sizeof(ValueType)
                                         , cudaCreateChannelDesc< AliasType >()
                                         , & m_obj
                                         , reinterpret_cast<const void **>( & m_alloc_ptr )
@@ -202,6 +172,7 @@ public:
     {
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
       MemorySpace::texture_object_attach( arg_ptr
+                                        , sizeof(ValueType)
                                         , cudaCreateChannelDesc< AliasType >()
                                         , & m_obj
                                         , reinterpret_cast<const void **>( & m_alloc_ptr )
@@ -211,8 +182,10 @@ public:
       return *this ;
     }
 
+
   KOKKOS_INLINE_FUNCTION
-  ValueType * raw_ptr() const { return m_alloc_ptr + m_offset ; }
+  operator const ValueType * () const { return m_alloc_ptr + m_offset ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -268,8 +241,10 @@ public:
     return *this;
   }
 
+
   KOKKOS_INLINE_FUNCTION
-  ValueType * raw_ptr() const { return m_ptr ; }
+  operator const ValueType * () const { return m_ptr ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -307,27 +282,12 @@ class ViewDataHandle< ViewTraits ,
                     >::type >
 {
 public:
-  enum { ReferenceAble = 0 };
+  enum { ReturnTypeIsReference = false };
 
   typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
-                                , typename ViewTraits::memory_space > type;
+                                , typename ViewTraits::memory_space > handle_type;
 
   typedef typename ViewTraits::value_type return_type;
-
-  static type allocate( const std::string & label , size_t count )
-    {
-      return type( (typename ViewTraits::value_type*)
-                    ViewTraits::memory_space::allocate(
-                      label ,
-                      typeid(typename ViewTraits::value_type) ,
-                      sizeof(typename ViewTraits::value_type) ,
-                      count )
-                 );
-    }
-
-  KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr( const type & handle )
-    { return handle.raw_ptr(); }
 };
 
 }

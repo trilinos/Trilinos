@@ -89,7 +89,9 @@ namespace panzer {
   template <typename> class LinearObjFactory;
 
   template <typename,typename> class BlockedDOFManager;
+#ifdef PANZER_HAVE_FEI
   template <typename,typename> class DOFManagerFEI;
+#endif
   template <typename,typename> class DOFManager;
   template <typename> class ConnManagerBase;
 }
@@ -240,6 +242,7 @@ namespace panzer_stk_classic {
     void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
+#ifdef PANZER_HAVE_FEI
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
       * \param[in] fieldName Field to fill associative container with
@@ -249,6 +252,7 @@ namespace panzer_stk_classic {
     template <typename GO>
     void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+#endif
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -303,8 +307,10 @@ namespace panzer_stk_classic {
     template <typename GO>
     void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
 
+#ifdef PANZER_HAVE_FEI
     template <typename GO>
     void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
+#endif
 
   private:
 

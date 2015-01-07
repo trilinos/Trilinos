@@ -54,56 +54,15 @@
 # @HEADER
 
 
-
-
-#
-# Define the TriBITS package or not and decide what version of TriBITS to
-# point to.
-#
-IF (TriBITS_SOURCE_DIR)
-  # The TriBITS repo is defined, so let that repo define the TriBITS package.
-  SET(TRIBITS_PACKAGE_LINE)
-  # NOTE: This is the case when Trilinos is just a repo in a larger TriBITS
-  # meta-project that will be pulling in TriBITS as its own repo and that repo
-  # will define the TriBITS package and will ignore the version of TriBITS
-  # under Trilinos/cmake/tribits/.
-ELSEIF(${PROJECT_NAME}_TRIBITS_PACKAGE_USE_TRIBITS_DIR)
-  # There is no TriBITS repo defined so let the Trilinos repo define the
-  # TriBITS package and we want to use the version of TriBITS in
-  # ${PROJECT_NAME}_TRIBITS_DIR.  WARNING: Only use this when
-  # ${PROJECT_NAME}_TRIBITS_DIR is a subdir of ${PROJECT_SOURCE_DIR}!
-  SET(TRIBITS_PACKAGE_LINE
-    TriBITS   "${${PROJECT_NAME}_TRIBITS_DIR}"   PS
-    )
-  # NOTE: We use ${${PROJECT_NAME}_TRIBITS_DIR}, *not* hard-coded
-  # cmake/tribits/ in case we are pointing to a different TriBITS
-  # implementation when doing TriBITS/Trilinos co-development.
-ELSE()
-  # There is no TriBITS repo defined so let the Trilinos repo define the
-  # TriBITS package and use the version of TriBITS in Trilinos for the TriBITS
-  # package, not the one in ${PROJECT_NAME}_TRIBITS_DIR!
-  SET(TRIBITS_PACKAGE_LINE
-    TriBITS   "cmake/tribits"   PS
-    )
-  # NOTE: It is important *not* to use ${PROJECT_NAME}_TRIBITS_DIR when doing
-  # automated CTest/CDash testing where ${PROJECT_NAME}_TRIBITS_DIR is defined
-  # outside of PROJECT_SOURCE_DIR!  We want to be running the inner TriBITS
-  # source build, not the outer TriBITS in this case.  This also maintains
-  # prefect backward compatibility w.r.t. the definition of a TriBITS package
-  # under Trilinos.
-ENDIF()
-
-
 #
 # Define the Trilinos packages
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-  ${TRIBITS_PACKAGE_LINE}
-  Teuchos               packages/teuchos                  PS
-  ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
-  RTOp                  packages/rtop                     PS
   Gtest                 commonTools/gtest                 SS
+  ThreadPool            packages/ThreadPool               PS # Depends on Pthreads
   Kokkos                packages/kokkos                   PS
+  Teuchos               packages/teuchos                  PS
+  RTOp                  packages/rtop                     PS
   Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
   Zoltan                packages/zoltan                   PS

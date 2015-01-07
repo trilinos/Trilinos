@@ -54,7 +54,6 @@
 
 namespace Amesos2 {
 
-
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #endif
@@ -62,6 +61,5 @@ namespace Amesos2 {
 }
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-
 
 #endif

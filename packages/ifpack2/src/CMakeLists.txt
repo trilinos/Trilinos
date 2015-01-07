@@ -119,7 +119,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   # FIXME (mfh 02 Oct 2014) There's currently no CMake variable
   # "Kokkos_ENABLE_Serial" to test if the Kokkos::Serial device is
   # enabled.  It would make sense to use that variable here.
-  IF (KokkosClassic_ENABLE_KokkosCompat)
+  IF (TpetraCore_ENABLE_TeuchosKokkosCompat)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Serial.tmpl
@@ -135,7 +135,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # ETI for the Kokkos::Threads device.
-  IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Pthread)
+  IF (TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Pthread)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Threads.tmpl
@@ -151,7 +151,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # ETI for the Kokkos::OpenMP device.
-  IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_OpenMP)
+  IF (TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_OpenMP)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_OpenMP.tmpl
@@ -167,7 +167,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # ETI for the Kokkos::Cuda device.
-  IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+  IF (TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Cuda.tmpl
@@ -193,7 +193,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES} ${IFPACK2_CPP_SOURCES} ${IFPACK2_CUDA_SOURCES}
   )
 
-IF(KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
   IF( TPL_ENABLE_MPI )
     CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
   ENDIF()

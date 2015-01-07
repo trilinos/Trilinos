@@ -155,7 +155,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
               << "flagged as converged." << std::endl;
     }
 
-    printUpdate();
+    if (status == NOX::StatusTest::Unconverged) printUpdate();
   }
 
   // First check status

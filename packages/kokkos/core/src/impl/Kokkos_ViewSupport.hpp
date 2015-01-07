@@ -110,83 +110,158 @@ struct ViewAssignable
 namespace Kokkos {
 namespace Impl {
 
-/** \brief  View tracking increment/decrement only happens when
- *          view memory is managed and executing in the host space.
+template< class ExecSpace , class Type , bool Initialize >
+struct ViewDefaultConstruct
+{ ViewDefaultConstruct( Type * , size_t ) {} };
+
+
+/** \brief  ViewDataHandle provides the type of the 'data handle' which the view
+ *          uses to access data with the [] operator. It also provides
+ *          an allocate function and a function to extract a raw ptr from the
+ *          data handle. ViewDataHandle also defines an enum ReferenceAble which
+ *          specifies whether references/pointers to elements can be taken and a
+ *          'return_type' which is what the view operators will give back.
+ *          Specialisation of this object allows three things depending
+ *          on ViewTraits and compiler options:
+ *          (i)   Use special allocator (e.g. huge pages/small pages and pinned memory)
+ *          (ii)  Use special data handle type (e.g. add Cuda Texture Object)
+ *          (iii) Use special access intrinsics (e.g. texture fetch and non-caching loads)
  */
-template< class ViewTraits , class Enable = void >
-struct ViewTracking {
-  KOKKOS_INLINE_FUNCTION void increment( const void * ) const {}
-  KOKKOS_INLINE_FUNCTION void decrement( const void * ) const {}
+template< class StaticViewTraits , class Enable = void >
+struct ViewDataHandle {
 
-  KOKKOS_INLINE_FUNCTION
-  ViewTracking & operator = ( const ViewTracking & ) { return *this ; }
+  enum { ReturnTypeIsReference = true };
 
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  ViewTracking & operator = ( const ViewTracking<T> & ) { return *this ; }
-
-  KOKKOS_INLINE_FUNCTION
-  ViewTracking & operator = ( const bool ) { return *this ; }
-
-  KOKKOS_INLINE_FUNCTION
-  operator bool() const { return false ; }
+  typedef typename StaticViewTraits::value_type * handle_type;
+  typedef typename StaticViewTraits::value_type & return_type;
 };
 
-template< class ViewTraits >
-struct ViewTracking< ViewTraits , typename enable_if< ViewTraits::is_managed >::type >
-{
+template< class StaticViewTraits , class Enable = void >
+class ViewDataManagement : public ViewDataHandle< StaticViewTraits > {
 private:
 
-  enum { is_host_space = is_same< Kokkos::HostSpace , Kokkos::Impl::ActiveExecutionMemorySpace >::value };
+  template< class , class > friend class ViewDataManagement ;
 
-  bool m_flag ;
+  struct PotentiallyManaged  {};
+  struct StaticallyUnmanaged {};
 
-  struct NoType {};
+  /* Statically unmanaged if traits or not executing in host-accessible memory space */
+  typedef typename
+    Impl::if_c< StaticViewTraits::is_managed &&
+                Impl::is_same< Kokkos::HostSpace
+                             , Kokkos::Impl::ActiveExecutionMemorySpace >::value
+              , PotentiallyManaged
+              , StaticallyUnmanaged
+              >::type StaticManagementTag ;
+
+  enum { Unmanaged     = 0x01
+       , Noncontiguous = 0x02
+       };
+
+  enum { DefaultTraits = Impl::is_same< StaticManagementTag , StaticallyUnmanaged >::value ? Unmanaged : 0 };
+
+  unsigned m_traits ; ///< Runtime traits
+
+
+  template< class T >
+  inline static
+  unsigned assign( const ViewDataManagement<T> & rhs , const PotentiallyManaged & )
+    { return rhs.m_traits | ( rhs.is_managed() && Kokkos::HostSpace::in_parallel() ? unsigned(Unmanaged) : 0u ); }
+
+  template< class T >
+  KOKKOS_INLINE_FUNCTION static
+  unsigned assign( const ViewDataManagement<T> & rhs , const StaticallyUnmanaged & )
+    { return rhs.m_traits | Unmanaged ; }
+
+  inline
+  void increment( const void * ptr , const PotentiallyManaged & ) const
+    { if ( is_managed() ) StaticViewTraits::memory_space::increment( ptr ); }
+  
+  inline
+  void decrement( const void * ptr , const PotentiallyManaged & ) const
+    { if ( is_managed() ) StaticViewTraits::memory_space::decrement( ptr ); }
+  
+  KOKKOS_INLINE_FUNCTION
+  void increment( const void * , const StaticallyUnmanaged & ) const {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void decrement( const void * , const StaticallyUnmanaged & ) const {}
 
 public:
 
-  typedef typename ViewTraits::memory_space memory_space ;
-
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  void increment( const T * ptr
-                , typename enable_if<( ! is_same<T,NoType>::value && is_host_space )>::type * = 0 ) const
-    { if ( m_flag ) memory_space::increment( ptr ); }
-
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  void increment( const T *
-                , typename enable_if<( ! is_same<T,NoType>::value && ! is_host_space )>::type * = 0 ) const
-    {}
-
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  void decrement( const T * ptr
-                , typename enable_if<( ! is_same<T,NoType>::value && is_host_space )>::type * = 0 ) const
-    { if ( m_flag ) memory_space::decrement( ptr ); }
-
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  void decrement( const T *
-                , typename enable_if<( ! is_same<T,NoType>::value && ! is_host_space )>::type * = 0 ) const
-    {}
+  typedef typename ViewDataHandle< StaticViewTraits >::handle_type handle_type;
 
   KOKKOS_INLINE_FUNCTION
-  ViewTracking() : m_flag( true ) {}
-
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  ViewTracking & operator = ( const ViewTracking & rhs ) { m_flag = rhs.m_flag ; return *this ; }
-
-  template< class T >
-  KOKKOS_INLINE_FUNCTION
-  ViewTracking & operator = ( const ViewTracking<T> & rhs ) { m_flag = rhs.operator bool(); return *this ; }
+  ViewDataManagement() : m_traits( DefaultTraits ) {}
 
   KOKKOS_INLINE_FUNCTION
-  ViewTracking & operator = ( const bool rhs ) { m_flag = rhs ; return *this ; }
+  ViewDataManagement( const ViewDataManagement & rhs )
+    : m_traits( assign( rhs , StaticManagementTag() ) ) {}
 
   KOKKOS_INLINE_FUNCTION
-  operator bool() const { return m_flag ; }
+  ViewDataManagement & operator = ( const ViewDataManagement & rhs )
+    { m_traits = assign( rhs , StaticManagementTag() ); return *this ; }
+
+  template< class SVT >
+  KOKKOS_INLINE_FUNCTION
+  ViewDataManagement( const ViewDataManagement<SVT> & rhs )
+    : m_traits( assign( rhs , StaticManagementTag() ) ) {}
+
+  template< class SVT >
+  KOKKOS_INLINE_FUNCTION
+  ViewDataManagement & operator = ( const ViewDataManagement<SVT> & rhs )
+    { m_traits = assign( rhs , StaticManagementTag() ); return *this ; }
+
+  KOKKOS_INLINE_FUNCTION
+  bool is_managed() const { return ! ( m_traits & Unmanaged ); }
+
+  KOKKOS_INLINE_FUNCTION
+  bool is_contiguous() const { return ! ( m_traits & Noncontiguous ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_unmanaged() { m_traits |= Unmanaged ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_noncontiguous() { m_traits |= Noncontiguous ; }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void increment( handle_type handle ) const
+    { increment( ( typename StaticViewTraits::value_type *) handle , StaticManagementTag() ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void decrement( handle_type handle ) const
+    { decrement( ( typename StaticViewTraits::value_type *) handle , StaticManagementTag() ); }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void increment( const void * ptr ) const
+    { increment( ptr , StaticManagementTag() ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void decrement( const void * ptr ) const
+    { decrement( ptr , StaticManagementTag() ); }
+
+
+  template< bool Initialize >
+  static
+  handle_type allocate( const std::string & label
+                      , const Impl::ViewOffset< typename StaticViewTraits::shape_type
+                                              , typename StaticViewTraits::array_layout > & offset_map )
+    {
+      typedef typename StaticViewTraits::execution_space  execution_space ;
+      typedef typename StaticViewTraits::memory_space     memory_space ;
+      typedef typename StaticViewTraits::value_type       value_type ;
+
+      const size_t count = offset_map.capacity();
+
+      value_type * ptr = (value_type*) memory_space::allocate( label , sizeof(value_type) * count );
+
+        // Default construct within the view's execution space.
+      (void) ViewDefaultConstruct< execution_space , value_type , Initialize >( ptr , count );
+
+      return typename ViewDataHandle< StaticViewTraits >::handle_type(ptr);
+    }
 };
 
 } // namespace Impl
@@ -261,6 +336,24 @@ struct ViewRemap< OutputView ,  InputView , 0 >
 };
 
 //----------------------------------------------------------------------------
+
+template< class ExecSpace , class Type >
+struct ViewDefaultConstruct< ExecSpace , Type , true >
+{
+  Type * const m_ptr ;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const typename ExecSpace::size_type i ) const
+    { new( m_ptr + i ) Type(); }
+
+  ViewDefaultConstruct( Type * pointer , size_t capacity )
+    : m_ptr( pointer )
+    {
+      Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+      parallel_for( range , *this );
+      ExecSpace::fence();
+    }
+};
 
 template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewFill
@@ -352,18 +445,10 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocate
   typedef size_t               size_type ;
   typedef const ViewAllocate & property_type ;
 
+  enum { Initialize = true };
+
   inline
   static const std::string & label( property_type p ) { return p.label ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  static bool initialize() { return true ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & view )
-    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
 };
 
 template< class Traits >
@@ -376,18 +461,10 @@ struct ViewAllocProp< Traits , std::string
   typedef size_t              size_type ;
   typedef const std::string & property_type ;
 
+  enum { Initialize = true };
+
   inline
   static const std::string & label( property_type s ) { return s ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  static bool initialize() { return true ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & view )
-    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
 };
 
 template< class Traits , unsigned N >
@@ -404,19 +481,10 @@ public:
   typedef size_t             size_type ;
   typedef const label_type & property_type ;
 
+  enum { Initialize = true };
+
   inline
   static std::string label( property_type s ) { return std::string(s) ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  inline
-  static bool initialize() { return true ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & view )
-    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
 };
 
 template< class Traits >
@@ -429,18 +497,10 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocateWithoutInitializing
   typedef size_t size_type ;
   typedef const Kokkos::ViewAllocateWithoutInitializing & property_type ;
 
+  enum { Initialize = false };
+
   inline
   static std::string label( property_type s ) { return s.label ; }
-
-  inline
-  static bool managed( property_type ) { return true ; }
-
-  inline
-  static bool initialize() { return false ; }
-
-  template< class ViewType >
-  inline
-  static void initialize( const ViewType & ) {}
 };
 
 } // namespace Impl

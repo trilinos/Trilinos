@@ -129,6 +129,7 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
         entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 6), 1));
     }
 
+    bulk.modification_begin("testing CEO");
     bulk.my_internal_change_entity_owner(entity_procs);
 
     CEOUtils::checkStatesAfterCEO_2Elem2ProcMove(bulk);

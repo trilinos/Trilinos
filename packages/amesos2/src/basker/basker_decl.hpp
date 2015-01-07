@@ -60,7 +60,7 @@ namespace Basker{
                    Int *pattern, /* o/p */
                    Int *top,       /* o/p */
                    Int k,
-                   Int *pinv,
+                   Int *tpinv,
                    Int *stack
                    );
     void free_factor();
@@ -70,6 +70,8 @@ namespace Basker{
     int permute_row(Int *p, basker_matrix<Int,Entry> *B);
     int permute_column(Int *p, basker_matrix<Int, Entry> *B);
     int sort_factors();
+    Entry* entry_realloc(Entry *old, Int old_size, Int new_size);
+    Int* int_realloc(Int *old, Int old_size, Int new_size);
     basker_matrix<Int, Entry> *A;
     basker_matrix<Int, Entry> *L;
     basker_matrix<Int, Entry> *U;

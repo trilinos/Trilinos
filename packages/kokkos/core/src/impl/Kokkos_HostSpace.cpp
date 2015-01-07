@@ -73,37 +73,33 @@ Impl::MemoryTracking<> & host_space_singleton()
 namespace Kokkos {
 namespace Impl {
 
-void * host_allocate_not_thread_safe(
-  const std::string    & label ,
-  const std::type_info & scalar_type ,
-  const size_t           scalar_size ,
-  const size_t           scalar_count )
+void * host_allocate_not_thread_safe( const std::string & label , const size_t size )
 {
   void * ptr = 0 ;
 
-  if ( 0 < scalar_size && 0 < scalar_count ) {
+  if ( size ) {
+    size_t size_padded = size ;
     void * ptr_alloc = 0 ;
-    size_t count_alloc = scalar_count ;
 
 #if defined( __INTEL_COMPILER ) && !defined ( KOKKOS_HAVE_CUDA )
 
-    ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , MEMORY_ALIGNMENT );
+    ptr = ptr_alloc = _mm_malloc( size , MEMORY_ALIGNMENT );
 
 #elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
       ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
 
-    posix_memalign( & ptr_alloc , MEMORY_ALIGNMENT , scalar_size * count_alloc );
+    posix_memalign( & ptr_alloc , MEMORY_ALIGNMENT , size );
     ptr = ptr_alloc ;
 
 #else
 
-    // Over-allocate to guarantee enough aligned space.
+    {
+      // Over-allocate to and round up to guarantee proper alignment.
 
-    count_alloc += ( MEMORY_ALIGNMENT + scalar_size - 1 ) / scalar_size ;
+      size_padded = ( size + MEMORY_ALIGNMENT - 1 );
 
-    ptr_alloc = malloc( scalar_size * count_alloc );
+      ptr_alloc = malloc( size_padded );
 
-    { // Round up to guarantee proper alignment
       const size_t rem = reinterpret_cast<ptrdiff_t>(ptr_alloc) % MEMORY_ALIGNMENT ;
 
       ptr = static_cast<unsigned char *>(ptr_alloc) + ( rem ? MEMORY_ALIGNMENT - rem : 0 );
@@ -114,15 +110,13 @@ void * host_allocate_not_thread_safe(
     if ( ptr_alloc && ptr_alloc <= ptr &&
          0 == ( reinterpret_cast<ptrdiff_t>(ptr) % MEMORY_ALIGNMENT ) ) {
       // Insert allocated pointer and allocation count
-      Impl::host_space_singleton().insert( label , ptr_alloc , scalar_size , count_alloc );
+      Impl::host_space_singleton().insert( label , ptr_alloc , size_padded );
     }
     else {
       std::ostringstream msg ;
       msg << "Kokkos::Impl::host_allocate_not_thread_safe( "
           << label
-          << " , " << scalar_type.name()
-          << " , " << scalar_size
-          << " , " << scalar_count
+          << " , " << size
           << " ) FAILED aligned memory allocation" ;
       Kokkos::Impl::throw_runtime_exception( msg.str() );
     }
@@ -213,16 +207,12 @@ int HostSpace::in_parallel()
 
 namespace Kokkos {
 
-void * HostSpace::allocate(
-  const std::string    & label ,
-  const std::type_info & scalar_type ,
-  const size_t           scalar_size ,
-  const size_t           scalar_count )
+void * HostSpace::allocate( const std::string & label , const size_t size )
 {
   void * ptr = 0 ;
 
   if ( ! HostSpace::in_parallel() ) {
-    ptr = Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
+    ptr = Impl::host_allocate_not_thread_safe( label , size );
   }
   else {
     Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::allocate called within a parallel functor") );

@@ -35,7 +35,6 @@
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
 #include <exodusMeshInterface.h>
-#include <gtest/gtest.h>
 #include <optionParsing/getOption.h>
 
 inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
@@ -109,7 +108,7 @@ inline void createBoundingBoxesForSidesInSidesets(const sierra::Mesh &mesh, cons
         }
     }
 
-    ASSERT_EQ(boxCounter, numberBoundingBoxes);
+    ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
 }
 
 inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes)
@@ -408,7 +407,8 @@ inline void fillBoundingVolumesUsingNodesFromFile(
     }
 }
 
-inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MPI_Comm comm, SearchResults& searchResults)
+template <typename Identifier>
+inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
     int num_procs = -1;
     int proc_id   = -1;
@@ -437,18 +437,18 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
 
     // i am sending proc 'ghost proc[i]' my range box 'ghost_indices[i]'
     // ghost_indices.size() is total number of communications that need to occur with all procs
-
-    std::vector< std::vector<int> > send_indices(num_procs);
-    std::vector< std::vector<int> > recv_indices(num_procs);
+    typedef typename Identifier::ident_type GlobalIdType;
+    std::vector< std::vector<GlobalIdType> > send_indices(num_procs);
+    std::vector< std::vector<GlobalIdType> > recv_indices(num_procs);
 
     for (size_t i=0;i<ghost_indices.size();i++)
     {
         send_list[ghost_procs[i]].push_back(rangeBoxes[ghost_indices[i]]);
-        int id = local_range[ghost_indices[i]].second.id();
+        GlobalIdType id = local_range[ghost_indices[i]].second.id();
         send_indices[ghost_procs[i]].push_back(id);
     }
 
-    ACME::Parallel_Data_Exchange(send_indices, recv_indices, comm );
+    ACME::Parallel_Data_Exchange_T(send_indices, recv_indices, comm );
     ACME::Parallel_Data_Exchange(send_list, recv_list, comm);
 
     for (size_t i=0;i<recv_list.size();i++)
@@ -456,7 +456,7 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
         for (size_t j=0;j<recv_list[i].size();j++)
         {
             rangeBoxes.push_back(recv_list[i][j]);
-            local_range.push_back(std::make_pair(recv_list[i][j], Ident(recv_indices[i][j], i)));
+            local_range.push_back(std::make_pair(recv_list[i][j], Identifier(recv_indices[i][j], i)));
         }
     }
 
@@ -466,33 +466,26 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
 
     gtk::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
 
-    typedef std::vector <std::pair<Ident,Ident> > localJunk;
-    typedef std::set <std::pair<Ident,Ident> > localJunkSet;
+    typedef std::vector <std::pair<Identifier,Identifier> > localJunk;
+    typedef std::set <std::pair<Identifier,Identifier> > localJunkSet;
     localJunk localResults;
     localResults.reserve(domainBoxes.size());
 
-    // Ident box1, Ident box2
     for (size_t i=0;i<domainBoxes.size();i++)
     {
-        Ident box1_ident = local_domain[i].second;
+        Identifier box1_ident = local_domain[i].second;
         for (int j=first_interaction[i];j<last_interaction[i];j++)
         {
-            //            Ident box2_ident = local_range[j].second;
-            Ident box2_ident = local_range[interaction_list[j]].second;
+            Identifier box2_ident = local_range[interaction_list[j]].second;
             localResults.push_back(std::make_pair(box1_ident, box2_ident));
         }
     }
 
-//    std::cerr << "LocalResults.size = " << localResults.size() << std::endl;
-//    localJunkSet ljset;
-//    std::copy(localResults.begin(), localResults.end(), inserter(ljset, ljset.end()));
-
     localJunk tmp;
     tmp.reserve(localResults.size());
-    stk::search::communicateVector< std::pair<Ident,Ident>, std::pair<Ident,Ident> >(comm, localResults, tmp);
+    stk::search::communicateVector< std::pair<Identifier,Identifier>, std::pair<Identifier,Identifier> >(comm, localResults, tmp);
 
     searchResults=tmp;
-//    std::copy(tmp.begin(), tmp.end(), std::back_inserter(searchResults));
     std::sort(searchResults.begin(), searchResults.end());
 }
 
@@ -514,8 +507,8 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
     return stk::search::BOOST_RTREE;
 }
 
-
-inline void coarse_search_new(GtkBoxVector& local_domain, GtkBoxVector& local_range, NewSearchMethod algorithm, MPI_Comm comm, SearchResults& searchResults)
+template <typename Identifier>
+inline void coarse_search_new(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
     if ( algorithm == GTK )
     {

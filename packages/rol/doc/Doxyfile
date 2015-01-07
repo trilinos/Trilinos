@@ -241,7 +241,7 @@ SUBGROUPING            = YES
 # Private class members and static file members will be hidden unless 
 # the EXTRACT_PRIVATE and EXTRACT_STATIC tags are set to YES
 
-EXTRACT_ALL            = NO
+EXTRACT_ALL            = YES
 
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class 
 # will be included in the documentation.
@@ -496,7 +496,15 @@ INPUT                  = \
 ../test/function \
 ../test/step \
 ../test/vector \
-../example/rosenbrock
+../example/rosenbrock \ 
+../example/sacado \
+../example/zakharov \
+../example/dual-spaces/rosenbrock-1 \
+../example/dual-spaces/simple-eq-constr-1 \
+../example/burgers-control \
+../example/poisson-control \
+../example/poisson-inversion \
+../example/gross-pitaevskii
 
 # This tag can be used to specify the character encoding of the source files that 
 # doxygen parses. Internally doxygen uses the UTF-8 encoding, which is also the default 
@@ -1320,3 +1328,5 @@ MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
 # used. If set to NO the values of all tags below this one will be ignored.
 
 SEARCHENGINE           = NO
+
+

@@ -55,6 +55,7 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
+#include <string>
 
 //#include "XpetraExt_MatrixMatrix.hpp"
 
@@ -258,7 +259,8 @@ void Multiply(
   bool transposeB,
   Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result = true,
-  bool doOptimizeStorage = true) {
+  bool doOptimizeStorage = true,
+  const std::string & label = std::string()) {
 
     if(transposeA == false && C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
       std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as row map of A";
@@ -285,8 +287,17 @@ void Multiply(
       Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
       Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
 
-
       int i = EpetraExt::MatrixMatrix::Multiply(epA,transposeA,epB,transposeB,epC,haveMultiplyDoFillComplete);
+      if (haveMultiplyDoFillComplete) {
+        // Due to Epetra wrapper intricacies, we need to explicitly call
+        // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+        // only keeps an internal variable to check whether we are in resumed
+        // state or not, but never touches the underlying Epetra object. As
+        // such, we need to explicitly update the state of Xpetra matrix to
+        // that of Epetra one afterwords
+        C.fillComplete();
+      }
+
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
@@ -303,7 +314,7 @@ void Multiply(
 
       //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
       //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -465,7 +476,8 @@ void Jacobi(
   const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result = true,
-  bool doOptimizeStorage = true) {
+  bool doOptimizeStorage = true,
+  const std::string & label = std::string()) {
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -496,7 +508,7 @@ void Jacobi(
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
 
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
+    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -523,7 +535,8 @@ inline void JacobiT(
   const Xpetra::Matrix<double,int,GlobalOrdinal> & B,
   Xpetra::Matrix<double,int,GlobalOrdinal> &C,
   bool call_FillComplete_on_result,
-  bool doOptimizeStorage) {
+  bool doOptimizeStorage,
+  const std::string & label) {
 
   typedef double        SC;
   typedef int           LO;
@@ -597,8 +610,9 @@ inline void Jacobi(
   const Xpetra::Matrix<double,int,int> & B,
   Xpetra::Matrix<double,int,int> &C,
   bool call_FillComplete_on_result,
-  bool doOptimizeStorage) {
-  JacobiT<int>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
+  bool doOptimizeStorage,
+  const std::string & label) {
+  JacobiT<int>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
 #endif
 
@@ -610,8 +624,9 @@ inline void Jacobi(
   const Xpetra::Matrix<double,int,long long> & B,
   Xpetra::Matrix<double,int,long long> &C,
   bool call_FillComplete_on_result,
-  bool doOptimizeStorage) {
-  JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
+  bool doOptimizeStorage,
+  const std::string & label) {
+  JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
 #endif
 

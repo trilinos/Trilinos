@@ -60,7 +60,6 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -281,7 +280,7 @@ int main(int argc,char * argv[])
    AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
    solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,1000);
+   solver.SetAztecOption(AZ_kspace,300);
    solver.SetAztecOption(AZ_output,10);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 

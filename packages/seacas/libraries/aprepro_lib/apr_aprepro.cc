@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.20 (2014/09/24)";
+  const char* version_string = "4.21 (2014/11/18)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -516,13 +516,36 @@ namespace SEAMS {
     if(is_valid_variable)
     {
       int hashval = hash_symbol(sym_name.c_str());
-      for (symrec *ptr = sym_table[hashval]; ptr != NULL; ) {
-        symrec *save = ptr;
-        ptr = ptr->next;
-        delete save;
+      symrec *hash_ptr = sym_table[hashval];
+
+      // Handle the case if the variable we want to delete is first in the
+      // linked list.
+      if(ptr == hash_ptr)
+      {
+        // NOTE: If ptr is the only thing in the linked list, ptr->next will be
+        // NULL, which is what we want in sym_table when we delete ptr.
+        sym_table[hashval] = ptr->next;
+        delete ptr;
       }
 
-      sym_table[hashval] = NULL;
+      // Handle the case where the variable we want to delete is somewhere
+      // in the middle or at the end of the linked list.
+      else
+      {
+        // Find the preceeding ptr (singly linked list).
+        // NOTE: We don't have a check for NULL here because the fact that
+        // ptr != hash_ptr tells us that we must have more than one item in our
+        // linked list, in which case hash_ptr->next will not be NULL until we
+        // reach the end of the list. hash_ptr->next should be equal to ptr
+        // before that happens.
+        while(hash_ptr->next != ptr)
+          hash_ptr = hash_ptr->next;
+
+        // NOTE: If ptr is at the end of the list ptr->next will be NULL, in
+        // which case this will change hash_ptr to be the end of the list.
+        hash_ptr->next = ptr->next;
+        delete ptr;
+      }
     }
     else
     {

@@ -45,6 +45,8 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -54,9 +56,10 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_Tuple.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 //
@@ -73,13 +76,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::inOutArg;
 using Teuchos::Comm;
 using Teuchos::tuple;
-typedef Thyra::Ordinal Ordinal;
-using Thyra::VectorSpaceBase;
-using Thyra::SpmdVectorSpaceBase;
-using Thyra::MultiVectorBase;
-using Thyra::VectorBase;
-using Thyra::LinearOpBase;
-using Thyra::createMember;
 
 
 const int g_localDim = 4; // ToDo: Make variable!
@@ -672,6 +668,150 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstLinearOp,
 
 
 //
+// Tpetra-implemented methods
+//
+
+
+Teuchos::RCP<Teuchos::Time> lookupAndAssertTimer(const std::string &label)
+{
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter(label);
+  TEUCHOS_TEST_FOR_EXCEPTION(timer == null,
+    std::runtime_error,
+    "lookupAndAssertTimer(): timer \"" << label << "\" was not present in Teuchos::TimeMonitor."
+    " Unit test not valid.");
+  return timer;
+}
+
+
+#define CHECK_TPETRA_FUNC_CALL_INCREMENT( timerStr, tpetraCode, thyraCode ) \
+{ \
+  out << "\nTesting that Thyra calls down to " << timerStr << "\n"; \
+  ECHO(tpetraCode); \
+  const RCP<const Time> timer = lookupAndAssertTimer(timerStr); \
+  const int countBefore = timer->numCalls();  \
+  ECHO(thyraCode); \
+  const int countAfter = timer->numCalls(); \
+  TEST_EQUALITY( countAfter, countBefore+1 ); \
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations,
+  Scalar )
+{
+  using Teuchos::Time;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType Magnitude;
+  typedef VectorSpaceBase<Scalar> VectorSpace;
+  typedef MultiVectorBase<Scalar> MultiVec;
+  typedef Tpetra::Map<int> TpetraMap;
+  typedef Tpetra::MultiVector<Scalar> TpetraMultiVec;
+  typedef TpetraOperatorVectorExtraction<Scalar, int> TOVE;
+
+  const int numCols = 3;
+
+  const RCP<const VectorSpace> vs =
+    createTpetraVectorSpace<Scalar>(g_localDim);
+  const RCP<MultiVec>
+    A = createMembers(vs, numCols),
+    B = createMembers(vs, numCols);
+  const RCP<TpetraMultiVec>
+    tA = TOVE::getTpetraMultiVector(A),
+    tB = TOVE::getTpetraMultiVector(B);
+  Array<Scalar> C(numCols*numCols,ST::zero());
+
+  Teuchos::Array<Magnitude> avMag(numCols);
+  Teuchos::Array<Scalar> avScal(numCols);
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::putScalar()",
+    tA->putScalar(ST::zero()),
+    Thyra::assign(A.ptr(), ST::zero())
+    );
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::dot()",
+    tA->dot(*tB, avScal() ),      // norms calls scalarProd, which calls Tpetra::dot
+    Thyra::norms( *A, avMag() )
+    );
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::dot()",
+    tA->dot(*tB, avScal() ),
+    A->range()->scalarProds(*A, *B, avScal() )
+    );
+
+  /*
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::scale(alpha)",
+    tB->scale( ST::zero() ),
+    Thyra::scale( ST::zero(), B.ptr() )
+    );
+  */
+
+  /*
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::operator=()",
+    (*tA) = *tB,
+    Thyra::assign( A.ptr(), *B )
+    );
+  */
+
+  /*
+  {
+    RCP<MultiVec> Ctmvb = Thyra::createMembersView(
+        A->domain(),
+        RTOpPack::SubMultiVectorView<Scalar>(
+          0, numCols, 0, numCols,
+          Teuchos::arcpFromArrayView(C()), numCols
+        )
+      );
+    CHECK_TPETRA_FUNC_CALL_INCREMENT(
+      "Tpetra::multiplyOntoHost()",
+      Tpetra::multiplyOntoHost(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ST::one(),*tA,*tB, C()),
+      A->apply(Thyra::CONJTRANS,*B,Ctmvb.ptr(),ST::one(),ST::zero())
+      );
+  }
+  */
+
+  /*
+  {
+    RCP<const MultiVec> Ctmvb = Thyra::createMembersView(
+        A->domain(),
+        RTOpPack::ConstSubMultiVectorView<Scalar>(
+          0, numCols, 0, numCols,
+          Teuchos::arcpFromArrayView(C()), numCols
+        )
+      );
+    const RCP<const TpetraMultiVec>
+      tC = TOVE::getConstTpetraMultiVector(Ctmvb);
+    CHECK_TPETRA_FUNC_CALL_INCREMENT(
+      "Tpetra::MultiVector::multiply()",
+      tB->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ST::one(),*tA,*tC,ST::zero()),
+      A->apply(Thyra::NOTRANS,*Ctmvb,B.ptr(),ST::one(),ST::zero())
+    );
+  }
+  */
+
+/*
+  RCP<Time>
+    timerUpdate = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta,B,gamma)"),
+    timerUpdate2   = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta)"),
+
+  // TODO: test update(two vector)
+  // TODO: test update(three vector)
+*/
+}
+
+
+#ifdef TPETRA_TEUCHOS_TIME_MONITOR
+#  define TPETRA_TIMER_TESTS(SCALAR)  \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, UseTpetraImplementations, SCALAR )
+#else
+#  define TPETRA_TIMER_TESTS(SCALAR)
+#endif
+
+
+//
 // TpetraLinearOp_EpetraRowMatrix
 //
 
@@ -920,4 +1060,4 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLin
 THYRA_TPETRA_THYRA_WRAPPERS_INSTANT(double)
 
 
-} // namespace
+} // namespace Thyra

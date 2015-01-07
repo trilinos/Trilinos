@@ -50,7 +50,7 @@ LDFLAGS = -L$(QTHREADS_DIR)/lib \
 	  -L${SCOTCH_DIR}/lib \
 	  -lscotch -lscotcherr -lscotcherrexit \
 	  -L${TRILINOS_DIR}/lib \
-          -lkokkoscorelinalg \
+          -ltpetrakernels \
 	  -lkokkoscontainers \
 	  -lkokkoscore \
 	  -lkokkos \

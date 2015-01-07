@@ -92,7 +92,7 @@ using namespace Intrepid;
 template<class Scalar>
 Scalar ddot(int n, Scalar *x, int incx, Scalar *y, int incy)
 {
-  register Scalar sum = 0.;
+  Scalar sum = 0.;
 
   while (n--) {
     sum += (*x) * (*y);
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
   int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 1;
 
-  typedef IntrepidPolylib ipl; 
+  typedef IntrepidPolylib ipl;
   IntrepidPolylib iplib;
 
   *outStream \

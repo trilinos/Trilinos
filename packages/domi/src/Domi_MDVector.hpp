@@ -169,7 +169,7 @@ namespace Domi
  * internally.
  */
 template< class Scalar,
-          class Node = Kokkos::DefaultNode::DefaultNodeType >
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType >
 class MDVector : public Teuchos::Describable
 {
 public:
@@ -265,7 +265,7 @@ public:
   MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
            Teuchos::ParameterList & plist,
            const Teuchos::RCP< Node > & node =
-             Kokkos::DefaultNode::getDefaultNode());
+             KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Constructor with MDComm and ParameterList
    *
@@ -283,7 +283,7 @@ public:
   MDVector(const Teuchos::RCP< const MDComm > mdComm,
            Teuchos::ParameterList & plist,
            const Teuchos::RCP< Node > & node =
-             Kokkos::DefaultNode::getDefaultNode());
+             KokkosClassic::DefaultNode::getDefaultNode());
 
   /** \brief Parent/single global ordinal sub-vector constructor
    *
@@ -325,7 +325,7 @@ public:
   MDVector< Scalar, Node > &
   operator=(const MDVector< Scalar, Node > & source);
 
-  /** \brief Destructor 
+  /** \brief Destructor
    */
   virtual ~MDVector();
 
@@ -959,7 +959,7 @@ public:
    */
   typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const;
 
-  /** \brief Compute the weighted norm of this 
+  /** \brief Compute the weighted norm of this
    *
    * \param weights [in] MDVector of weights for weighted norm
    */
@@ -996,7 +996,7 @@ public:
   /** \name Global assignment methods */
   //@{
 
-  /** \brief Set all values in the multivector with the given value. 
+  /** \brief Set all values in the multivector with the given value.
    *
    * \param value [in] assignment value
    *
@@ -1006,7 +1006,7 @@ public:
   void putScalar(const Scalar & value,
                  bool includePadding = true);
 
-  /** \brief Set all values in the multivector to pseudorandom numbers. 
+  /** \brief Set all values in the multivector to pseudorandom numbers.
    */
   void randomize();
 
@@ -1442,7 +1442,7 @@ MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
-  
+
   // Compute the MDComm and MDMap
   MDMap< Node > * myMdMap = new MDMap< Node >(teuchosComm, plist, node);
   dim_type leadingDim  = plist.get("leading dimension" , 0);
@@ -1486,7 +1486,7 @@ MDVector(const Teuchos::RCP< const MDComm > mdComm,
   _recvMessages()
 {
   setObjectLabel("Domi::MDVector");
-  
+
   // Compute the MDMap
   MDMap< Node > * myMdMap = new MDMap< Node >(mdComm, plist, node);
   dim_type leadingDim  = plist.get("leading dimension" , 0);
@@ -1708,7 +1708,7 @@ onSubcommunicator() const
 
 template< class Scalar,
           class Node >
-Teuchos::RCP< const Teuchos::Comm< int > > 
+Teuchos::RCP< const Teuchos::Comm< int > >
 MDVector< Scalar, Node >::
 getTeuchosComm() const
 {

@@ -91,12 +91,29 @@ ENDIF()
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK)
+   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STKClassic)
+  TRIBITS_ADD_EXECUTABLE(
+    Example_Poisson_STKclassic
+    SOURCES example_Poisson_stkclassic.cpp
+    )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFilesSTKclassic
+  SOURCE_FILES unit_cube_10int_hex.exo
+               unit_cube_5int_tet.exo
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  ) 
+ENDIF()
+
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK
+   AND Trilinos_ENABLE_STKIO AND Trilinos_ENABLE_STKMesh)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STK
     SOURCES example_Poisson_stk.cpp
     )
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFilesSTK
   SOURCE_FILES unit_cube_10int_hex.exo
                unit_cube_5int_tet.exo
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}

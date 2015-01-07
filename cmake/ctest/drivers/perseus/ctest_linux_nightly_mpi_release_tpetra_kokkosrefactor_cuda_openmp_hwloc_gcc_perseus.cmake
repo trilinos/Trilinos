@@ -67,7 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Tpetra KokokosCore KokkosCompat KokkosContainers KokkosLinalg KokkosClassic)
+SET(Trilinos_PACKAGES Tpetra KokkosCore KokkosContainers KokkosAlgorithms TpetraKokkosCompat TpetraKokkosComm TpetraKernels TpetraClassic)
 
 SET(CUDA_NVCC_FLAGS "-O3")
 SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_35,code=sm_35 -I/home/crtrott/lib/mpi/include")
@@ -75,12 +75,12 @@ SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DKOKKOS_USE_CUDA_UVM -Xcompiler -Wall,-
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KokkosCore=ON"
-  "-DTrilinos_ENABLE_KokkosCompat=ON"
   "-DTrilinos_ENABLE_KokkosContainers=ON"
-  "-DTrilinos_ENABLE_KokkosLinAlg=ON"
   "-DTrilinos_ENABLE_KokkosAlgorithms=ON"
-  "-DTrilinos_ENABLE_KokkosClassic=ON"
-  "-DTrilinos_ENABLE_KokkosMpiComm=ON"
+  "-DTrilinos_ENABLE_TpetraClassic=ON"
+  "-DTrilinos_ENABLE_TpetraKernels=ON"
+  "-DTrilinos_ENABLE_TeuchosKokkosCompat=ON"
+  "-DTrilinos_ENABLE_TeuchosKokkosComm=ON"
   
   "-D Kokkos_ENABLE_Cuda_UVM:BOOL=ON"  
   
@@ -97,7 +97,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
     
   "-DTPL_ENABLE_CUSPARSE:STRING=OFF"
   "-DTpetra_ENABLE_Thrust:BOOL=OFF"
-  "-DKokkosClassic_ENABLE_Thrust=OFF"
+  "-DTpetraClassic_ENABLE_Thrust=OFF"
   "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
 )
 

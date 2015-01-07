@@ -79,11 +79,63 @@ namespace MueLu {
     }
     return problemSpecificList_;
   }
+ 
+   std::string MasterList::interpretParameterName(const std::string& name, const std::string& value) {
 
+    // used to concatenate the return string
+    std::stringstream ss;
+
+    // put in short cuts here!
+
+    if (name == "verbosity") { 
+      std::string verb = "none";
+      if (value == "\"0\"") verb = "none";
+      if (value == "\"1\"" || value == "\"2\"" || value == "\"3\"") verb = "low";
+      if (value == "\"4\"" || value == "\"5\"" || value == "\"6\"") verb = "medium";
+      if (value == "\"7\"" || value == "\"8\"") verb = "high";
+      if (value == "\"9\"") verb = "extreme";
+      if (value == "\"10\"") verb = "test";  
+      verb = "\"" + verb + "\"";
+      ss << "<Parameter name=\"verbosity\" type=\"string\" value=" << verb << "/>"; 
+      return ss.str(); 
+    }
+    
+    if (name == "cycle type") {
+      std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
+      std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
+      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; return ss.str(); }
+      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; return ss.str(); }
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "
+                                           << "The parameter " << value << " is not supported by MueLu.");
+      return ss.str();
+    }    
+
+    // energy minimization is enabled
+    if (name == "multigrid algorithm") {
+      std::stringstream temp; temp << "\"" << "1" << "\"";
+      if (value == temp.str() ) { ss << "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"; return ss.str(); }
+    }
+
+    if (name == "repartition: enable") {
+      std::stringstream temp1; temp1 << "\"" << "1" << "\"";
+      if (value == temp1.str()) {
+        RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        *out << "WARNING: repartitioning in MueLu is different to ML's. Please refer to the MueLu user's Manual for more information." << std::endl;
+      }
+    }
+    
+    // put in auto-generated code here
+' > $code_file
+xsltproc gen_interpreter.xsl masterList.xml >> $code_file
+
+echo '
+    return "";
+  }
+ 
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   std::string                          MasterList::problemType_ = "unknown";
-  const std::string                    MasterList::stringList_ =' > $code_file
+  const std::string                    MasterList::stringList_ =' >> $code_file
 
 xsltproc paramlist.xsl masterList.xml >> $code_file
 
@@ -99,16 +151,22 @@ for i in "${PROBLEM_TYPES[@]}"; do
   echo ')' >> $code_file
 done
 
+echo ";" >> $code_file
+
+echo '  std::map<std::string,std::string> MasterList::ML2MueLuLists_ = DefaultProblemStrings<std::string,std::string>' >> $code_file
+xsltproc ml2muelu.xsl masterList.xml >> $code_file
 echo ';
 
 }
 ' >> $code_file
 
-SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" )
-for i in "${SECTIONS[@]}"; do
-  xsltproc --stringparam section "$i" options.xsl masterList.xml > options_$i.tex
-done
-
 # fix quotation
 sed -i '/<Parameter/ s/\\""/\\"/g' $code_file
 sed -i '/<Parameter/ s/"\\"/\\"/g' $code_file
+
+# generate LaTeX files (MueLu options and ML compatibility)
+SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" "reuse" )
+for i in "${SECTIONS[@]}"; do
+  xsltproc --stringparam section "$i" options.xsl   masterList.xml > options_$i.tex
+  xsltproc --stringparam section "$i" mloptions.xsl masterList.xml > mloptions_$i.tex
+done

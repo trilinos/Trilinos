@@ -155,8 +155,11 @@ namespace Sacado {
 
     public:
 
+      typedef T value_type;
+
       //! Default constructor
-      MemPoolStorage(const T & x) :
+      template <typename S>
+      MemPoolStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         val_(x), sz_(0), len_(0), dx_(NULL), myPool_(defaultPool_) {}
 
       //! Constructor with size \c sz

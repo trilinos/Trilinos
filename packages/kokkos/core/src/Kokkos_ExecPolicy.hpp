@@ -108,9 +108,9 @@ private:
   enum { ArgOption_OK = Impl::StaticAssert< (
     ( Arg0_ExecSpace && Arg1_WorkTag && ( Arg2_IntConst || Arg2_IntType ) ) ||
     ( Arg0_ExecSpace && Arg1_WorkTag && Arg2_Void ) ||
-    ( Arg0_ExecSpace && ( Arg1_IntConst || Arg2_IntType ) && Arg2_Void ) ||
+    ( Arg0_ExecSpace && ( Arg1_IntConst || Arg1_IntType ) && Arg2_Void ) ||
     ( Arg0_ExecSpace && Arg1_Void && Arg2_Void ) ||
-    ( Arg0_WorkTag && ( Arg1_IntConst || Arg2_IntType ) && Arg2_Void ) ||
+    ( Arg0_WorkTag && ( Arg1_IntConst || Arg1_IntType ) && Arg2_Void ) ||
     ( Arg0_WorkTag && Arg1_Void && Arg2_Void ) ||
     ( ( Arg0_IntConst || Arg0_IntType ) && Arg1_Void && Arg2_Void ) ||
     ( Arg0_Void && Arg1_Void && Arg2_Void )
@@ -143,28 +143,42 @@ private:
 
   enum { GranularityMask = IntType(Granularity) - 1 };
 
-  IntType m_begin ;
-  IntType m_end ;
+  ExecSpace m_space ;
+  IntType   m_begin ;
+  IntType   m_end ;
 
 public:
 
   //! Tag this class as an execution policy
-  typedef RangePolicy  execution_policy ;
   typedef ExecSpace    execution_space ;
-  typedef IntType      member_type ;
+  typedef RangePolicy  execution_policy ;
   typedef WorkTag      work_tag ;
+  typedef IntType      member_type ;
 
+  KOKKOS_INLINE_FUNCTION const execution_space & space() const { return m_space ; }
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
   KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
 
-  KOKKOS_INLINE_FUNCTION RangePolicy() : m_begin(0), m_end(0) {}
+  inline RangePolicy() : m_space(), m_begin(0), m_end(0) {}
 
   /** \brief  Total range */
-  KOKKOS_INLINE_FUNCTION
+  inline
   RangePolicy( const member_type work_begin
              , const member_type work_end
              )
-    : m_begin( work_begin < work_end ? work_begin : 0 )
+    : m_space()
+    , m_begin( work_begin < work_end ? work_begin : 0 )
+    , m_end(   work_begin < work_end ? work_end : 0 )
+    {}
+
+  /** \brief  Total range */
+  inline
+  RangePolicy( const execution_space & work_space
+             , const member_type work_begin
+             , const member_type work_end
+             )
+    : m_space( work_space )
+    , m_begin( work_begin < work_end ? work_begin : 0 )
     , m_end(   work_begin < work_end ? work_end : 0 )
     {}
 
@@ -172,26 +186,44 @@ public:
    *
    *  Typically used to partition a range over a group of threads.
    */
-  KOKKOS_INLINE_FUNCTION
-  RangePolicy( const RangePolicy & range
+  struct WorkRange {
+    typedef RangePolicy::work_tag     work_tag ;
+    typedef RangePolicy::member_type  member_type ;
+
+    KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
+    KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
+
+    /** \brief  Subrange for a partition's rank and size.
+     *
+     *  Typically used to partition a range over a group of threads.
+     */
+    KOKKOS_INLINE_FUNCTION
+    WorkRange( const RangePolicy & range
              , const int part_rank
              , const int part_size
              )
-    : m_begin(0), m_end(0)
-    {
-      if ( part_size ) {
+      : m_begin(0), m_end(0)
+      {
+        if ( part_size ) {
+  
+          // Split evenly among partitions, then round up to the granularity.
+          const member_type work_part =
+            ( ( ( ( range.end() - range.begin() ) + ( part_size - 1 ) ) / part_size )
+              + GranularityMask ) & ~member_type(GranularityMask);
 
-        // Split evenly among partitions, then round up to the granularity.
-        const member_type work_part =
-          ( ( ( ( range.m_end - range.m_begin ) + ( part_size - 1 ) ) / part_size ) + GranularityMask ) & ~member_type(GranularityMask);
-
-        m_begin = range.m_begin + work_part * part_rank ;
-        m_end   = m_begin       + work_part ;
-
-        if ( range.m_end < m_begin ) m_begin = range.m_end ;
-        if ( range.m_end < m_end )   m_end   = range.m_end ;
+          m_begin = range.begin() + work_part * part_rank ;
+          m_end   = m_begin       + work_part ;
+  
+          if ( range.end() < m_begin ) m_begin = range.end() ;
+          if ( range.end() < m_end )   m_end   = range.end() ;
+        }
       }
-    }
+  private:
+     member_type m_begin ;
+     member_type m_end ;
+     WorkRange();
+     WorkRange & operator = ( const WorkRange & );
+  };
 };
 
 } // namespace Kokkos
@@ -245,6 +277,7 @@ public:
   typedef ExecSpace   execution_space ;
   typedef WorkTag     work_tag ;
 
+  //----------------------------------------
   /** \brief  Query maximum team size for a given functor.
    *
    *  This size takes into account execution space concurrency limitations and
@@ -254,8 +287,18 @@ public:
   template< class FunctorType >
   static int team_size_max( const FunctorType & );
 
+  /** \brief  Query recommended team size for a given functor.
+   *
+   *  This size takes into account execution space concurrency limitations and
+   *  scratch memory space limitations for reductions, team reduce/scan, and
+   *  team shared memory.
+   */
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & );
+
+  //----------------------------------------
   /** \brief  Construct policy with the given instance of the execution space */
-  TeamPolicy( execution_space & , int league_size_request , int team_size_request );
+  TeamPolicy( const execution_space & , int league_size_request , int team_size_request );
 
   /** \brief  Construct policy with the default instance of the execution space */
   TeamPolicy( int league_size_request , int team_size_request );
@@ -328,205 +371,64 @@ public:
 
 } // namespace Kokkos
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 namespace Kokkos {
 
-/** \brief  Execution policy for parallel work over a league of teams of threads
- *          with explicit vector support.
- *
- *  The work functor is called for each thread of each team such that
- *  the team's member threads are guaranteed to be concurrent.
- *
- *  The team's threads have access to team shared scratch memory and
- *  team collective operations.
- *
- *  If the WorkArgTag is non-void then the first calling argument of the
- *  work functor's parentheses operator is 'const WorkArgTag &'.
- *  This allows a functor to have multiple work member functions.
- */
-template< unsigned VectorLength
-        , class Arg0 = void
-        , class Arg1 = void
-        , class ExecSpace =
-          // If the second argument is not an execution
-          // then use the default execution space.
-          typename Impl::if_c< Impl::is_execution_space< Arg0 >::value , Arg0
-                             , Kokkos::DefaultExecutionSpace >::type
-        >
-class TeamVectorPolicy {
-private:
-  enum { Arg0_ExecSpace = Impl::is_execution_space< Arg0 >::value };
-  enum { Arg1_Void      = Impl::is_same< Arg1 , void >::value };
-  enum { ArgOption_OK   = Impl::StaticAssert< ( Arg0_ExecSpace || Arg1_Void ) >::value };
+namespace Impl {
+  template<typename iType, class TeamMemberType>
+  struct TeamThreadLoopBoundariesStruct {
+    typedef iType index_type;
+    const iType start;
+    const iType end;
+    enum {increment = 1};
+    const TeamMemberType& thread;
 
-  typedef typename Impl::if_c< Arg0_ExecSpace , Arg1 , Arg0 >::type WorkTag ;
-
-public:
-
-  //! Tag this class as a kokkos execution policy
-  typedef TeamVectorPolicy  execution_policy ;
-  typedef ExecSpace         execution_space ;
-  typedef WorkTag           work_tag ;
-
-  /** \brief  Query maximum team size for a given functor.
-   *
-   *  This size takes into account execution space concurrency limitations and
-   *  scratch memory space limitations for reductions, team reduce/scan, and
-   *  team shared memory.
-   */
-  template< class FunctorType >
-  static int team_size_max( const FunctorType & );
-
-  /** \brief  Construct policy with the given instance of the execution space */
-  TeamVectorPolicy( execution_space & , int league_size_request , int team_size_request );
-
-  /** \brief  Construct policy with the default instance of the execution space */
-  TeamVectorPolicy( int league_size_request , int team_size_request );
-
-  /** \brief  The actual league size (number of teams) of the policy.
-   *
-   *  This may be smaller than the requested league size due to limitations
-   *  of the execution space.
-   */
-  KOKKOS_INLINE_FUNCTION int league_size() const ;
-
-  /** \brief  The actual team size (number of threads per team) of the policy.
-   *
-   *  This may be smaller than the requested team size due to limitations
-   *  of the execution space.
-   */
-  KOKKOS_INLINE_FUNCTION int team_size() const ;
-
-  /** \brief  Parallel execution of a functor calls the functor once with
-   *          each member of the execution policy.
-   */
-  struct member_type {
-
-    /** \brief  Handle to the currently executing team shared scratch memory */
     KOKKOS_INLINE_FUNCTION
-    typename execution_space::scratch_memory_space team_shmem() const ;
-
-    /** \brief  Rank of this team within the league of teams */
-    KOKKOS_INLINE_FUNCTION int league_rank() const ;
-
-    /** \brief  Number of teams in the league */
-    KOKKOS_INLINE_FUNCTION int league_size() const ;
-
-    /** \brief  Rank of this thread within this team */
-    KOKKOS_INLINE_FUNCTION int team_rank() const ;
-
-    /** \brief  Number of threads in this team */
-    KOKKOS_INLINE_FUNCTION int team_size() const ;
-
-    /** \brief  Barrier among the threads of this team */
-    KOKKOS_INLINE_FUNCTION void team_barrier() const ;
-
-    /** \brief  Intra-team reduction. Returns join of all values of the team members. */
-    template< class JoinOp >
-    KOKKOS_INLINE_FUNCTION
-    typename JoinOp::value_type team_reduce( const typename JoinOp::value_type
-                                           , const JoinOp & ) const ;
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-     *
-     *  The highest rank thread can compute the reduction total as
-     *    reduction_total = dev.team_scan( value ) + value ;
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const ;
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-     *          with intra-team non-deterministic ordering accumulation.
-     *
-     *  The global inter-team accumulation value will, at the end of the
-     *  league's parallel execution, be the scan's total.
-     *  Parallel execution ordering of the league's teams is non-deterministic.
-     *  As such the base value for each team's scan operation is similarly
-     *  non-deterministic.
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const ;
-
-#ifdef KOKKOS_HAVE_CXX11
-    /** \brief  Intra-team parallel for. Executes op(const iType i) for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all threads in the team.
-     * This functionality requires C++11 support.*/
-    //template< typename iType, class Operation, typename ValueType >
-    //KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const ;
-
-    /** \brief  Intra-team parallel sum reduction. Executes op(const iType i, ValueType & val) for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all threads in the team and an ordered summation over val of all threads
-     * takes place. This functionality requires C++11 support.*/
-    //template< typename iType, class Operation, typename ValueType >
-    //KOKKOS_INLINE_FUNCTION void team_par_reduce(const iType n, const Operation & op, ValueType& result) const ;
-
-    /** \brief  Intra-team parallel reduction. Executes op(const iType i, ValueType & val) for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all threads in the team and an ordered reduction over val of all threads
-     * takes place where JoinType(ValueType& val, const ValueType& update). This functionality requires C++11 support.*/
-    //template< typename iType, class Operation, typename ValueType, class JoinType >
-    //KOKKOS_INLINE_FUNCTION void team_par_reduce(const iType n, const Operation & op, ValueType& result, const JoinType & join) const ;
-
-    /** \brief  Intra-team parallel exclusive prefix sum. Executes op(const iType i, ValueType & val, bool final)
-     *          for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all threads in the team and a scan operation is performed.
-     * Depending on the target execution space the operator might be called twice: once with final=false
-     * and once with final=true. When final==true val contains the prefix sum value. The contribution of this
-     * "i" needs to be added to val no matter whether final==true or not. In a serial execution
-     * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
-     * to the final sum value over all threads.
-     * This functionality requires C++11 support.*/
-    //template< typename iType, class Operation, typename ValueType >
-    //KOKKOS_INLINE_FUNCTION  void team_par_scan(const iType n, const Operation & op, ValueType& scan_val) const ;
-
-    /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
-    template< class Operation >
-    KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op) const ;
-
-    /** \brief  Intra-thread vector parallel for. Executes op(const iType i) for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
-     * This functionality requires C++11 support.*/
-    template< typename iType, class Operation>
-    KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const ;
-
-    /** \brief  Intra-thread vector parallel reduce. Executes op(const iType i, ValueType & val) for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a summation of
-     * val is performed and put into result. This functionality requires C++11 support.*/
-    template< typename iType, class Operation, typename ValueType >
-    KOKKOS_INLINE_FUNCTION void vector_par_reduce(const iType n, const Operation & op, ValueType& result) const ;
-
-    /** \brief  Intra-thread vector parallel reduce. Executes op(const iType i, ValueType & val) for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
-     * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
-     * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
-     * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
-     * '1 for *'). This functionality requires C++11 support.*/
-    template< typename iType, class Operation, typename ValueType, class JoinType >
-    KOKKOS_INLINE_FUNCTION void vector_par_reduce(const iType n, const Operation & op, ValueType& init_result, const JoinType & join) const ;
-
-    /** \brief  Intra-thread vector parallel exclusive prefix sum. Executes op(const iType i, ValueType & val, bool final)
-     *          for each i=0..N-1.
-     *
-     * The range i=0..N-1 is mapped to all vector lanes in the thread and a scan operation is performed.
-     * Depending on the target execution space the operator might be called twice: once with final=false
-     * and once with final=true. When final==true val contains the prefix sum value. The contribution of this
-     * "i" needs to be added to val no matter whether final==true or not. In a serial execution
-     * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
-     * to the final sum value over all vector lanes.
-     * This functionality requires C++11 support.*/
-    template< typename iType, class Operation, typename ValueType >
-    KOKKOS_INLINE_FUNCTION  void vector_par_scan(const iType n, const Operation & op, ValueType& scan_val) const ;
-#endif
+    TeamThreadLoopBoundariesStruct (const TeamMemberType& thread_, const iType& count):
+      start( ( (count + thread_.team_size()-1) / thread_.team_size() ) * thread_.team_rank() ),
+      end(   ( (count + thread_.team_size()-1) / thread_.team_size() ) * ( thread_.team_rank() + 1 ) <= count?
+             ( (count + thread_.team_size()-1) / thread_.team_size() ) * ( thread_.team_rank() + 1 ):count),
+      thread(thread_)
+    {}
   };
-};
+
+  template<typename iType, class TeamMemberType>
+  struct ThreadVectorLoopBoundariesStruct {
+    typedef iType index_type;
+    enum {start = 0};
+    const iType end;
+    enum {increment = 1};
+
+    KOKKOS_INLINE_FUNCTION
+    ThreadVectorLoopBoundariesStruct (const TeamMemberType& thread, const iType& count):
+      end( count )
+    {}
+  };
+
+  template<class TeamMemberType>
+  struct ThreadSingleStruct {
+    const TeamMemberType& team_member;
+    KOKKOS_INLINE_FUNCTION
+    ThreadSingleStruct(const TeamMemberType& team_member_):team_member(team_member_){}
+  };
+
+  template<class TeamMemberType>
+  struct VectorSingleStruct {
+    const TeamMemberType& team_member;
+    KOKKOS_INLINE_FUNCTION
+    VectorSingleStruct(const TeamMemberType& team_member_):team_member(team_member_){}
+  };
+} // namespace Impl
+
+/*template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadLoopBoundariesStruct<iType,TeamMemberType>
+  TeamThreadLoop(TeamMemberType thread, const iType count);
+
+template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorLoopBoundariesStruct<iType,TeamMemberType>
+  ThreadVectorLoop(TeamMemberType thread, const iType count);*/
+
 
 } // namespace Kokkos
 

@@ -162,7 +162,21 @@ DefaultColumnwiseMultiVector<Scalar>::domain() const
 }
 
 
-// Overridden from LinearOpBase
+// Overridden protected functions from MultiVectorBase
+
+
+template<class Scalar>
+void DefaultColumnwiseMultiVector<Scalar>::assignImpl(Scalar alpha)
+{
+  const Ordinal m = col_vecs_.size();
+  for (Ordinal col_j = 0; col_j < m; ++col_j) {
+    col_vecs_[col_j]->assign(alpha);
+  }
+}
+
+
+// Overridden protected functions from LinearOpBase
+
 
 
 template<class Scalar>

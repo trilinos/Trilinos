@@ -76,19 +76,27 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-  void initialize();
 
-  void initialize(int& narg, char* arg[]);
+struct InitArguments {
+  int num_threads;
+  int num_numa;
+  int device_id;
 
-  void initialize(const int arg1);
+  InitArguments() {
+    num_threads = -1;
+    num_numa = -1;
+    device_id = -1;
+  }
+};
 
-  void initialize(const int arg1, const int arg2);
+void initialize(int& narg, char* arg[]);
 
-  void initialize(const int arg1, const int arg2, const int arg3);
+void initialize(const InitArguments& args = InitArguments());
 
-  void finalize();
+void finalize();
 
-  void fence();
+void fence();
+
 }
 
 #endif

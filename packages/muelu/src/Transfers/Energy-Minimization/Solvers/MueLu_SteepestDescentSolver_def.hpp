@@ -52,6 +52,7 @@
 #include "MueLu_SteepestDescentSolver_decl.hpp"
 
 #include "MueLu_Constraint.hpp"
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -65,6 +66,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const {
+    PrintMonitor m(*this, "SD iterations");
+
     RCP<const Matrix> A = rcpFromRef(Aref);
     RCP<Matrix> AP, G;
 

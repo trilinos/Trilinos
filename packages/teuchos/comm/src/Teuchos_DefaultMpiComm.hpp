@@ -42,6 +42,15 @@
 #ifndef TEUCHOS_MPI_COMM_HPP
 #define TEUCHOS_MPI_COMM_HPP
 
+/// \file Teuchos_DefaultMpiComm.hpp
+/// \brief Implementation of Teuchos wrappers for MPI.
+///
+/// \warning It only makes sense to include this file if MPI is enabled.
+
+#include <Teuchos_ConfigDefs.hpp>
+
+// If MPI is not enabled, disable the contents of this file.
+#ifdef HAVE_TEUCHOS_MPI
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommUtilities.hpp"
@@ -59,11 +68,9 @@
 // This must be defined globally for the whole program!
 //#define TEUCHOS_MPI_COMM_DUMP
 
-
 #ifdef TEUCHOS_MPI_COMM_DUMP
 #  include "Teuchos_VerboseObject.hpp"
 #endif
-
 
 namespace Teuchos {
 
@@ -115,7 +122,6 @@ void dumpBuffer(
 }
 #endif // TEUCHOS_MPI_COMM_DUMP
 
-
 /// \class MpiCommStatus
 /// \brief MPI-specific implementation of CommStatus.
 ///
@@ -161,7 +167,6 @@ mpiCommStatus (MPI_Status rawMpiStatus)
 {
   return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
 }
-
 
 /// \class MpiCommRequestBase
 /// \brief Base class MPI implementation of CommRequest.
@@ -289,7 +294,6 @@ private:
   MPI_Request rawMpiRequest_;
 };
 
-
 /// \class MpiCommRequest
 /// \brief MPI implementation of CommRequest.
 /// \tparam OrdinalType Same as the template parameter of Comm.
@@ -372,7 +376,6 @@ mpiCommRequest (MPI_Request rawMpiRequest,
 template<typename Ordinal>
 class MpiComm : public Comm<Ordinal> {
 public:
-
   //! @name Constructors
   //@{
 
@@ -412,9 +415,7 @@ public:
   /// Preconditions:
   /// - <tt>rawMpiComm.get() != NULL</tt>
   /// - <tt>*rawMpiComm != MPI_COMM_NULL</tt>
-  MpiComm(
-    const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
-    );
+  MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm);
 
   /// \brief Construct an MpiComm with a wrapped MPI_Comm and a default tag.
   ///
@@ -436,11 +437,9 @@ public:
   MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
            const int defaultTag);
 
-public:
-
   /**
-   * \brief Construct a communicator with a new context with the same properties
-   * as the original.
+   * \brief Construct a communicator with a new context with the same
+   *   properties as the original.
    *
    * The newly constructed communicator will have a duplicate communication
    * space that has the same properties (e.g. processes, attributes,
@@ -454,11 +453,12 @@ public:
    * </tt></li>
    * </ul>
    */
-  MpiComm(const MpiComm<Ordinal>& other);
+  MpiComm (const MpiComm<Ordinal>& other);
 
   /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
-  RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
-  {return rawMpiComm_;}
+  RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm () const {
+    return rawMpiComm_;
+  }
 
   /// \brief Set the MPI error handler for this communicator.
   ///
@@ -530,16 +530,20 @@ public:
   //! @name Implementation of Comm interface
   //@{
 
-  /** \brief . */
+  //! The calling process' rank.
   virtual int getRank() const;
-  /** \brief . */
+
+  //! The number of processes in the communicator.
   virtual int getSize() const;
-  /** \brief . */
+
+  //! Execute a barrier; must be called collectively.
   virtual void barrier() const;
+
   /** \brief . */
   virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
+
   //! Gather values from all processes to the root process.
   virtual void
   gather (const Ordinal sendBytes, const char sendBuffer[],
@@ -727,6 +731,38 @@ RCP<MpiComm<Ordinal> >
 createMpiComm(
   const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   );
+
+
+/** \brief Helper function that extracts a raw <tt>MPI_Comm</tt> object out of
+ * a <tt>Teuchos::MpiComm</tt> wrapper object.
+ *
+ * <b>Preconditions:</b></ul>
+ * <li><tt>dynamic_cast<const MpiComm<Ordinal>*>(&comm) != 0</tt>
+ * </ul>
+ *
+ * If the underlying type is not an <tt>MpiComm<Ordinal></tt> object, then the
+ * function with throw an exception which contains the type information as for
+ * why it failed.
+ *
+ * <b>WARNING:</b> The lifetime of the returned <tt>MPI_Comm</tt> object is
+ * controlled by the owning <tt>RCP<OpaqueWrapper<MPI_Comm> ></tt> object and
+ * is not guaranteed to live the entire life of the program.  Therefore, only
+ * use this function to grab and use the underlying <tt>MPI_Comm</tt> object
+ * in a vary narrow scope and then forget it.  If you need it again, get it
+ * off of the <tt>comm</tt> object each time.
+ *
+ * If you want a memory safe <tt><tt>RCP<OpaqueWrapper<MPI_Comm> ></tt> to the
+ * raw <tt>MPI_Comm</tt> object, then call:
+ *
+ * \verbatim
+ * dyn_cast<const MpiComm<Ordinal> >(comm).getRawMpiComm()
+ * \endverbatim
+ *
+ * \relates MpiComm
+ */
+template<typename Ordinal>
+MPI_Comm
+getRawMpiComm(const Comm<Ordinal> &comm);
 
 
 // ////////////////////////
@@ -1007,25 +1043,48 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
            char globalReducts[]) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::reduceAll(...)" );
+  int err = MPI_SUCCESS;
 
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
+  MPI_Op op = Details::setMpiReductionOp (opWrap);
+
+  // FIXME (mfh 23 Nov 2014) Ross decided to mash every type into
+  // char.  This can cause correctness issues if we're actually doing
+  // a reduction over, say, double.  Thus, he creates a custom
+  // MPI_Datatype here that represents a contiguous block of char, so
+  // that MPI doesn't split up the reduction type and thus do the sum
+  // wrong.  It's a hack but it works.
+
   MPI_Datatype char_block;
+  err = MPI_Type_contiguous (bytes, MPI_CHAR, &char_block);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
+    "MPI_Type_contiguous failed with error \"" << mpiErrorCodeToString (err)
+    << "\".");
+  err = MPI_Type_commit (&char_block);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
+    "MPI_Type_commit failed with error \"" << mpiErrorCodeToString (err)
+    << "\".");
 
-  // TODO (mfh 26 Mar 2012) Check returned error codes of the MPI
-  // custom datatype functions.
-  MPI_Type_contiguous(bytes, MPI_CHAR, &char_block);
-  MPI_Type_commit(&char_block);
-
-  const int err =
-    MPI_Allreduce (const_cast<char*>(sendBuffer), globalReducts, 1, char_block,
-                   op.mpi_op(), *rawMpiComm_);
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::reduceAll (custom op): MPI_Allreduce failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
-
-  // TODO (mfh 26 Mar 2012) Check returned error codes of the MPI
-  // custom datatype functions.
-  MPI_Type_free(&char_block);
+  err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, 1,
+                       char_block, op, *rawMpiComm_);
+  if (err != MPI_SUCCESS) {
+    // Don't throw until we release the type resources we allocated
+    // above.  If freeing fails for some reason, let the memory leak
+    // go; we already have more serious problems if MPI_Allreduce
+    // doesn't work.
+    (void) MPI_Type_free (&char_block);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, "Teuchos::reduceAll (MPI, custom op): "
+      "MPI_Allreduce failed with error \"" << mpiErrorCodeToString (err)
+      << "\".");
+  }
+  err = MPI_Type_free (&char_block);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
+    "MPI_Type_free failed with error \"" << mpiErrorCodeToString (err)
+    << "\".");
 }
 
 
@@ -1082,19 +1141,16 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
     int_recvCounts = &ws_int_recvCounts[0];
   }
 
-  // Perform the operation
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp, false)));
-
-  const int err = MPI_Reduce_scatter(
-    const_cast<char*>(sendBuffer), myGlobalReducts,
-    const_cast<int*>(int_recvCounts),
-    MPI_CHAR,
-    op.mpi_op(),
-    *rawMpiComm_
-    );
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::reduceAllAndScatter: MPI_Reduce_scatter failed with "
-    "error \"" << mpiErrorCodeToString (err) << "\".");
+  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
+  MPI_Op op = Details::setMpiReductionOp (opWrap);
+  const int err =
+    MPI_Reduce_scatter (const_cast<char*> (sendBuffer), myGlobalReducts,
+                        const_cast<int*> (int_recvCounts), MPI_CHAR,
+                        op, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err != MPI_SUCCESS, std::runtime_error, "Teuchos::MpiComm::"
+    "reduceAllAndScatter: MPI_Reduce_scatter failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
 }
 
 
@@ -1106,10 +1162,11 @@ void MpiComm<Ordinal>::scan(
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::scan(...)" );
 
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
+  MPI_Op op = Details::setMpiReductionOp (opWrap);
   const int err =
-    MPI_Scan (const_cast<char*>(sendBuffer), scanReducts, bytes, MPI_CHAR,
-              op.mpi_op(), *rawMpiComm_);
+    MPI_Scan (const_cast<char*> (sendBuffer), scanReducts, bytes, MPI_CHAR,
+              op, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::scan: MPI_Scan() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
@@ -1813,4 +1870,16 @@ Teuchos::createMpiComm(
 }
 
 
+template<typename Ordinal>
+MPI_Comm
+Teuchos::getRawMpiComm(const Comm<Ordinal> &comm)
+{
+  return *(
+    dyn_cast<const MpiComm<Ordinal> >(comm).getRawMpiComm()
+    );
+}
+
+
+#endif // HAVE_TEUCHOS_MPI
 #endif // TEUCHOS_MPI_COMM_HPP
+

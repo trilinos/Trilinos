@@ -60,6 +60,7 @@
 
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
+#include <CGSolve.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -602,7 +603,7 @@ public:
       for ( unsigned j = 0 ; j < ElemNodeCount ; ++j ) {
         const unsigned A_index = elem_graph( elem_id , row_index , j );
 
-        jacobian.values( A_index ) += elem_jacobian( elem_id, row_index, j );
+        jacobian.coeff( A_index ) += elem_jacobian( elem_id, row_index, j );
       }
     }
   }
@@ -668,22 +669,21 @@ template< class FiniteElementMeshType , class SparseMatrixType >
 class ElementComputation ;
 
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
+template< class ExecSpace , BoxElemPart::ElemOrder Order , class CoordinateMap , typename ScalarType >
 class ElementComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  Kokkos::Example::BoxElemFixture< ExecSpace , Order , CoordinateMap > ,
+  Kokkos::Example::CrsMatrix< ScalarType , ExecSpace > >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
-  typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecSpace, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >             element_data_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
-  typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
+  typedef Kokkos::Example::CrsMatrix< ScalarType , ExecSpace >  sparse_matrix_type ;
+  typedef typename sparse_matrix_type::StaticCrsGraphType       sparse_graph_type ;
 
-  typedef DeviceType   device_type ;
-  typedef ScalarType   scalar_type ;
+  typedef ExecSpace   device_type ;
+  typedef ScalarType  scalar_type ;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
   static const unsigned TensorDim        = SpatialDim * SpatialDim ;
@@ -1000,7 +1000,7 @@ if ( 1 == ielem ) {
           for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
             const unsigned entry = elem_graph( ielem , i , j );
             if ( entry != ~0u ) {
-              atomic_fetch_add( & jacobian.values( entry ) , elem_mat[i][j] );
+              atomic_fetch_add( & jacobian.coeff( entry ) , elem_mat[i][j] );
             }
           }
         }
@@ -1014,23 +1014,22 @@ if ( 1 == ielem ) {
 template< class FixtureType , class SparseMatrixType >
 class DirichletComputation ;
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
+template< class ExecSpace , BoxElemPart::ElemOrder Order , class CoordinateMap , typename ScalarType >
 class DirichletComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  Kokkos::Example::BoxElemFixture< ExecSpace , Order , CoordinateMap > ,
+  Kokkos::Example::CrsMatrix< ScalarType , ExecSpace > >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
-  typedef typename mesh_type::node_coord_type                                  node_coord_type ;
-  typedef typename node_coord_type::value_type                                 scalar_coord_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecSpace, Order, CoordinateMap >  mesh_type ;
+  typedef typename mesh_type::node_coord_type                                 node_coord_type ;
+  typedef typename node_coord_type::value_type                                scalar_coord_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
-  typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
+  typedef Kokkos::Example::CrsMatrix< ScalarType , ExecSpace >  sparse_matrix_type ;
+  typedef typename sparse_matrix_type::StaticCrsGraphType       sparse_graph_type ;
 
-  typedef DeviceType   device_type ;
-  typedef ScalarType   scalar_type ;
+  typedef ExecSpace   device_type ;
+  typedef ScalarType  scalar_type ;
 
   //------------------------------------
 
@@ -1110,7 +1109,7 @@ public:
         //  on the diagonal
 
         for( unsigned i = iBeg ; i < iEnd ; ++i ) {
-          jacobian.values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
+          jacobian.coeff(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
         }
       }
       else {
@@ -1123,7 +1122,7 @@ public:
           const scalar_coord_type cc = node_coords(cnode,bc_plane);
 
           if ( ( cc <= bc_lower_limit ) || ( bc_upper_limit <= cc ) ) {
-            jacobian.values(i) = 0 ;
+            jacobian.coeff(i) = 0 ;
           }
         }
       }

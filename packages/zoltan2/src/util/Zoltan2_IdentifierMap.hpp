@@ -662,7 +662,7 @@ template< typename User>
 
   typedef GidLookupHelper<zgid_t, lno_t> lookup_t;
 
-  RCP<lookup_t> lookupMine = rcp(new lookup_t(env_, gidInBuf));
+  lookup_t *lookupMine = new lookup_t(env_, gidInBuf);
 
   // Use a vector to find process that sent gid.
 
@@ -694,9 +694,8 @@ template< typename User>
   // (This happens in graph subsetting.)
   ///////////////////////////////////////////////////////////////////////
 
-  ArrayRCP<const zgid_t> in_gidArray =
-    arcp(in_gid.getRawPtr(), 0, inLen, false);
-  RCP<lookup_t> lookupRequested = rcp(new lookup_t(env_, in_gidArray));
+  lookup_t *lookupRequested = 
+            new lookup_t(env_, arcp(in_gid.getRawPtr(),0,inLen,false));
 
   size_t numberOfUniqueGids = lookupRequested->size();
 
@@ -704,6 +703,7 @@ template< typename User>
 
   ArrayRCP<lno_t> uniqueIndices;
   lookupRequested->getIndices(uniqueIndices);
+  delete lookupRequested;
 
   countOutBuf.resize(numProcs_, 0);
 
@@ -821,7 +821,7 @@ template< typename User>
 
   gidInBuf.clear();
   gnoInBuf.clear();
-  lookupMine.~RCP<lookup_t>();
+  delete lookupMine;
 
   if (needProcs){
     try{

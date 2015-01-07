@@ -72,11 +72,19 @@
 /* Define if KokkosCore is enabled */
 #cmakedefine HAVE_STOKHOS_KOKKOSCORE
 
-/* Define if KokkosLinAlg is enabled */
-#cmakedefine HAVE_STOKHOS_KOKKOSLINALG
+/* Define if TpetraKernels is enabled */
+#cmakedefine HAVE_STOKHOS_TPETRAKERNELS
+#ifdef HAVE_STOKHOS_TPETRAKERNELS
+// Define old macro for backwards compatibility.
+#  define HAVE_STOKHOS_KOKKOSLINALG
+#endif // HAVE_STOKHOS_TPETRAKERNELS
 
 /* Define if KokkosMpiCom is enabled */
-#cmakedefine HAVE_STOKHOS_KOKKOSMPICOMM
+#cmakedefine HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
+#ifdef HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
+// For backwards compatibility
+#  define HAVE_STOKHOS_KOKKOSMPICOMM
+#endif // HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
 
 /* Define if KokkosAlgorithms is enabled */
 #cmakedefine HAVE_STOKHOS_KOKKOSALGORITHMS

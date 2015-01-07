@@ -12,10 +12,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    Pseudo_Block_TFQMR_Epetra_File_Ex
+    SOURCES PseudoBlockTFQMREpetraExFile.cpp createEpetraProblem.cpp
+    COMM serial mpi
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleTFQMRFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb 
-    EXEDEPS TFQMR_Epetra_File_Ex
+    EXEDEPS TFQMR_Epetra_File_Ex Pseudo_Block_TFQMR_Epetra_File_Ex
     )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)

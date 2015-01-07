@@ -69,7 +69,7 @@ namespace Sacado {                                                      \
     public:                                                             \
                                                                         \
       typedef typename ExprT::value_type value_type;                    \
-                                                                        \
+      typedef typename ExprT::scalar_type scalar_type;                  \
       typedef typename ExprT::base_expr_type base_expr_type;            \
                                                                         \
       static const int num_args = ExprT::num_args;                      \
@@ -136,11 +136,6 @@ namespace Sacado {                                                      \
       KOKKOS_INLINE_FUNCTION                                            \
       const value_type* getDx(int j) const {                            \
         return expr.getDx(j);                                           \
-      }                                                                 \
-                                                                        \
-      KOKKOS_INLINE_FUNCTION                                            \
-      const base_expr_type& getArg(int j) const {                       \
-        return expr.getArg(j);                                          \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
@@ -350,10 +345,15 @@ namespace Sacado {                                                      \
       typedef typename Sacado::Promote<value_type_1,                    \
                                        value_type_2>::type value_type;  \
                                                                         \
+      typedef typename ExprT1::scalar_type scalar_type_1;               \
+      typedef typename ExprT2::scalar_type scalar_type_2;               \
+      typedef typename Sacado::Promote<scalar_type_1,                   \
+                                       scalar_type_2>::type scalar_type; \
+                                                                        \
       typedef typename ExprT1::base_expr_type base_expr_type_1;         \
       typedef typename ExprT2::base_expr_type base_expr_type_2;         \
-      typedef typename ExprPromote<base_expr_type_1,                    \
-                                   base_expr_type_2>::type base_expr_type; \
+      typedef typename Sacado::Promote<base_expr_type_1,                \
+                                       base_expr_type_2>::type base_expr_type; \
                                                                         \
       static const int num_args1 = ExprT1::num_args;                    \
       static const int num_args2 = ExprT2::num_args;                    \
@@ -451,14 +451,6 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const base_expr_type& getArg(int j) const {                       \
-        if (j < num_args1)                                              \
-          return expr1.getArg(j);                                       \
-        else                                                            \
-          return expr2.getArg(j-num_args1);                             \
-      }                                                                 \
-                                                                        \
-      KOKKOS_INLINE_FUNCTION                                            \
       int numActiveArgs() const {                                       \
         return expr1.numActiveArgs() + expr2.numActiveArgs();           \
       }                                                                 \
@@ -489,10 +481,15 @@ namespace Sacado {                                                      \
       typedef typename Sacado::Promote<value_type_1,                    \
                                        value_type_2>::type value_type;  \
                                                                         \
+      typedef typename ExprT1::scalar_type scalar_type_1;               \
+      typedef typename ExprT2::scalar_type scalar_type_2;               \
+      typedef typename Sacado::Promote<scalar_type_1,                   \
+                                       scalar_type_2>::type scalar_type; \
+                                                                        \
       typedef typename ExprT1::base_expr_type base_expr_type_1;         \
       typedef typename ExprT2::base_expr_type base_expr_type_2;         \
-      typedef typename ExprPromote<base_expr_type_1,                    \
-                                   base_expr_type_2>::type base_expr_type; \
+      typedef typename Sacado::Promote<base_expr_type_1,                \
+                                       base_expr_type_2>::type base_expr_type; \
                                                                         \
       static const int num_args = ExprT1::num_args;                     \
                                                                         \
@@ -569,11 +566,6 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const base_expr_type& getArg(int j) const {                       \
-        return expr1.getArg(j);                                         \
-      }                                                                 \
-                                                                        \
-      KOKKOS_INLINE_FUNCTION                                            \
       int numActiveArgs() const {                                       \
         return expr1.numActiveArgs();                                   \
       }                                                                 \
@@ -602,10 +594,15 @@ namespace Sacado {                                                      \
       typedef typename Sacado::Promote<value_type_1,                    \
                                        value_type_2>::type value_type;  \
                                                                         \
+      typedef typename ExprT1::scalar_type scalar_type_1;               \
+      typedef typename ExprT2::scalar_type scalar_type_2;               \
+      typedef typename Sacado::Promote<scalar_type_1,                   \
+                                       scalar_type_2>::type scalar_type; \
+                                                                        \
       typedef typename ExprT1::base_expr_type base_expr_type_1;         \
       typedef typename ExprT2::base_expr_type base_expr_type_2;         \
-      typedef typename ExprPromote<base_expr_type_1,                    \
-                                   base_expr_type_2>::type base_expr_type; \
+      typedef typename Sacado::Promote<base_expr_type_1,                \
+                                       base_expr_type_2>::type base_expr_type; \
                                                                         \
       static const int num_args = ExprT2::num_args;                     \
                                                                         \
@@ -681,12 +678,6 @@ namespace Sacado {                                                      \
         return expr2.getDx(j);                                          \
       }                                                                 \
                                                                         \
-                                                                        \
-      KOKKOS_INLINE_FUNCTION                                            \
-      const base_expr_type& getArg(int j) const {                       \
-        return expr2.getArg(j);                                         \
-      }                                                                 \
-                                                                        \
       KOKKOS_INLINE_FUNCTION                                            \
       int numActiveArgs() const {                                       \
         return expr2.numActiveArgs();                                   \
@@ -706,10 +697,10 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T1>, Expr<T2> > >                                    \
-    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)               \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                                  \
+    OPNAME (const T1& expr1, const T2& expr2)                           \
     {                                                                   \
-      typedef OP< Expr<T1>, Expr<T2> > expr_t;                          \
+      typedef OP< T1, T2 > expr_t;                                      \
                                                                         \
       return Expr<expr_t>(expr1, expr2);                                \
     }                                                                   \
@@ -745,6 +736,30 @@ namespace Sacado {                                                      \
             const typename Expr<T>::value_type& c)                      \
     {                                                                   \
       typedef ConstExpr<typename Expr<T>::value_type> ConstT;           \
+      typedef OP< Expr<T>, ConstT > expr_t;                             \
+                                                                        \
+      return Expr<expr_t>(expr, ConstT(c));                             \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                                \
+    OPNAME (const typename Expr<T>::scalar_type& c,                     \
+            const Expr<T>& expr)                                        \
+    {                                                                   \
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
+      typedef OP< ConstT, Expr<T> > expr_t;                             \
+                                                                        \
+      return Expr<expr_t>(ConstT(c), expr);                             \
+    }                                                                   \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                                \
+    OPNAME (const Expr<T>& expr,                                        \
+            const typename Expr<T>::scalar_type& c)                     \
+    {                                                                   \
+      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
       typedef OP< Expr<T>, ConstT > expr_t;                             \
                                                                         \
       return Expr<expr_t>(expr, ConstT(c));                             \
@@ -1030,8 +1045,14 @@ namespace Sacado {
 
     template <typename ExprT>
     std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
-      typedef typename Expr<ExprT>::base_expr_type base_expr_type;
-      return os << base_expr_type(x);
+      os << x.val() << " [";
+
+      for (int i=0; i< x.size(); i++) {
+        os << " " << x.dx(i);
+      }
+
+      os << " ]";
+      return os;
     }
 
   } // namespace Fad

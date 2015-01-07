@@ -118,7 +118,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (multipleCallCheckGlobal_ == ENABLED) && (lastLevelID_ == levelID),
                                  Exceptions::RuntimeError,
                                  this->ShortClassName() << "::Build() called twice for the same level (levelID=" << levelID
-                                 << "). This is likely due to a configuration error.");
+                                 << "). This is likely due to a configuration error, or calling hierarchy setup multiple times "
+                                 << "without resetting debug info through FactoryManager::ResetDebugData().");
       if (multipleCallCheck_ == FIRSTCALL)
         multipleCallCheck_ = ENABLED;
 

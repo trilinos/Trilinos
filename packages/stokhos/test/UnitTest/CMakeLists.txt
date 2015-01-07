@@ -510,7 +510,7 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
-    IF (Stokhos_ENABLE_KokkosLinAlg)
+    IF (Stokhos_ENABLE_TpetraKernels)
 
       IF (Kokkos_ENABLE_Pthread)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -581,7 +581,7 @@ IF(Stokhos_ENABLE_Sacado)
 
       IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
 
-        IF (Kokkos_ENABLE_Pthread AND KokkosClassic_ENABLE_KokkosCompat)
+        IF (Kokkos_ENABLE_Pthread AND TpetraCore_ENABLE_TeuchosKokkosCompat)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_Threads
             SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
@@ -601,7 +601,7 @@ IF(Stokhos_ENABLE_Sacado)
             )
         ENDIF()
 
-        IF (Kokkos_ENABLE_OpenMP AND KokkosClassic_ENABLE_KokkosCompat)
+        IF (Kokkos_ENABLE_OpenMP AND TpetraCore_ENABLE_TeuchosKokkosCompat)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_OpenMP
             SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
@@ -621,7 +621,7 @@ IF(Stokhos_ENABLE_Sacado)
             )
         ENDIF()
 
-        IF (Kokkos_ENABLE_Cuda AND KokkosClassic_ENABLE_KokkosCompat)
+        IF (Kokkos_ENABLE_Cuda AND TpetraCore_ENABLE_TeuchosKokkosCompat)
           CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda.cu)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_Cuda

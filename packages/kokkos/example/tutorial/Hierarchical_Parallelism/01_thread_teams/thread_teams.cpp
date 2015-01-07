@@ -48,7 +48,7 @@
 
 // Using default execution space:
 typedef Kokkos::TeamPolicy<>              team_policy ;
-typedef typename team_policy::member_type team_member ;
+typedef team_policy::member_type team_member ;
 
 struct hello_world {
   typedef int value_type; //Specify value type for reduction target, sum
@@ -63,7 +63,7 @@ int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
   // 12 teams of the maximum number of threads per team
-  const team_policy policy( 12 , team_policy::execution_space::team_max() );
+  const team_policy policy( 12 , team_policy::team_size_max( hello_world() ) );
   
   int sum = 0;
   Kokkos::parallel_reduce( policy , hello_world() , sum );

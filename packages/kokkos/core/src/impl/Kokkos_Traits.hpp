@@ -245,6 +245,35 @@ struct if_ : public if_c<Cond::value, TrueType, FalseType> {};
 
 //----------------------------------------------------------------------------
 
+// Allows aliased types:
+template< typename T >
+struct is_integral : public integral_constant< bool ,
+  (
+    Impl::is_same< T ,          char >::value ||
+    Impl::is_same< T , unsigned char >::value ||
+    Impl::is_same< T ,          short int >::value ||
+    Impl::is_same< T , unsigned short int >::value ||
+    Impl::is_same< T ,          int >::value ||
+    Impl::is_same< T , unsigned int >::value ||
+    Impl::is_same< T ,          long int >::value ||
+    Impl::is_same< T , unsigned long int >::value ||
+    Impl::is_same< T ,          long long int >::value ||
+    Impl::is_same< T , unsigned long long int >::value ||
+
+    Impl::is_same< T , int8_t   >::value ||
+    Impl::is_same< T , int16_t  >::value ||
+    Impl::is_same< T , int32_t  >::value ||
+    Impl::is_same< T , int64_t  >::value ||
+    Impl::is_same< T , uint8_t  >::value ||
+    Impl::is_same< T , uint16_t >::value ||
+    Impl::is_same< T , uint32_t >::value ||
+    Impl::is_same< T , uint64_t >::value 
+  )>
+{};
+
+//----------------------------------------------------------------------------
+
+
 template < size_t N >
 struct is_power_of_two
 {
@@ -315,20 +344,6 @@ struct integral_nonzero_constant<T,zero,false>
   typedef integral_nonzero_constant<T,0> type ;
   KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & v ) : value(v) {}
 };
-
-//----------------------------------------------------------------------------
-
-template < typename T > struct is_integral : public false_ {};
-
-template <> struct is_integral<int8_t>  : public true_ {};
-template <> struct is_integral<int16_t> : public true_ {};
-template <> struct is_integral<int32_t> : public true_ {};
-template <> struct is_integral<int64_t> : public true_ {};
-
-template <> struct is_integral<uint8_t>  : public true_ {};
-template <> struct is_integral<uint16_t> : public true_ {};
-template <> struct is_integral<uint32_t> : public true_ {};
-template <> struct is_integral<uint64_t> : public true_ {};
 
 //----------------------------------------------------------------------------
 

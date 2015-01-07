@@ -250,11 +250,18 @@ public:
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const {
-    if (!availAdjs(sourcetarget, through))
-      return false;
-    else {
-      return false;
+    return false;
+  }
 
+
+  virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
+				    MeshEntityType through,
+				    const lno_t *&offsets,
+				    const zgid_t *&adjacencyIds) const
+  {
+    /* Find the adjacency for a nodal based decomposition */
+    size_t nadj = 0;
+    if (availAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
       using Tpetra::global_size_t;
       using Teuchos::Array;
@@ -263,42 +270,40 @@ public:
       using Teuchos::rcp;
 
       // Get the default communicator and Kokkos Node instance
+      // TODO:  Default communicator may not be correct here
       RCP<const Comm<int> > comm =
 	DefaultPlatform::getDefaultPlatform ().getComm ();
-      RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
 
       // Get node-element connectivity
 
-      lno_t const *offsets=NULL;
-      zgid_t const *adjacencyIds=NULL;
+      offsets=NULL;
+      adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
       zgid_t const *Ids=NULL;
-      getIDsViewOf(MESH_VERTEX, Ids);
+      getIDsViewOf(sourcetarget, Ids);
 
-      int LocalNumIDs = getLocalNumIDs();
+      int LocalNumIDs = getLocalNumOf(sourcetarget);
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       /***********************************************************************/
       /************************* BUILD MAPS FOR ADJS *************************/
       /***********************************************************************/
 
-      Array<GO> adjsGIDs;
-      RCP<const map_type> adjsMapG;
+      Array<GO> sourcetargetGIDs;
+      RCP<const map_type> sourcetargetMapG;
 
       // count owned nodes
-      int LocalNumOfNodes = getLocalNumOf(MESH_VERTEX);
+      int LocalNumOfNodes = getLocalNumOf(through);
       
-      // Build a list of the ADJS global ids...
-      adjsGIDs.resize (LocalNumOfNodes);
+      // Build a list of the global sourcetarget ids...
+      sourcetargetGIDs.resize (LocalNumOfNodes);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
-	adjsGIDs[i] = as<int> (Ids[i]);
+	sourcetargetGIDs[i] = as<GO> (Ids[i]);
       }
 
-      getIDsView(Ids);
-
-      //Generate Map for nodes.
-      adjsMapG = rcp (new map_type (-1, adjsGIDs (), 0, comm, node));
+      //Generate Map for sourcetarget.
+      sourcetargetMapG = rcp (new map_type (-1, sourcetargetGIDs (), 0, comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -307,7 +312,7 @@ public:
       RCP<sparse_graph_type> adjsGraph;
 
       // Construct Tpetra::CrsGraph objects.
-      adjsGraph = rcp (new sparse_graph_type (adjsMapG, 0));
+      adjsGraph = rcp (new sparse_graph_type (sourcetargetMapG, 0));
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
 
@@ -344,7 +349,7 @@ public:
       RCP<const map_type> ColMap = adjsMatrix->getColMap ();
       RCP<const map_type> globalMap =
 	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
-			   Tpetra::GloballyDistributed, node));
+			   Tpetra::GloballyDistributed));
 
       // Create the exporter from this process' column Map to the global
       // 1-1 column map. (???)
@@ -387,18 +392,41 @@ public:
       Array<GO> Indices;
       Array<ST> Values;
 
+      /* Allocate memory necessary for the adjacency */
+      lno_t *start = new lno_t [LocalNumIDs+1];
+      std::vector<int> adj;
+
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+	start[localElement] = nadj;
 	const GO globalRow = Ids[localElement];
 	size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
 	Values.resize (NumEntries);
 	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+	for (size_t j = 0; j < NumEntries; ++j) {
+	  if(globalRow != Indices[j]) {
+	    adj.push_back(Indices[j]);
+	    nadj++;;
+	  }
+	}
       }
 
-      return false;
-    }
-  }
+      Ids = NULL;
+      start[LocalNumIDs] = nadj;
 
+      zgid_t *adj_ = new zgid_t [nadj];
+
+      for (size_t i=0; i < nadj; i++) {
+	adj_[i] = adj[i];
+      }
+
+      offsets = start;
+      adjacencyIds = adj_;
+    }
+
+    return nadj;
+  }
 
   /*! \brief Returns the number of second adjacencies on this process.
    *
@@ -407,10 +435,16 @@ public:
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
                                     MeshEntityType through) const {
-    if (!avail2ndAdjs(sourcetarget, through))
+    if (!availAdjs(sourcetarget, through))
       return 0;
     else {
-      return nadj_;
+      lno_t const *offsets;
+      zgid_t const *adjacencyIds;
+      size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
+				       adjacencyIds);
+      delete [] offsets;
+      delete [] adjacencyIds;
+      return nadj;
     }
   }
 
@@ -424,20 +458,19 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-// TODO:  Later may allow user to not implement second adjacencies and,
-// TODO:  if we want them, we compute A^T A, where A is matrix of first adjacencies.
+  // allow user to not implement second adjacencies and,
+  // if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-    if (!avail2ndAdjs(sourcetarget, through)) {
+    if (!availAdjs(sourcetarget, through)) {
       offsets = NULL;
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     } else {
-      offsets = start_;
-      adjacencyIds =  adj_;
+      get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
     }
   }
 
@@ -618,9 +651,6 @@ private:
   enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
                                                  // defining second-order
                                                  // adjacencies.
-  lno_t *start_;
-  zgid_t *adj_;
-  size_t nadj_;
 };
   
 }  //namespace Zoltan2

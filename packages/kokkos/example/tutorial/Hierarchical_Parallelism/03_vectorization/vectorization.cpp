@@ -50,8 +50,7 @@
 #ifdef KOKKOS_HAVE_CXX11
 
 // Using default execution space:
-typedef Kokkos::TeamVectorPolicy<32>      team_policy ;
-typedef typename team_policy::member_type team_member ;
+typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
 
 struct SomeCorrelation {
   typedef int value_type; //Specify value type for reduction target, sum
@@ -71,37 +70,40 @@ struct SomeCorrelation {
     shared_1d_int count(thread.team_shmem(),data.dimension_1());
 
     // With each team run a parallel_for with its threads
-    thread.team_par_for(data.dimension_1(), [&] (const int& j) {
+    Kokkos::parallel_for(Kokkos::TeamThreadLoop(thread,data.dimension_1()), [=] (const int& j) {
       int tsum;
       // Run a vector loop reduction over the inner dimension of data
       // Count how many values are multiples of 4
       // Every vector lane gets the same reduction value (tsum) back
-      thread.vector_par_reduce(data.dimension_2(), [&] (const int& k, int & vsum) {
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorLoop(thread,data.dimension_2()), [=] (const int& k, int & vsum) {
         vsum+= (data(i,j,k) % 4 == 0)?1:0;
       },tsum);
 
-      // Make sure only one vector lane adds the reduction value to the shared
-      // array
-      thread.vector_single([&] () {
+      // Make sure only one vector lane adds the reduction value to the shared array
+      Kokkos::single(Kokkos::PerThread(thread),[=] () {
         count(j) = tsum;
       });
     });
 
-    // Wait for all threads to finish the team_par_for
+    // Wait for all threads to finish the parallel_for so that all shared memory writes are done
     thread.team_barrier();
 
     // Check with one vector lane from each thread how many consecutive
-    // Data segments have the same number of values divisible by 4
-    int sum = 0;
-    thread.team_par_for(data.dimension_1()-1, [&] (const int& j) {
-      thread.vector_single([&] () {
+    // data segments have the same number of values divisible by 4
+    int team_sum = 0;
+    Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(thread, data.dimension_1()-1), [=] (const int& j, int& thread_sum) {
+      // It is not valid to directly add to thread_sum
+      // Use a single function with broadcast instead
+      // team_sum will be used as input to the operator (i.e. it is used to initialize sum)
+      // the end value of sum will be broadcast to all vector lanes in the thread.
+      Kokkos::single(Kokkos::PerThread(thread),[=] (int& sum) {
         if(count(j)==count(j+1)) sum++;
-      });
-    });
+      },thread_sum);
+    },team_sum);
 
-    // Add with one vector lane from each thread sum to the global value
-    thread.vector_single([&] () {
-      Kokkos::atomic_fetch_add(&gsum(),sum);
+    // Add with one thread of the team the team_sum to the global value
+    Kokkos::single(Kokkos::PerTeam(thread),[=] () {
+      Kokkos::atomic_add(&gsum(),team_sum);
     });
   }
 
@@ -118,10 +120,15 @@ int main(int narg, char* args[]) {
   Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
   Kokkos::fill_random(data,rand_pool64,100);
 
-  // Each team handles a slice of the data
-  const team_policy policy( 512 , 16 );
-
+  // A global value to put the result in
   Kokkos::View<int> gsum("Sum");
+
+  // Each team handles a slice of the data
+  // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes
+  // The team_size_max function will determine the maximum number of threads taking into account
+  // shared memory requirements of the Functor
+  const Kokkos::TeamPolicy<> policy( 512 , Kokkos::TeamPolicy<>::team_size_max(SomeCorrelation(data,gsum)) , 16);
+
   Kokkos::parallel_for( policy , SomeCorrelation(data,gsum) );
 
   Kokkos::fence();

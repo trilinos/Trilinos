@@ -90,6 +90,7 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include <cstdio> // for get char
 #include <fstream>

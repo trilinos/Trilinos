@@ -95,7 +95,7 @@ public:
 
   /*! \brief Get (local) size of color array.
    */
-  inline size_t getColorsSize() {return length_;}
+  inline size_t getColorsSize() {return length_;} // TODO Deprecate or rename? Should always be numVertices?
 
   /*! \brief Get (local) color array by RCP.
    */

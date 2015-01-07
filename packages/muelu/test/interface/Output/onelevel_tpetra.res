@@ -11,7 +11,7 @@ Level 0
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
-
+ 
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

@@ -49,9 +49,9 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
 // Kokkos includes
-#include "KokkosClassic_config.h"
+#include "TpetraClassic_config.h"
 #include "Kokkos_Core.hpp"
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
@@ -96,7 +96,7 @@ namespace Kokkos {
 #endif
 
 // Kokkos-Linalg
-#include "Tpetra_config.h"
+#include "Tpetra_ConfigDefs.hpp"
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
@@ -115,7 +115,7 @@ struct DeviceForNode2 {
   typedef Kokkos::Serial type;
 };
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 template <typename Device>
 struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;

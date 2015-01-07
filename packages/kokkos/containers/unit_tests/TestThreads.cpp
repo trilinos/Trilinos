@@ -57,6 +57,7 @@
 //----------------------------------------------------------------------------
 #include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
+#include <TestStaticCrsGraph.hpp>
 
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
@@ -90,6 +91,12 @@ protected:
     Kokkos::Threads::finalize();
   }
 };
+
+TEST_F( threads , staticcrsgraph )
+{
+  TestStaticCrsGraph::run_test_graph< Kokkos::Threads >();
+  TestStaticCrsGraph::run_test_graph2< Kokkos::Threads >();
+}
 
 /*TEST_F( threads, bitset )
 {

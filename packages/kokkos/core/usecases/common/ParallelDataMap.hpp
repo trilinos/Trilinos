@@ -346,11 +346,11 @@ public:
 
     // Total send subview of the device buffer
     dev_send_buffer =
-      Kokkos::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , send_msg_length ) );
+      Kokkos::subview( dev_buffer , std::pair<size_t,size_t>( 0 , send_msg_length ) );
 
     // Total receive subview of the device buffer
     dev_recv_buffer =
-      Kokkos::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , recv_msg_length ) );
+      Kokkos::subview( dev_buffer , std::pair<size_t,size_t>( 0 , recv_msg_length ) );
 
     // Total receive message buffer on the host:
     host_recv_buffer = buffer_host_type(

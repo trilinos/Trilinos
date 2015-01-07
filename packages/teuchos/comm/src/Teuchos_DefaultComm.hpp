@@ -217,13 +217,14 @@ DefaultComm<OrdinalType>::getComm ()
 
     // We want comm_ to be deallocated when MPI_Finalize is called.
     // The standard idiom for this (look in the MPI standard) is to
-    // register an attribute with MPI_COMM_SELF, whose deallocation
-    // function does what we want.
+    // register an attribute ((key,value) pair) with MPI_COMM_SELF,
+    // with a custom "destructor" to be called at MPI_Finalize.
 
-    // Hopefully this is a unique key.  The only issue here is if
-    // Foo<T> is instantiated for multiple T, in which case we have
-    // to ensure that the numbers are unique.
-    int key = static_cast<int> (reinterpret_cast<ptrdiff_t> (comm_));
+    // Key is an output argument of MPI_Comm_create_keyval.  If we
+    // ever wanted to call MPI_Comm_free_keyval, we would need to save
+    // the key.  MPI_Finalize will free the (key,value) pair
+    // automatically, so we never need to call MPI_Comm_free_keyval.
+    int key = MPI_KEYVAL_INVALID;
     int err =
       MPI_Comm_create_keyval (MPI_COMM_NULL_COPY_FN,
                               Details::mpiFreeDefaultComm<OrdinalType>,
@@ -239,13 +240,7 @@ DefaultComm<OrdinalType>::getComm ()
     }
     int val = key; // doesn't matter
 
-    // OpenMPI 1.8.1 man page: "MPI_Comm_set_attr stores the
-    // stipulated attribute value attribute_val for subsequent
-    // retrieval by MPI_Comm_get_attr. If the value is already
-    // present, then the outcome is as if MPI_Comm_delete_attr was
-    // first called to delete the previous value (and the callback
-    // function delete_fn was executed), and a new value was next
-    // stored."
+    // Attach the attribute to MPI_COMM_SELF.
     err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
     if (err != MPI_SUCCESS) {
       if (comm_ != NULL) { // clean up if MPI call fails
@@ -299,15 +294,10 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
       //defaultSerialComm_ = new MpiComm<OrdinalType> (MPI_COMM_SELF);
       defaultSerialComm_ = new SerialComm<OrdinalType> ();
 
-      // We want defaultSerialComm_ to be deallocated when
-      // MPI_Finalize is called.  The standard idiom for this (look in
-      // the MPI standard) is to register an attribute with
-      // MPI_COMM_SELF, whose deallocation function does what we want.
+      // Register an MPI_Finalize hook to free defaultSerialComm_.
+      // (See getComm implementation above in this file for details.)
 
-      // Hopefully this is a unique key.  The only issue here is if
-      // Foo<T> is instantiated for multiple T, in which case we have
-      // to ensure that the numbers are unique.
-      int key = static_cast<int> (reinterpret_cast<ptrdiff_t> (defaultSerialComm_));
+      int key = MPI_KEYVAL_INVALID;
       int err =
         MPI_Comm_create_keyval (MPI_COMM_NULL_COPY_FN,
                                 Details::mpiFreeDefaultSerialComm<OrdinalType>,
@@ -318,26 +308,22 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
           delete defaultSerialComm_;
           defaultSerialComm_ = NULL;
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Teuchos::DefaultComm::getDefaultSerialComm: MPI_Comm_create_keyval failed!");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::runtime_error, "Teuchos::DefaultComm::getDefaultSerialComm"
+          ": MPI_Comm_create_keyval failed!");
       }
       int val = key; // doesn't matter
 
-      // OpenMPI 1.8.1 man page: "MPI_Comm_set_attr stores the
-      // stipulated attribute value attribute_val for subsequent
-      // retrieval by MPI_Comm_get_attr. If the value is already
-      // present, then the outcome is as if MPI_Comm_delete_attr was
-      // first called to delete the previous value (and the callback
-      // function delete_fn was executed), and a new value was next
-      // stored."
+      // Attach the attribute to MPI_COMM_SELF.
       err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
       if (err != MPI_SUCCESS) {
         if (defaultSerialComm_ != NULL) { // clean up if MPI call fails
           delete defaultSerialComm_;
           defaultSerialComm_ = NULL;
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Teuchos::DefaultComm::getDefaultSerialComm: MPI_Comm_set_attr failed!");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::runtime_error, "Teuchos::DefaultComm::getDefaultSerialComm"
+          ": MPI_Comm_set_attr failed!");
       }
 #else // NOT HAVE_MPI
       defaultSerialComm_ = new SerialComm<OrdinalType> ();

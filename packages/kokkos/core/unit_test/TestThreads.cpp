@@ -57,7 +57,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
-#include <TestAggregate.hpp>
+#include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 
 #include <TestCrsArray.hpp>
@@ -66,10 +66,12 @@
 #include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -134,8 +136,39 @@ TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
 }
 
+
+TEST_F( threads, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::Threads >();
+}
+
+
 TEST_F( threads, view_aggregate ) {
   TestViewAggregate< Kokkos::Threads >();
+  TestViewAggregateReduction< Kokkos::Threads >();
 }
 
 TEST_F( threads , range_tag )
@@ -304,8 +337,15 @@ TEST_F( threads , memory_space )
   TestMemorySpace< Kokkos::Threads >();
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( threads , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Threads >();
+}
 
 //----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
 TEST_F( threads , cxx11 )
 {
@@ -327,6 +367,11 @@ TEST_F( threads , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(4) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(10) ) );
 }
 #endif
 } // namespace Test

@@ -339,7 +339,7 @@ namespace MueLuTests {
       // Multigrid setup phase (using default parameters)
       FactoryManager M0; // how to build aggregates and smoother of the first level
 
-      bool r = H.Setup(0, Teuchos::null,  ptrInArg(M0), Teuchos::null); TEST_EQUALITY(r, true); // cf. Teuchos Bug 5214
+      bool r = H.Setup(0, Teuchos::null, rcpFromRef(M0), Teuchos::null); TEST_EQUALITY(r, true); // cf. Teuchos Bug 5214
 
       RCP<Level> l0 = H.GetLevel(0);
 
@@ -430,8 +430,8 @@ namespace MueLuTests {
       M2.SetFactory("P", rcp(new SaPFactory()));
 
       bool r; // cf. Teuchos Bug 5214
-      r = H.Setup(0, Teuchos::null,ptrInArg(M0), ptrInArg(M1));  TEST_EQUALITY(r, false);
-      r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), Teuchos::null); TEST_EQUALITY(r, true);
+      r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1));  TEST_EQUALITY(r, false);
+      r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null); TEST_EQUALITY(r, true);
 
       RCP<Level> l0 = H.GetLevel(0);
       RCP<Level> l1 = H.GetLevel(1);
@@ -500,10 +500,10 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
       bool r; // cf. bug Teuchos Bug 5214
-      r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
+      r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, false);
       std::cout << "............." << std::endl;
-      r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
-      r = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ); TEST_EQUALITY(r, true);
+      r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));   TEST_EQUALITY(r, false);
+      r = H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ); TEST_EQUALITY(r, true);
 
       RCP<Level> l0 = H.GetLevel(0);
       RCP<Level> l1 = H.GetLevel(1);
@@ -603,9 +603,9 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
       bool r; // cf. bug Teuchos Bug 5214
-      r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
-      r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
-      r = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null);  TEST_EQUALITY(r, true);
+      r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, false);
+      r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));   TEST_EQUALITY(r, false);
+      r = H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null);  TEST_EQUALITY(r, true);
 
       RCP<Level> l0 = H.GetLevel(0);
       RCP<Level> l1 = H.GetLevel(1);
@@ -678,7 +678,7 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
       bool r; // cf. bug Teuchos Bug 5214
-      r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, true);
+      r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, true);
       TEST_EQUALITY(H.GetNumLevels(),1);
 
       RCP<Level> l0 = H.GetLevel(0);

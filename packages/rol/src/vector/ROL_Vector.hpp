@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -45,6 +46,7 @@
 #define ROL_VECTOR_H
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_oblackholestream.hpp"
 
 /** @ingroup la_group
     \class ROL::Vector
@@ -241,11 +243,20 @@ public:
                                          const Vector<Real> &y,
                                          const bool printToStream = true,
                                          std::ostream & outStream = std::cout ) const {
-    Real one  = 1.0;
+    Real one  =  1.0;
     Real a    =  1.234;
     Real b    = -432.1;
+    int width =  94;
     std::vector<Real> vCheck;
-    int width = 94;
+
+    Teuchos::oblackholestream bhs; // outputs nothing
+
+    Teuchos::RCP<std::ostream> pStream;
+    if (printToStream) {
+      pStream = Teuchos::rcp(&outStream, false);
+    } else {
+      pStream = Teuchos::rcp(&bhs, false);
+    }
 
     std::ios::fmtflags f( outStream.flags() );
 
@@ -254,67 +265,71 @@ public:
     Teuchos::RCP<Vector> xtmp = x.clone();
     Teuchos::RCP<Vector> ytmp = y.clone();
 
+    *pStream << "\n************ Begin verification of linear algebra.\n\n";
+
     // Commutativity of addition.
     v->set(*this); xtmp->set(x); ytmp->set(y);
     v->plus(x); xtmp->plus(*this); v->axpy(-one, *xtmp); vCheck.push_back(v->norm());
-    outStream << std::scientific << std::setprecision(12) << std::setfill('>');
-    outStream << "\n" << std::setw(width) << std::left << "Commutativity of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::scientific << std::setprecision(12) << std::setfill('>');
+    *pStream << std::setw(width) << std::left << "Commutativity of addition. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Associativity of addition.
     v->set(*this); xtmp->set(x); ytmp->set(y);
     ytmp->plus(x); v->plus(*ytmp); xtmp->plus(*this); xtmp->plus(y); v->axpy(-one, *xtmp); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Associativity of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Associativity of addition. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Identity element of addition.
     v->set(*this); xtmp->set(x); ytmp->set(y);
     v->zero(); v->plus(x); v->axpy(-one, x); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Identity element of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Identity element of addition. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Inverse elements of addition.
     v->set(*this); xtmp->set(x); ytmp->set(y);
     v->scale(-one); v->plus(*this); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Inverse elements of addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Inverse elements of addition. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Identity element of scalar multiplication.
     v->set(*this); xtmp->set(x); ytmp->set(y);
     v->scale(one); v->axpy(-one, *this); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Identity element of scalar multiplication. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Identity element of scalar multiplication. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication with field multiplication.
     v->set(*this); vtmp->set(*this);
     v->scale(b); v->scale(a); vtmp->scale(a*b); v->axpy(-one, *vtmp); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Consistency of scalar multiplication with field multiplication. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Consistency of scalar multiplication with field multiplication. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Distributivity of scalar multiplication with respect to field addition.
     v->set(*this); vtmp->set(*this);
     v->scale(a+b); vtmp->scale(a); vtmp->axpy(b, *this); v->axpy(-one, *vtmp); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Distributivity of scalar multiplication with respect to field addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Distributivity of scalar multiplication with respect to field addition. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Distributivity of scalar multiplication with respect to vector addition.
     v->set(*this); xtmp->set(x); ytmp->set(y);
     v->plus(x); v->scale(a); xtmp->scale(a); xtmp->axpy(a, *this); v->axpy(-one, *xtmp); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Distributivity of scalar multiplication with respect to vector addition. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Distributivity of scalar multiplication with respect to vector addition. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Commutativity of dot (inner) product over the field of reals.
     vCheck.push_back(std::abs(this->dot(x) - x.dot(*this)));
-    outStream << std::setw(width) << std::left << "Commutativity of dot (inner) product over the field of reals. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Commutativity of dot (inner) product over the field of reals. Consistency error: " << " " << vCheck.back() << "\n";
 
-    // Additivity of dot (inner) product.  
+    // Additivity of dot (inner) product.
     xtmp->set(x);
     xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - x.dot(*this) - y.dot(*this)));
-    outStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.
     v->set(*this);
     v->scale(one/v->norm()); vCheck.push_back(std::abs(v->norm() - one));
-    outStream << std::setw(width) << std::left << "Consistency of scalar multiplication and norm. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Consistency of scalar multiplication and norm. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Reflexivity.
     v->set(*this);
     xtmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(this->dual()));
     ytmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(xtmp->dual()));
     v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
-    outStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
+
+    *pStream << "************   End verification of linear algebra.\n\n";
 
     outStream.flags( f );
 

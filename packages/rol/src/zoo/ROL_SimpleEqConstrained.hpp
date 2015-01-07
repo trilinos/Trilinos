@@ -70,9 +70,8 @@ namespace ZOO {
     Objective_SimpleEqConstrained() {}
 
     Real value( const Vector<Real> &x, Real &tol ) {
-      XPrim & ex =
-        Teuchos::dyn_cast<XPrim>(const_cast <Vector<Real> &>(x));
-      Teuchos::RCP<const std::vector<Real> > xp = ex.getVector();
+      Teuchos::RCP<const std::vector<Real> > xp =
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
 
       int n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective value): "
@@ -91,7 +90,7 @@ namespace ZOO {
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
       Teuchos::RCP<std::vector<Real> > gp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(g)).getVector());
 
@@ -120,9 +119,9 @@ namespace ZOO {
 
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(v)).getVector();
       Teuchos::RCP<std::vector<Real> > hvp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(hv)).getVector());
 
@@ -199,7 +198,7 @@ namespace ZOO {
 
     void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
       Teuchos::RCP<std::vector<Real> > cp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<CPrim>(c)).getVector());
 
@@ -224,9 +223,9 @@ namespace ZOO {
   
     void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(v)).getVector();
       Teuchos::RCP<std::vector<Real> > jvp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<CPrim>(jv)).getVector());
 
@@ -261,9 +260,9 @@ namespace ZOO {
 
     void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<CDual>(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<const CDual>(v)).getVector();
       Teuchos::RCP<std::vector<Real> > ajvp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(ajv)).getVector());
 
@@ -299,11 +298,11 @@ namespace ZOO {
 
     void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(x))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(x)).getVector();
       Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<CDual>(const_cast<Vector<Real> &>(u))).getVector();
+        (Teuchos::dyn_cast<const CDual>(u)).getVector();
       Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(v))).getVector();
+        (Teuchos::dyn_cast<const XPrim>(v)).getVector();
       Teuchos::RCP<std::vector<Real> > ahuvp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<XDual>(ahuv)).getVector());
 

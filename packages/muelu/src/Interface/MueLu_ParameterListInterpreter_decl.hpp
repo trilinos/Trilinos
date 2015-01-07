@@ -87,6 +87,7 @@ namespace MueLu {
     public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
+    typedef std::pair<std::string, const FactoryBase*> keep_pair;
 
   public:
     //! @name Constructors/Destructors
@@ -157,7 +158,8 @@ namespace MueLu {
     void SetEasyParameterList(const Teuchos::ParameterList& paramList);
     void Validate(const Teuchos::ParameterList& paramList) const;
 
-    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager) const;
+    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                              int levelID, std::vector<keep_pair>& keeps) const;
 
     bool useCoordinates_;
     //@}

@@ -68,8 +68,7 @@ public:
   typedef Kokkos::Cuda          execution_space ;
   typedef unsigned int          size_type ;
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device
-   *          with size = scalar_size * scalar_count.
+  /** \brief  Allocate a contiguous block of memory on the Cuda device.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
@@ -77,10 +76,7 @@ public:
    *
    *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string    & label ,
-                          const std::type_info & scalar_type ,
-                          const size_t           scalar_size ,
-                          const size_t           scalar_count );
+  static void * allocate( const std::string & label , const size_t size );
 
   /** \brief  Increment the reference count of the block of memory
    *          in which the input pointer resides.
@@ -117,6 +113,7 @@ public:
    */
 #if defined( __CUDACC__ )
   static void texture_object_attach( const void            * const arg_ptr
+                                   , const unsigned                arg_type_size
                                    , ::cudaChannelFormatDesc const & arg_desc
                                    , ::cudaTextureObject_t * const arg_tex_obj
                                    , void const           ** const arg_alloc_ptr
@@ -151,8 +148,7 @@ public:
   /** \brief  If UVM capability is available */
   static bool available();
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device
-   *          with size = scalar_size * scalar_count.
+  /** \brief  Allocate a contiguous block of memory on the Cuda device.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
@@ -160,10 +156,7 @@ public:
    *
    *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string    & label ,
-                          const std::type_info & scalar_type ,
-                          const size_t           scalar_size ,
-                          const size_t           scalar_count );
+  static void * allocate( const std::string & label , const size_t size );
 
   /** \brief  Increment the reference count of the block of memory
    *          in which the input pointer resides.
@@ -199,6 +192,7 @@ public:
    */
 #if defined( __CUDACC__ )
   static void texture_object_attach( const void            * const arg_ptr
+                                   , const unsigned                arg_type_size
                                    , ::cudaChannelFormatDesc const & arg_desc
                                    , ::cudaTextureObject_t * const arg_tex_obj
                                    , void const           ** const arg_alloc_ptr
@@ -227,8 +221,7 @@ public:
   /** \brief  Memory is in HostSpace so use the HostSpace::execution_space */
   typedef HostSpace::execution_space  execution_space ;
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device
-   *          with size = scalar_size * scalar_count.
+  /** \brief  Allocate a contiguous block of memory on the Cuda device.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
@@ -236,10 +229,7 @@ public:
    *
    *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string    & label ,
-                          const std::type_info & scalar_type ,
-                          const size_t           scalar_size ,
-                          const size_t           scalar_count );
+  static void * allocate( const std::string & label , const size_t size );
 
   /** \brief  Increment the reference count of the block of memory
    *          in which the input pointer resides.
@@ -279,9 +269,23 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template<> struct DeepCopy< CudaSpace , CudaSpace > { DeepCopy( void * dst , const void * src , size_t ); };
-template<> struct DeepCopy< CudaSpace , HostSpace > { DeepCopy( void * dst , const void * src , size_t ); };
-template<> struct DeepCopy< HostSpace , CudaSpace > { DeepCopy( void * dst , const void * src , size_t ); };
+template<> struct DeepCopy< CudaSpace , CudaSpace >
+{
+  DeepCopy( void * dst , const void * src , size_t );
+  DeepCopy( const Cuda & , void * dst , const void * src , size_t );
+};
+
+template<> struct DeepCopy< CudaSpace , HostSpace >
+{
+  DeepCopy( void * dst , const void * src , size_t );
+  DeepCopy( const Cuda & , void * dst , const void * src , size_t );
+};
+
+template<> struct DeepCopy< HostSpace , CudaSpace >
+{
+  DeepCopy( void * dst , const void * src , size_t );
+  DeepCopy( const Cuda & , void * dst , const void * src , size_t );
+};
 
 template<> struct DeepCopy< CudaSpace , CudaUVMSpace >
 {

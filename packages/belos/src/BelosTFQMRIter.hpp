@@ -239,6 +239,7 @@ namespace Belos {
       state.Rtilde = Rtilde_;
       state.D = D_;
       state.V = V_;
+      state.solnUpdate = solnUpdate_;
       return state;
     }
     
@@ -259,9 +260,10 @@ namespace Belos {
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
-    /*! \note This method returns a null pointer because the linear problem is updated every iteration.
+    /*! \note This method returns the accumulated update to the solution instead of updating
+              the linear problem, since it may incur an additional preconditioner application each iteration.
      */
-    Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
+    Teuchos::RCP<MV> getCurrentUpdate() const { return solnUpdate_; }
 
     //@}
 
@@ -335,7 +337,7 @@ namespace Belos {
     Teuchos::RCP<MV> Rtilde_;
     Teuchos::RCP<MV> D_;
     Teuchos::RCP<MV> V_;
-
+    Teuchos::RCP<MV> solnUpdate_;
   };
   
   
@@ -406,6 +408,7 @@ namespace Belos {
           R_ = MVT::Clone( *tmp, 1 );
 	  AU_ = MVT::Clone( *tmp, 1 );
 	  D_ = MVT::Clone( *tmp, 1 );
+	  solnUpdate_ = MVT::Clone( *tmp, 1 );
           V_ = MVT::Clone( *tmp, 1 );
         }
 
@@ -456,6 +459,7 @@ namespace Belos {
       U_ = MVT::CloneCopy( *R_ );
       Rtilde_ = MVT::CloneCopy( *R_ );
       MVT::MvInit( *D_ );
+      MVT::MvInit( *solnUpdate_ );
       // Multiply the current residual by Op and store in V_
       //       V_ = Op * R_ 
       //
@@ -565,9 +569,10 @@ namespace Belos {
       //
       //--------------------------------------------------------
       // Update the solution.
+      // Don't update the linear problem object, may incur additional preconditioner application.
       //--------------------------------------------------------
       //
-      lp_->updateSolution( D_, true, eta );
+      MVT::MvAddMv( STone, *solnUpdate_, eta, *D_, *solnUpdate_ );
       //
       if (iter_%2) {
 	//

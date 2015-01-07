@@ -46,6 +46,7 @@
     \author Created by D. Ridzal and D. Kouri.
  */
 
+// Whether or not to use the exact Hessian-times-a-vector
 #ifndef USE_HESSVEC 
 #define USE_HESSVEC 1
 #endif

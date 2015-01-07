@@ -2,13 +2,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,8 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -63,10 +63,10 @@ template < class ExecSpace , class ResultType , class FunctorType >
 class TaskMember ;
 
 template< class ExecPolicy , class ResultType , class FunctorType >
-struct TaskForEach ;
+class TaskForEach ;
 
 template< class ExecPolicy , class ResultType , class FunctorType >
-struct TaskReduce ;
+class TaskReduce ;
 
 template< class ExecPolicy , class ResultType , class FunctorType >
 struct TaskScan ;
@@ -115,7 +115,7 @@ private:
 
   enum { Opt1  =   Arg1_is_space && Arg2_is_void
        , Opt2  = ! Arg1_is_space && Arg2_is_void
-       , Opt3  = ! Arg1_is_space && Arg2_is_space 
+       , Opt3  = ! Arg1_is_space && Arg2_is_space
        , OptOK = Impl::StaticAssert< Opt1 || Opt2 || Opt3 , ErrorNoExecutionSpace >::value
        };
 
@@ -265,11 +265,7 @@ public:
     : m_future(0)
     {
       if ( n ) {
-        m_future = (future_type *)
-          MemorySpace::allocate( "FutureArray"
-                               , typeid(future_type)
-                               , sizeof(future_type)
-                               , n + 1 );
+        m_future = (future_type *) MemorySpace::allocate( "FutureArray" , sizeof(future_type) * ( n + 1 ) );
         for ( size_t i = 0 ; i <= n ; ++i ) m_future[i].m_task = 0 ;
       }
     }

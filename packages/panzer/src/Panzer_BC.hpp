@@ -54,6 +54,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Panzer_GlobalData.hpp"
+
 namespace Teuchos {
   class ParameterList;
 }
@@ -65,7 +67,7 @@ namespace panzer {
   /** \brief Nonmember constructor to build BC objects from a ParameterList
       \relates panzer::BC
   */
-  void buildBCs(std::vector<panzer::BC>& bcs, const Teuchos::ParameterList& p);
+  void buildBCs(std::vector<panzer::BC>& bcs, const Teuchos::ParameterList& p, const Teuchos::RCP<panzer::GlobalData> global_data);
 
   //! Type of boundary condition.
   enum BCType {
@@ -111,6 +113,11 @@ namespace panzer {
     BC(std::size_t bc_id,
        const Teuchos::ParameterList& p);
 
+    //! \brief Ctor based on ParameterList
+    BC(std::size_t bc_id,
+       const Teuchos::ParameterList& p,
+       const Teuchos::RCP<panzer::GlobalData> gd);
+
     //! Dtor.
     ~BC();
 
@@ -134,6 +141,9 @@ namespace panzer {
 
     //! Returns a parameter list with user defined parameters for bc.
     Teuchos::RCP<const Teuchos::ParameterList> params() const;
+
+    //! Returns the RCP to the global data.
+    Teuchos::RCP<panzer::GlobalData> global_data() const;
 
     //! Returns a nonconst parameter list with user defined parameters for bc.  Nonconst is meant to be used for parameter list validation.
     Teuchos::RCP<Teuchos::ParameterList> nonconstParams() const;
@@ -164,6 +174,7 @@ namespace panzer {
 
     Teuchos::RCP<Teuchos::ParameterList> m_params;
 
+    Teuchos::RCP<panzer::GlobalData> m_gd;
   };
 
   std::ostream& 

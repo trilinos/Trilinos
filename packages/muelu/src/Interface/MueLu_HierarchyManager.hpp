@@ -73,6 +73,7 @@ namespace MueLu {
   class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
+    typedef std::pair<std::string, const FactoryBase*> keep_pair;
 
   public:
 
@@ -99,9 +100,9 @@ namespace MueLu {
     }
 
     //!
-    Teuchos::Ptr<FactoryManagerBase> GetFactoryManager(int levelID) const {
+    RCP<FactoryManagerBase> GetFactoryManager(int levelID) const {
       // NOTE: last levelManager is used for all the remaining levels
-      return (levelID >= levelManagers_.size() ? levelManagers_[levelManagers_.size()-1]() : levelManagers_[levelID]());
+      return (levelID >= levelManagers_.size() ? levelManagers_[levelManagers_.size()-1] : levelManagers_[levelID]);
     }
 
     //! returns number of factory managers stored in levelManagers_ vector.
@@ -134,8 +135,8 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level>    l  = H.GetLevel(0);
-      RCP<Operator> Op = l->Get<RCP<Operator> >("A");
+      RCP<Level>    l0 = H.GetLevel(0);
+      RCP<Operator> Op = l0->Get<RCP<Operator> >("A");
 
       Xpetra::UnderlyingLib lib = Op->getDomainMap()->lib();
       H.setlib(lib);
@@ -145,16 +146,45 @@ namespace MueLu {
 
       // Setup Hierarchy
       H.SetMaxCoarseSize(maxCoarseSize_);
-      H.SetDefaultVerbLevel(verbosity_);
+      VerboseObject::SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
 
       H.SetPRrebalance(doPRrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);
 
-      // TODO: coarsestLevelManager
-
       H.Clear();
+
+      // There are few issues with using Keep in the interpreter:
+      //   1. Hierarchy::Keep interface takes a name and a factory. If
+      //      factories are different on different levels, the AddNewLevel() call
+      //      in Hierarchy does not work properly, as it assume that factories are
+      //      the same.
+      //   2. FactoryManager does not have a Keep option, only Hierarchy and
+      //      Level have it
+      //   3. Interpreter constructs factory managers, but not levels. So we
+      //      cannot set up Keep flags there.
+      //
+      // The solution implemented here does the following:
+      //   1. Construct hierarchy with dummy levels. This avoids
+      //      Hierarchy::AddNewLevel() calls which will propagate wrong
+      //      inheritance.
+      //   2. Interpreter constructs keep_ array with names and factories for
+      //      that level
+      //   3. For each level, we call Keep(name, factory) for each keep_
+      for (int i = 0; i < numDesiredLevel_; i++) {
+        std::map<int, std::vector<keep_pair> >::const_iterator it = keep_.find(i);
+        if (it != keep_.end()) {
+          RCP<Level> l = H.GetLevel(i);
+          const std::vector<keep_pair>& keeps = it->second;
+          for (size_t j = 0; j < keeps.size(); j++)
+            l->Keep(keeps[j].first, keeps[j].second);
+        }
+        if (i < numDesiredLevel_-1) {
+          RCP<Level> newLevel = rcp(new Level());
+          H.AddLevel(newLevel);
+        }
+      }
 
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
@@ -207,7 +237,7 @@ namespace MueLu {
     // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
-    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
+    Teuchos::RCP<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
       // NOTE: the order of 'if' statements is important
       if (levelID == -1)                    // levelID = -1 corresponds to the finest level
         return Teuchos::null;
@@ -218,7 +248,7 @@ namespace MueLu {
       if (levelManagers_.size() == 0) {     // default factory manager.
         // The default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager
         static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
-        return defaultMngr();
+        return defaultMngr;
       }
 
       return GetFactoryManager(levelID);
@@ -235,12 +265,14 @@ namespace MueLu {
     Teuchos::Array<int>   prolongatorsToPrint_;
     Teuchos::Array<int>   restrictorsToPrint_;
 
+    std::map<int, std::vector<keep_pair> > keep_;
+
   private:
 
     template<class T>
     void WriteData(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
       for (int i = 0; i < data.size(); ++i) {
-        std::string fileName = name + "_" + toString(data[i]) + ".m";
+        std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
 
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);

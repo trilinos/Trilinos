@@ -43,7 +43,7 @@
 #define KOKKOS_TEUCHOS_COMM_ADAPTERS_UQ_PCE_HPP
 
 #include "Stokhos_ConfigDefs.h"
-#if defined(HAVE_STOKHOS_KOKKOSMPICOMM)
+#if defined(HAVE_STOKHOS_TEUCHOSKOKKOSCOMM)
 
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE_Contiguous.hpp"

@@ -210,8 +210,7 @@ namespace Piro {
                 rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
-            break;
-
+            /* There is no break here and that is on purpose */
           case 3:
             for(ii=0;ii<3+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<3+NscalarDof;jj++){

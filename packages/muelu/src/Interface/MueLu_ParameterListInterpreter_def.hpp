@@ -251,26 +251,27 @@ namespace MueLu {
     // FIXME: should it be here, or higher up
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
-    UpdateFactoryManager(paramList, ParameterList(), *defaultManager);
-    defaultManager->Print();
 
+    std::vector<keep_pair> keeps0;
+    UpdateFactoryManager(paramList, ParameterList(), *defaultManager, 0, keeps0);
+
+    // Create level specific factory managers
     for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-      RCP<FactoryManager> levelManager;
+      // Note, that originally if there were no level specific parameters, we
+      // simply copied the defaultManager However, with the introduction of
+      // levelID to UpdateFactoryManager (required for reuse), we can no longer
+      // guarantee that the kept variables are the same for each level even if
+      // dependency structure does not change.
+      RCP<FactoryManager> levelManager = rcp(new FactoryManager(*defaultManager));
+      levelManager->SetVerbLevel(defaultManager->GetVerbLevel());
 
-      if (paramList.isSublist("level " + toString(levelID))) {
-        // Some level specific parameters, update default manager
-        bool mustAlreadyExist = true;
-        ParameterList& levelList = paramList.sublist("level " + toString(levelID), mustAlreadyExist);
+      ParameterList levelList;
+      if (paramList.isSublist("level " + toString(levelID)))
+        levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
 
-        levelManager = rcp(new FactoryManager(*defaultManager));
-        levelManager->SetVerbLevel(defaultManager->GetVerbLevel());
-
-        UpdateFactoryManager(levelList, paramList, *levelManager);
-
-      } else {
-        // No level specific parameter, use default manager
-        levelManager = defaultManager;
-      }
+      std::vector<keep_pair> keeps;
+      UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
+      this->keep_[levelID] = keeps;
 
       this->AddFactoryManager(levelID, 1, levelManager);
     }
@@ -322,9 +323,20 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager(Teuchos::ParameterList& paramList,
-        const Teuchos::ParameterList& defaultList, FactoryManager& manager) const {
+        const Teuchos::ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
     // NOTE: Factory::SetParameterList must be called prior to Factory::SetFactory, as
     // SetParameterList sets default values for non mentioned parameters, including factories
+
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
+    if (reuseType != "none" && (multigridAlgo != "sa" && multigridAlgo != "emin")) {
+        this->GetOStream(Warnings0) << "Ignoring reuse options as multigrid algorithm is not \"sa\" or \"emin\"" << std::endl;
+        reuseType = "none";
+    }
+    if (reuseType == "emin" && multigridAlgo != "emin") {
+      this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
+      reuseType = "none";
+    }
 
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
@@ -333,7 +345,7 @@ namespace MueLu {
         paramList.isParameter("smoother: type")    || paramList.isParameter("smoother: pre type")    || paramList.isParameter("smoother: post type")   ||
         paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
         paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
-        paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");;
+        paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");
     MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: pre or post", std::string, PreOrPost);
     if (PreOrPost == "none") {
       manager.SetFactory("Smoother", Teuchos::null);
@@ -427,7 +439,15 @@ namespace MueLu {
         manager.SetFactory("PreSmoother",  preSmoother);
         manager.SetFactory("PostSmoother", postSmoother);
       }
-
+    }
+    if ((reuseType == "RAP" && levelID) || (reuseType == "full")) {
+      // The difference between "RAP" and "full" is keeping smoothers. However,
+      // as in both cases we keep coarse matrices, we do not need to update
+      // coarse smoothers. On the other hand, if a user changes fine level
+      // matrix, "RAP" would update the fine level smoother, while "full" would
+      // not
+      keeps.push_back(keep_pair("PreSmoother",  manager.GetFactory("PreSmoother") .get()));
+      keeps.push_back(keep_pair("PostSmoother", manager.GetFactory("PostSmoother").get()));
     }
 
     // === Coarse solver ===
@@ -467,6 +487,12 @@ namespace MueLu {
 
       manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
     }
+    if ((reuseType == "RAP" && levelID) || (reuseType == "full")) {
+      // We do keep_pair("PreSmoother", // manager.GetFactory("CoarseSolver").get())
+      // as the coarse solver factory is in fact a smoothing factory, so the
+      // only pieces of data it generates are PreSmoother and PostSmoother
+      keeps.push_back(keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get()));
+    }
 
     // === Aggregation ===
     // Aggregation graph
@@ -478,10 +504,12 @@ namespace MueLu {
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
     dropFactory->SetParameterList(dropParams);
-    manager.SetFactory("Graph", dropFactory);
+    manager.SetFactory("Graph",       dropFactory);
 
     // Aggregation sheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
+    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled", Exceptions::RuntimeError,
+                               "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     RCP<Factory> aggFactory;
     if      (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
@@ -497,12 +525,19 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
+      // I'm not sure why we need this line, but without it we construct CoalesceDropFactory twice
+      // SaPFactory
+      //   FilteredAFactory
+      //     CoalesceDropFactory
+      //   TentativePFactory
+      //     UncoupledAggregationFactory
+      //       CoalesceDropFactory
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
 
     } else if (aggType == "coupled") {
       aggFactory = rcp(new CoupledAggregationFactory());
     }
-    aggFactory->SetFactory("Graph",       manager.GetFactory("Graph"));
-    aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+    aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
@@ -522,7 +557,8 @@ namespace MueLu {
     manager.SetFactory("Nullspace", nullSpace);
 
     // === Prolongation ===
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
+                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
     if (multigridAlgo == "unsmoothed") {
       manager.SetFactory("P", Ptent);
 
@@ -539,7 +575,9 @@ namespace MueLu {
         ParameterList fParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
         filterFactory->SetParameterList(fParams);
-        filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+        filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+        // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+        filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
         P->SetFactory("A", filterFactory);
       }
 
@@ -569,6 +607,11 @@ namespace MueLu {
       ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations",           int, Pparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+      if (reuseType == "emin") {
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations",   int, Pparams);
+        Pparams.set("Keep P0",          true);
+        Pparams.set("Keep Constraint0", true);
+      }
       P->SetParameterList(Pparams);
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
@@ -604,13 +647,21 @@ namespace MueLu {
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     ParameterList RAPparams;
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+#if 0
+    // This should be enable once Tpetra supports proper graph reuse in MMM
+    // At the moment, only Epetra does, and Tpetra throws
+    if (reuseType == "RP") {
+      RAPparams.set("Keep AP Pattern",  true);
+      RAPparams.set("Keep RAP Pattern", true);
+    }
+#endif
     RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
       RAP->SetFactory("R", manager.GetFactory("R"));
     if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
       RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
-      aggExport->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
       RAP->AddTransferFactory(aggExport);
     }
     manager.SetFactory("A", RAP);
@@ -625,10 +676,26 @@ namespace MueLu {
       RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
     }
 
+    if (reuseType == "RP") {
+      keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
+      if (!this->implicitTranspose_)
+        keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
+    }
+    if ((reuseType == "RP" || reuseType == "emin") &&
+        useCoordinates_)
+      keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
+
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
     if (enableRepart) {
 #ifdef HAVE_MPI
+      // Short summary of the issue: RebalanceTransferFactory shares ownership
+      // of "P" with SaPFactory, and therefore, changes the stored version.
+      // Unless we do a deep copy or something similar, this leads to
+      // inconsistencies in reuse.
+      TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && reuseType == "RP", Exceptions::InvalidArgument,
+                                 "Reuse type \"PR\" requires \"repartition: rebalance P and R\" set to false");
+
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
@@ -670,6 +737,8 @@ namespace MueLu {
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
       manager.SetFactory("Importer", repartFactory);
+      if (reuseType != "none")
+        keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
 
       // Rebalanced A
       RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
@@ -716,6 +785,12 @@ namespace MueLu {
 #else
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif
+    }
+    if (reuseType == "RAP" || reuseType == "full") {
+      keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
+      if (!this->implicitTranspose_)
+        keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
+      keeps.push_back(keep_pair("A", manager.GetFactory("A").get()));
     }
   }
 #undef MUELU_SET_VAR_2LIST

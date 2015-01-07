@@ -52,8 +52,6 @@
 #define IFPACK2_BORDEREDOPERATOR_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Kokkos_DefaultNode.hpp"
-
 #include "Tpetra_Operator.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
