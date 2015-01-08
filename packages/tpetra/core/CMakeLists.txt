@@ -272,13 +272,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor
-  TPETRA_ENABLE_KOKKOS_REFACTOR
-  "Enable the \"Kokkos refactor\" version of Tpetra.  In order to enable this, you must also enable the following subpackages that do not currently build by default: KokkosCore, TeuchosKokkosCompat, KokkosContainers, KokkosAlgorithms, TeuchosKokkosComm, and TpetraKernels."
-  OFF
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MMM_Timings
   HAVE_TPETRA_MMM_TIMINGS
   "Enable the timings for the MMM kernels"
@@ -291,6 +284,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # 2014) marked Primary Stable.  This will change in the future, but
 # for now, you must enable these subpackages explicitly.  The error
 # message below explains how to do that.
+
+ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
 IF (Tpetra_ENABLE_Kokkos_Refactor AND
     (NOT ${PACKAGE_NAME}_ENABLE_KokkosCore OR
      NOT ${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat OR
