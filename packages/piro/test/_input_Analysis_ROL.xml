@@ -156,6 +156,44 @@
       <Parameter name="Error File" type="string" value="dak.err"/>
     </ParameterList>
     <ParameterList name="ROL">
+      <Parameter name="Response Vector Index" type="int" value="0"/>
+      <Parameter name="Parameter Vector Index" type="int" value="0"/>
+      <Parameter name="Print Output" type="bool" value="true"/>
+      
+      <Parameter name="Seed For Thyra Randomize" type="int" value="42"/>
+      
+      <Parameter name="Parameter Initial Guess Type" type="string" value="From Model Evaluator"/> <!-- other choices are "Uniform Vector" or "Random Vector", default is "From Model Evaluator"/-->
+      <!--Parameter name="Uniform Parameter Guess" type="double" value="2.0"/-->
+      <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/-->     
+      
+      <Parameter name="Check Gradient" type="bool" value="false"/>
+      <Parameter name="Number Of Gradient Checks" type="int" value="1"/>
+      
+      <Parameter name="Test Vector" type="bool" value="false"/>
+      <Parameter name="Number Of Vector Tests" type="int" value="1"/>
+      
+      <Parameter name="Gradient Tolerance" type="double" value="1e-4"/>
+      <Parameter name="Step Tolerance" type="double" value="1e-4"/>
+      <Parameter name="Max Iterations" type="int" value="36"/>
+     
+      <Parameter name="Bound Constrained" type="bool" value="true"/>
+      <Parameter name="epsilon bound" type="double" value="1e-4"/>
+      <ParameterList name="ROL Options">
+        <Parameter  name="Descent Type" type="string" value="Quasi-Newton Method"/>
+        <Parameter  name="Maximum Secant Storage" type="int" value="50"/>
+        <!--Parameter  name="Descent Type" type="string" value="Newton-Krylov"/-->
+        <Parameter  name="Secant Type" type="string" value="Limited-Memory BFGS"/>
+        <Parameter  name="Linesearch Type"  type="string" value="Backtracking"/>
+        <Parameter  name="Linesearch Curvature Condition" type="string" value="Strong Wolfe Conditions"/>
+        <Parameter  name="Trust-Region Subproblem Solver Type" type="string" value="Truncated CG"/>
+        <!-- Linesearch Parameters/-->
+        <Parameter  name="Maximum Number of Function Evaluations" type="int" value="5"/>
+        <Parameter  name="Sufficient Decrease Parameter" type="double" value="1.e-4"/>
+        <Parameter  name="Curvature Conditions Parameter" type="double" value="0.9"/>
+        <Parameter  name="Backtracking Rate" type="double" value="0.5"/>
+        <Parameter  name="Initial Linesearch Parameter" type="double" value="1.0"/>
+        <Parameter  name="User Defined Linesearch Parameter" type="bool" value="false"/>
+      </ParameterList>
     </ParameterList>
     <ParameterList name="MOOCHO">
       <ParameterList name="Parameter Guess">

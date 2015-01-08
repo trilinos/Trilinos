@@ -72,7 +72,13 @@ MockModelEval_A::MockModelEval_A(const MPI_Comm appComm)
     const int numParameters= 2;
     p_map = rcp(new Epetra_LocalMap(numParameters, 0, *Comm));
     p_init = rcp(new Epetra_Vector(*p_map));
-    for (int i=0; i<numParameters; i++) (*p_init)[i]= 1.0;
+    p_lo = rcp(new Epetra_Vector(*p_map));
+    p_up = rcp(new Epetra_Vector(*p_map));
+    for (int i=0; i<numParameters; i++) {
+      (*p_init)[i]= 1.0;
+      (*p_lo)[i]= 0.1;
+      (*p_up)[i]= 10.0;
+    }
 
     //set up jacobian graph
     jacGraph = rcp(new Epetra_CrsGraph(Copy, *x_map, vecLength, true));
@@ -157,10 +163,30 @@ RCP<const Epetra_Vector> MockModelEval_A::get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
-                     "Error!  App::ModelEval::get_p_map() only " <<
+                     "Error!  App::ModelEval::get_p_init() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
                      l << std::endl);
   return p_init;
+}
+
+RCP<const Epetra_Vector> MockModelEval_A::get_p_lower_bounds(int l) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+                     std::endl <<
+                     "Error!  App::ModelEval::get_p_lower_bounds() only " <<
+                     " supports 1 parameter vector.  Supplied index l = " <<
+                     l << std::endl);
+  return p_lo;
+}
+
+RCP<const Epetra_Vector> MockModelEval_A::get_p_upper_bounds(int l) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
+                     std::endl <<
+                     "Error!  App::ModelEval::get_p_upper_bounds() only " <<
+                     " supports 1 parameter vector.  Supplied index l = " <<
+                     l << std::endl);
+  return p_up;
 }
 
 EpetraExt::ModelEvaluator::InArgs MockModelEval_A::createInArgs() const
