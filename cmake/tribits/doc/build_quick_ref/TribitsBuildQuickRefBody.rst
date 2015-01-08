@@ -929,7 +929,7 @@ are just a convenience to make it easier to specify the location of the
 libraries.
 
 In order to allow a TPL that normally requires one or more libraries to ignore
-the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES``, for example::
+the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES`` to empty, for example::
 
   -D BLAS_LIBRARY_NAMES=""
 
@@ -955,6 +955,12 @@ WARNING: Do *not* try to hack the system and set::
 
 This is not compatible with proper CMake usage and it not guaranteed
 to be supported.
+
+If all the parts of a TPL are not found on an initial configure, then one can
+change the variables ``<TPLNAME>_INCLUDE_DIRS``, ``<TPLNAME>_LIBRARY_NAMES``,
+and/or ``<TPLNAME>_LIBRARY_DIRS``.  One can do this over and over until the
+TPL is found. By reconfiguring, one avoid a complete configure from scrath
+which saves time.
 
 
 Disabling support for a Third-Party Library (TPL)

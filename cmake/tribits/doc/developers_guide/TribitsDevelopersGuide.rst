@@ -2511,7 +2511,7 @@ independent TriBITS repositories.  The goal of maintaining these under TriBITS
 is to enforce conformity in case these independent repositories are combined
 into a single meta-project.
 
-The common riBITS TPLs are contained under the directory::
+The common TriBITS TPLs are contained under the directory::
 
   tribits/common_tpls/
 
@@ -2532,9 +2532,9 @@ By using a standard TPL definition, it is guaranteed that the TPL used will be
 consistent with all of the TriBITS packages that depend on these TPLs in case
 they are combined into a single project.
 
-Note that just because packages in two different TriBIITS repositories
+Note that just because packages in two different TriBITS repositories
 reference the same TPL does not necessarily mean that it needs to be moved
-into the TriBITS source tree under ``tribits/common_tpls``.  For example, if
+into the TriBITS source tree under ``tribits/common_tpls/``.  For example, if
 the TPL ``QT`` is defined in an `upstream`_ repository (e.g. Trilinos), then a
 package in a `downstream`_ repository can list a dependency on the TPL ``QT``
 without having to define its own ``QT`` TPL in its repository's
