@@ -121,6 +121,9 @@ int main(int argc, char *argv[]) {
     double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
 
     std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
+    std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
+    std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
+    std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
     std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
     std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
     std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
@@ -230,13 +233,16 @@ int main(int argc, char *argv[]) {
 
     } else {
       if (!mapFile.empty())
-        map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
+        map = Utils2::ReadMap(mapFile, lib, comm);
       comm->barrier();
 
       const bool binaryFormat = false;
 
       if (!binaryFormat && !map.is_null()) {
-        A = Utils::Read(matrixFile, map);
+        RCP<const Map> colMap    = (!colMapFile.empty()    ? Utils2::ReadMap(colMapFile,    lib, comm) : Teuchos::null);
+        RCP<const Map> domainMap = (!domainMapFile.empty() ? Utils2::ReadMap(domainMapFile, lib, comm) : Teuchos::null);
+        RCP<const Map> rangeMap  = (!rangeMapFile.empty()  ? Utils2::ReadMap(rangeMapFile,  lib, comm) : Teuchos::null);
+        A = Utils::Read(matrixFile, map, colMap, domainMap, rangeMap);
 
       } else {
         A = Utils::Read(matrixFile, lib, comm, binaryFormat);
