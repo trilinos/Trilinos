@@ -67,56 +67,57 @@ public:
   void plus( const Vector<Real> &x ) {
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    int dimension  = (int)(this->std_vec_->size());
-    for (int i=0; i<dimension; i++) {
-      (*this->std_vec_)[i] += xval[i];
+    unsigned dimension  = std_vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
+      (*std_vec_)[i] += xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    int dimension = (int)(this->std_vec_->size());
-    for (int i=0; i<dimension; i++) {
-      (*this->std_vec_)[i] *= alpha;
+    unsigned dimension = std_vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
+      (*std_vec_)[i] *= alpha;
     }
   }
 
   Real dot( const Vector<Real> &x ) const {
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    int dimension  = (int)(this->std_vec_->size());
+    unsigned dimension  = std_vec_->size();
     Real val = 0;
-
-    for (int i=0; i<dimension; i++) {
-      val += (*this->std_vec_)[i]*xval[i];
+    for (unsigned i=0; i<dimension; i++) {
+      val += (*std_vec_)[i]*xval[i];
     }
     return val;
   }
 
   Real norm() const {
     Real val = 0;
-    val = std::sqrt( this->dot(*this) );
+    val = std::sqrt( dot(*this) );
     return val;
   }
 
   Teuchos::RCP<Vector<Real> > clone() const {
-    return Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(this->std_vec_->size())) ));
+    return Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())) ));
   }
 
   Teuchos::RCP<const std::vector<Element> > getVector() const {
-    return this->std_vec_;
+    return std_vec_;
   }
 
   Teuchos::RCP<std::vector<Element> > getVector() {
-    return this->std_vec_;
+    return std_vec_;
   }
 
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(this->std_vec_->size(), 0.0)) ));
-    (*e->getVector())[i]= 1.0;
+    Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ));
+    (*e->getVector())[i] = 1.0;
     return e;
   }
 
-  int dimension() const {return this->std_vec_->size();}
+  int dimension() const {
+    return std_vec_->size();
+  }
 
 }; // class StdVector
 

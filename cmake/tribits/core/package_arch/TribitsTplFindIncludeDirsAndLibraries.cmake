@@ -375,7 +375,11 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
         " This variable, however, is the final value and will not be touched."
         )
       ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
-        CACHE FILEPATH ${DOCSTR} )
+        CACHE FILEPATH ${DOCSTR} FORCE)
+      # Above, we have to force the set in case the find failed the last
+      # configure in which case this cache var will be empty.  NOTE: If the
+      # user specified a non-empty TPL_${TPL_NAME}_LIBRARIES, then we would
+      # never get here in the first place!
 
       IF (NOT TPL_${TPL_NAME}_LIBRARIES OR NOT _${TPL_NAME}_ENABLE_SUCCESS)
         MESSAGE(
@@ -389,7 +393,7 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
           "   to point to the full paths for the libraries which will\n"
           "   bypass any search for libraries and these libraries will be used without\n"
           "   question in the build.  (But this will result in a build-time error\n"
-          "   obviously if all all of the necssary symbols are not found.)")
+          "   if not all of the necessary symbols are found.)")
         TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES_HANDLE_FAIL()
       ENDIF()
 
@@ -483,7 +487,11 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
         )
 
       ADVANCED_SET(TPL_${TPL_NAME}_INCLUDE_DIRS ${INCLUDES_FOUND}
-        CACHE PATH ${DOCSTR})
+        CACHE PATH ${DOCSTR} FORCE)
+      # Above, we have to force the set in case the find failed the last
+      # configure in which case this cache var will be empty.  NOTE: If the
+      # user specified a non-empty TPL_${TPL_NAME}_INCLUDE_DIRS, then we would
+      # never get here in the first place!
 
       IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS OR NOT _${TPL_NAME}_ENABLE_SUCCESS)
         MESSAGE(
@@ -552,6 +560,10 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
       SET(TPL_ENABLE_${TPL_NAME} OFF CACHE STRING
         "Forced off since tentative enable failed!"  FORCE)
     ENDIF()
+  ENDIF()
+
+  IF (_${TPL_NAME}_ENABLE_SUCCESS)
+    GLOBAL_SET(TPL_${TPL_NAME}_NOT_FOUND FALSE)
   ENDIF()
 
 ENDFUNCTION()

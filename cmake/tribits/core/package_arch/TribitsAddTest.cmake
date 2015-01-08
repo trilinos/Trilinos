@@ -57,7 +57,7 @@ INCLUDE(TribitsAddTestHelpers)
 #       | POSTFIX_AND_ARGS_0 <postfix0> <arg0> <arg1> ...
 #         POSTFIX_AND_ARGS_1 ... ]
 #     [COMM [serial] [mpi]]
-#     [NUM_MPI_PROCS <numProcs>]
+#     [NUM_MPI_PROCS <numMpiProcs>]
 #     [NUM_TOTAL_CORES_USED <numTotalCoresUsed>]
 #     [CATEGORIES <category0>  <category1> ...]
 #     [HOST <host0> <host1> ...]
@@ -197,10 +197,10 @@ INCLUDE(TribitsAddTestHelpers)
 #     serial mpi`` or ``COMM mpi serial`` is passed in, then the value of
 #     ``TPL_ENABLE_MPI`` does not determine if the test is added or not.
 #
-#   ``NUM_MPI_PROCS <numProcs>``
+#   ``NUM_MPI_PROCS <numMpiProcs>``
 #
 #     If specified, gives the number of MPI processes used to run the test
-#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numProcs>`` is greater
+#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numMpiProcs>`` is greater
 #     than ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If
 #     not specified, then the default number of processes for an MPI build
 #     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
@@ -213,9 +213,9 @@ INCLUDE(TribitsAddTestHelpers)
 #     If specified, gives the total number of processes or cores that is
 #     reported to CTest as the built-in CTest ``PROCESSORS`` property.  If
 #     this is not specified, then ``PROCESSORS`` is specified by the argument
-#     ``NUM_MPI_PROCS <numProcs>``.  This argument is used for test
+#     ``NUM_MPI_PROCS <numMpiProcs>``.  This argument is used for test
 #     scripts/executables that use more cores than MPI processes
-#     (i.e. ``<numProcs>``) and its only purpose is to inform CTest and
+#     (i.e. ``<numMpiProcs>``) and its only purpose is to inform CTest and
 #     TriBITS of the maximum number of processes or cores that are used by the
 #     underlying test executable/script.  When specified, if
 #     ``<numTotalCoresUsed>`` is greater than ``${MPI_EXEC_MAX_NUMPROCS}``,
@@ -531,42 +531,46 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Running multiple tests at the same time (TRIBITS_ADD_TEST())**
 #
-# By default, CTest will run many tests defined with ``ADD_TEST()`` at same
-# time as it can according to its parallel level (e.g. ``'test -j<N>'`` or the
-# CTest property ``CTEST_PARALLEL_LEVEL``).  For example, when raw ``'ctest
-# -j10'`` is run, CTest will run multiple tests at the same time to try to
-# make usage of 10 processes.  If all of the defined tests only used one
-# process (which is assumed by default except for MPI tests), then CTest will
-# run 10 tests at the same time and will launch new tests as running tests
-# finish.  One can also define tests using ``ADD_TEST()`` that use more than
-# one process or use more cores than the number of MPI processes.  When
-# passing in ``NUM_MPI_PROCS <numProcs>`` (see above), this TriBITS function
-# will set the built-in CTest property ``PROCESSORS`` to ``<numProcs>``
-# using::
+# By default, CTest will run as many tests defined with ``ADD_TEST()`` at same
+# time as it can according to its parallel level (e.g. ``'ctest -j<N>'`` or
+# the CTest property ``CTEST_PARALLEL_LEVEL``).  For example, when raw
+# ``'ctest -j10'`` is run, CTest will run multiple tests at the same time to
+# try to make usage of 10 processors/cores.  If all of the defined tests only
+# used one process (which is assumed by default except for MPI tests), then
+# CTest will run 10 tests at the same time and will launch new tests as
+# running tests finish.  One can also define tests which use more than one
+# process or use more cores than the number of MPI processes.  When passing in
+# ``NUM_MPI_PROCS <numMpiProcs>`` (see above), this TriBITS function will set the
+# built-in CTest property ``PROCESSORS`` to ``<numMpiProcs>`` using::
 #
-#   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <numProcs>)
+#   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <numMpiProcs>)
 #
-# This tells CTest that the defined test uses ``<numProcs>`` processes and
+# This tells CTest that the defined test uses ``<numMpiProcs>`` processes and
 # CTest will use that information to not exceed the requested parallel level.
 # For example, if several ``NUM_MPI_PROCS 3`` tests are defined and CTest is
 # run with ``'ctest -j12'``, then CTest would schedule and run 4 of these
-# tests at a time (to make use of 12 processes), starting new ones as running
-# tests finish, until all of the tests have been run.
+# tests at a time (to make use of 12 processors/cores on the machine),
+# starting new tests as running tests finish, until all of the tests have been
+# run.
 #
 # There are some situations where a test will use more processes/cores than
-# specified by ``NUM_MPI_PROCS <numProcs>`` such as when the underlying
+# specified by ``NUM_MPI_PROCS <numMpiProcs>`` such as when the underlying
 # executable fires off more processes in parallel to do processing.  Also, an
 # MPI program may use threading and therefore use overall more cores than the
 # number of MPI processes. For these cases, it is critical to set
 # ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to tell TriBITS and CTest how
-# many cores will be used.  This is needed to exclude the test if there are
-# too many processes/cores needed to run the test than are available.  If the
-# test is added, then this is needed to set the built-in CTest ``PROCESSORS``
-# property.  That is critical so that CTest can avoid overloading the machine.
-# For an MPI executable running on 4 processes that uses 10 threads per
-# process would set::
+# many cores will be used by a threaded test.  This is needed to exclude the
+# test if there are too many processes/cores needed to run the test than are
+# available.  Also, if the test is added, then this is needed to set the
+# built-in CTest ``PROCESSORS`` property so CTest can avoid overloading the
+# machine.  For example, for test where the MPI executable running on 4
+# processes uses 10 threads per process, one would set::
 #
-#    NUM_MPI_PROCS 4 NUM_TOTAL_CORES_USED 40
+#    NUM_MPI_PROCS  4  NUM_TOTAL_CORES_USED  40
+#
+# In this case, it sets the CTest ``PROCESSORS`` property as::
+#
+#   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <numTotalCoresUsed>)
 #
 # When the number of processes a test uses does not cleanly divide into the
 # requested CTest parallel level, it is not clear how CTest schedules the
@@ -575,15 +579,21 @@ INCLUDE(TribitsAddTestHelpers)
 # well observed is that CTest will run all defined tests regardless of the
 # size of the ``PROCESSORS`` property or the value of
 # ``CTEST_PARALLEL_LEVEL``.  For example, if there are tests where
-# ``PROCESSORS`` is set to 20 but ```ctest -j10'`` is run, then CTest will
-# still run those tests (using 20 processes) one at a time but will not
-# schedule any other tests while the parallel level is exceeded.
+# ``PROCESSORS`` is set to 20 but ```ctest -j10'`` is used, then CTest will
+# still run those tests (using 20 processes) but will not schedule any other
+# tests while the parallel level is exceeded.  This can overload the machine
+# obviously.  Therefore, always set ``MPI_EXEC_MAX_NUMPROCS`` to the maximum
+# number of cores/processes that can be comfortably run on a given machine.
+# Also note that MPI tests are very fragile to overloaded machines
 #
-# NOTE: **Never** manually override the ``PROCESSORS`` property.  Instead,
-# always using ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to set this.  This
-# is important becaues TriBITS needs to know how many processes/cores are
-# required in order to be able disable a test with too many cores/processes
-# for a given machine or imposed budget of processes to be used.
+# NOTE: **Never** manually override the ``PROCESSORS`` CTest property.
+# Instead, always using ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>`` to set
+# this.  This is important because TriBITS needs to know how many
+# processes/cores are required for test so that it can disable the test if the
+# test requires more cores/processes than a given machine can handle or to
+# exceed an imposed budget of the number processes to be used.  The latter is
+# important when running multiple ``ctest -J<N>`` invocations on the same test
+# machine.
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 #
