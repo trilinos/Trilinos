@@ -103,7 +103,6 @@ public:
     : FieldDataManager(),
       m_default_allocator(),
       m_default_alignment_increment_bytes(4),
-      m_user_specified_allocator(NULL),
       m_field_raw_data(num_ranks),
       m_num_bytes_allocated_per_field()
     {
@@ -118,7 +117,6 @@ public:
     : FieldDataManager(),
       m_default_allocator(),
       m_default_alignment_increment_bytes(user_specified_alignment_increment_bytes),
-      m_user_specified_allocator(user_specified_allocator_adaptor),
       m_field_raw_data(num_ranks),
       m_num_bytes_allocated_per_field()
     {
@@ -143,7 +141,6 @@ public:
 private:
     AllocatorAdaptor<page_aligned_allocator<unsigned char, FieldDataTag> > m_default_allocator;
     size_t m_default_alignment_increment_bytes;
-    AllocatorAdaptorInterface* m_user_specified_allocator;
     std::vector<std::vector<unsigned char*> > m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
 };
@@ -156,7 +153,6 @@ public:
         FieldDataManager(),
         m_default_allocator(),
         m_default_alignment_increment_bytes(4),
-        m_user_specified_allocator(NULL),
         m_field_raw_data(),
         m_num_bytes_allocated_per_field(),
         m_extra_capacity(8192),
@@ -190,7 +186,6 @@ private:
 
     AllocatorAdaptor<page_aligned_allocator<unsigned char, FieldDataTag> > m_default_allocator;
     size_t m_default_alignment_increment_bytes;
-    AllocatorAdaptorInterface* m_user_specified_allocator;
     std::vector<unsigned char*> m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
     size_t m_extra_capacity;

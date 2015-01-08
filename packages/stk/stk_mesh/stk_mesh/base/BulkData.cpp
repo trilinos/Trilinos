@@ -2431,31 +2431,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
 }
 
 
-namespace {
-void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const stk::mesh::EntityToDependentProcessorsMap & entity_to_dependent_processors_map)
-{
-#ifndef NDEBUG
-  {
-      std::ostringstream oss;
-      oss << "\n";
-      stk::mesh::EntityToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
-      for (; dep_proc_it != entity_to_dependent_processors_map.end() ; ++dep_proc_it ) {
-          EntityKey key = dep_proc_it->first;
-          const std::set<int> & sharing_procs = dep_proc_it->second;
-          oss << title << " P" << parallel_rank << ": entity_to_dependent_processors_map[" << key << "] = { ";
-          for (std::set<int>::const_iterator it=sharing_procs.begin() ; it!=sharing_procs.end() ; ++it) {
-              oss << *it << " ";
-          }
-          oss << "}" << std::endl;
-          std::cout << oss.str() << std::flush;
-      }
-  }
-#endif // NDEBUG
-
-}
-
-} // namespace
-
 void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
                                              bool regenerate_aura,
                                              modification_optimization mod_optimization )
