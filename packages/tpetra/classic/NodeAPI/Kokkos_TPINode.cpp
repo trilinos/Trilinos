@@ -40,6 +40,12 @@
 //@HEADER
 
 #include "Kokkos_TPINode.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_THREADPOOL
+
 #include <iostream>
 #include <Teuchos_Assert.hpp>
 
@@ -116,3 +122,5 @@ namespace KokkosClassic {
     return "TPI";
   }
 }
+
+#endif // HAVE_TPETRACLASSIC_THREADPOOL

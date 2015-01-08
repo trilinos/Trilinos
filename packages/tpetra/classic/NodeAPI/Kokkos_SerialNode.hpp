@@ -42,6 +42,12 @@
 #ifndef KOKKOS_SERIALNODE_HPP_
 #define KOKKOS_SERIALNODE_HPP_
 
+#include "Kokkos_ConfigDefs.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_SERIAL
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
 
@@ -50,7 +56,7 @@
 #  ifdef KOKKOS_HAVE_SERIAL
 #    include "Kokkos_Serial.hpp"
 #  endif // KOKKOS_HAVE_SERIAL
-#endif
+#endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 
 namespace KokkosClassic {
 
@@ -109,21 +115,20 @@ namespace KokkosClassic {
   };
 
 #ifdef _MSC_VER
-#pragma warning(push)
+#  pragma warning(push)
 // destructor could not be generated because a base class destructor is inaccessible
-#pragma warning(disable : 4624)
-#endif
+#  pragma warning(disable : 4624)
+#endif // _MSC_VER
 
   template <> class ArrayOfViewsHelper<SerialNode> :
     public ArrayOfViewsHelperTrivialImpl<SerialNode>
   {};
 
 #ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+#  pragma warning(pop)
+#endif // _MSC_VER
 
 } // namespace KokkosClassic
-
 
 #if defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 namespace Kokkos {
@@ -136,5 +141,5 @@ namespace Kokkos {
 } // namespace Kokkos
 #endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
 
-
-#endif
+#endif // HAVE_TPETRACLASSIC_SERIAL
+#endif // KOKKOS_SERIALNODE_HPP_

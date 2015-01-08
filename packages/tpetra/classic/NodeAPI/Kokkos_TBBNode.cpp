@@ -40,6 +40,12 @@
 //@HEADER
 
 #include "Kokkos_TBBNode.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_TBB
+
 #include <Teuchos_ParameterList.hpp>
 #include <iostream>
 
@@ -144,3 +150,5 @@ namespace KokkosClassic {
   }
 
 } // namespace KokkosClassic
+
+#endif // HAVE_TPETRACLASSIC_TBB

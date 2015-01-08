@@ -42,6 +42,13 @@
 #ifndef KOKKOS_TBBNODE_HPP_
 #define KOKKOS_TBBNODE_HPP_
 
+#include "Kokkos_ConfigDefs.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_TBB
+
 #include "Kokkos_StandardNodeMemoryModel.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 
@@ -187,4 +194,5 @@ namespace KokkosClassic {
 
 } // namespace KokkosClassic
 
-#endif
+#endif // HAVE_TPETRACLASSIC_TBB
+#endif // KOKKOS_TBBNODE_HPP_

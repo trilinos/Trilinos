@@ -39,8 +39,14 @@
 // ************************************************************************
 //@HEADER
 
-#include <Teuchos_ParameterList.hpp>
 #include "Kokkos_OpenMPNode.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_OPENMP
+
+#include <Teuchos_ParameterList.hpp>
 
 namespace KokkosClassic {
 
@@ -50,7 +56,6 @@ namespace KokkosClassic {
   {
     init (curNumThreads_);
   }
-
 
   OpenMPNode::OpenMPNode (Teuchos::ParameterList &pl) :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
@@ -94,3 +99,5 @@ namespace KokkosClassic {
   }
 
 } // namespace KokkosClassic
+
+#endif // HAVE_TPETRACLASSIC_OPENMP

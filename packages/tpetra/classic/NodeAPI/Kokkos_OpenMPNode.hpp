@@ -39,13 +39,17 @@
 // ************************************************************************
 //@HEADER
 
-
 #ifndef KOKKOS_OPENMPNODE_HPP_
 #define KOKKOS_OPENMPNODE_HPP_
 
+#include "Kokkos_ConfigDefs.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_OPENMP
 #include "Kokkos_StandardNodeMemoryModel.hpp"
 #include "Kokkos_NodeHelpers.hpp"
-
 #include <omp.h>
 
 #ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
@@ -193,4 +197,5 @@ namespace Kokkos {
 } // namespace Kokkos
 #endif
 
-#endif
+#endif // HAVE_TPETRACLASSIC_OPENMP
+#endif // KOKKOS_OPENMPNODE_HPP_

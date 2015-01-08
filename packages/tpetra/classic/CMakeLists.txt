@@ -9,41 +9,64 @@ TRIBITS_SUBPACKAGE(Classic)
 
 TRIBITS_ADD_DEBUG_OPTION()
 
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
+# If the "Kokkos refactor" version of Tpetra is enabled,
+# disable ALL the "classic" Node types by default.
+ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
 
+#
+# Decide whether to enable KokkosClassic::OpenMPNode
+# (which is DEPRECATED).
+#
+# Users may specify KokkosClassic_ENABLE_OpenMP to enable
+# the DEPRECATED KokkosClassic::OpenMPNode explicitly.
+# Even still, it won't be enabled unless OpenMP is enabled in
+# Trilinos.
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_OpenMP
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable OpenMP in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This option is DEPRECATED and is OFF by default.  It will be removed in future Trilinos releases."
+  "Enable KokkosClassic::OpenMPNode in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This option is DEPRECATED and is OFF by default.  It will be removed in future Trilinos releases.  If the Kokkos refactor version of Tpetra is enabled (it will be enabled by default in the next Trilinos release), you may use Kokkos::Compat::KokkosOpenMPWrapperNode instead of KokkosClassic::OpenMPNode."
   OFF
   )
-IF(KokkosClassic_ENABLE_OpenMP AND ${PROJECT_NAME}_ENABLE_OpenMP)
+# Set whether to enable KokkosClassic::OpenMPNode by default.
+# The default is OFF, since KokkosClassic_ENABLE_OpenMP is OFF
+# by default.  We also disable this Node type by default if the
+# Kokkos refactor version of Tpetra is enabled.
+IF(KokkosClassic_ENABLE_OpenMP AND ${PROJECT_NAME}_ENABLE_OpenMP AND NOT Tpetra_ENABLE_Kokkos_Refactor)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT ON)
 ELSE()
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT OFF)
 ENDIF()
 
+# This is the final CMake option that controls whether
+# KokkosClassic::OpenMPNode is enabled.
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_OpenMP
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED."
+  "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED and OFF by default."
   ${${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT}
   )
 IF(${PACKAGE_NAME}_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
   MESSAGE(ERROR "${PROJECT_NAME}_ENABLE_OpenMP is OFF, so it is not legal to set ${PACKAGE_NAME}_ENABLE_OpenMP to ON.")
 ENDIF()
 
-# The "KokkosClassic_ENABLE_Serial" option is for for backwards
-# compatibility ONLY, so that existing scripts that set this option
-# won't suddenly change behavior.  TpetraClassic_ENABLE_Serial
-# overrides this option.
+#
+# Decide whether to enable KokkosClassic::SerialNode.
+# It will be DEPRECATED in the next Trilinos release.
+#
+# Users may specify KokkosClassic_ENABLE_Serial to enable
+# the soon-to-be deprecated KokkosClassic::SerialNode explicitly.
+# It will still be disabled by default if the Kokkos refactor
+# version of Tpetra is enabled.
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_Serial
   HAVE_TPETRACLASSIC_SERIAL
-  "Enable KokkosClassic::SerialNode in ${PACKAGE_NAME}.  This option is DEPRECATED.  Please use ${PACKAGE_NAME}_ENABLE_Serial instead."
+  "Enable KokkosClassic::SerialNode in ${PACKAGE_NAME}."
   ON
   )
-IF(KokkosClassic_ENABLE_Serial)
+# Disable KokkosClassic::SerialNode by default, if the Kokkos
+# refactor version of Tpetra is enabled.
+IF(KokkosClassic_ENABLE_Serial AND NOT Tpetra_ENABLE_Kokkos_Refactor)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_Serial_DEFAULT ON)
 ELSE()
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_Serial_DEFAULT OFF)
@@ -55,20 +78,35 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_Serial_DEFAULT}
   )
 
-# For backwards compatibility only.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_NodeAPI
-  HAVE_KOKKOSCLASSIC_NODEAPI
-  "Enable classic Kokkos node programming API.  This option is for backwards compatibility only and should never be specified explicitly."
-  ON
+#
+# Decide whether to enable KokkosClassic::TPINode.
+# It will be DEPRECATED in the next Trilinos release.
+#
+# Users may specify KokkosClassic_ENABLE_ThreadPool to enable
+# the soon-to-be deprecated KokkosClassic::TPINode explicitly.
+# It will still be disabled by default if the Kokkos refactor
+# version of Tpetra is enabled.
+IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  KokkosClassic_ENABLE_ThreadPool
+  HAVE_TPETRACLASSIC_THREADPOOL
+  "Enable KokkosClassic::TPINode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."
+  ${${PROJECT_NAME}_ENABLE_ThreadPool}
   )
-
-# For backwards compatibility only.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_LinAlg
-  HAVE_KOKKOSCLASSIC_LINALG
-  "Enable classic Kokkos local linear algebra.  This option is for backwards compatibility only and should never be specified explicitly."
-  ON
+# Disable KokkosClassic::TPINode by default, if the Kokkos
+# refactor version of Tpetra is enabled.
+IF(KokkosClassic_ENABLE_ThreadPool AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThreadPool_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThreadPool_DEFAULT OFF)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  ${PACKAGE_NAME}_ENABLE_ThreadPool
+  HAVE_TPETRACLASSIC_THREADPOOL
+  "Add KokkosClassic::TPINode to the list of enabled Node types."
+  ${${PACKAGE_NAME}_ENABLE_ThreadPool_DEFAULT}
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -84,23 +122,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable double type for CUDA nodes."
   OFF
 )
-
-# TRIBITS_ADD_OPTION_AND_DEFINE(
-#   ${PACKAGE_NAME}_ENABLE_CUDA_COMPLEX_FLOAT
-#   HAVE_TPETRACLASSIC_CUDA_COMPLEX_FLOAT
-#   "Enable complex<float> type for CUDA nodes (requires Teuchos_ENABLE_COMPLEX)"
-#   OFF
-# )
-# TRIBITS_ADD_OPTION_AND_DEFINE(
-#   ${PACKAGE_NAME}_ENABLE_CUDA_COMPLEX_DOUBLE
-#   HAVE_TPETRACLASSIC_CUDA_COMPLEX_DOUBLE
-#   "Enable complex<double> type for CUDA nodes (requires Teuchos_ENABLE_COMPLEX)."
-#   OFF
-# )
-# IF((${PACKAGE_NAME}_ENABLE_CUDA_COMPLEX_FLOAT OR ${PACKAGE_NAME}_ENABLE_CUDA_COMPLEX_DOUBLE) AND NOT (Teuchos_ENABLE_COMPLEX AND ${PACKAGE_NAME}_ENABLE_Cusp))
-#   MESSAGE(FATAL_ERROR 
-#     "\nKokkos support for Complex requires enabling Teuchos support for Complex via Teuchos_ENABLE_COMPLEX and the Cusp TPL")
-# ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_CUDA_NODE_MEMORY_PROFILING
@@ -128,14 +149,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 #
 
 ADD_SUBDIRECTORY(src)
-
-IF (KokkosClassic_ENABLE_NodeAPI)
-  ADD_SUBDIRECTORY(NodeAPI)
-ENDIF()
-
-if (KokkosClassic_ENABLE_LinAlg AND KokkosClassic_ENABLE_NodeAPI)
-  ADD_SUBDIRECTORY(LinAlg)
-ENDIF()
+ADD_SUBDIRECTORY(NodeAPI)
+ADD_SUBDIRECTORY(LinAlg)
 
 #
 # Do standard subpackage postprocessing

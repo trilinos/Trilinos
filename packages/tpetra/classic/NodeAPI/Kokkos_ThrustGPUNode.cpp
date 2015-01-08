@@ -40,6 +40,12 @@
 //@HEADER
 
 #include "Kokkos_ThrustGPUNode.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_THRUST
+
 #include <Teuchos_Assert.hpp>
 #include <iostream>
 #include <cuda_runtime.h>
@@ -181,3 +187,5 @@ namespace KokkosClassic {
   }
 
 } // namespace KokkosClassic
+
+#endif // HAVE_TPETRACLASSIC_THRUST

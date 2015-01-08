@@ -42,6 +42,13 @@
 #ifndef KOKKOS_THRUSTGPUNODE_HPP_
 #define KOKKOS_THRUSTGPUNODE_HPP_
 
+#include "Kokkos_ConfigDefs.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_THRUST
+
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "Kokkos_CUDANodeMemoryModel.hpp"
 #include "Kokkos_ThrustGPUWrappers.hpp"
@@ -143,4 +150,5 @@ namespace Kokkos {
 }
 #endif
 
-#endif
+#endif // HAVE_TPETRACLASSIC_THRUST
+#endif // KOKKOS_THRUSTGPUNODE_HPP_

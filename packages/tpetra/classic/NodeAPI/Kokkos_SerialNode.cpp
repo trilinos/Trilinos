@@ -41,6 +41,11 @@
 
 #include "Kokkos_SerialNode.hpp"
 
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_SERIAL
+
 namespace KokkosClassic {
 
   SerialNode::SerialNode () {}
@@ -57,5 +62,6 @@ namespace KokkosClassic {
   std::string SerialNode::name () {
     return "Serial";
   }
-
 } // namespace KokkosClassic
+
+#endif // HAVE_TPETRACLASSIC_SERIAL

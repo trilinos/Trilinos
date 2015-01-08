@@ -43,6 +43,12 @@
 #define KOKKOS_TPINODE_HPP_
 
 #include "Kokkos_ConfigDefs.hpp"
+
+// mfh 08 Jan 2015: Don't enable the contents of this file unless the
+// appropriate CMake option is enabled.  This avoids deprecation
+// warnings once we deprecate this Node type.
+#ifdef HAVE_TPETRACLASSIC_THREADPOOL
+
 #include "Kokkos_StandardNodeMemoryModel.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include <TPI.h>
@@ -50,7 +56,6 @@
 #ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "Kokkos_Core.hpp"
 #endif
-
 
 namespace KokkosClassic {
 
@@ -227,5 +232,5 @@ namespace Kokkos {
 }
 #endif
 
-
-#endif
+#endif // HAVE_TPETRACLASSIC_THREADPOOL
+#endif // KOKKOS_TPINODE_HPP_

@@ -17,6 +17,11 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+# mfh 08 Jan 2015: Any header (.hpp) or source (.cpp) file that
+# relates to a specific Node type, should have its entire contents
+# protected by the macro that controls whether that Node type is
+# enabled.  This makes it a bit easier to manage the build system.
+
 # CUDA-specific source and headers
 APPEND_SET(CUDA_HEADERS
     Kokkos_CUDANodeMemoryModel.hpp
