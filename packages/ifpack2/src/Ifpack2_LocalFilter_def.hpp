@@ -888,11 +888,16 @@ bool LocalFilter<MatrixType>::supportsRowViews () const
 
 template<class MatrixType>
 typename
-Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+  typedef Kokkos::Details::ArithTraits<mag_type> STM;
+#else
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
+#endif
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
   const size_type maxNumRowEnt = getNodeMaxNumRowEntries ();
@@ -901,25 +906,13 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   const size_t numRows = static_cast<size_t> (localRowMap_->getNodeNumElements ());
 
   // FIXME (mfh 03 Apr 2013) Scale during sum to avoid overflow.
-  magnitude_type sumSquared = STM::zero ();
-  if (STS::isComplex) {
-    for (size_t i = 0; i < numRows; ++i) {
-      size_t numEntries = 0;
-      this->getLocalRowCopy (i, ind (), val (), numEntries);
-      for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
-        sumSquared += STS::real (val[k]) * STS::real (val[k]) +
-          STS::imag (val[k]) * STS::imag (val[k]);
-      }
-    }
-  }
-  else {
-    for (size_t i = 0; i < numRows; ++i) {
-      size_t numEntries = 0;
-      this->getLocalRowCopy (i, ind (), val (), numEntries);
-      for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
-        const magnitude_type v_k_abs = STS::magnitude (val[k]);
-        sumSquared += v_k_abs * v_k_abs;
-      }
+  mag_type sumSquared = STM::zero ();
+  for (size_t i = 0; i < numRows; ++i) {
+    size_t numEntries = 0;
+    this->getLocalRowCopy (i, ind (), val (), numEntries);
+    for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
+      const mag_type v_k_abs = STS::magnitude (val[k]);
+      sumSquared += v_k_abs * v_k_abs;
     }
   }
   return STM::squareroot (sumSquared); // Different for each process; that's OK.

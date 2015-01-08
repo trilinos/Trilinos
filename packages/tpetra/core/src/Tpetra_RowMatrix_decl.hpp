@@ -113,6 +113,13 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node          node_type;
 
+    /// \brief Type of a norm result.
+    ///
+    /// This is usually the same as the type of the magnitude
+    /// (absolute value) of <tt>Scalar</tt>, but may differ for
+    /// certain <tt>Scalar</tt> types.
+    typedef typename Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+
     //@}
     //! @name Destructor
     //@{
@@ -388,7 +395,7 @@ namespace Tpetra {
     /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
     /// It has the same value as the Euclidean norm of a vector made
     /// by stacking the columns of \f$A\f$.
-    virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
+    virtual mag_type getFrobeniusNorm() const = 0;
 
     /// \brief Return a new RowMatrix which is the result of <tt>beta*this + alpha*A</tt>.
     ///

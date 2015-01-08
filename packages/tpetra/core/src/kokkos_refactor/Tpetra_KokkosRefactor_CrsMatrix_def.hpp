@@ -3306,8 +3306,11 @@ namespace Tpetra {
           for (size_type k = 0; k < numEntries; ++k) {
             // FIXME (mfh 05 Aug 2014) This assumes UVM.
             const impl_scalar_type val = k_values1D_(k);
-            mySum += STS::real (val) * STS::real (val) +
-              STS::imag (val) * STS::imag (val);
+            // Note (etp 06 Jan 2015) We need abs() here for composite types
+            // (in general, if mag_type is on the left-hand-side, we need
+            // abs() on the right-hand-side)
+            const mag_type val_abs = STS::abs (val);
+            mySum += val_abs * val_abs;
           }
         }
         else {
@@ -3320,8 +3323,8 @@ namespace Tpetra {
               this->getView (rowInfo).view (0, numEntries);
             for (size_type k = 0; k < numEntries; ++k) {
               const impl_scalar_type val = A_r[k];
-              mySum += STS::real (val) * STS::real (val) +
-                STS::imag (val) * STS::imag (val);
+              const mag_type val_abs = STS::abs (val);
+              mySum += val_abs * val_abs;
             }
           }
         }

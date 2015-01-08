@@ -556,7 +556,7 @@ rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+typename OverlappingRowMatrix<MatrixType>::mag_type
 OverlappingRowMatrix<MatrixType>::getFrobeniusNorm () const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix does not support getFrobeniusNorm.");

@@ -1004,7 +1004,7 @@ public:
   /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
-  virtual typename Tpetra::MultiVector<Scalar, LO, GO, Node>::mag_type
+  virtual typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
   getFrobeniusNorm () const;
 };
 

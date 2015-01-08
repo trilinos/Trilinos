@@ -2336,7 +2336,7 @@ namespace Experimental {
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  typename Tpetra::MultiVector<Scalar, LO, GO, Node>::mag_type
+  typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getFrobeniusNorm () const
   {

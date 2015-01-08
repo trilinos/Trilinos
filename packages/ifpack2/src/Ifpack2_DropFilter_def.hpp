@@ -454,7 +454,7 @@ bool DropFilter<MatrixType>::supportsRowViews() const
 
 //==========================================================================  
 template<class MatrixType> 
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType DropFilter<MatrixType>::getFrobeniusNorm() const
+typename DropFilter<MatrixType>::mag_type DropFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::DropFilter does not implement getFrobeniusNorm.");
 }

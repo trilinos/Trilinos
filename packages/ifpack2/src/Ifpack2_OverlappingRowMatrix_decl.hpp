@@ -71,6 +71,9 @@ public:
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+
+  typedef typename row_matrix_type::mag_type mag_type;
+
   //@}
   //! \name Constructors and destructor
   //@{
@@ -315,7 +318,7 @@ public:
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType
+  virtual mag_type
   getFrobeniusNorm () const;
 
   //! \brief Computes the operator-multivector application.

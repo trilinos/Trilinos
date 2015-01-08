@@ -398,7 +398,7 @@ bool DiagonalFilter<MatrixType>::supportsRowViews() const
 
 //==========================================================================  
 template<class MatrixType> 
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType DiagonalFilter<MatrixType>::getFrobeniusNorm() const
+typename DiagonalFilter<MatrixType>::mag_type DiagonalFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter does not implement getFrobeniusNorm.");
 }

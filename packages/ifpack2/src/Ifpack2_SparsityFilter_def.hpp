@@ -478,7 +478,7 @@ bool SparsityFilter<MatrixType>::supportsRowViews() const
 
 //==========================================================================  
 template<class MatrixType> 
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType SparsityFilter<MatrixType>::getFrobeniusNorm() const
+typename SparsityFilter<MatrixType>::mag_type SparsityFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::SparsityFilter does not implement getFrobeniusNorm.");
 }
