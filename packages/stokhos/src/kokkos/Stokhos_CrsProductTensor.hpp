@@ -270,9 +270,15 @@ public:
           const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
-    bool sort_nnz = false;
-    if (params.isParameter("Sort Nonzeros"))
-      sort_nnz = params.get<bool>("Sort Nonzeros");
+
+    // Note (etp 01/08/15  Commenting out the sorting as it causes a really
+    // weird compiler error when compiling with NVCC.  It seems to think the
+    // < in CompareCijkRowCount() is part of a template parameter.  We don't
+    // seem to use this option, so I am just commenting it out.
+
+    // bool sort_nnz = false;
+    // if (params.isParameter("Sort Nonzeros"))
+    //   sort_nnz = params.get<bool>("Sort Nonzeros");
 
     // Compute number of non-zeros for each i
     const size_type dimension = basis.size();
@@ -314,8 +320,11 @@ public:
       row_count[i].count = coord_work[i];
       row_count[i].basis = i;
     }
-    if (sort_nnz)
-      std::sort( row_count.begin(), row_count.end(), CompareCijkRowCount() );
+
+    // Note (etp 01/08/15  See above.
+
+    // if (sort_nnz)
+    //   std::sort( row_count.begin(), row_count.end(), CompareCijkRowCount() );
     std::vector<size_type> sorted_row_map( dimension );
     for ( size_type i = 0; i < dimension; ++i ) {
       coord_work[i] = row_count[i].count;
