@@ -99,16 +99,21 @@ IF(Tpetra_INST_FLOAT)
 ENDIF()
 
 IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
-  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT ON)
+  # ETI for std::complex<float> is now OFF by default.
+  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
 ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
-  "If explicit instantiation is enabled, instantiate over scalar field std::complex<float>."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<float>.  This option is ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT} by default."
   ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT}  
   )
+IF(Tpetra_INST_COMPLEX_FLOAT AND NOT HAVE_COMPLEX_BLAS)
+  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<float>, if the BLAS library you are using does not support complex arithmetic.")
+ENDIF()
+
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
 ENDIF()
