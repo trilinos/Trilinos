@@ -198,10 +198,10 @@ int main(int narg, char** arg)
   //////////////////////////////////
   std::string colorMethod("FirstFit"); 
   int balanceColors = 0; 
-  cmdp.setOption("color_method", &colorMethod,
-                "Color choice method: FirstFit, LeastUsed, or Random");
-  cmdp.setOption("balance_colors", &balanceColors, 
-                 "Balance the size of color classes: 0/1 for false/true");
+  cmdp.setOption("color_choice", &colorMethod,
+       "Color choice method: FirstFit, LeastUsed, Random, RandomFast");
+  // cmdp.setOption("balance_colors", &balanceColors, 
+  //                "Balance the size of color classes: 0/1 for false/true");
   
   //////////////////////////////////
   cmdp.parse(narg, arg);
@@ -224,7 +224,7 @@ int main(int narg, char** arg)
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
-  //params.set("color_method", colorMethod); // TODO
+  params.set("color_choice", colorMethod); 
   //params.set("balance_colors", balanceColors); // TODO
 
   ////// Create an input adapter for the Tpetra matrix.
