@@ -69,15 +69,18 @@ bool is_unsigned_int(const char* str)
 
 void initialize_internal(const InitArguments& args)
 {
+  // Protect declarations, to prevent "unused variable" warnings.
+#if defined( KOKKOS_HAVE_OPENMP ) || defined( KOKKOS_HAVE_PTHREAD )
   const int num_threads = args.num_threads;
   const int use_numa = args.num_numa;
+#endif // defined( KOKKOS_HAVE_OPENMP ) || defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_CUDA )
   const int use_gpu = args.device_id;
+#endif // defined( KOKKOS_HAVE_CUDA )
 
 #if defined( KOKKOS_HAVE_OPENMP )
-
   if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ) {
-
     if(num_threads>0) {
       if(use_numa>0) {
         Kokkos::OpenMP::initialize(num_threads,use_numa);
@@ -93,14 +96,11 @@ void initialize_internal(const InitArguments& args)
   else {
     std::cout << "Kokkos::initialize() fyi: OpenMP enabled but not initialized" << std::endl ;
   }
-
 #endif
 
 #if defined( KOKKOS_HAVE_PTHREAD )
-
   if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ) {
-
     if(num_threads>0) {
       if(use_numa>0) {
         Kokkos::Threads::initialize(num_threads,use_numa);
@@ -116,24 +116,23 @@ void initialize_internal(const InitArguments& args)
   else {
     std::cout << "Kokkos::initialize() fyi: Pthread enabled but not initialized" << std::endl ;
   }
-
 #endif
 
 #if defined( KOKKOS_HAVE_SERIAL )
+  // Prevent "unused variable" warning for 'args' input struct.  If
+  // Serial::initialize() ever needs to take arguments from the input
+  // struct, you may remove this line of code.
+  (void) args;
 
   if( Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ) {
-
     Kokkos::Serial::initialize();
   }
-
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
-
   if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value || 0 < use_gpu ) {
-
-    if(use_gpu>-1) {
+    if (use_gpu > -1) {
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( use_gpu ) );
     }
     else {
@@ -141,9 +140,7 @@ void initialize_internal(const InitArguments& args)
     }
     std::cout << "Kokkos::initialize() fyi: Cuda enabled and initialized" << std::endl ;
   }
-
 #endif
-
 }
 
 void finalize_internal()
@@ -423,7 +420,7 @@ void finalize()
   Impl::finalize_internal();
 }
 
-void fence() 
+void fence()
 {
   Impl::fence_internal();
 }
