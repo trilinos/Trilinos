@@ -3,9 +3,9 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #
   # New Kokkos subpackages:
   TPL                   TPL               PS       OPTIONAL
-  Core                  core              EX       OPTIONAL
-  Containers            containers        EX       OPTIONAL
-  Algorithms            algorithms        EX       OPTIONAL
+  Core                  core              PS       REQUIRED
+  Containers            containers        PS       OPTIONAL
+  Algorithms            algorithms        PS       OPTIONAL
   Example               example           EX       OPTIONAL
   )
 
