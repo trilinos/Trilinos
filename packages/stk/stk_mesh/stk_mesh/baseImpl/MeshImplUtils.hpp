@@ -37,6 +37,7 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
@@ -345,6 +346,7 @@ void VisitAuraClosure(
 
 stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
+void internal_fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data);
 
 
 } // namespace impl

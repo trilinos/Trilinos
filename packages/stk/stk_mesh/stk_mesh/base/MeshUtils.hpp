@@ -35,10 +35,10 @@
 #define stk_mesh_base_MeshUtils_hpp
 
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 namespace stk {
 namespace mesh {
-
 
 // Function to promote ghosts to shared:
 // This function is a transition aid until an application can consistently and
@@ -46,6 +46,9 @@ namespace mesh {
 // expected to perform well or to scale well at large processor counts.
 void fixup_ghosted_to_shared_nodes(BulkData& bulk);
 
+#ifndef STK_BUILT_IN_SIERRA // DELETE public functions between 2015-03-06 and 2015-03-25
+STK_DEPRECATED(void fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data) { impl::internal_fix_node_sharing_delete_on_2015_03_06(bulk_data); });
+#endif // STK_BUILT_IN_SIERRA DELETE public functions between 2015-03-06 and 2015-03-25
 
 // Helper functions:
 void find_ghosted_nodes_that_need_to_be_shared(const BulkData & bulk, stk::mesh::EntityVector& ghosted_nodes_that_are_now_shared);
