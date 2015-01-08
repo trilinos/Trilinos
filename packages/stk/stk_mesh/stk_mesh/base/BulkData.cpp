@@ -3888,9 +3888,9 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
       bool isCustomGhost = false;
       PairIterEntityComm pairIterEntityComm = entity_comm_map(key);
-      for(unsigned i=0; i<pairIterEntityComm.size(); ++i)
+      for(unsigned j=0; j<pairIterEntityComm.size(); ++j)
       {
-          if (pairIterEntityComm[i].ghost_id > 1)
+          if (pairIterEntityComm[j].ghost_id > 1)
           {
               isCustomGhost = true;
               break;
