@@ -313,33 +313,49 @@ Piro::PerformROLAnalysis(
 
   bool print = rolParams.get<bool>("Print Output", false);
 
-  if(rolParams.isParameter("Parameter Scalar Guess"))
-    rol_p.putScalar(rolParams.get<double>("Parameter Scalar Guess", 2.0));
-
   int seed = rolParams.get<int>("Seed For Thyra Randomize", 42);
 
+  //! set initial guess (or use the one provided by the Model Evaluator)
+  std::string init_guess_type = rolParams.get<string>("Parameter Initial Guess Type", "From Model Evaluator");
+  if(init_guess_type == "Uniform Vector")
+    rol_p.putScalar(rolParams.get<double>("Uniform Parameter Guess", 1.0));
+  else if(init_guess_type == "Random Vector") {
+    Teuchos::Array<double> minmax(2); minmax[0] = -1; minmax[1] = 1;
+    minmax = rolParams.get<Teuchos::Array<double> >("Min And Max Of Random Parameter Guess", minmax);
+    ::Thyra::randomize<double>( minmax[0], minmax[1],  rol_p.getVector().ptr());
+  }
+  else if(init_guess_type != "From Model Evaluator") {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+              std::endl << "Error in Piro::PerformROLAnalysis:  " <<
+              "Parameter Initial Guess Type \"" << init_guess_type << "\" is not Known.\nValid options are: \"Parameter Scalar Guess\", \"Uniform Vector\" and \"Random Vector\""<<std::endl);
+  }
+
+  //! test thyra implementation of ROL vector
   if(rolParams.get<bool>("Test Vector", false)) {
-      Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_x = p->clone_v();
-      Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_y = p->clone_v();
-      Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_z = p->clone_v();
-      ::Thyra::seed_randomize<double>( seed );
+    Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_x = p->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_y = p->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<double> > rand_vec_z = p->clone_v();
+    ::Thyra::seed_randomize<double>( seed );
 
-      int num_tests = rolParams.get<int>("Number Of Vector Tests", 1);
+    int num_tests = rolParams.get<int>("Number Of Vector Tests", 1);
 
-      for(int i=0; i< num_tests; i++) {
+    for(int i=0; i< num_tests; i++) {
 
-        ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_x.ptr());
-        ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_y.ptr());
-        ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_z.ptr());
+      *out << "\nROL performing vector test " << i+1 << " of " << num_tests  << std::endl;
 
-        ROL::ThyraVector<double> rol_x(rand_vec_x);
-        ROL::ThyraVector<double> rol_y(rand_vec_y);
-        ROL::ThyraVector<double> rol_z(rand_vec_z);
+      ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_x.ptr());
+      ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_y.ptr());
+      ::Thyra::randomize<double>( -1.0, 1.0,  rand_vec_z.ptr());
 
-        rol_x.checkVector(rol_y, rol_z,print, *out);
-      }
+      ROL::ThyraVector<double> rol_x(rand_vec_x);
+      ROL::ThyraVector<double> rol_y(rand_vec_y);
+      ROL::ThyraVector<double> rol_z(rand_vec_z);
+
+      rol_x.checkVector(rol_y, rol_z,print, *out);
     }
+  }
 
+  //! check correctness of Gradient prvided by Model Evaluator
   if(rolParams.get<bool>("Check Gradient", false)) {
     Teuchos::RCP<Thyra::VectorBase<double> > rand_vec = p->clone_v();
     ::Thyra::seed_randomize<double>( seed );
@@ -382,7 +398,7 @@ Piro::PerformROLAnalysis(
   // Run Algorithm
   std::vector<std::string> output;
   if(rolParams.get<bool>("Bound Constrained", false)) {
-    double eps_bound = rolParams.get<double>("eps_bound", 1e-6);
+    double eps_bound = rolParams.get<double>("epsilon bound", 1e-6);
     Teuchos::RCP<const Thyra::VectorBase<double> > p_lo = piroModel.getLowerBounds().get_p(p_index);
     Teuchos::RCP<const Thyra::VectorBase<double> > p_up = piroModel.getUpperBounds().get_p(p_index);
     TEUCHOS_TEST_FOR_EXCEPTION((p_lo == Teuchos::null)  || (p_up == Teuchos::null), Teuchos::Exceptions::InvalidParameter,
