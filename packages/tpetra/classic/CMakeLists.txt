@@ -9,15 +9,13 @@ TRIBITS_SUBPACKAGE(Classic)
 
 TRIBITS_ADD_DEBUG_OPTION()
 
-# The "KokkosClassic_ENABLE_OpenMP" option is for for backwards
-# compatibility ONLY, so that existing scripts that set this option
-# won't suddenly change behavior.  TpetraClassic_ENABLE_OpenMP
-# overrides this option.
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
+
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_OpenMP
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable OpenMP in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This option is DEPRECATED.  Please use ${PACKAGE_NAME}_ENABLE_OpenMP instead."
-  ${${PROJECT_NAME}_ENABLE_OpenMP}
+  "Enable OpenMP in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This option is DEPRECATED and is OFF by default.  It will be removed in future Trilinos releases."
+  OFF
   )
 IF(KokkosClassic_ENABLE_OpenMP AND ${PROJECT_NAME}_ENABLE_OpenMP)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT ON)
@@ -25,11 +23,10 @@ ELSE()
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT OFF)
 ENDIF()
 
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_OpenMP
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is broken and soon to be deprecated anyway."
+  "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED."
   ${${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT}
   )
 IF(${PACKAGE_NAME}_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)

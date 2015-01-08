@@ -62,7 +62,15 @@ namespace KokkosClassic {
 
   /// \class OpenMPNode
   /// \brief Kokkos Node using OpenMP for parallelization.
-  class OpenMPNode : public StandardNodeMemoryModel {
+  ///
+  /// \warning This Node type is DEPRECATED.  Please use
+  ///   Kokkos::Compat::KokkosOpenMPWrapperNode instead.  That Node
+  ///   type lives in
+  ///   <tt>Trilinos/packages/teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp</tt>.
+  ///   You should not normally have to include that header file, as
+  ///   Kokkos_DefaultNode.hpp normally includes header files for all
+  ///   the enabled Nodes.
+  class TPETRA_DEPRECATED OpenMPNode : public StandardNodeMemoryModel {
   public:
     /// \brief This is a "classic" Node type.
     ///
