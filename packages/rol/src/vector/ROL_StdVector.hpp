@@ -66,9 +66,10 @@ public:
 
   void plus( const Vector<Real> &x ) {
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
     int dimension  = (int)(this->std_vec_->size());
     for (int i=0; i<dimension; i++) {
-      (*this->std_vec_)[i] += (*ex.getVector())[i];
+      (*this->std_vec_)[i] += xval[i];
     }
   }
 
@@ -81,11 +82,12 @@ public:
 
   Real dot( const Vector<Real> &x ) const {
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
     int dimension  = (int)(this->std_vec_->size());
     Real val = 0;
 
     for (int i=0; i<dimension; i++) {
-      val += (*this->std_vec_)[i]*(*ex.getVector())[i];
+      val += (*this->std_vec_)[i]*xval[i];
     }
     return val;
   }
