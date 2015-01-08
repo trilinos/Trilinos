@@ -820,11 +820,10 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fileName, const Matrix& Op) {
-    std::string mapfile = "rowmap_" + fileName;
-    Write(mapfile, *(Op.getRowMap()));
-    //Re-enabling this because bug#6139 is fixed.
-    mapfile = "colmap_" + fileName;
-    Write(mapfile, *(Op.getColMap()));
+    Write("rowmap_"    + fileName, *(Op.getRowMap()));
+    Write("colmap_"    + fileName, *(Op.getColMap()));
+    Write("domainmap_" + fileName, *(Op.getDomainMap()));
+    Write("rangemap_"  + fileName, *(Op.getRangeMap()));
 
     const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
