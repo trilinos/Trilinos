@@ -144,6 +144,10 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     // LeastUsed: need array of size #colors
     Teuchos::Array<lno_t> numVerticesWithColor(maxDegree+2, 0);
 
+    // Get colorChoice from parameter list.
+    const Teuchos::ParameterList &pl = env->getParameters();
+    std::string colorChoice = pl.get<std::string>("color_choice", "FirstFit"); 
+
     for (lno_t i=0; i<nVtx; i++){
       //std::cout << "Debug: i= " << i << std::endl;
       lno_t v=i; // TODO: Use ordering here.
@@ -157,7 +161,6 @@ class AlgSerialGreedy : public Algorithm<Adapter>
       }
 
       // Pick color for v
-      std::string colorChoice = "FirstFit"; // TODO make parameter!
 
       // Keep colors[v] if possible, otherwise find valid color.
       if ((colors[v]==0) || ((colors[v]>0) && forbidden[colors[v]] == v)){
@@ -173,7 +176,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
         }
         else if (colorChoice.compare("Random")){
           // Pick random available color.
-          // This is slow, please consider RandomFast instead.
+          // Truely random is slow, please consider RandomFast instead.
           int numAvail = 0;
           Teuchos::Array<int> avail(maxColor+1);
           for (int c=1; c < maxColor+1; c++){
