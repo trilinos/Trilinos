@@ -151,16 +151,17 @@ Entity declare_element_side(
   std::vector<unsigned> side_node_map(side_top.num_nodes());
   elem_top.side_node_ordinals(local_side_id, side_node_map.begin());
 
-  PartVector add_parts ;
   Permutation perm = static_cast<Permutation>(0);
   OrdinalVector ordinal_scratch;
   ordinal_scratch.reserve(64);
   PartVector part_scratch;
   part_scratch.reserve(64);
 
-  if ( part ) { add_parts.push_back( part ); }
-
-  mesh.change_entity_parts(side, add_parts);
+  if ( part )
+  {
+    PartVector add_parts(1, part);
+    mesh.change_entity_parts(side, add_parts);
+  }
 
   mesh.declare_relation( elem , side , local_side_id, perm, ordinal_scratch, part_scratch );
 
@@ -198,16 +199,17 @@ Entity declare_element_edge(
   std::vector<unsigned> edge_node_map(edge_top.num_nodes());
   elem_top.edge_node_ordinals( local_edge_id, edge_node_map.begin() );
 
-  PartVector add_parts ;
   Permutation perm = static_cast<Permutation>(0);
   OrdinalVector ordinal_scratch;
   ordinal_scratch.reserve(64);
   PartVector part_scratch;
   part_scratch.reserve(64);
 
-  if ( part ) { add_parts.push_back( part ); }
-
-  mesh.change_entity_parts(edge, add_parts);
+  if ( part )
+  {
+    PartVector add_parts(1, part);
+    mesh.change_entity_parts(edge, add_parts);
+  }
 
   mesh.declare_relation( elem , edge , local_edge_id, perm, ordinal_scratch, part_scratch );
 
@@ -238,6 +240,7 @@ Entity declare_element_side(
   Entity side = mesh.get_entity(side_top.rank(), global_side_id);
   if (!mesh.is_valid(side)) {
     side = mesh.declare_entity( side_top.rank() , global_side_id, empty_parts );
+    // It seem like declare_element_side should be called even if the side is valid to make sure it is attached to the element.
     declare_element_side(mesh, elem, side, local_side_id, part);
   }
   return side;
@@ -259,6 +262,7 @@ Entity declare_element_edge(
   Entity edge = mesh.get_entity(edge_top.rank() , global_edge_id);
   if (!mesh.is_valid(edge)) {
     edge = mesh.declare_entity( edge_top.rank() , global_edge_id, empty_parts );
+    // It seem like declare_element_edge should be called even if the edge is valid to make sure it is attached to the element.
     declare_element_edge(mesh, elem, edge, local_edge_id, part);
   }
   return edge;
