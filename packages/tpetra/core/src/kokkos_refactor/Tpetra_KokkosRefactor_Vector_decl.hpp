@@ -56,8 +56,7 @@ namespace Tpetra {
 ///   documentation of Map for requirements.
 /// \tparam GlobalOrdinal The type of global indices.  See the
 ///   documentation of Map for requirements.
-/// \tparam Node The Kokkos Node type.  See the documentation of Map
-///   for requirements.
+/// \tparam DeviceType The Kokkos execution space type.
 ///
 /// This class inherits from MultiVector, and has the same template
 /// parameters.  A Vector is a special case of a MultiVector that has

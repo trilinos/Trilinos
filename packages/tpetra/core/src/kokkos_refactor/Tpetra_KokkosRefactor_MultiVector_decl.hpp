@@ -310,8 +310,7 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam GlobalOrdinal The type of global indices.  See the
   ///   documentation of Map for requirements.
-  /// \tparam DeviceType The Kokkos execution space type.  See the
-  ///   documentation of Map for requirements.
+  /// \tparam DeviceType The Kokkos execution space type.
   ///
   /// \section Kokkos_KR_MV_prereq Prerequisites
   ///
