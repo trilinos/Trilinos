@@ -134,7 +134,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                size_t NumVectors,
                bool zeroOut) : /* default is true */
     base_type (map)
@@ -148,7 +148,7 @@ namespace Tpetra {
       "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
     if (myLen > 0) {
-      RCP<Node> node = map->getNode();
+      RCP<node_type> node = map->getNode();
       // On host-type Kokkos Nodes, allocBuffer() just calls the
       // one-argument version of arcp to allocate memory.  This should
       // not fill the memory by default, otherwise we would lose the
@@ -208,7 +208,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                const dual_view_type& view) :
     base_type (map),
     view_ (view),
@@ -241,7 +241,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                const dual_view_type& view,
                const dual_view_type& origView) :
     base_type (map),
@@ -274,7 +274,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                const dual_view_type& view,
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
@@ -322,7 +322,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                const dual_view_type& view,
                const dual_view_type& origView,
                const Teuchos::ArrayView<const size_t>& whichVectors) :
@@ -371,7 +371,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                const Teuchos::ArrayView<const Scalar>& data,
                const size_t LDA,
                const size_t numVecs) :
@@ -397,7 +397,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
                const size_t NumVectors) :
     base_type (map)
@@ -487,7 +487,7 @@ namespace Tpetra {
     // Check whether the source object is a MultiVector.  If not, then
     // we can't even compare sizes, so it's definitely not OK to
     // Import or Export from it.
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> this_type;
     const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
     if (src == NULL) {
       return false;
@@ -1763,7 +1763,7 @@ namespace Tpetra {
   MultiVector<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& newMap)
+  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& newMap)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::Comm;
@@ -2512,7 +2512,7 @@ namespace Tpetra {
   MultiVector<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
               size_t offset) const
   {
     using Kokkos::ALL;
@@ -2622,7 +2622,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
                       size_t offset)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
@@ -3578,7 +3578,7 @@ namespace Tpetra {
           out << "Scalar: " << Teuchos::TypeNameTraits<Scalar>::name () << endl
               << "LocalOrdinal: " << Teuchos::TypeNameTraits<LocalOrdinal>::name () << endl
               << "GlobalOrdinal: " << Teuchos::TypeNameTraits<GlobalOrdinal>::name () << endl
-              << "Node: " << Teuchos::TypeNameTraits<Node>::name () << endl;
+              << "Node: " << Teuchos::TypeNameTraits<node_type>::name () << endl;
         }
         out << "label: \"" << this->getObjectLabel () << "\"" << endl
             << "numRows: " << getGlobalLength () << endl
@@ -3697,7 +3697,7 @@ namespace Tpetra {
   MultiVector<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& newMap)
   {
     replaceMap (newMap);
   }

@@ -538,7 +538,6 @@ namespace Tpetra {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
   private:
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, node_type> base_type;
 
   public:
@@ -586,7 +585,7 @@ namespace Tpetra {
       typename device_type::execution_space> dual_view_type;
 
     //! The type of the Map specialization used by this class.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
 
     //@}
     //! @name Constructors and destructor
@@ -605,12 +604,12 @@ namespace Tpetra {
     /// \note The Kokkos refactor version of MultiVector reserves the
     ///   right to initialize all entries of the MultiVector to zero,
     ///   regardless of the value of \c zeroOut.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  size_t NumVectors,
                  bool zeroOut=true);
 
     //! Copy constructor (shallow copy!).
-    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &source);
 
     /// \brief Copy constructor, with option to do deep or shallow copy.
     ///
@@ -620,7 +619,7 @@ namespace Tpetra {
     /// does not mark this MultiVector as having copy semantics.
     /// However, copyOrView = Teuchos::Copy will make the resulting
     /// MultiVector a deep copy of the input MultiVector.
-    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& source,
                  const Teuchos::DataAccess copyOrView);
 
     /// \brief Create multivector by copying two-dimensional array of local data.
@@ -638,7 +637,7 @@ namespace Tpetra {
     /// \pre LDA >= A.size()
     /// \pre NumVectors > 0
     /// \post isConstantStride() == true
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  const Teuchos::ArrayView<const Scalar>& A,
                  const size_t LDA,
                  const size_t NumVectors);
@@ -656,7 +655,7 @@ namespace Tpetra {
     /// \pre NumVectors > 0
     /// \pre NumVectors == ArrayOfPtrs.size()
     /// \post constantStride() == true
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  const size_t NumVectors);
 
@@ -670,7 +669,7 @@ namespace Tpetra {
     ///
     /// \param map [in] Map describing the distribution of rows.
     /// \param view [in] Device view to the data (shallow copy).
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  const dual_view_type& view);
 
     /// \brief Expert mode constructor, that takes a Kokkos::DualView
@@ -693,7 +692,7 @@ namespace Tpetra {
     /// the view, and does not allow constructing a view with a
     /// superset of rows or columns, so we have to keep the original
     /// view.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  const dual_view_type& view,
                  const dual_view_type& origView);
 
@@ -712,7 +711,7 @@ namespace Tpetra {
     /// \param map [in] Map describing the distribution of rows.
     /// \param view [in] Device view to the data (shallow copy).
     /// \param whichVectors [in] Which columns (vectors) to view.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  const dual_view_type& view,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
 
@@ -741,7 +740,7 @@ namespace Tpetra {
     /// the view, and does not allow constructing a view with a
     /// superset of rows or columns, so we have to keep the original
     /// view.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
                  const dual_view_type& view,
                  const dual_view_type& origView,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
@@ -1048,7 +1047,7 @@ namespace Tpetra {
     ///
     /// \note This method does <i>not</i> do data redistribution.  If
     ///   you need to move data around, use Import or Export.
-    void replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+    void replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map);
 
     /// \brief Sum values of a locally replicated multivector across all processes.
     ///
@@ -1088,27 +1087,27 @@ namespace Tpetra {
     //@{
 
     //! Return a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
     subCopy (const Teuchos::Range1D &colRng) const;
 
     //! Return a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
     subCopy (const Teuchos::ArrayView<const size_t> &cols) const;
 
     //! Return a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
     subView (const Teuchos::Range1D &colRng) const;
 
     //! Return a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
     subView (const Teuchos::ArrayView<const size_t> &cols) const;
 
     //! Return a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
     subViewNonConst (const Teuchos::Range1D &colRng);
 
     //! Return a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
     subViewNonConst (const Teuchos::ArrayView<const size_t> &cols);
 
     /// \brief Return a const view of a subset of rows.
@@ -1173,8 +1172,8 @@ namespace Tpetra {
     /// number of entries in \c subMap (in this case, zero) and the \c
     /// offset may equal the number of local entries in
     /// <tt>*this</tt>.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-    offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+    offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
                 size_t offset) const;
 
     /// \brief Return a nonconst view of a subset of rows.
@@ -1194,16 +1193,16 @@ namespace Tpetra {
     ///
     /// See the documentation of offsetView() for a code example and
     /// an explanation of edge cases.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-    offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+    offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> > &subMap,
                         size_t offset);
 
     //! Return a Vector which is a const view of column j.
-    Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> >
+    Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> >
     getVector (size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> >
+    Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> >
     getVectorNonConst (size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
@@ -1381,7 +1380,7 @@ namespace Tpetra {
     ///
     /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
-    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
          const Teuchos::ArrayView<dot_type>& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
@@ -1397,7 +1396,7 @@ namespace Tpetra {
     /// different types; the method still returns \c void, as above.
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
          const Teuchos::ArrayView<T> &dots) const
     {
       const size_t sz = static_cast<size_t> (dots.size ());
@@ -1412,7 +1411,7 @@ namespace Tpetra {
     //! Like the above dot() overload, but for std::vector output.
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
          std::vector<T>& dots) const
     {
       const size_t sz = dots.size ();
@@ -1442,7 +1441,7 @@ namespace Tpetra {
     ///
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
-    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
          const Kokkos::View<dot_type*, device_type>& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
@@ -1459,7 +1458,7 @@ namespace Tpetra {
     /// different types; the method still returns \c void, as above.
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
          const Kokkos::View<T*, device_type>& dots) const
     {
       const size_t numDots = dots.dimension_0 ();
@@ -1476,10 +1475,10 @@ namespace Tpetra {
     }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
+    void abs (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A);
 
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
+    void reciprocal (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A);
 
     /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
@@ -1520,7 +1519,7 @@ namespace Tpetra {
     /// MultiVector.
     void
     scale (const Scalar& alpha,
-           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
+           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A);
 
     /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
     ///
@@ -1530,7 +1529,7 @@ namespace Tpetra {
     /// MultiVector.
     void
     update (const Scalar& alpha,
-            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
             const Scalar& beta);
 
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
@@ -1541,9 +1540,9 @@ namespace Tpetra {
     /// alias this MultiVector.
     void
     update (const Scalar& alpha,
-            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
             const Scalar& beta,
-            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
+            const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
             const Scalar& gamma);
 
     /// \brief Compute the one-norm of each vector (column), storing
@@ -1768,7 +1767,7 @@ namespace Tpetra {
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void
-    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& weights,
                   const Teuchos::ArrayView<mag_type>& norms) const;
 
     /// \brief Compute the weighted 2-norm (RMS Norm) of each column.
@@ -1787,7 +1786,7 @@ namespace Tpetra {
     /// \c void, as above.
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights,
+    normWeighted (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& weights,
                   const Teuchos::ArrayView<T>& norms) const
     {
       typedef typename Teuchos::ArrayView<T>::size_type size_type;
@@ -1829,8 +1828,8 @@ namespace Tpetra {
     multiply (Teuchos::ETransp transA,
               Teuchos::ETransp transB,
               const Scalar& alpha,
-              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
               const Scalar& beta);
 
     /// \brief Multiply a Vector A elementwise by a MultiVector B.
@@ -1855,8 +1854,8 @@ namespace Tpetra {
     /// applying a diagonal scaling.
     void
     elementWiseMultiply (Scalar scalarAB,
-                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>& A,
-                         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false>& A,
+                         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
                          Scalar scalarThis);
     //@}
     //! @name Attribute access functions
@@ -1939,7 +1938,7 @@ namespace Tpetra {
     ///   is not, this method's behavior is undefined.  This pointer
     ///   will be null on excluded processes.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& newMap);
 
     /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
     ///   or view (copyOrView = Teuchos::View) semantics.
