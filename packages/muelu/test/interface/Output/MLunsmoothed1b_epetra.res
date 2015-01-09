@@ -43,6 +43,7 @@ Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationI
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
   IFPACK (Local SGS, sweeps=2, damping=1)
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
@@ -114,11 +115,11 @@ Level 1
   Ac   #  nnz per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
   IFPACK (Local SGS, sweeps=2, damping=1)
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    PreDropFunctionConstVal: threshold = 0
     lightweight wrap = 1
     algorithm = "classical": threshold = 0.00, blocksize = 1
     Detected 0 Dirichlet nodes
@@ -185,11 +186,11 @@ Level 2
   Ac   #  nnz per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
   IFPACK (Local SGS, sweeps=2, damping=1)
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 3
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    PreDropFunctionConstVal: threshold = 0
     lightweight wrap = 1
     algorithm = "classical": threshold = 0.00, blocksize = 1
     Detected 0 Dirichlet nodes
@@ -256,11 +257,11 @@ Level 3
   Ac   #  nnz per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
   IFPACK (Local SGS, sweeps=2, damping=1)
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 4
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    PreDropFunctionConstVal: threshold = 0
     lightweight wrap = 1
     algorithm = "classical": threshold = 0.00, blocksize = 1
     Detected 0 Dirichlet nodes
@@ -326,7 +327,7 @@ Level 4
   Ac   # rows per proc   : avg = 1.24e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   Ac   #  nnz per proc   : avg = 3.70e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Max coarse size (<= 128) achieved
- Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -349,6 +350,6 @@ Smoother (level 2) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
 Smoother (level 3) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
-Smoother (level 4) pre  : MueLu::AmesosSmoother{type = <ignored>}
+Smoother (level 4) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 4) post : no smoother
 
