@@ -291,6 +291,17 @@ LOCA::AdaptiveStepper::eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & 
    return true;
 }
 
+void LOCA::AdaptiveStepper::computeEigenData() {
+  Teuchos::RCP< std::vector<double> > evals_r;
+  Teuchos::RCP< std::vector<double> > evals_i;
+  Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
+  Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
+  eigensolver->computeEigenvalues(
+    *curGroupPtr->getBaseLevelUnderlyingGroup(),
+    evals_r, evals_i, evecs_r, evecs_i);
+  saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
+}
+
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::AdaptiveStepper::start() {
 
@@ -306,6 +317,9 @@ LOCA::AdaptiveStepper::start() {
 
   // Perform solve of initial conditions
   solverStatus = solverPtr->solve();
+
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) computeEigenData();
 
   // Allow continuation group to postprocess the step
   if (solverStatus == NOX::StatusTest::Converged)
@@ -351,19 +365,6 @@ LOCA::AdaptiveStepper::start() {
 
   // Save initial solution
   curGroupPtr->printSolution();
-
-  // Compute eigenvalues/eigenvectors if requested
-  if (calcEigenvalues) {
-    Teuchos::RCP< std::vector<double> > evals_r;
-    Teuchos::RCP< std::vector<double> > evals_i;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(
-                 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-                 evals_r, evals_i, evecs_r, evecs_i);
-
-    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
-  }
 
   // Compute predictor direction
   NOX::Abstract::Group::ReturnType predictorStatus =
@@ -548,6 +549,9 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Perform solve of newSolnGroup conditions - this is the "relaxation" (equilibration) solve
   solverStatus = solverPtr->solve();
 
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) computeEigenData();
+
   // Allow continuation group to postprocess the step
   if (solverStatus == NOX::StatusTest::Converged)
     curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
@@ -601,19 +605,6 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
     globalData->locaUtils->out()
       << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
 
-  }
-
-  // Compute eigenvalues/eigenvectors if requested
-  if (calcEigenvalues) {
-    Teuchos::RCP< std::vector<double> > evals_r;
-    Teuchos::RCP< std::vector<double> > evals_i;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(
-           *curGroupPtr->getBaseLevelUnderlyingGroup(),
-           evals_r, evals_i, evecs_r, evecs_i);
-
-    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
 
   // We have successfully relaxed the solution from the remesh, now prepare to resume stepping
@@ -851,6 +842,9 @@ LOCA::AdaptiveStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStat
 {
   std::string callingFunction = "LOCA_AdaptiveStepper::postprocess()";
 
+  // Compute eigenvalues/eigenvectors
+  if (calcEigenvalues) computeEigenData();
+
   // Allow continuation group to postprocess the step
   curGroupPtr->postProcessContinuationStep(stepStatus);
 
@@ -887,19 +881,6 @@ LOCA::AdaptiveStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStat
 
   // Print (save) solution
   curGroupPtr->printSolution();
-
-  // Compute eigenvalues/eigenvectors
-  if (calcEigenvalues) {
-    Teuchos::RCP< std::vector<double> > evals_r;
-    Teuchos::RCP< std::vector<double> > evals_i;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(
-                 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-                 evals_r, evals_i, evecs_r, evecs_i);
-
-    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
-  }
 
   return stepStatus;
 }

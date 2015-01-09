@@ -258,6 +258,8 @@ namespace LOCA {
                               const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
                               const Teuchos::RCP<Teuchos::ParameterList>& p);
 
+    void computeEigenData();
+
   protected:
 
     //! Global data
