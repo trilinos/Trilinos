@@ -50,6 +50,7 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <zoltan_cpp.h>
 
 #include <Tpetra_MultiVector.hpp>
 
@@ -62,75 +63,136 @@ using Teuchos::Comm;
 // A few of the RCB tests done by Zoltan in nightly testing.
 //
 
-#if 0
-#define NUMTESTS 19
+#define NUMTESTS 22
 
-static int testNumProcs[NUMTESTS] = {
+static int testNumProcs[] = {
 2,2,
-3,3,3,3,
-4,4,4,4,4,4,4,
+3,3,3,3,3,3,
+4,4,4,4,4,4,4,4,
 5,
 6,6,6,6,
 8
 };
 
-static string testArgs[NUMTESTS*3] = {
-"simple", "no", "no",
-"vwgt2", "no", "no",
+static string testArgs[] = {
+// Filename  AverageCuts  RectilinearBlocks
+"simple",       "no",          "no",
+"vwgt2",        "no",          "no",
 
-"vwgt", "no", "no",
-"bug", "no", "no",
-"drake", "no", "no",
-"onedbug", "no", "no",
+"bug",          "no",          "no",
+"drake",        "no",          "no",
+"onedbug",      "no",          "no",
+"simple",       "no",          "no",
+"vwgt",         "no",          "no",
+"vwgt2",        "no",          "no",
 
-"ewgt", "no", "no", 
-"grid20x19", "no", "no", 
-"grid20x19", "yes", "no",
-"grid20x19", "no", "yes",
-"nograph", "no", "no", 
-"simple", "no", "no", 
-"simple", "yes", "no",
+"ewgt",         "no",          "no", 
+"grid20x19",    "no",          "no", 
+"grid20x19",    "yes",         "no",
+"grid20x19",    "no",          "yes",
+"nograph",      "no",          "no", 
+"simple",       "no",          "no", 
+"simple",       "yes",         "no",
+"vwgt2",        "no",          "no",
 
-"brack2_3", "no", "no",
+"brack2_3",     "no",          "no",
 
-"hammond2", "no", "no",
-"degenerateAA", "no", "no",
-"degenerate", "no", "no",
-"degenerate", "no", "yes",
+"hammond2",     "no",          "no",
+"degenerateAA", "no",          "no",
+"degenerate",   "no",          "no",
+"degenerate",   "no",          "yes",
 
-"hammond", "no", "no"
+"hammond",      "no",          "no"
 };
-#else
-#define NUMTESTS 2
-static int testNumProcs[NUMTESTS] = {4,4};
 
-static string testArgs[NUMTESTS*3] = {
-"grid20x19", "no", "no",
-"simple", "no", "no"};
-#endif
+static string objectives[] = {
+  "balance_object_count",
+  "balance_object_weight",
+  "multicriteria_balance_total_maximum"
+};
+
 
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
 
-int runRCB(const RCP<const Comm<int> > &comm,
-  string fname, bool average_cuts, bool rectilinear_blocks,
-  int numGlobalParts)
+////////////////////////////////////////////////////////////////////////////////
+// Zoltan callbacks
+
+template <typename MV>
+int znumobj(void *data, int *ierr) 
 {
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
+  *ierr = ZOLTAN_OK;
+  MV *vec = (MV *) data;
+  return vec->getLocalLength();
+}
+
+template <typename MV, typename scalar_t>
+void zobjlist(void *data, int ngid, int nlid, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+              int nwgts, float *wgts, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  MV *vec = (MV *) data;
+  int n = vec->getLocalLength();
+  for (int i = 0; i < n; i++) {
+    gids[i] = vec->getMap()->getGlobalElement(i);
+    lids[i] = i;
+  }
+  for (int w = 0; w < nwgts; w++) {
+    ArrayRCP<const scalar_t> wvec = vec->getData(w);
+    for (int i = 0; i < n; i++)
+      wgts[i*nwgts+w] = wvec[i];
+  }
+}
+
+template <typename MV>
+int znumgeom(void *data, int *ierr) 
+{
+  *ierr = ZOLTAN_OK;
+  MV *cvec = (MV *) data;
+  return cvec->getNumVectors();
+}
+
+template <typename MV, typename scalar_t>
+void zgeom(void *data, int ngid, int nlid, int nobj, 
+          ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+          int ndim, double *coords, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  MV *vec = (MV *) data;
+  for (int d = 0; d < ndim; d++) {
+    ArrayRCP<const scalar_t> cvec = vec->getData(d);
+    for (int i = 0; i < nobj; i++) {
+      coords[lids[i]*ndim+d] = cvec[lids[i]];
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Function to compute both Zoltan2 and Zoltan partitions and print metrics
+
+int runRCB(
+  const RCP<const Comm<int> > &comm,
+  int numGlobalParts,
+  int testCnt
+)
+{
+  int me = comm->getRank();
+  int np = comm->getSize();
   
 
   // Read this test data from the Zoltan(1) test directory.
 
   UserInputForTests *uinput;
   try{
-    uinput = new UserInputForTests(zoltanTestDirectory, fname, comm, true);
+    uinput = new UserInputForTests(zoltanTestDirectory, testArgs[testCnt*3],
+                                   comm, true);
   }
   catch(...){
-    if (rank == 0)
-      std::cout << "FAIL: UserInputForTests" << std::endl;
+    if (me == 0)
+      std::cout << "Test " << testCnt << ":  FAIL: UserInputForTests" << std::endl;
     return 1;
   }
 
@@ -139,8 +201,8 @@ int runRCB(const RCP<const Comm<int> > &comm,
     matrix = uinput->getTpetraCrsMatrix();
   }
   catch(...){
-    if (rank == 0)
-      std::cout << "FAIL: get matrix" << std::endl;
+    if (me == 0)
+      std::cout << "Test " << testCnt << ":  FAIL: get matrix" << std::endl;
     return 1;
   }
 
@@ -151,8 +213,8 @@ int runRCB(const RCP<const Comm<int> > &comm,
    coords = uinput->getCoordinates();
   }
   catch(...){
-    if (rank == 0)
-      std::cout << "FAIL: get coordinates" << std::endl;
+    if (me == 0)
+      std::cout << "Test " << testCnt << ":  FAIL: get coordinates" << std::endl;
     return 1;
   }
 
@@ -163,28 +225,28 @@ int runRCB(const RCP<const Comm<int> > &comm,
    weights = uinput->getWeights();
   }
   catch(...){
-    if (rank == 0)
-      std::cout << "FAIL: get weights" << std::endl;
+    if (me == 0)
+      std::cout << "Test " << testCnt << ":  FAIL: get weights" << std::endl;
     return 1;
   }
 
-  int weightDim = (weights.is_null() ? 0 : weights->getNumVectors());
+  int nWeights = (weights.is_null() ? 0 : weights->getNumVectors());
 
   // Create input adapters for the matrix and its coordinates
 
   matrixAdapter_t *ia;
 
   try{
-    ia = new matrixAdapter_t(matrixConst, weightDim);
+    ia = new matrixAdapter_t(matrixConst, nWeights);
   }
   catch(...){
-    if (rank == 0)
-      std::cout << "FAIL: matrix adapter" << std::endl;
+    if (me == 0)
+      std::cout << "Test " << testCnt << ":  FAIL: matrix adapter" << std::endl;
     return 1;
   }
 
-  for (int dim=0; dim < weightDim; dim++)
-    ia->setRowWeights(weights->getData(dim).getRawPtr(), 1, dim);
+  for (int idx=0; idx < nWeights; idx++)
+    ia->setRowWeights(weights->getData(idx).getRawPtr(), 1, idx);
 
   vectorAdapter_t *ca = NULL;
 
@@ -192,8 +254,8 @@ int runRCB(const RCP<const Comm<int> > &comm,
     ca = new vectorAdapter_t(coords);
   }
   catch(...){
-    if (rank == 0)
-      std::cout << "FAIL: vector adapter" << std::endl;
+    if (me == 0)
+      std::cout << "Test " << testCnt << ":  FAIL: vector adapter" << std::endl;
     return 1;
   }
 
@@ -203,51 +265,62 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   Teuchos::ParameterList params;
   params.set("timer_output_stream" , "std::cout");
-  params.set("debug_level" , "verbose_detailed_status");
+  params.set("compute_metrics", "true");
+  // params.set("debug_level" , "verbose_detailed_status");
 
   params.set("algorithm", "rcb");
-  params.set("partitioning_objective", "multicriteria_balance_total_maximum");
-  if (rank == 0)
-    std::cout << "algorithm = rcb" << std::endl;
+  params.set("partitioning_objective", objectives[(nWeights > 2 ? 2 : nWeights)]);
 
   double tolerance = 1.1;
   params.set("imbalance_tolerance", tolerance );
-  if (rank == 0)
-    std::cout << "imbalance_tolerance = " << tolerance << std::endl;
-
-  if (nprocs == 1){
-    params.set("num_global_parts", numGlobalParts);
-    std::cout << "num_global_parts = " << numGlobalParts << std::endl;
-  }
-
+  params.set("num_global_parts", numGlobalParts);
   params.set("bisection_num_test_cuts", 1);
-  if (rectilinear_blocks){
-    params.set("rectilinear_blocks", "yes");
-    if (rank == 0)
-      std::cout << "rectilinear_blocks = yes" << std::endl;
-  }
-  if (average_cuts){
-    params.set("average_cuts", "yes");
-    if (rank == 0)
-      std::cout << "average_cuts = yes" << std::endl;
-  }
+  params.set("average_cuts", testArgs[testCnt*3+1]);
+  params.set("rectilinear_blocks", testArgs[testCnt*3+2]);
 
-  if (rank == 0){
-    std::cout << "coordinate dimension: " << coordDim << std::endl;
-    std::cout << "weight dimension: " << weightDim << std::endl;
-    if (weightDim > 1)
-      std::cout << 
-        "objective: multicriteria_balance_total_maximum (2-norm)" << std::endl;
+  if (me == 0) {
+    std::cout << "Test " << testCnt << " filename            = "
+              << testArgs[testCnt*3] << std::endl;
+    std::cout << "Test " << testCnt << " num processors      = "
+              << np << std::endl;
+    std::cout << "Test " << testCnt << " algorithm           = rcb"
+              << std::endl;
+    std::cout << "Test " << testCnt << " num_global_parts    = "
+              << numGlobalParts << std::endl;
+    std::cout << "Test " << testCnt << " imbalance_tolerance = "
+              << tolerance << std::endl;
+    std::cout << "Test " << testCnt << " coordinate dim      = "
+              << coordDim << std::endl;
+    std::cout << "Test " << testCnt << " num weights per ID  = "
+              << nWeights << std::endl;
+    std::cout << "Test " << testCnt << " partition objective = "
+              << objectives[(nWeights > 2 ? 2 : nWeights)] << std::endl;
+    std::cout << "Test " << testCnt << " average_cuts        = "
+              << testArgs[testCnt*3+1] << std::endl;
+    std::cout << "Test " << testCnt << " rectilinear_blocks  = "
+              << testArgs[testCnt*3+2] << std::endl;
   }
 
   // Create the problem.
 
   Zoltan2::PartitioningProblem<matrixAdapter_t> *problem;
+#ifdef HAVE_ZOLTAN2_MPI
+  // TPLs may want an MPI communicator
+
+  const Teuchos::MpiComm<int> *tmpicomm =
+                 dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
+  MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
+
+  try{
+    problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params,mpiComm);
+  }
+#else
   try{
     problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params);
   }
+#endif
   catch(...){
-    if (rank == 0)
+    if (me == 0)
       std::cout << "FAIL: problem" << std::endl;
     return 1;
   }
@@ -256,12 +329,49 @@ int runRCB(const RCP<const Comm<int> > &comm,
     problem->solve();
   }
   catch(...){
-    if (rank == 0)
+    if (me == 0)
       std::cout << "FAIL: solve" << std::endl;
     return 1;
   }
 
-  if (rank == 0){
+  // Now run the same partitioning using Zoltan
+#ifdef HAVE_ZOLTAN2_MPI
+  Zoltan zz(mpiComm);
+#else
+  Zoltan zz();
+#endif
+  char tmp[56];
+  zz.Set_Param("LB_METHOD", "RCB");
+  
+  sprintf(tmp, "%d", numGlobalParts);
+  zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
+  sprintf(tmp, "%d", nWeights);
+  zz.Set_Param("OBJ_WEIGHT_DIM", tmp);
+  sprintf(tmp, "%f", tolerance);
+  zz.Set_Param("IMBALANCE_TOL", tmp);
+  zz.Set_Param("RETURN_LISTS", "PART");
+  zz.Set_Param("FINAL_OUTPUT", "1");
+  zz.Set_Param("CHECK_GEOM", "0");
+  if (testArgs[testCnt*3+1] == "yes") zz.Set_Param("AVERAGE_CUTS", "1");
+  if (testArgs[testCnt*3+2] == "yes") zz.Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
+
+  zz.Set_Num_Obj_Fn(znumobj<tMVector_t>, (void *) coords.getRawPtr());
+  if (nWeights)
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) weights.getRawPtr());
+  else
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+  zz.Set_Num_Geom_Fn(znumgeom<tMVector_t>, (void *) coords.getRawPtr());
+  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+
+  int changes, ngid, nlid;
+  int numd, nump;
+  ZOLTAN_ID_PTR dgid = NULL, dlid = NULL, pgid = NULL, plid = NULL;
+  int *dproc = NULL, *dpart = NULL, *pproc = NULL, *ppart = NULL;
+  zz.LB_Partition(changes, ngid, nlid, numd, dgid, dlid, dproc, dpart,
+                                       nump, pgid, plid, pproc, ppart);
+  zz.LB_Free_Part(&pgid, &plid, &pproc, &ppart);
+
+  if (me == 0){
     problem->printMetrics(cout);
   }
 
@@ -275,80 +385,50 @@ int runRCB(const RCP<const Comm<int> > &comm,
   return 0;
 }
   
+////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  bool ac = false, rb = false;
-
-  if (getenv("DEBUGME")){
-    std::cout << getpid() << std::endl;
-    sleep(10);
-  }
+  int me = comm->getRank();
+  int np = comm->getSize();
 
   int fail=0;
 
-  if (argc > 1){
-   
-    Teuchos::CommandLineProcessor cmdp (false, false);
-  
-    string inputFile("none"), average_cuts("no"), rectilinear_blocks("no");
-  
-    cmdp.setOption("inputFile", &inputFile, 
-      "root of file name: \"grid20x19\" for \"grid20x19_coord.mtx\"");
-    cmdp.setOption("average_cuts", &average_cuts, 
-      "yes or no");
-    cmdp.setOption("rectilinear_blocks", &rectilinear_blocks, 
-      "yes or no");
-  
-    try{
-      cmdp.parse(argc, argv);
-    }
-    catch(...){
-      if (rank == 0)
-        std::cout << "FAIL: arguments" << std::endl;
-      return 1;
-    }
-  
-    if (inputFile == string("none"))
-      return 0;
-  
-    if (average_cuts == string("yes"))
-      ac = true;
-    if (rectilinear_blocks == string("yes"))
-      rb = true;
+  Array<int> ranks(np);
+  for (int i = 0; i < np; i++) ranks[i] = i;
 
-    fail = runRCB(comm, inputFile, ac, rb, nprocs);
-  }
-  else{         // do all the Zoltan tests
-    int numRan = 0;
-    for (int i=0,ii=0; i < NUMTESTS; i++, ii+=3){
-      int numProcs = testNumProcs[i];
-      if ((nprocs == 1) || (nprocs == numProcs)){
-        numRan++;
-        ac = (testArgs[ii+1] == string("yes"));
-        rb = (testArgs[ii+2] == string("yes"));
-        fail = runRCB(comm, testArgs[ii], ac, rb, numProcs);
-
-        // AlltoAll hangs second time around on 3 or 5 procs.
-        // On s861036 and on octopi.
-        // Tried many re-writes of AlltoAll using both Teuchos
-        // and MPI.
-        // TODO
- 
-        if ((nprocs == 3) || (nprocs == 5))
-          break;
-
+  for (int i=0; i < NUMTESTS; i++) {
+    int nTestProcs = testNumProcs[i];
+    if (nTestProcs > np) {
+      if (me == 0) {
+        std::cout << "Skipping test " << i << " on " << testArgs[i*3]
+                  << "; required number of procs " << nTestProcs 
+                  << " is greater than available procs " << np << std::endl;
       }
+      continue;
     }
-    if (numRan == 0){
-      fail = runRCB(comm, "grid20x19", "yes", "yes", nprocs);
+    RCP<const Comm<int> > testcomm;
+    if (nTestProcs == np)
+      testcomm = comm;
+    else
+      testcomm = comm->createSubcommunicator(ranks.view(0,nTestProcs));
+
+    if (me < nTestProcs) {
+      fail = runRCB(testcomm, nTestProcs, i);
+
+      // AlltoAll hangs second time around on 3 or 5 procs.
+      // On s861036 and on octopi.
+      // Tried many re-writes of AlltoAll using both Teuchos
+      // and MPI.
+      // TODO
+      // if ((np == 3) || (np == 5))
+      //   break;
     }
   }
   
-  if (rank == 0 && !fail)
+  if (me == 0 && !fail)
     std::cout << "PASS" << std::endl;
   
   return 0;

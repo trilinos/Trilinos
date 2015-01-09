@@ -1825,10 +1825,58 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
       }
   
       nRuns++;
+
       printf(" STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
               nRuns, bal, balmax, balmin, balsum/nRuns);
       printf(" STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
               nRuns, countType, gmove, movemax, movemin, movesum/nRuns);
+    }
+
+    {
+      int cntmax = 0, cntmin = 0, cntsum = 0;
+      MPI_Allreduce(&dotnum, &cntmin, 1, MPI_INT, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&dotnum, &cntmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
+      MPI_Allreduce(&dotnum, &cntsum, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+      if (proc == print_proc) {
+        double avg = (double) cntsum / (double) nprocs;
+        printf(" STATS DETAIL count:  min %d  max %d  avg %f  imbal %f\n",
+               cntmin, cntmax, avg, (double) cntmax / avg);
+      }
+    }
+
+    if (wdim) {
+
+      double *wtarr = (double *) ZOLTAN_MALLOC(4 * wdim * sizeof(double));
+      double *wtarrmin = wtarr    + wdim;
+      double *wtarrmax = wtarrmin + wdim;
+      double *wtarrsum = wtarrmax + wdim;
+      int d;
+      for (d = 0; d < 4*wdim; d++) wtarr[d] = 0.;
+
+      for (i = 0; i < dotnum; i++) {
+        for (d = 0; d < wdim; d++) {
+          wtarr[d] += dotpt->Weight[i*wdim+d];
+        }
+      }
+    
+      MPI_Allreduce(wtarr, wtarrmin, wdim, MPI_DOUBLE,MPI_MIN,zz->Communicator);
+      MPI_Allreduce(wtarr, wtarrmax, wdim, MPI_DOUBLE,MPI_MAX,zz->Communicator);
+      MPI_Allreduce(wtarr, wtarrsum, wdim, MPI_DOUBLE,MPI_SUM,zz->Communicator);
+
+      if (proc == print_proc) {
+        for (d = 0; d < wdim; d++) {
+          double avg = wtarrsum[d] / (double)nprocs;
+          printf(" STATS DETAIL wgt %d:  min %f  max %f  avg %f  imbal %f\n",
+                 d, wtarrmin[d], wtarrmax[d], avg, wtarrmax[d]/avg);
+        }
+      }
+      ZOLTAN_FREE(&wtarr);
+    }
+    else {
+      if (proc == print_proc) {
+        printf(" STATS DETAIL wdim = %d; no detail available\n", wdim);
+      }
     }
 
     ZOLTAN_FREE(&gpartWgt);
