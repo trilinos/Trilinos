@@ -5,6 +5,47 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.13):
 ----------------------------
 
+* Update to instructions for building Kokkos Refactor version
+
+See the Release Notes for the 11.12 release (below) for an explanation
+of what the Kokkos Refactor version of Tpetra is.  Currently, you must
+enable this option explicitly at Trilinos configuration time; it is
+disabled by default.  Here is a summary of the required CMake options
+(NOTE: many options are no longer necessary!).
+
+  # Enable the Kokkos refactor version of Tpetra.
+  -D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+  # Set default Node type to one of the new Kokkos Nodes.
+  # The one below uses the Kokkos::Serial execution space.
+  # Replace "Serial" with "OpenMP" for the Kokkos::OpenMP
+  # execution space, or replace it with "Threads" for the
+  # Kokkos::Threads execution space.
+  -D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosSerialWrapperNode"
+
+* Subpackages needed for the Kokkos refactor version of Tpetra
+  are now Primary Tested (PT) by default
+
+This means that if you enable Tpetra, you should no longer have to
+enable the necessary subpackages of Kokkos and Tpetra (see below) by
+default.
+
+* Changed CMake options for enabling / disabling "classic" Nodes
+
+  TpetraClassic_ENABLE_SerialNode:    For KokkosClassic::SerialNode
+  TpetraClassic_ENABLE_OpenMPNode:    For KokkosClassic::OpenMPNode
+  TpetraClassic_ENABLE_TBBNode:       For KokkosClassic::TBBNode  
+  TpetraClassic_ENABLE_TPINode:       For KokkosClassic::TPINode
+  TpetraClassic_ENABLE_ThrustGPUNode: For KokkosClassic::ThrustGPUNode
+
+* Disabled "classic" Node types by default if Kokkos refactor version
+  of Tpetra is enabled
+
+* Scalar = std::complex<double> now works with Kokkos refactor version
+  of Tpetra
+
+Scalar = std::complex<float> does not work yet.
+
 * Moved KokkosCompat and KokkosMpiComm subpackages of Kokkos to
   KokkosCompat resp. KokkosComm subpackages of Teuchos
 
@@ -29,7 +70,7 @@ now be changed to "TpetraClassic" resp. "TpetraTSQR".
 
 See the Release Notes for the 11.12 release (below) for an explanation
 of what the Kokkos Refactor version of Tpetra is.  Currently, you must
-enable this option explicitly at Trilinoss configuration time; it is
+enable this option explicitly at Trilinos configuration time; it is
 disabled by default.  Here is a summary of the required CMake options.
 
 # Enable Kokkos subpackages explicitly.
