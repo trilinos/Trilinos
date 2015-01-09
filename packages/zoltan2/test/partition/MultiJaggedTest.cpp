@@ -770,7 +770,8 @@ int testFromDataFile(
         params->set("mj_migration_option", migration_check_option);
     }
     if(migration_imbalance_cut_off >= 0){
-        params->set("mj_minimum_migration_imbalance", double (migration_imbalance_cut_off));
+        params->set("mj_minimum_migration_imbalance", 
+                    double (migration_imbalance_cut_off));
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -793,7 +794,9 @@ int testFromDataFile(
         const zgno_t *zgids = problem->getSolution().getIdList();
         for (int i = 0; i < len; i++)
             cout << comm->getRank()
-            << " gid " << zgids[i] << " part " << zparts[i] << endl;
+            << " lid " << i 
+            << " gid " << zgids[i] 
+            << " part " << zparts[i] << endl;
     }
 
     if (comm->getRank() == 0){
@@ -937,7 +940,8 @@ int testFromSeparateDataFiles(
         params->set("migration_all_to_all_type", migration_all_to_all_type);
     }
     if(migration_imbalance_cut_off >= 0){
-        params->set("migration_imbalance_cut_off", double (migration_imbalance_cut_off));
+        params->set("migration_imbalance_cut_off",
+                    double (migration_imbalance_cut_off));
     }
     if (migration_doMigration_type >= 0){
         params->set("migration_doMigration_type", int (migration_doMigration_type));
