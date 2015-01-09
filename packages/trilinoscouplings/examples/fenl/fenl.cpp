@@ -42,14 +42,14 @@
 #include <Kokkos_Core.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
-
+#include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_PTHREAD)
+#if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
 
 INST_FENL( double , Threads , BoxElemPart::ElemLinear ,
            ElementComputationConstantCoefficient , ManufacturedSolution )
@@ -58,7 +58,7 @@ INST_FENL( double , Threads , BoxElemPart::ElemQuadratic ,
 
 #endif
 
-#if defined (KOKKOS_HAVE_OPENMP)
+#if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
 
 INST_FENL( double , OpenMP , BoxElemPart::ElemLinear ,
            ElementComputationConstantCoefficient , ManufacturedSolution )
