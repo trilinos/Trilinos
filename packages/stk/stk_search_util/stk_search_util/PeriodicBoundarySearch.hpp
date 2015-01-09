@@ -268,7 +268,7 @@ public:
     for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
     {
       find_periodic_nodes_for_given_pair(m_periodic_pairs[i].first, m_periodic_pairs[i].second, parallel,
-                                         m_transforms[i]);
+                                         m_transforms[i], m_search_tolerances[i]);
     }
 
     for (size_t i = 0; i < m_search_results.size(); ++i)
@@ -296,20 +296,25 @@ public:
   }
 
   void add_linear_periodic_pair(const stk::mesh::Selector & domain,
-      const stk::mesh::Selector & range)
+                                const stk::mesh::Selector & range,
+                                const double search_tol = 1.e-10)
   {
     ThrowErrorIf(m_hasRotationalPeriodicity);
     m_periodic_pairs.push_back(std::make_pair(domain, range));
     m_transforms.push_back( TransformHelper() );
+    m_search_tolerances.push_back(search_tol);
   }
 
   void add_rotational_periodic_pair(const stk::mesh::Selector & domain,
       const stk::mesh::Selector & range,
       const double theta,
       const double axis[],
-      const double point[])
+      const double point[],
+      const double search_tol = 1.e-10)
   {
     m_periodic_pairs.push_back(std::make_pair(domain, range));
+    m_search_tolerances.push_back(search_tol);
+
     //only one periodic BC can exist with rotational periodicity
     ThrowRequire(m_periodic_pairs.size() == 1);
 
@@ -390,6 +395,7 @@ private:
   stk::mesh::Ghosting * m_periodic_ghosts;
   typedef std::vector<TransformHelper > TransformVector;
   TransformVector m_transforms;
+  std::vector<double> m_search_tolerances;
   bool m_firstCallToFindPeriodicNodes;
   bool m_hasRotationalPeriodicity;
 
@@ -417,6 +423,7 @@ private:
 
         //now add new pair with this
         m_periodic_pairs.push_back(std::make_pair(domainIntersection, rangeIntersection));
+        m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
         break;
       }
@@ -438,12 +445,16 @@ private:
 
         //edges
         m_periodic_pairs.push_back(std::make_pair(domainA & domainB, rangeA & rangeB));
+        m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
         m_periodic_pairs.push_back(std::make_pair(domainB & domainC, rangeB & rangeC));
+        m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
         m_periodic_pairs.push_back(std::make_pair(domainA & domainC, rangeA & rangeC));
+        m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
         m_periodic_pairs.push_back(std::make_pair(domainA & domainB & domainC, rangeA & rangeB & rangeC));
+        m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
         break;
       }
@@ -456,15 +467,16 @@ private:
   void find_periodic_nodes_for_given_pair(stk::mesh::Selector side1,
                                           stk::mesh::Selector side2,
                                           stk::ParallelMachine parallel,
-                                          TransformHelper & transform
+                                          TransformHelper & transform,
+                                          const double search_tolerance
                                           )
   {
     SearchPairVector search_results;
     SphereIdVector side_1_vector, side_2_vector;
 
-    populate_search_vector(side1, side_1_vector);
+    populate_search_vector(side1, side_1_vector, search_tolerance);
 
-    populate_search_vector(side2, side_2_vector);
+    populate_search_vector(side2, side_2_vector, search_tolerance);
 
     switch (transform.m_transform_type)
     {
@@ -548,11 +560,11 @@ private:
 
   }
 
-  void populate_search_vector(stk::mesh::Selector side_selector
-                              , SphereIdVector & aabb_vector
+  void populate_search_vector(stk::mesh::Selector side_selector,
+                              SphereIdVector & aabb_vector,
+                              const double search_tolerance
                              )
   {
-    const double radius = 1e-10;
     const unsigned parallel_rank = m_bulk_data.parallel_rank();
 
     stk::mesh::BucketVector const& buckets = m_bulk_data.get_buckets( stk::topology::NODE_RANK, side_selector );
@@ -566,7 +578,7 @@ private:
         ++num_nodes;
         m_get_coordinates(b[ord], &center[0]);
         SearchId search_id( m_bulk_data.entity_key(b[ord]), parallel_rank);
-        aabb_vector.push_back( std::make_pair( Sphere(center, radius), search_id));
+        aabb_vector.push_back( std::make_pair( Sphere(center, search_tolerance), search_id));
       }
     }
   }
