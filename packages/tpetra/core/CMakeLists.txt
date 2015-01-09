@@ -349,11 +349,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 )
 
 # The "Kokkos refactor" version of Tpetra currently requires that
-# several Kokkos subpackages be enabled.  These subpackages are not
-# enabled by default, because they are not currently (as of August
-# 2014) marked Primary Stable.  This will change in the future, but
-# for now, you must enable these subpackages explicitly.  The error
-# message below explains how to do that.
+# several Kokkos subpackages be enabled.  These subpackages should be
+# enabled by default (as of 08 Jan 2015).  The following test checks
+# that the subpackages have been enabled.
 
 ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
 IF (Tpetra_ENABLE_Kokkos_Refactor AND
@@ -363,7 +361,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor AND
      NOT ${PACKAGE_NAME}_ENABLE_KokkosContainers OR
      NOT ${PACKAGE_NAME}_ENABLE_KokkosAlgorithms OR
      NOT ${PACKAGE_NAME}_ENABLE_TeuchosKokkosComm))
-  MESSAGE(FATAL_ERROR "Dear user: You enabled the Tpetra_ENABLE_Kokkos_Refactor option, which turns on the Kokkos Refactor version of Tpetra.  However, you did not enable all required packages in order for this to work.  The Kokkos Refactor version of Tpetra depends on some subpackages which currently do not build by default.  For now, you must enable them explicitly in order to use the Kokkos Refactor version of Tpetra.  Please enable subpackages KokkosCore, KokkosContainers, KokkosAlgorithms, TeuchosKokkosCompat, TeuchosKokkosComm, and TpetraKernels.  Enable these subpackages by adding the following to your CMake configuration:\n-D Trilinos_ENABLE_KokkosCore:BOOL=ON\n-D Trilinos_ENABLE_TeuchosKokkosCompat:BOOL=ON\n-D Trilinos_ENABLE_TpetraKernels:BOOL=ON\n-D Trilinos_ENABLE_KokkosContainers:BOOL=ON\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_TeuchosKokkosComm:BOOL=ON\nIf you are running Trilinos' check-in test script, you must enable these subpackages explicitly, using arguments to --enable-packages, like this:\n--enable-packages=KokkosCore,TeuchosKokkosCompat,KokkosContainers,TpetraKernels,KokkosAlgorithms,TeuchosKokkosComm,<YOUR_PACKAGES>\n(Replace <YOUR_PACKAGES> with the other packages you want to enable.)  Also, the check-in test script will not enable these subpackages with the default builds MPI_DEBUG and SERIAL_RELEASE, so you must create another configuration and use it with the --extra-builds=... command-line argument.\n\n${PACKAGE_NAME}_ENABLE_KokkosCore = ${${PACKAGE_NAME}_ENABLE_KokkosCore}\n${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat = ${${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat}\n${PACKAGE_NAME}_ENABLE_TpetraKernels = ${${PACKAGE_NAME}_ENABLE_TpetraKernels}\n${PACKAGE_NAME}_ENABLE_KokkosContainers = ${${PACKAGE_NAME}_ENABLE_KokkosContainers}\n${PACKAGE_NAME}_ENABLE_KokkosAlgorithms = ${${PACKAGE_NAME}_ENABLE_KokkosAlgorithms}\n${PACKAGE_NAME}_ENABLE_TeuchosKokkosComm = ${${PACKAGE_NAME}_ENABLE_TeuchosKokkosComm}")
+  MESSAGE(FATAL_ERROR "Dear user: You enabled the Tpetra_ENABLE_Kokkos_Refactor option, which turns on the Kokkos Refactor version of Tpetra.  However, not all of the required subpackages have been enabled.  These subpackages should be enabled by default, so it could be that you disabled them explicitly.  For now, you must allow them to be enabled, in order to use the Kokkos Refactor version of Tpetra.  Please enable subpackages KokkosCore, KokkosContainers, KokkosAlgorithms, TeuchosKokkosCompat, TeuchosKokkosComm, and TpetraKernels.  Enable these subpackages, if they are not already enabled, by adding the following to your CMake configuration:\n-D Trilinos_ENABLE_KokkosCore:BOOL=ON\n-D Trilinos_ENABLE_TeuchosKokkosCompat:BOOL=ON\n-D Trilinos_ENABLE_TpetraKernels:BOOL=ON\n-D Trilinos_ENABLE_KokkosContainers:BOOL=ON\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_TeuchosKokkosComm:BOOL=ON\n\nHere is the current state of these packages:\n\n${PACKAGE_NAME}_ENABLE_KokkosCore = ${${PACKAGE_NAME}_ENABLE_KokkosCore}\n${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat = ${${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat}\n${PACKAGE_NAME}_ENABLE_TpetraKernels = ${${PACKAGE_NAME}_ENABLE_TpetraKernels}\n${PACKAGE_NAME}_ENABLE_KokkosContainers = ${${PACKAGE_NAME}_ENABLE_KokkosContainers}\n${PACKAGE_NAME}_ENABLE_KokkosAlgorithms = ${${PACKAGE_NAME}_ENABLE_KokkosAlgorithms}\n${PACKAGE_NAME}_ENABLE_TeuchosKokkosComm = ${${PACKAGE_NAME}_ENABLE_TeuchosKokkosComm}")
 ENDIF()
 
 IF (Tpetra_ENABLE_Kokkos_Refactor)
