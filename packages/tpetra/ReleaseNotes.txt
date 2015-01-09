@@ -5,6 +5,8 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.13):
 ----------------------------
 
+* Deprecated "classic" Node types
+
 * Update to instructions for building Kokkos Refactor version
 
 See the Release Notes for the 11.12 release (below) for an explanation
