@@ -30,9 +30,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # vector headers
 #
 
-IF (ROL_ENABLE_Thyra) 
+IF (ROL_ENABLE_Thyra)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
-  APPEND_SET(HEADERS 
+  APPEND_SET(HEADERS
     vector/ROL_ThyraVector.hpp
   )
 ENDIF()
@@ -43,19 +43,11 @@ ENDIF()
 
 IF (ROL_ENABLE_Thyra)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
-  APPEND_SET(HEADERS 
+  APPEND_SET(HEADERS
     function/ROL_ThyraME_Objective.hpp
     function/ROL_Thyra_BoundConstraint.hpp
     function/TOpEleWiseBoundsHelpers.hpp
   )
 ENDIF()
 
-#
-# C) Define the targets for package's library(s)
-# 
-
-  TRIBITS_ADD_LIBRARY(
-    rolthyra
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
+INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
