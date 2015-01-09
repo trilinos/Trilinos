@@ -2624,6 +2624,12 @@ struct ArithTraits<qd_real>
 #endif // HAVE_KOKKOS_QD
 
 } // namespace Details
+
+  // Promote ArithTraits into Kokkos namespace.  At some point, we
+  // will remove it from the Details namespace completely.  We leave
+  // it there for now, because a lot of code depends on it being
+  // there.
+  using Details::ArithTraits;
 } // namespace Kokkos
 
 #endif // KOKKOS_ARITHTRAITS_HPP
