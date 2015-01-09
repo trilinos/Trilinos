@@ -2356,7 +2356,7 @@ namespace KokkosClassic {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! isInitialized_,
       std::runtime_error,
-      "Kokkos::AltSparseOps<"
+      "KokkosClassic::AltSparseOps<"
       << TypeNameTraits<Scalar>::name ()
       << ", " << TypeNameTraits<Ordinal>::name ()
       << ", " << TypeNameTraits<Node>::name ()
@@ -2366,7 +2366,7 @@ namespace KokkosClassic {
     TEUCHOS_TEST_FOR_EXCEPTION(
       X.getNumCols() != Y.getNumCols(),
       std::runtime_error,
-      "Kokkos::AltSparseOps<"
+      "KokkosClassic::AltSparseOps<"
       << TypeNameTraits<Scalar>::name ()
       << ", " << TypeNameTraits<Ordinal>::name ()
       << ", " << TypeNameTraits<Node>::name ()
@@ -2376,7 +2376,7 @@ namespace KokkosClassic {
     TEUCHOS_TEST_FOR_EXCEPTION(
       trans == Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
-      "Kokkos::AltSparseOps<"
+      "KokkosClassic::AltSparseOps<"
       << TypeNameTraits<Scalar>::name ()
       << ", " << TypeNameTraits<Ordinal>::name ()
       << ", " << TypeNameTraits<Node>::name ()
@@ -2388,7 +2388,7 @@ namespace KokkosClassic {
     TEUCHOS_TEST_FOR_EXCEPTION(
       trans != Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
-      "Kokkos::AltSparseOps<"
+      "KokkosClassic::AltSparseOps<"
       << TypeNameTraits<Scalar>::name ()
       << ", " << TypeNameTraits<Ordinal>::name ()
       << ", " << TypeNameTraits<Node>::name ()
@@ -2400,7 +2400,7 @@ namespace KokkosClassic {
     TEUCHOS_TEST_FOR_EXCEPTION(
       trans == Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
-      "Kokkos::AltSparseOps<"
+      "KokkosClassic::AltSparseOps<"
       << TypeNameTraits<Scalar>::name ()
       << ", " << TypeNameTraits<Ordinal>::name ()
       << ", " << TypeNameTraits<Node>::name ()
@@ -2412,7 +2412,7 @@ namespace KokkosClassic {
     TEUCHOS_TEST_FOR_EXCEPTION(
       trans != Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
-      "Kokkos::AltSparseOps<"
+      "KokkosClassic::AltSparseOps<"
       << TypeNameTraits<Scalar>::name ()
       << ", " << TypeNameTraits<Ordinal>::name ()
       << ", " << TypeNameTraits<Node>::name ()
@@ -2429,7 +2429,7 @@ namespace KokkosClassic {
       TEUCHOS_TEST_FOR_EXCEPTION(
         unit_diag_ != Teuchos::UNIT_DIAG,
         std::runtime_error,
-        "Kokkos::AltSparseOps<"
+        "KokkosClassic::AltSparseOps<"
         << TypeNameTraits<Scalar>::name ()
         << ", " << TypeNameTraits<Ordinal>::name ()
         << ", " << TypeNameTraits<Node>::name ()
@@ -2668,7 +2668,7 @@ namespace KokkosClassic {
                     const DST[], const OT) = NULL;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      matVecVariant_ != FOR_FOR, std::logic_error, "Kokkos::AltSparseOps::"
+      matVecVariant_ != FOR_FOR, std::logic_error, "KokkosClassic::AltSparseOps::"
       "multiply: The \"for-while\" and \"for-if\" variants of sparse matrix-"
       "vector multiply have been removed and are no longer supported.");
 
@@ -2878,7 +2878,7 @@ namespace KokkosClassic {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      matVec == NULL, std::logic_error, "Kokkos::AltSparseOps::multiply: "
+      matVec == NULL, std::logic_error, "KokkosClassic::AltSparseOps::multiply: "
       "Failed to pick a matVec routine.  Please report this bug to the Kokkos "
       "developers.");
 

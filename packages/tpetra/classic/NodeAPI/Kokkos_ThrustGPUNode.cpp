@@ -95,7 +95,7 @@ namespace KokkosClassic {
     // int multiProcessorCount;
     // int kernelExecTimeoutEnabled;
     if (verbose) {
-      cout << "Kokkos::ThrustGPUNode attached to device #" << device << " \""
+      cout << "KokkosClassic::ThrustGPUNode attached to device #" << device << " \""
            << deviceProp.name << "\", of compute capability "
            << deviceProp.major << "." << deviceProp.minor << endl;
     }

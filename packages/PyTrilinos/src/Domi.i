@@ -59,7 +59,7 @@ other Trilinos solver technologies.
 
 %module(package = "PyTrilinos",
         autodoc   = "1",
-	docstring = %domi_docstring) Domi
+        docstring = %domi_docstring) Domi
 
 %{
 // System includes
@@ -202,7 +202,7 @@ import numpy
   catch(int errCode)
   {
     PyErr_Format(PyExc_RuntimeError, "Error code = %d\nSee stderr for details",
-		 errCode);
+                 errCode);
     SWIG_fail;
   }
   catch(Swig::DirectorException &e)
@@ -399,8 +399,8 @@ import numpy
   }
 }
 %include "Domi_MDMap.hpp"
-%teuchos_rcp(Domi::MDMap< Kokkos::DefaultNode::DefaultNodeType >)
-%template(MDMap_default) Domi::MDMap< Kokkos::DefaultNode::DefaultNodeType >;
+%teuchos_rcp(Domi::MDMap< KokkosClassic::DefaultNode::DefaultNodeType >)
+%template(MDMap_default) Domi::MDMap< KokkosClassic::DefaultNode::DefaultNodeType >;
 %pythoncode
 {
 MDMap = MDMap_default
