@@ -145,8 +145,8 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     Teuchos::Array<lno_t> numVerticesWithColor(maxDegree+2, 0);
 
     // Get colorChoice from parameter list.
-    const Teuchos::ParameterList &pl = env->getParameters();
-    std::string colorChoice = pl.get<std::string>("color_choice", "FirstFit"); 
+    Teuchos::ParameterList &pl = env_->getParametersNonConst();
+    std::string colorChoice = pl.get<std::string>("color_choice", "FirstFit");
 
     for (lno_t i=0; i<nVtx; i++){
       //std::cout << "Debug: i= " << i << std::endl;
