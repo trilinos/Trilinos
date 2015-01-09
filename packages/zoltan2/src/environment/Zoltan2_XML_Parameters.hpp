@@ -246,6 +246,14 @@
     id=\"45\" name=\"mj_recursion_depth\" type=\"int\" validatorId=\"45\" value=\"-1\" \
     docString=\"Recursion depth for MJ: Must be greater than 0.\" \
     /> \
+   <Parameter  \
+    id=\"46\" name=\"color_method\" type=\"string\" validatorId=\"46\" value=\"rcm\" \
+    docString='  coloring algorithm' \
+    /> \
+   <Parameter  \
+    id=\"47\" name=\"color_choice\" type=\"string\" validatorId=\"47\" value=\"amd\" \
+    docString='  selection criterion for coloring' \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -447,6 +455,15 @@
         <String integralValue=\"0\" stringValue=\"no\"/> \
         <String integralValue=\"0\" stringValue=\"0\"/> \
         <String integralValue=\"0\" stringValue=\"off\"/> \
+      </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"46\"> \
+        <String value=\"SerialGreedy\"/> \
+      </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"47\"> \
+        <String value=\"FirstFit\"/> \
+        <String value=\"Random\"/> \
+        <String value=\"RandomFast\"/> \
+        <String value=\"LeastUsed\"/> \
       </Validator> \
     </Validators> \
   </ParameterList>"
