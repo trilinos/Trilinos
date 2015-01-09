@@ -89,11 +89,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
 ENDIF()
+IF (DEFINED ${PROJECT_NAME}_ENABLE_ThreadPool AND ${PROJECT_NAME}_ENABLE_ThreadPool)
+  GLOBAL_SET(KokkosClassic_ENABLE_ThreadPool_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(KokkosClassic_ENABLE_ThreadPool_DEFAULT OFF)
+ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_ThreadPool
   HAVE_TPETRACLASSIC_THREADPOOL
   "Enable KokkosClassic::TPINode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."
-  ${${PROJECT_NAME}_ENABLE_ThreadPool}
+  ${KokkosClassic_ENABLE_ThreadPool_DEFAULT}
   )
 # Disable KokkosClassic::TPINode by default, if the Kokkos
 # refactor version of Tpetra is enabled.
