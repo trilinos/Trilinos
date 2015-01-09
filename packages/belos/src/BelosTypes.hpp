@@ -206,7 +206,7 @@ namespace Belos {
   /// This method is DEPRECATED because the generic-sounding name of
   /// this function makes it easy to pass in the wrong enum type.  Use
   /// \c convertStatusTypeToString() instead.
-  const char* TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED const char*
   toString (const StatusType status);
 
   //! The string name corresponding to the given StatusType enum value.

@@ -343,7 +343,7 @@ namespace Belos {
       return X_view;
     }
 
-    static int GetVecLength (const MV& mv) {
+    BELOS_DEPRECATED static int GetVecLength (const MV& mv) {
       return static_cast<int> (mv.getGlobalLength ());
     }
 

@@ -158,7 +158,7 @@ namespace Belos {
     ///
     /// \warning This method is deprecated.  Please call \c
     /// getValidParameters() instead.
-    static TEUCHOS_DEPRECATED Teuchos::RCP<const Teuchos::ParameterList>
+    BELOS_DEPRECATED static Teuchos::RCP<const Teuchos::ParameterList> 
     getDefaultParameters ()
     {
       using Teuchos::ParameterList;
