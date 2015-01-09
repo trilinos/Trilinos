@@ -58,7 +58,7 @@ namespace Kokkos {
 namespace Example {
 
 template< class CommMessageType , class CommIdentType , class VectorType >
-struct VectorImport ;
+class VectorImport ;
 
 } // namespace Example
 } // namespace Kokkos
@@ -72,8 +72,8 @@ namespace Kokkos {
 namespace Example {
 
 template< class CommMessageType , class CommIdentType , class VectorType >
-struct VectorImport {
-
+class VectorImport {
+public:
   const MPI_Comm comm ;
   const unsigned count_owned ;
   const unsigned count_receive ;
