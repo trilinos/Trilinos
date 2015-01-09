@@ -21,14 +21,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION}
   )
 
-#
-# Set up package-specific options
-#
-COMBINED_OPTION( ${PACKAGE_NAME}_ENABLE_Thrust
-  DEP_OPTIONS_NAMES TpetraClassic_ENABLE_Thrust
-  DOCSTR "Enables CUDA GPU support in Tpetra.  Requires Kokkos/Thrust"
-  )
-
 SET(Tpetra_MACHINE_XML_FILE_DIR 
     ${CMAKE_CURRENT_SOURCE_DIR}/machine_files
     CACHE INTERNAL "")

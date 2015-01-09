@@ -14,105 +14,125 @@ TRIBITS_ADD_DEBUG_OPTION()
 ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
 
 #
-# Decide whether to enable KokkosClassic::OpenMPNode
-# (which is DEPRECATED).
+# Decide whether to enable KokkosClassic::OpenMPNode (which is
+# DEPRECATED and must be enabled explicitly).  This requires that
+# OpenMP be enabled in Trilinos.
 #
-# Users may specify KokkosClassic_ENABLE_OpenMP to enable
-# the DEPRECATED KokkosClassic::OpenMPNode explicitly.
-# Even still, it won't be enabled unless OpenMP is enabled in
-# Trilinos.
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
+GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMPNode_DEFAULT OFF)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
-  KokkosClassic_ENABLE_OpenMP
-  HAVE_TPETRACLASSIC_OPENMP
-  "Enable KokkosClassic::OpenMPNode in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This option is DEPRECATED and is OFF by default.  It will be removed in future Trilinos releases.  If the Kokkos refactor version of Tpetra is enabled (it will be enabled by default in the next Trilinos release), you may use Kokkos::Compat::KokkosOpenMPWrapperNode instead of KokkosClassic::OpenMPNode."
-  OFF
-  )
-# Set whether to enable KokkosClassic::OpenMPNode by default.
-# The default is OFF, since KokkosClassic_ENABLE_OpenMP is OFF
-# by default.  We also disable this Node type by default if the
-# Kokkos refactor version of Tpetra is enabled.
-IF(KokkosClassic_ENABLE_OpenMP AND ${PROJECT_NAME}_ENABLE_OpenMP AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT OFF)
-ENDIF()
-
-# This is the final CMake option that controls whether
-# KokkosClassic::OpenMPNode is enabled.
-TRIBITS_ADD_OPTION_AND_DEFINE( 
-  ${PACKAGE_NAME}_ENABLE_OpenMP
+  ${PACKAGE_NAME}_ENABLE_OpenMPNode
   HAVE_TPETRACLASSIC_OPENMP
   "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED and OFF by default."
-  ${${PACKAGE_NAME}_ENABLE_OpenMP_DEFAULT}
+  ${${PACKAGE_NAME}_ENABLE_OpenMPNode_DEFAULT}
   )
-IF(${PACKAGE_NAME}_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
-  MESSAGE(ERROR "${PROJECT_NAME}_ENABLE_OpenMP is OFF, so it is not legal to set ${PACKAGE_NAME}_ENABLE_OpenMP to ON.")
-ENDIF()
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_OpenMPNode)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_OpenMPNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+IF (${PACKAGE_NAME}_ENABLE_OpenMPNode AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+  MESSAGE(ERROR "${PROJECT_NAME}_ENABLE_OpenMP is OFF, so it is not legal to set ${PACKAGE_NAME}_ENABLE_OpenMPNode to ON.")
+ENDIF ()
 
 #
-# Decide whether to enable KokkosClassic::SerialNode.
-# It will be DEPRECATED in the next Trilinos release.
+# Decide whether to enable KokkosClassic::SerialNode.  It will be
+# DEPRECATED in the next Trilinos release.  It will also be disabled
+# by default if the Kokkos refactor version of Tpetra is enabled.
 #
-# Users may specify KokkosClassic_ENABLE_Serial to enable
-# the soon-to-be deprecated KokkosClassic::SerialNode explicitly.
-# It will still be disabled by default if the Kokkos refactor
-# version of Tpetra is enabled.
-TRIBITS_ADD_OPTION_AND_DEFINE( 
-  KokkosClassic_ENABLE_Serial
-  HAVE_TPETRACLASSIC_SERIAL
-  "Enable KokkosClassic::SerialNode in ${PACKAGE_NAME}."
-  ON
-  )
-# Disable KokkosClassic::SerialNode by default, if the Kokkos
-# refactor version of Tpetra is enabled.
-IF(KokkosClassic_ENABLE_Serial AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_Serial_DEFAULT ON)
+IF(NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT ON)
 ELSE()
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_Serial_DEFAULT OFF)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT OFF)
 ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
-  ${PACKAGE_NAME}_ENABLE_Serial
+  ${PACKAGE_NAME}_ENABLE_SerialNode
   HAVE_TPETRACLASSIC_SERIAL
   "Add KokkosClassic::SerialNode to the list of enabled Node types."
-  ${${PACKAGE_NAME}_ENABLE_Serial_DEFAULT}
+  ${${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT}
   )
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_SerialNode)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_SerialNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
 
 #
-# Decide whether to enable KokkosClassic::TPINode.
-# It will be DEPRECATED in the next Trilinos release.
+# Users may specify TpetraClassic_ENABLE_TPINode to enable
+# KokkosClassic::TPINode explicitly.  It will be DEPRECATED in the
+# next Trilinos release.  This Node will also be disabled by default
+# if the Kokkos refactor version of Tpetra is enabled.
 #
-# Users may specify KokkosClassic_ENABLE_ThreadPool to enable
-# the soon-to-be deprecated KokkosClassic::TPINode explicitly.
-# It will still be disabled by default if the Kokkos refactor
-# version of Tpetra is enabled.
-IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
-ENDIF()
-IF (DEFINED ${PROJECT_NAME}_ENABLE_ThreadPool AND ${PROJECT_NAME}_ENABLE_ThreadPool)
-  GLOBAL_SET(KokkosClassic_ENABLE_ThreadPool_DEFAULT ON)
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_ThreadPool)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
+IF(${PROJECT_NAME}_ENABLE_ThreadPool AND ${PACKAGE_NAME}_ENABLE_ThreadPool AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT ON)
 ELSE()
-  GLOBAL_SET(KokkosClassic_ENABLE_ThreadPool_DEFAULT OFF)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT OFF)
 ENDIF()
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+
 TRIBITS_ADD_OPTION_AND_DEFINE( 
-  KokkosClassic_ENABLE_ThreadPool
+  ${PACKAGE_NAME}_ENABLE_TPINode
   HAVE_TPETRACLASSIC_THREADPOOL
-  "Enable KokkosClassic::TPINode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."
-  ${KokkosClassic_ENABLE_ThreadPool_DEFAULT}
+  "Enable KokkosClassic::TPINode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."  
+  ${${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT}
   )
-# Disable KokkosClassic::TPINode by default, if the Kokkos
-# refactor version of Tpetra is enabled.
-IF(KokkosClassic_ENABLE_ThreadPool AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThreadPool_DEFAULT ON)
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TPINode)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_TPINode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+
+
+#
+# Users may specify TpetraClassic_ENABLE_TBBNode to enable
+# KokkosClassic::TBBNode explicitly.  It will be DEPRECATED in the
+# next Trilinos release.  This Node will also be disabled by default
+# if the Kokkos refactor version of Tpetra is enabled.
+#
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBB)
+IF(${PACKAGE_NAME}_ENABLE_TBB AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT ON)
 ELSE()
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThreadPool_DEFAULT OFF)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT OFF)
 ENDIF()
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+
 TRIBITS_ADD_OPTION_AND_DEFINE( 
-  ${PACKAGE_NAME}_ENABLE_ThreadPool
-  HAVE_TPETRACLASSIC_THREADPOOL
-  "Add KokkosClassic::TPINode to the list of enabled Node types."
-  ${${PACKAGE_NAME}_ENABLE_ThreadPool_DEFAULT}
+  ${PACKAGE_NAME}_ENABLE_TBBNode
+  HAVE_TPETRACLASSIC_TBB
+  "Enable KokkosClassic::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release."
+  ${${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT}
   )
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TBBNode)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_TBBNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+
+#
+# Users may specify TpetraClassic_ENABLE_ThrustGPUNode to enable
+# KokkosClassic::ThrustGPUNode explicitly.  It will be DEPRECATED in
+# the next Trilinos release.  It will also be disabled by default if
+# the Kokkos refactor version of Tpetra is enabled.
+#
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thrust)
+IF (${PACKAGE_NAME}_ENABLE_Thrust AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT OFF)
+ENDIF()
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_ThrustGPUNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  ${PACKAGE_NAME}_ENABLE_ThrustGPUNode
+  HAVE_TPETRACLASSIC_THRUST
+  "Enable KokkosClassic::ThrustGPUNode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosCudaWrapperNode instead."  
+  ${${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT}
+  )
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_ThrustGPUNode)
+  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_ThrustGPUNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+ENDIF ()
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_CUDA_FLOAT

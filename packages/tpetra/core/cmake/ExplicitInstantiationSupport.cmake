@@ -30,8 +30,8 @@ ENDIF()
 SET(${PACKAGE_NAME}_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 
 # Exclude all of the types that CUDA/Thrust doesn't support
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thrust)
-IF(${PACKAGE_NAME}_ENABLE_Thrust)
+ASSERT_DEFINED(TpetraClassic_ENABLE_ThrustGPUNode)
+IF(TpetraClassic_ENABLE_ThrustGPUNode)
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
   SET(CUDA_UNSUPPORTED_SCALARS "dd_real|qd_real|std::complex<double>|std::complex<float>")
   TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET     "S=${CUDA_UNSUPPORTED_SCALARS}"                 "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
