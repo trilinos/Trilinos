@@ -41,7 +41,8 @@ Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationI
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
   chebyshev: max eigenvalue (calculated by Ifpack) = 1.95
-  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.94902, alpha: 20, lambdaMin: 0.0974509}
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
@@ -118,12 +119,12 @@ Level 1
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack) = 1.94
-  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.94496, alpha: 20, lambdaMin: 0.0972481}
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    PreDropFunctionConstVal: threshold = 0
     lightweight wrap = 1
     algorithm = "classical": threshold = 0.00, blocksize = 1
     Detected 0 Dirichlet nodes
@@ -195,12 +196,12 @@ Level 2
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack) = 1.95
-  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.95426, alpha: 20, lambdaMin: 0.0977129}
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 3
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    PreDropFunctionConstVal: threshold = 0
     lightweight wrap = 1
     algorithm = "classical": threshold = 0.00, blocksize = 1
     Detected 0 Dirichlet nodes
@@ -272,12 +273,12 @@ Level 3
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack) = 1.95
-  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+  "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.9461, alpha: 20, lambdaMin: 0.0973049}
+Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 4
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    PreDropFunctionConstVal: threshold = 0
     lightweight wrap = 1
     algorithm = "classical": threshold = 0.00, blocksize = 1
     Detected 0 Dirichlet nodes
@@ -347,7 +348,7 @@ Level 4
   Ac   # rows per proc   : avg = 1.24e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   Ac   #  nnz per proc   : avg = 3.70e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Max coarse size (<= 128) achieved
- Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -362,14 +363,14 @@ A 2    1111   3331     3.00  1
 A 3     371   1111     2.99  1
 A 4     124    370     2.98  1
 
-Smoother (level 0) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+Smoother (level 0) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.94902, alpha: 20, lambdaMin: 0.0974509}
 
-Smoother (level 1) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+Smoother (level 1) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.94496, alpha: 20, lambdaMin: 0.0972481}
 
-Smoother (level 2) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+Smoother (level 2) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.95426, alpha: 20, lambdaMin: 0.0977129}
 
-Smoother (level 3) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
+Smoother (level 3) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax: 1.9461, alpha: 20, lambdaMin: 0.0973049}
 
-Smoother (level 4) pre  : MueLu::AmesosSmoother{type = <ignored>}
+Smoother (level 4) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 4) post : no smoother
 

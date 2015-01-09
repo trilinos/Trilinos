@@ -4,15 +4,11 @@ min # of root nbrs already aggregated : 0
 aggregate ordering :                    natural
 =============================================================================
 Clearing old data (if any)
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
-Using default factory (MueLu::CoarseMapFactory) for building 'CoarseMap'.
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack2) = 1.95
-  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
-Using default factory (MueLu::CoarseMapFactory) for building 'CoarseMap'.
+  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94914, alpha: 20, lambdaMin: 0.0974568}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
@@ -21,49 +17,38 @@ Level 1
      lightweight wrap = 0
      CoalesceDropFactory::Build(): found blockdim=1 from strided maps. offset=0
      Build (MueLu::AmalgamationFactory)
-      AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
      CoalesceDropFactory::SetupAmalgamationData() # of amalgamated blocks=9999
      CoalesceDropFactory: nodeMap 9999/9999 elements
      Detected 0 Dirichlet nodes
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/9999 [0.00%] (total)
-       remaining  : 9999
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
-       remaining  : 1
-       aggregates : 3333 (phase), 3333 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 1 (phase), 9999/9999 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 3333 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 9999/9999 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 3333 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 9999/9999 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 3333 (total)
+    BuildAggregates (Phase - (Dirichlet))
+      aggregated : 0 (phase), 0/9999 [0.00%] (total)
+      remaining  : 9999
+      aggregates : 0 (phase), 0 (total)
+    BuildAggregates (Phase 1 (main))
+      aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
+      remaining  : 1
+      aggregates : 3333 (phase), 3333 (total)
+    BuildAggregates (Phase 2 (cleanup))
+      aggregated : 1 (phase), 9999/9999 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 3333 (total)
+    BuildAggregates (Phase 3 (emergency))
+      aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 3333 (total)
+    BuildAggregates (Phase - (isolated))
+      aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 3333 (total)
     "UC": MueLu::Aggregates{nGlobalAggregates = 3333}
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
    Ptent size =  9999 x 3333, nnz = 9999
    Ptent Load balancing info
    Ptent   # active processes: 1/1
    Ptent   # rows per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
    Ptent   #  nnz per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Using cached max eigenvalue estimate
-   Prolongator damping factor = 0.68 (1.33 / 1.95)
-  Fused (I-omega*D^{-1} A)*Ptent
+  Using cached max eigenvalue estimate
+  Prolongator damping factor = 0.68 (1.33 / 1.95)
   P size =  9999 x 3333, nnz = 16663
   P Load balancing info
   P   # active processes: 1/1
@@ -76,10 +61,6 @@ Level 1
   R   # rows per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   R   #  nnz per proc   : avg = 1.67e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-   Utils::Multiply : Estimate for nnz per row of product matrix = 3
-  MxM: R x (AP) (explicit)
-   Utils::Multiply : Estimate for nnz per row of product matrix = 5
   Ac size =  3333 x 3333, nnz = 9997
   Ac Load balancing info
   Ac   # active processes: 1/1
@@ -88,9 +69,7 @@ Level 1
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack2) = 1.95
-  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
-Using default factory (MueLu::CoarseMapFactory) for building 'CoarseMap'.
+  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94974, alpha: 20, lambdaMin: 0.0974869}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
@@ -99,50 +78,39 @@ Level 2
      lightweight wrap = 0
      CoalesceDropFactory::Build(): found blockdim=1 from strided maps. offset=0
      Build (MueLu::AmalgamationFactory)
-      AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
      CoalesceDropFactory::SetupAmalgamationData() # of amalgamated blocks=3333
      CoalesceDropFactory: nodeMap 3333/3333 elements
      Detected 0 Dirichlet nodes
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/3333 [0.00%] (total)
-       remaining  : 3333
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
-       remaining  : 1
-       aggregates : 1111 (phase), 1111 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 1 (phase), 3333/3333 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 1111 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 3333/3333 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 1111 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 3333/3333 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 1111 (total)
+    BuildAggregates (Phase - (Dirichlet))
+      aggregated : 0 (phase), 0/3333 [0.00%] (total)
+      remaining  : 3333
+      aggregates : 0 (phase), 0 (total)
+    BuildAggregates (Phase 1 (main))
+      aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
+      remaining  : 1
+      aggregates : 1111 (phase), 1111 (total)
+    BuildAggregates (Phase 2 (cleanup))
+      aggregated : 1 (phase), 3333/3333 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 1111 (total)
+    BuildAggregates (Phase 3 (emergency))
+      aggregated : 0 (phase), 3333/3333 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 1111 (total)
+    BuildAggregates (Phase - (isolated))
+      aggregated : 0 (phase), 3333/3333 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 1111 (total)
     "UC": MueLu::Aggregates{nGlobalAggregates = 1111}
    Nullspace factory (MueLu::NullspaceFactory)
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
    Ptent size =  3333 x 1111, nnz = 3333
    Ptent Load balancing info
    Ptent   # active processes: 1/1
    Ptent   # rows per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
    Ptent   #  nnz per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Using cached max eigenvalue estimate
-   Prolongator damping factor = 0.68 (1.33 / 1.95)
-  Fused (I-omega*D^{-1} A)*Ptent
+  Using cached max eigenvalue estimate
+  Prolongator damping factor = 0.68 (1.33 / 1.95)
   P size =  3333 x 1111, nnz = 5553
   P Load balancing info
   P   # active processes: 1/1
@@ -155,10 +123,6 @@ Level 2
   R   # rows per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   R   #  nnz per proc   : avg = 5.55e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-   Utils::Multiply : Estimate for nnz per row of product matrix = 3
-  MxM: R x (AP) (explicit)
-   Utils::Multiply : Estimate for nnz per row of product matrix = 5
   Ac size =  1111 x 1111, nnz = 3331
   Ac Load balancing info
   Ac   # active processes: 1/1
@@ -167,9 +131,7 @@ Level 2
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack2) = 1.95
-  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
-Using default factory (MueLu::CoarseMapFactory) for building 'CoarseMap'.
+  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94855, alpha: 20, lambdaMin: 0.0974277}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 Level 3
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
@@ -178,50 +140,39 @@ Level 3
      lightweight wrap = 0
      CoalesceDropFactory::Build(): found blockdim=1 from strided maps. offset=0
      Build (MueLu::AmalgamationFactory)
-      AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
      CoalesceDropFactory::SetupAmalgamationData() # of amalgamated blocks=1111
      CoalesceDropFactory: nodeMap 1111/1111 elements
      Detected 0 Dirichlet nodes
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/1111 [0.00%] (total)
-       remaining  : 1111
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 1111 (phase), 1111/1111 [100.00%] (total)
-       remaining  : 0
-       aggregates : 371 (phase), 371 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 0 (phase), 1111/1111 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 371 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 1111/1111 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 371 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 1111/1111 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 371 (total)
+    BuildAggregates (Phase - (Dirichlet))
+      aggregated : 0 (phase), 0/1111 [0.00%] (total)
+      remaining  : 1111
+      aggregates : 0 (phase), 0 (total)
+    BuildAggregates (Phase 1 (main))
+      aggregated : 1111 (phase), 1111/1111 [100.00%] (total)
+      remaining  : 0
+      aggregates : 371 (phase), 371 (total)
+    BuildAggregates (Phase 2 (cleanup))
+      aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 371 (total)
+    BuildAggregates (Phase 3 (emergency))
+      aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 371 (total)
+    BuildAggregates (Phase - (isolated))
+      aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 371 (total)
     "UC": MueLu::Aggregates{nGlobalAggregates = 371}
    Nullspace factory (MueLu::NullspaceFactory)
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
    Ptent size =  1111 x 371, nnz = 1111
    Ptent Load balancing info
    Ptent   # active processes: 1/1
    Ptent   # rows per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
    Ptent   #  nnz per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Using cached max eigenvalue estimate
-   Prolongator damping factor = 0.68 (1.33 / 1.95)
-  Fused (I-omega*D^{-1} A)*Ptent
+  Using cached max eigenvalue estimate
+  Prolongator damping factor = 0.68 (1.33 / 1.95)
   P size =  1111 x 371, nnz = 1851
   P Load balancing info
   P   # active processes: 1/1
@@ -234,10 +185,6 @@ Level 3
   R   # rows per proc   : avg = 3.71e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   R   #  nnz per proc   : avg = 1.85e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-   Utils::Multiply : Estimate for nnz per row of product matrix = 3
-  MxM: R x (AP) (explicit)
-   Utils::Multiply : Estimate for nnz per row of product matrix = 5
   Ac size =  371 x 371, nnz = 1111
   Ac Load balancing info
   Ac   # active processes: 1/1
@@ -246,9 +193,7 @@ Level 3
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
   chebyshev: ratio eigenvalue (computed) = 20.00
   chebyshev: max eigenvalue (calculated by Ifpack2) = 1.94
-  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [371, 371], Global nnz: 1111}
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
-Using default factory (MueLu::CoarseMapFactory) for building 'CoarseMap'.
+  "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.93826, alpha: 20, lambdaMin: 0.0969131}, Global matrix dimensions: [371, 371], Global nnz: 1111}
 Level 4
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
@@ -257,50 +202,39 @@ Level 4
      lightweight wrap = 0
      CoalesceDropFactory::Build(): found blockdim=1 from strided maps. offset=0
      Build (MueLu::AmalgamationFactory)
-      AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
      CoalesceDropFactory::SetupAmalgamationData() # of amalgamated blocks=371
      CoalesceDropFactory: nodeMap 371/371 elements
      Detected 0 Dirichlet nodes
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/371 [0.00%] (total)
-       remaining  : 371
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 371 (phase), 371/371 [100.00%] (total)
-       remaining  : 0
-       aggregates : 124 (phase), 124 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 0 (phase), 371/371 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 124 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 371/371 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 124 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 371/371 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 124 (total)
+    BuildAggregates (Phase - (Dirichlet))
+      aggregated : 0 (phase), 0/371 [0.00%] (total)
+      remaining  : 371
+      aggregates : 0 (phase), 0 (total)
+    BuildAggregates (Phase 1 (main))
+      aggregated : 371 (phase), 371/371 [100.00%] (total)
+      remaining  : 0
+      aggregates : 124 (phase), 124 (total)
+    BuildAggregates (Phase 2 (cleanup))
+      aggregated : 0 (phase), 371/371 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 124 (total)
+    BuildAggregates (Phase 3 (emergency))
+      aggregated : 0 (phase), 371/371 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 124 (total)
+    BuildAggregates (Phase - (isolated))
+      aggregated : 0 (phase), 371/371 [100.00%] (total)
+      remaining  : 0
+      aggregates : 0 (phase), 124 (total)
     "UC": MueLu::Aggregates{nGlobalAggregates = 124}
    Nullspace factory (MueLu::NullspaceFactory)
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
    Ptent size =  371 x 124, nnz = 371
    Ptent Load balancing info
    Ptent   # active processes: 1/1
    Ptent   # rows per proc   : avg = 3.71e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
    Ptent   #  nnz per proc   : avg = 3.71e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Using cached max eigenvalue estimate
-   Prolongator damping factor = 0.69 (1.33 / 1.94)
-  Fused (I-omega*D^{-1} A)*Ptent
+  Using cached max eigenvalue estimate
+  Prolongator damping factor = 0.69 (1.33 / 1.94)
   P size =  371 x 124, nnz = 617
   P Load balancing info
   P   # active processes: 1/1
@@ -313,17 +247,13 @@ Level 4
   R   # rows per proc   : avg = 1.24e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   R   #  nnz per proc   : avg = 6.17e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-   Utils::Multiply : Estimate for nnz per row of product matrix = 3
-  MxM: R x (AP) (explicit)
-   Utils::Multiply : Estimate for nnz per row of product matrix = 6
   Ac size =  124 x 124, nnz = 370
   Ac Load balancing info
   Ac   # active processes: 1/1
   Ac   # rows per proc   : avg = 1.24e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
   Ac   #  nnz per proc   : avg = 3.70e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
  Max coarse size (<= 128) achieved
- Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -338,14 +268,14 @@ A 2    1111   3331     3.00  1
 A 3     371   1111     2.99  1
 A 4     124    370     2.98  1
 
-Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94914, alpha: 20, lambdaMin: 0.0974568}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94974, alpha: 20, lambdaMin: 0.0974869}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
+Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94855, alpha: 20, lambdaMin: 0.0974277}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}, Global matrix dimensions: [371, 371], Global nnz: 1111}
+Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.93826, alpha: 20, lambdaMin: 0.0969131}, Global matrix dimensions: [371, 371], Global nnz: 1111}
 
-Smoother (level 4) pre  : <Direct> solver interface
+Smoother (level 4) pre  : KLU2 solver interface
 Smoother (level 4) post : no smoother
 
