@@ -50,11 +50,12 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
+#include <MueLu.hpp>
+
 #if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h> // needed for check whether KLU2 is available
 #endif
 
-#include <MueLu.hpp>
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_TestHelpers.hpp>
 
